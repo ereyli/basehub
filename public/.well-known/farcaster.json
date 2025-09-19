@@ -26,3 +26,8 @@
     "signature": "6cm4RcrXEAoihRWZ+6e2uspMoY35dsu3QHGLE04imUlJpmGQ5YCw0tABFgqsR0sajr/EB/Dx51Da0PYk5vbkHhw="
   }
 }
+
+  "baseBuilder": {
+    "allowedAddresses": ["0xcF1B5d6CD8e0bfd6B1a8B2c2ceAb0bc165EEE5B3"
+  }
+
