@@ -10,23 +10,19 @@
     "splashBackgroundColor": "#2563eb",
     "webhookUrl": "https://basehub-alpha.vercel.app/api/webhook",
     "subtitle": "BaseHub",
-    "description": "BaseHub",
+    "description": "BaseHub - Play games",
     "primaryCategory": "games",
-    "tags": [
-      "gaming",
-      "l2"
-    ],
-    "tagline": "gaming,tx,airdrop",
+    "tags": ["gaming", "l2"],
+    "tagline": ["gaming", "tx", "airdrop"],
     "ogTitle": "BaseHub",
-    "ogDescription": "BaseHub"
+    "ogDescription": "BaseHub - Play games "
   },
   "accountAssociation": {
     "header": "eyJmaWQiOjI1MTYxOSwidHlwZSI6ImF1dGgiLCJrZXkiOiIweDk3Njc1RjAzRDY1RkFCNzM3MWZhMkJlQjNkYkY5YzY4NDJjOGQ1MjUifQ",
     "payload": "eyJkb21haW4iOiJiYXNlaHViLWFscGhhLnZlcmNlbC5hcHAifQ",
     "signature": "6cm4RcrXEAoihRWZ+6e2uspMoY35dsu3QHGLE04imUlJpmGQ5YCw0tABFgqsR0sajr/EB/Dx51Da0PYk5vbkHhw="
+  },
+  "baseBuilder": {
+    "allowedAddresses": ["0xcF1B5d6CD8e0bfd6B1a8B2c2ceAb0bc165EEE5B3"]
   }
 }
-
-  "baseBuilder": {
-    "allowedAddresses": ["0xcF1B5d6CD8e0bfd6B1a8B2c2ceAb0bc165EEE5B3"
-  },
