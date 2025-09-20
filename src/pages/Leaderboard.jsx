@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react'
-import { getLeaderboard } from '../utils/xpUtils'
+import { getLeaderboard, getExtendedLeaderboard } from '../utils/xpUtils'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
-import { Trophy, Medal, Award, Users, TrendingUp, RefreshCw } from 'lucide-react'
+import { Trophy, Medal, Award, Users, TrendingUp, RefreshCw, ChevronDown } from 'lucide-react'
 
 const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState([])
+  const [extendedLeaderboard, setExtendedLeaderboard] = useState([])
   const [lastUpdated, setLastUpdated] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(null)
+  const [showMore, setShowMore] = useState(false)
+  const [hasMorePlayers, setHasMorePlayers] = useState(false)
 
   useEffect(() => {
     loadLeaderboard()
@@ -26,11 +30,37 @@ const Leaderboard = () => {
       console.log('Leaderboard data received:', data)
       setLeaderboard(data)
       setLastUpdated(new Date())
+      
+      // Check if there are more players
+      const extendedData = await getExtendedLeaderboard(10, 5)
+      setHasMorePlayers(extendedData.length > 0)
     } catch (err) {
       console.error('Error loading leaderboard:', err)
       setError(err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadMorePlayers = async () => {
+    try {
+      setLoadingMore(true)
+      const currentCount = leaderboard.length + extendedLeaderboard.length
+      const moreData = await getExtendedLeaderboard(currentCount, 5)
+      
+      if (moreData.length > 0) {
+        setExtendedLeaderboard(prev => [...prev, ...moreData])
+        
+        // Check if there are even more players
+        const nextBatch = await getExtendedLeaderboard(currentCount + 5, 5)
+        setHasMorePlayers(nextBatch.length > 0)
+      } else {
+        setHasMorePlayers(false)
+      }
+    } catch (err) {
+      console.error('Error loading more players:', err)
+    } finally {
+      setLoadingMore(false)
     }
   }
 
@@ -207,7 +237,7 @@ const Leaderboard = () => {
                   height: '40px',
                   marginRight: '16px'
                 }}>
-                  {getRankIcon(player.rank)}
+                  {getRankIcon(index + 1)}
                 </div>
 
                 <div style={{ flex: 1 }}>
@@ -226,14 +256,14 @@ const Leaderboard = () => {
                     </span>
                     {index < 3 && (
                       <span style={{
-                        background: getRankColor(player.rank),
+                        background: getRankColor(index + 1),
                         color: 'white',
                         padding: '2px 8px',
                         borderRadius: '12px',
                         fontSize: '10px',
                         fontWeight: 'bold'
                       }}>
-                        TOP {player.rank}
+                        TOP {index + 1}
                       </span>
                     )}
                   </div>
@@ -267,6 +297,119 @@ const Leaderboard = () => {
                 </div>
               </div>
             ))}
+
+            {/* Extended Leaderboard */}
+            {extendedLeaderboard.map((player, index) => {
+              const globalIndex = leaderboard.length + index + 1
+              return (
+                <div
+                  key={player.wallet_address}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '16px',
+                    marginBottom: '12px',
+                    background: 'rgba(255, 255, 255, 0.5)',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(0, 0, 0, 0.1)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    width: '40px',
+                    height: '40px',
+                    marginRight: '16px'
+                  }}>
+                    <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#6b7280' }}>#{globalIndex}</span>
+                  </div>
+
+                  <div style={{ flex: 1 }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px',
+                      marginBottom: '4px'
+                    }}>
+                      <span style={{ 
+                        fontWeight: 'bold', 
+                        fontSize: '16px',
+                        color: '#1f2937'
+                      }}>
+                        {formatAddress(player.wallet_address)}
+                      </span>
+                    </div>
+                    
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '16px',
+                      fontSize: '14px',
+                      color: '#6b7280'
+                    }}>
+                      <span>Level {player.level}</span>
+                      <span>{player.total_xp} XP</span>
+                      <span>{player.total_transactions} transactions</span>
+                    </div>
+                  </div>
+
+                  <div style={{ 
+                    textAlign: 'right',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <TrendingUp size={16} style={{ color: '#10b981' }} />
+                    <span style={{ 
+                      fontWeight: 'bold',
+                      color: '#10b981',
+                      fontSize: '16px'
+                    }}>
+                      {player.total_xp} XP
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+
+            {/* Load More Button */}
+            {hasMorePlayers && (
+              <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                <button
+                  onClick={loadMorePlayers}
+                  disabled={loadingMore}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px 24px',
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    cursor: loadingMore ? 'not-allowed' : 'pointer',
+                    opacity: loadingMore ? 0.7 : 1,
+                    transition: 'all 0.2s ease',
+                    margin: '0 auto'
+                  }}
+                >
+                  {loadingMore ? (
+                    <>
+                      <div className="loading" style={{ width: '16px', height: '16px' }} />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown size={16} />
+                      And 5 more players...
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         )}
 

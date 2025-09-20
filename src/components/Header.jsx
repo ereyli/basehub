@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAccount, useChainId } from 'wagmi'
-import { Wallet, Home, Wifi, WifiOff, Gamepad2, Zap, Shield } from 'lucide-react'
+import { Wallet, Home, Wifi, WifiOff, Gamepad2, Zap, Shield, ExternalLink, Twitter } from 'lucide-react'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { getCurrentConfig } from '../config/base'
 import WalletConnect from './WalletConnect'
@@ -55,6 +55,30 @@ const Header = () => {
                 <span>Home</span>
               </Link>
             )}
+
+            {/* Social Links */}
+            <div className="social-links">
+              <a 
+                href="https://x.com/BaseHUBB" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="social-link twitter"
+                title="Follow us on X"
+              >
+                <Twitter size={16} />
+                <span>X</span>
+              </a>
+              <a 
+                href="https://basehub.fun" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="social-link website"
+                title="Visit our website"
+              >
+                <ExternalLink size={16} />
+                <span>Website</span>
+              </a>
+            </div>
 
             {/* Status Indicators */}
             <div className="status-indicators">
@@ -184,6 +208,49 @@ const headerStyles = `
     display: flex;
     align-items: center;
     gap: 16px;
+  }
+
+  .social-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .social-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+  }
+
+  .social-link.twitter {
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+
+  .social-link.twitter:hover {
+    background: rgba(0, 0, 0, 1);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .social-link.website {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.2);
+  }
+
+  .social-link.website:hover {
+    background: rgba(59, 130, 246, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
   }
 
   .nav-button {
@@ -351,6 +418,15 @@ const headerStyles = `
     .status-badge {
       padding: 4px 8px;
       font-size: 11px;
+    }
+
+    .social-link {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+
+    .social-link span {
+      display: none;
     }
   }
 

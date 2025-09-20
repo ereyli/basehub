@@ -170,6 +170,54 @@ export const getLeaderboard = async () => {
   }
 }
 
+// Get extended leaderboard (more players)
+export const getExtendedLeaderboard = async (offset = 0, limit = 5) => {
+  try {
+    // Check if Supabase is available
+    if (!supabase || !supabase.from) {
+      console.log('⚠️ Supabase not available, using local extended leaderboard')
+      // Get local XP data
+      const localXP = JSON.parse(localStorage.getItem('basehub_xp') || '{}')
+      const players = Object.entries(localXP).map(([wallet_address, total_xp]) => ({
+        wallet_address,
+        total_xp,
+        level: Math.floor(total_xp / 100) + 1,
+        total_transactions: 1,
+        token_balance: calculateTokens(total_xp)
+      })).sort((a, b) => b.total_xp - a.total_xp).slice(offset, offset + limit)
+      
+      console.log('✅ Returning local extended leaderboard data:', players)
+      return players
+    }
+
+    console.log('🏆 Fetching extended leaderboard from Supabase...')
+    const { data: players, error } = await supabase
+      .from('players')
+      .select('wallet_address, total_xp, level, total_transactions')
+      .order('total_xp', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    console.log('📊 Supabase extended leaderboard response:', { players, error })
+
+    if (error) {
+      console.error('❌ Error fetching extended leaderboard:', error)
+      throw error
+    }
+
+    // Add token_balance calculation to each player
+    const playersWithTokens = (players || []).map(player => ({
+      ...player,
+      token_balance: calculateTokens(player.total_xp)
+    }))
+
+    console.log('✅ Returning extended leaderboard data:', playersWithTokens)
+    return playersWithTokens
+  } catch (error) {
+    console.error('❌ Error in getExtendedLeaderboard:', error)
+    return []
+  }
+}
+
 // Calculate tokens from XP (1 XP = 10 BHUP)
 export const calculateTokens = (xp) => {
   return Math.floor(xp * 10)

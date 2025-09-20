@@ -4,7 +4,7 @@ import { useAccount } from 'wagmi'
 import { getLeaderboard } from '../utils/xpUtils'
 import { useTransactions } from '../hooks/useTransactions'
 import EmbedMeta from '../components/EmbedMeta'
-import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package } from 'lucide-react'
+import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink } from 'lucide-react'
 
 const Home = () => {
   const { isConnected } = useAccount()
@@ -562,6 +562,51 @@ const Home = () => {
           </div>
         </div>
       )}
+
+      {/* Social Links Section */}
+      <div className="card" style={{ marginTop: '24px' }}>
+        <div style={{ textAlign: 'center' }}>
+          <h3 style={{ 
+            fontSize: '20px', 
+            fontWeight: 'bold', 
+            marginBottom: '16px',
+            color: '#1f2937'
+          }}>
+            🌐 Connect With Us
+          </h3>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            gap: '16px',
+            flexWrap: 'wrap'
+          }}>
+            <a 
+              href="https://x.com/BaseHUBB" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="social-link-card twitter"
+            >
+              <Twitter size={24} />
+              <div>
+                <span className="social-title">Follow on X</span>
+                <span className="social-subtitle">@BaseHUBB</span>
+              </div>
+            </a>
+            <a 
+              href="https://basehub.fun" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="social-link-card website"
+            >
+              <ExternalLink size={24} />
+              <div>
+                <span className="social-title">Visit Website</span>
+                <span className="social-subtitle">basehub.fun</span>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -690,6 +735,55 @@ const styles = `
     100% { transform: rotate(360deg); }
   }
 
+  .social-link-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    min-width: 200px;
+  }
+
+  .social-link-card.twitter {
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+
+  .social-link-card.twitter:hover {
+    background: rgba(0, 0, 0, 1);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .social-link-card.website {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.2);
+  }
+
+  .social-link-card.website:hover {
+    background: rgba(59, 130, 246, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+  }
+
+  .social-title {
+    display: block;
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+
+  .social-subtitle {
+    display: block;
+    font-size: 12px;
+    opacity: 0.8;
+  }
+
   @media (max-width: 768px) {
     .games-grid {
       grid-template-columns: 1fr;
@@ -702,6 +796,11 @@ const styles = `
     
     .game-card {
       padding: 20px;
+    }
+
+    .social-link-card {
+      min-width: 150px;
+      padding: 12px 16px;
     }
   }
 `
