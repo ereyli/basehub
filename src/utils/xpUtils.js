@@ -2,13 +2,24 @@
 import { supabase } from '../config/supabase'
 
 // Add XP to user's wallet address (every game gives XP)
-export const addXP = async (walletAddress, xpAmount) => {
+export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
   if (!walletAddress || !xpAmount) {
     console.log('❌ Missing walletAddress or xpAmount:', { walletAddress, xpAmount })
     return
   }
 
-  console.log('🎯 Adding XP to Supabase:', { walletAddress, xpAmount })
+  console.log('🎯 Adding XP:', { walletAddress, xpAmount, gameType })
+
+  // Check if Supabase is available
+  if (!supabase || !supabase.from) {
+    console.log('⚠️ Supabase not available, XP will be stored locally')
+    // Store in localStorage as fallback
+    const localXP = JSON.parse(localStorage.getItem('basehub_xp') || '{}')
+    localXP[walletAddress] = (localXP[walletAddress] || 0) + xpAmount
+    localStorage.setItem('basehub_xp', JSON.stringify(localXP))
+    console.log('✅ XP stored locally:', localXP[walletAddress])
+    return
+  }
 
   try {
     console.log('📊 Checking if player exists in Supabase...')
@@ -114,6 +125,23 @@ export const getXP = async (walletAddress) => {
 // Get leaderboard (top 10 players)
 export const getLeaderboard = async () => {
   try {
+    // Check if Supabase is available
+    if (!supabase || !supabase.from) {
+      console.log('⚠️ Supabase not available, using local leaderboard')
+      // Get local XP data
+      const localXP = JSON.parse(localStorage.getItem('basehub_xp') || '{}')
+      const players = Object.entries(localXP).map(([wallet_address, total_xp]) => ({
+        wallet_address,
+        total_xp,
+        level: Math.floor(total_xp / 100) + 1,
+        total_transactions: 1,
+        token_balance: calculateTokens(total_xp)
+      })).sort((a, b) => b.total_xp - a.total_xp).slice(0, 10)
+      
+      console.log('✅ Returning local leaderboard data:', players)
+      return players
+    }
+
     console.log('🏆 Fetching leaderboard from Supabase...')
     const { data: players, error } = await supabase
       .from('players')
@@ -148,19 +176,30 @@ export const calculateTokens = (xp) => {
 }
 
 // Record transaction in Supabase
-export const recordTransaction = async (walletAddress, gameType, xpEarned, transactionHash) => {
-  if (!walletAddress || !gameType || !xpEarned) return
+export const recordTransaction = async (transactionData) => {
+  if (!transactionData || !transactionData.wallet_address) return
 
   try {
-    console.log('📝 Recording transaction to Supabase:', { walletAddress, gameType, xpEarned, transactionHash })
+    // Check if Supabase is available
+    if (!supabase || !supabase.from) {
+      console.log('⚠️ Supabase not available, storing transaction locally')
+      // Store in localStorage as fallback
+      const localTransactions = JSON.parse(localStorage.getItem('basehub_transactions') || '[]')
+      localTransactions.push({
+        ...transactionData,
+        created_at: new Date().toISOString()
+      })
+      localStorage.setItem('basehub_transactions', JSON.stringify(localTransactions))
+      console.log('✅ Transaction stored locally')
+      return
+    }
+
+    console.log('📝 Recording transaction to Supabase:', transactionData)
     
     const { error } = await supabase
       .from('transactions')
       .insert([{
-        wallet_address: walletAddress,
-        game_type: gameType,
-        xp_earned: xpEarned,
-        transaction_hash: transactionHash,
+        ...transactionData,
         created_at: new Date().toISOString()
       }])
 

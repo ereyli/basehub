@@ -4,7 +4,7 @@ import { useAccount } from 'wagmi'
 import { getLeaderboard } from '../utils/xpUtils'
 import { useTransactions } from '../hooks/useTransactions'
 import EmbedMeta from '../components/EmbedMeta'
-import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp } from 'lucide-react'
+import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package } from 'lucide-react'
 
 const Home = () => {
   const { isConnected } = useAccount()
@@ -162,6 +162,26 @@ const Home = () => {
       path: '/deploy',
       color: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
       xpReward: '50 XP',
+      bonusXP: null
+    },
+    {
+      id: 'deploy-erc721',
+      title: 'Deploy ERC721',
+      description: 'Deploy your own NFT contract',
+      icon: <Image size={20} />,
+      path: '/deploy-erc721',
+      color: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+      xpReward: '100 XP',
+      bonusXP: null
+    },
+    {
+      id: 'deploy-erc1155',
+      title: 'Deploy ERC1155',
+      description: 'Deploy multi-token contract',
+      icon: <Layers size={20} />,
+      path: '/deploy-erc1155',
+      color: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+      xpReward: '100 XP',
       bonusXP: null
     },
   ]

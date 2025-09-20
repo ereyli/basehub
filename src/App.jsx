@@ -15,6 +15,9 @@ import LuckyNumberGame from './pages/LuckyNumberGame'
 import DiceRollGame from './pages/DiceRollGame'
 import Leaderboard from './pages/Leaderboard'
 import DeployToken from './pages/DeployToken'
+import DeployNFT from './pages/DeployNFT'
+import DeployERC721 from './pages/DeployERC721'
+import DeployERC1155 from './pages/DeployERC1155'
 import './styles/index.css'
 
 const queryClient = new QueryClient()
@@ -60,6 +63,9 @@ function AppContent() {
             <Route path="/dice" element={<DiceRollGame />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/deploy" element={<DeployToken />} />
+            <Route path="/deploy-nft" element={<DeployNFT />} />
+            <Route path="/deploy-erc721" element={<DeployERC721 />} />
+            <Route path="/deploy-erc1155" element={<DeployERC1155 />} />
           </Routes>
         </main>
       </div>
