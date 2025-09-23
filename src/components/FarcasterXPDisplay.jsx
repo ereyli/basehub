@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
-import { Star, Coins, Zap, Trophy, Wallet, Clock, Home, LogOut } from 'lucide-react'
+import { Star, Coins, Zap, Trophy, Wallet, Clock, Home, LogOut, Wifi, RefreshCw } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { getXP, calculateTokens } from '../utils/xpUtils'
 import { useFarcaster } from '../contexts/FarcasterContext'
+import { useNetworkCheck } from '../hooks/useNetworkCheck'
 
 const FarcasterXPDisplay = () => {
   const { isConnected, address } = useAccount()
   const { connect, connectors } = useConnect()
   const { disconnect } = useDisconnect()
   const { isInFarcaster } = useFarcaster()
+  const { isCorrectNetwork, switchToBaseNetwork } = useNetworkCheck()
   const navigate = useNavigate()
   const location = useLocation()
   const [totalXP, setTotalXP] = useState(0)
+  const [isSwitching, setIsSwitching] = useState(false)
   
   // Check if we're on home page
   const isHomePage = location.pathname === '/'
@@ -53,6 +56,17 @@ const FarcasterXPDisplay = () => {
 
   const handleHomeClick = () => {
     navigate('/')
+  }
+
+  const handleSwitchNetwork = async () => {
+    setIsSwitching(true)
+    try {
+      await switchToBaseNetwork()
+    } catch (error) {
+      console.error('Failed to switch network:', error)
+    } finally {
+      setIsSwitching(false)
+    }
   }
 
   // If not connected, show header connect version
@@ -109,6 +123,27 @@ const FarcasterXPDisplay = () => {
       </div>
       
       <div className="header-right">
+        {/* Switch Network Button - only show when not on Base */}
+        {isConnected && !isInFarcaster && !isCorrectNetwork && (
+          <button 
+            onClick={handleSwitchNetwork}
+            disabled={isSwitching}
+            className="switch-network-btn-mini"
+          >
+            {isSwitching ? (
+              <>
+                <RefreshCw size={12} className="spinning" />
+                <span>Switching...</span>
+              </>
+            ) : (
+              <>
+                <Wifi size={12} />
+                <span>Switch to Base</span>
+              </>
+            )}
+          </button>
+        )}
+
         <div className="stat-mini xp">
           <Zap size={14} />
           <span>{totalXP}</span>

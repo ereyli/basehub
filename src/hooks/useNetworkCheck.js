@@ -1,0 +1,95 @@
+import { useState, useEffect } from 'react'
+import { useAccount, useChainId } from 'wagmi'
+import { getCurrentConfig } from '../config/base'
+
+export const useNetworkCheck = () => {
+  const { isConnected } = useAccount()
+  const chainId = useChainId()
+  const baseConfig = getCurrentConfig()
+  const [isCorrectNetwork, setIsCorrectNetwork] = useState(false)
+  const [isChecking, setIsChecking] = useState(false)
+
+  useEffect(() => {
+    if (!isConnected) {
+      setIsCorrectNetwork(false)
+      return
+    }
+
+    setIsChecking(true)
+    
+    // Check if user is on the correct network (Base)
+    const correctChainId = baseConfig.chainId
+    const isOnBase = chainId === correctChainId
+    
+    setIsCorrectNetwork(isOnBase)
+    setIsChecking(false)
+    
+    console.log('🔍 Network Check:', {
+      currentChainId: chainId,
+      requiredChainId: correctChainId,
+      isOnBase,
+      networkName: baseConfig.chainName
+    })
+  }, [isConnected, chainId, baseConfig.chainId])
+
+  const switchToBaseNetwork = async () => {
+    if (typeof window.ethereum === 'undefined') {
+      throw new Error('MetaMask not detected. Please install MetaMask to switch networks.')
+    }
+
+    try {
+      // Try to switch to Base network
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: `0x${baseConfig.chainId.toString(16)}` }],
+      })
+    } catch (switchError) {
+      // If the chain hasn't been added to MetaMask, add it
+      if (switchError.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: `0x${baseConfig.chainId.toString(16)}`,
+              chainName: baseConfig.chainName,
+              nativeCurrency: baseConfig.nativeCurrency,
+              rpcUrls: baseConfig.rpcUrls,
+              blockExplorerUrls: baseConfig.blockExplorerUrls,
+            }],
+          })
+        } catch (addError) {
+          console.error('Failed to add Base network:', addError)
+          throw new Error('Failed to add Base network to your wallet. Please add it manually.')
+        }
+      } else {
+        console.error('Failed to switch to Base network:', switchError)
+        throw new Error('Failed to switch to Base network. Please switch manually.')
+      }
+    }
+  }
+
+  const getNetworkName = (chainId) => {
+    const networks = {
+      1: 'Ethereum Mainnet',
+      5: 'Goerli Testnet',
+      10: 'Optimism',
+      56: 'BSC',
+      137: 'Polygon',
+      8453: 'Base',
+      84532: 'Base Sepolia',
+      42161: 'Arbitrum',
+      421614: 'Arbitrum Sepolia',
+    }
+    return networks[chainId] || `Chain ID: ${chainId}`
+  }
+
+  return {
+    isCorrectNetwork,
+    isChecking,
+    currentChainId: chainId,
+    requiredChainId: baseConfig.chainId,
+    networkName: getNetworkName(chainId),
+    baseNetworkName: baseConfig.chainName,
+    switchToBaseNetwork,
+  }
+}

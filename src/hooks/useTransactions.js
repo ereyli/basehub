@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAccount, useWriteContract } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { useFarcaster } from '../contexts/FarcasterContext'
+import { useNetworkCheck } from './useNetworkCheck'
 import { addXP, addBonusXP, recordTransaction } from '../utils/xpUtils'
 import { getCurrentConfig, getContractAddress, GAS_CONFIG, GAME_CONFIG } from '../config/base'
 import { parseEther } from 'viem'
@@ -11,15 +12,24 @@ export const useTransactions = () => {
   const { isInFarcaster } = useFarcaster()
   const { address, chainId } = useAccount()
   const { writeContractAsync, data: txData } = useWriteContract()
+  const { isCorrectNetwork, networkName, baseNetworkName } = useNetworkCheck()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  // Farcaster-only app - no need for provider checks
+  // Network validation function
+  const validateNetwork = () => {
+    if (!isCorrectNetwork) {
+      throw new Error(`Wrong network detected! You're on ${networkName} but BaseHub requires ${baseNetworkName}. Please switch to Base network to continue.`)
+    }
+  }
 
   const sendGMTransaction = async (message = 'GM!') => {
     if (!address) {
       throw new Error('Wallet not connected')
     }
+
+    // Validate network before proceeding
+    validateNetwork()
 
     setIsLoading(true)
     setError(null)
@@ -98,6 +108,9 @@ export const useTransactions = () => {
       throw new Error('Wallet not connected')
     }
 
+    // Validate network before proceeding
+    validateNetwork()
+
     setIsLoading(true)
     setError(null)
 
@@ -168,6 +181,9 @@ export const useTransactions = () => {
     if (!address) {
       throw new Error('Wallet not connected')
     }
+
+    // Validate network before proceeding
+    validateNetwork()
 
     setIsLoading(true)
     setError(null)
@@ -256,6 +272,9 @@ export const useTransactions = () => {
       throw new Error('Wallet not connected')
     }
 
+    // Validate network before proceeding
+    validateNetwork()
+
     setIsLoading(true)
     setError(null)
 
@@ -337,6 +356,9 @@ export const useTransactions = () => {
     if (!address) {
       throw new Error('Wallet not connected')
     }
+
+    // Validate network before proceeding
+    validateNetwork()
 
     setIsLoading(true)
     setError(null)
@@ -423,6 +445,9 @@ export const useTransactions = () => {
     if (!address) {
       throw new Error('Wallet not connected')
     }
+
+    // Validate network before proceeding
+    validateNetwork()
 
     setIsLoading(true)
     setError(null)

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAccount, useChainId } from 'wagmi'
-import { Wallet, Home, Wifi, WifiOff, Gamepad2, Zap, Shield, ExternalLink, Twitter } from 'lucide-react'
+import { Wallet, Home, Wifi, WifiOff, Gamepad2, Zap, Shield, ExternalLink, Twitter, RefreshCw } from 'lucide-react'
 import { useFarcaster } from '../contexts/FarcasterContext'
+import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { getCurrentConfig } from '../config/base'
 import WalletConnect from './WalletConnect'
 
@@ -11,8 +12,10 @@ const Header = () => {
   const { isConnected, address } = useAccount()
   const chainId = useChainId()
   const { isInFarcaster, user } = useFarcaster()
+  const { isCorrectNetwork, isChecking, switchToBaseNetwork } = useNetworkCheck()
   const baseConfig = getCurrentConfig()
   const [isScrolled, setIsScrolled] = useState(false)
+  const [isSwitching, setIsSwitching] = useState(false)
 
   // Handle scroll detection
   useEffect(() => {
@@ -28,6 +31,17 @@ const Header = () => {
   const formatAddress = (addr) => {
     if (!addr) return ''
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`
+  }
+
+  const handleSwitchNetwork = async () => {
+    setIsSwitching(true)
+    try {
+      await switchToBaseNetwork()
+    } catch (error) {
+      console.error('Failed to switch network:', error)
+    } finally {
+      setIsSwitching(false)
+    }
   }
 
   const isOnBaseNetwork = chainId === baseConfig.chainId
@@ -92,14 +106,35 @@ const Header = () => {
 
               {/* Network Status */}
               {isConnected && !isInFarcaster && (
-                <div className={`status-badge ${isOnBaseNetwork ? 'connected' : 'error'}`}>
-                  {isOnBaseNetwork ? (
+                <div className={`status-badge ${isCorrectNetwork ? 'connected' : 'error'}`}>
+                  {isCorrectNetwork ? (
                     <Wifi size={14} />
                   ) : (
                     <WifiOff size={14} />
                   )}
-                  <span>{isOnBaseNetwork ? 'Base' : 'Wrong Network'}</span>
+                  <span>{isCorrectNetwork ? 'Base' : 'Wrong Network'}</span>
                 </div>
+              )}
+
+              {/* Switch Network Button - only show when not on Base */}
+              {isConnected && !isInFarcaster && !isCorrectNetwork && (
+                <button 
+                  onClick={handleSwitchNetwork}
+                  disabled={isSwitching}
+                  className="switch-network-btn"
+                >
+                  {isSwitching ? (
+                    <>
+                      <RefreshCw size={14} className="spinning" />
+                      <span>Switching...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Wifi size={14} />
+                      <span>Switch to Base</span>
+                    </>
+                  )}
+                </button>
               )}
             </div>
             
@@ -375,6 +410,46 @@ const headerStyles = `
   .action-button.danger:hover {
     transform: translateY(-2px);
     box-shadow: 0 12px 24px rgba(239, 68, 68, 0.4);
+  }
+
+  .switch-network-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  .switch-network-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+  }
+
+  .switch-network-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .spinning {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   @media (max-width: 768px) {
