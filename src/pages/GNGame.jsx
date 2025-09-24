@@ -69,13 +69,13 @@ const GNGame = () => {
   return (
     <NetworkGuard showWarning={true}>
       <div className="card">
-      <EmbedMeta 
-        title="GN Game - BaseHub"
-        description="Say GN and earn 10 XP! Always wins. Play now on BaseHub!"
-        buttonText="Say GN"
-      />
-      
-      <BackButton />
+        <EmbedMeta 
+          title="GN Game - BaseHub"
+          description="Say GN and earn 10 XP! Always wins. Play now on BaseHub!"
+          buttonText="Say GN"
+        />
+        
+        <BackButton />
       
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <div 
@@ -230,6 +230,7 @@ const GNGame = () => {
           <li>1 XP = 50 BHUP tokens (claim coming soon!)</li>
           <li>Your wallet address: {address?.slice(0, 6)}...{address?.slice(-4)}</li>
         </ul>
+        </div>
       </div>
     </NetworkGuard>
   )

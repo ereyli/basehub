@@ -17,6 +17,16 @@ const FarcasterXPDisplay = () => {
   const [totalXP, setTotalXP] = useState(0)
   const [isSwitching, setIsSwitching] = useState(false)
   
+  // Auto-switch to Base network when wallet connects
+  useEffect(() => {
+    if (isConnected && !isCorrectNetwork) {
+      console.log('🔄 Wallet connected but not on Base network, switching...')
+      switchToBaseNetwork().catch(error => {
+        console.error('Failed to auto-switch to Base:', error)
+      })
+    }
+  }, [isConnected, isCorrectNetwork, switchToBaseNetwork])
+  
   // Check if we're on home page
   const isHomePage = location.pathname === '/'
 

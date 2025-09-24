@@ -230,6 +230,7 @@ const GMGame = () => {
           <li>1 XP = 50 BHUP tokens (claim coming soon!)</li>
           <li>Your wallet address: {address?.slice(0, 6)}...{address?.slice(-4)}</li>
         </ul>
+        </div>
       </div>
     </NetworkGuard>
   )

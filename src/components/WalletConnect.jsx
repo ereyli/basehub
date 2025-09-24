@@ -1,12 +1,24 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
 import { getPreferredConnector, isInFarcaster } from '../config/wagmi'
+import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { Wallet, LogOut, User } from 'lucide-react'
 
 function WalletConnect() {
   const { isConnected, address } = useAccount()
   const { connect, connectors } = useConnect()
   const { disconnect } = useDisconnect()
+  const { isCorrectNetwork, switchToBaseNetwork } = useNetworkCheck()
+
+  // Auto-switch to Base network when wallet connects
+  useEffect(() => {
+    if (isConnected && !isCorrectNetwork) {
+      console.log('🔄 Wallet connected but not on Base network, switching...')
+      switchToBaseNetwork().catch(error => {
+        console.error('Failed to auto-switch to Base:', error)
+      })
+    }
+  }, [isConnected, isCorrectNetwork, switchToBaseNetwork])
 
   const handleConnect = () => {
     const preferredConnector = getPreferredConnector(connectors)
