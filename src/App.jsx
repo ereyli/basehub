@@ -147,10 +147,20 @@ function WebAppContent() {
 
 // Main App component with providers
 function App() {
-  const isWeb = shouldUseRainbowKit()
+  // Check if we're in Farcaster environment first
+  const isFarcaster = typeof window !== 'undefined' && 
+    (window.location !== window.parent.location ||
+     window.parent !== window ||
+     window.location.href.includes('farcaster.xyz') ||
+     window.location.href.includes('warpcast.com'))
+  
+  const isWeb = shouldUseRainbowKit() && !isFarcaster
+  
+  console.log('🔍 App Environment Check:', { isFarcaster, isWeb })
   
   if (isWeb) {
     // Web users get RainbowKit
+    console.log('🌐 Using RainbowKit for web users')
     return (
       <HelmetProvider>
         <WagmiProvider config={rainbowkitConfig}>
@@ -165,6 +175,7 @@ function App() {
   }
   
   // Farcaster users get the original setup
+  console.log('🎭 Using Farcaster setup')
   return (
     <HelmetProvider>
       <WagmiProvider config={config}>

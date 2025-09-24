@@ -11,12 +11,21 @@ export const rainbowkitConfig = getDefaultConfig({
 
 // Helper function to check if we're in Farcaster
 export const isInFarcaster = () => {
-  return typeof window !== 'undefined' && 
-         window.location !== window.parent.location &&
-         window.parent !== window
+  if (typeof window === 'undefined') return false
+  
+  return window.location !== window.parent.location ||
+         window.parent !== window ||
+         window.location.href.includes('farcaster.xyz') ||
+         window.location.href.includes('warpcast.com') ||
+         window.location.href.includes('basehub-alpha.vercel.app')
 }
 
-// Helper function to check if we should use RainbowKit
+// Helper function to check if we should use RainbowKit (web only)
 export const shouldUseRainbowKit = () => {
-  return typeof window !== 'undefined' && !isInFarcaster()
+  if (typeof window === 'undefined') return false
+  
+  // Only use RainbowKit on web, not in Farcaster
+  return !isInFarcaster() && 
+         !window.location.href.includes('farcaster.xyz') &&
+         !window.location.href.includes('warpcast.com')
 }
