@@ -44,5 +44,29 @@
 <body>
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
+  
+  <!-- Block Coinbase analytics errors -->
+  <script>
+    // Override console.error to filter out Coinbase analytics errors
+    const originalError = console.error;
+    console.error = function(...args) {
+      const message = args.join(' ');
+      if (message.includes('cca-lite.coinbase.com') || 
+          message.includes('ERR_BLOCKED_BY_CLIENT') ||
+          message.includes('ERR_ABORTED 401')) {
+        return; // Don't log these errors
+      }
+      originalError.apply(console, args);
+    };
+    
+    // Block fetch requests to Coinbase analytics
+    const originalFetch = window.fetch;
+    window.fetch = function(url, options) {
+      if (typeof url === 'string' && url.includes('cca-lite.coinbase.com')) {
+        return Promise.reject(new Error('Blocked analytics request'));
+      }
+      return originalFetch.call(this, url, options);
+    };
+  </script>
 </body>
 </html>

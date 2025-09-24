@@ -7,9 +7,23 @@ import { addXP, addBonusXP, recordTransaction } from '../utils/xpUtils'
 import { getCurrentConfig, getContractAddress, GAS_CONFIG, GAME_CONFIG } from '../config/base'
 import { parseEther } from 'viem'
 import { config } from '../config/wagmi'
+import { shouldUseRainbowKit } from '../config/rainbowkit'
 
 export const useTransactions = () => {
-  const { isInFarcaster } = useFarcaster()
+  // Check if we're in web environment
+  const isWeb = shouldUseRainbowKit()
+  
+  // Safely get Farcaster context - only if not in web environment
+  let isInFarcaster = false
+  if (!isWeb) {
+    try {
+      const farcasterContext = useFarcaster()
+      isInFarcaster = farcasterContext?.isInFarcaster || false
+    } catch (error) {
+      // If FarcasterProvider is not available, default to false
+      isInFarcaster = false
+    }
+  }
   const { address, chainId } = useAccount()
   const { writeContractAsync, data: txData } = useWriteContract()
   const { isCorrectNetwork, networkName, baseNetworkName, switchToBaseNetwork } = useNetworkCheck()
@@ -24,10 +38,17 @@ export const useTransactions = () => {
         await switchToBaseNetwork()
         console.log('✅ Successfully switched to Base network')
         // Wait a moment for the network switch to complete
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        // Double-check network after switch
+        const currentChainId = chainId
+        const baseConfig = getCurrentConfig()
+        if (currentChainId !== baseConfig.chainId) {
+          throw new Error(`Still on wrong network (Chain ID: ${currentChainId}). Please manually switch to Base network and try again.`)
+        }
       } catch (switchError) {
         console.error('❌ Failed to switch network:', switchError)
-        throw new Error(`Failed to switch to Base network. Please manually switch to ${baseNetworkName} and try again.`)
+        throw new Error(`❌ BASE NETWORK REQUIRED!\n\nYou are currently on ${networkName}.\nBaseHub only works on Base network.\n\nPlease switch to Base network manually and try again.`)
       }
     }
   }

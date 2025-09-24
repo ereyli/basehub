@@ -2,19 +2,31 @@ import React, { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useNavigate } from 'react-router-dom'
 import { useTransactions } from '../hooks/useTransactions'
-import { useFarcaster } from '../contexts/FarcasterContext'
 import { useSupabase } from '../hooks/useSupabase'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
+import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { Target, Send, Star, CheckCircle, ExternalLink, Coins, TrendingUp, TrendingDown } from 'lucide-react'
 
 const LuckyNumberGame = () => {
   const { isConnected, address } = useAccount()
   const navigate = useNavigate()
   const { sendLuckyNumberTransaction, isLoading, error } = useTransactions()
-  const { isInFarcaster } = useFarcaster()
   const { calculateTokens } = useSupabase()
+  
+  // Safely get Farcaster context - only if not in web environment
+  let isInFarcaster = false
+  if (!shouldUseRainbowKit()) {
+    try {
+      const { useFarcaster } = require('../contexts/FarcasterContext')
+      const farcasterContext = useFarcaster()
+      isInFarcaster = farcasterContext?.isInFarcaster || false
+    } catch (error) {
+      // If FarcasterProvider is not available, default to false
+      isInFarcaster = false
+    }
+  }
   const [selectedNumber, setSelectedNumber] = useState(1)
   const [lastPlayed, setLastPlayed] = useState(null)
   const [totalXP, setTotalXP] = useState(0)

@@ -1,10 +1,22 @@
 import React from 'react'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
-import { useFarcaster } from '../contexts/FarcasterContext'
+import { shouldUseRainbowKit } from '../config/rainbowkit'
 
 const NetworkGuard = ({ children, showWarning = false }) => {
   const { isCorrectNetwork, networkName, baseNetworkName, switchToBaseNetwork } = useNetworkCheck()
-  const { isInFarcaster } = useFarcaster()
+  
+  // Safely get Farcaster context - only if not in web environment
+  let isInFarcaster = false
+  if (!shouldUseRainbowKit()) {
+    try {
+      const { useFarcaster } = require('../contexts/FarcasterContext')
+      const farcasterContext = useFarcaster()
+      isInFarcaster = farcasterContext?.isInFarcaster || false
+    } catch (error) {
+      // If FarcasterProvider is not available, default to false
+      isInFarcaster = false
+    }
+  }
 
   if (isCorrectNetwork) {
     return children
@@ -87,9 +99,17 @@ const NetworkGuard = ({ children, showWarning = false }) => {
         fontWeight: 'bold',
         fontSize: '18px',
         pointerEvents: 'all',
-        cursor: 'not-allowed'
+        cursor: 'not-allowed',
+        textAlign: 'center',
+        padding: '20px'
       }}>
-        ⚠️ Yanlış Ağ - İşlem Engellendi
+        <div>
+          <div style={{ fontSize: '24px', marginBottom: '10px' }}>🚫</div>
+          <div>Yanlış Ağ - İşlem Engellendi</div>
+          <div style={{ fontSize: '14px', marginTop: '8px', opacity: 0.8 }}>
+            Base ağına geçin
+          </div>
+        </div>
       </div>
     </div>
   )

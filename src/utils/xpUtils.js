@@ -18,7 +18,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
     localXP[walletAddress] = (localXP[walletAddress] || 0) + xpAmount
     localStorage.setItem('basehub_xp', JSON.stringify(localXP))
     console.log('✅ XP stored locally:', localXP[walletAddress])
-    return
+    return localXP[walletAddress]
   }
 
   try {
@@ -105,6 +105,13 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
 export const getXP = async (walletAddress) => {
   if (!walletAddress) return 0
   
+  // Check if Supabase is available
+  if (!supabase || !supabase.from) {
+    console.log('⚠️ Supabase not available, using local XP storage')
+    const localXP = JSON.parse(localStorage.getItem('basehub_xp') || '{}')
+    return localXP[walletAddress] || 0
+  }
+  
   try {
     const { data: player, error } = await supabase
       .from('players')
@@ -118,7 +125,9 @@ export const getXP = async (walletAddress) => {
     return player?.total_xp || 0
   } catch (error) {
     console.error('❌ Error in getXP:', error)
-    return 0
+    // Fallback to local storage
+    const localXP = JSON.parse(localStorage.getItem('basehub_xp') || '{}')
+    return localXP[walletAddress] || 0
   }
 }
 

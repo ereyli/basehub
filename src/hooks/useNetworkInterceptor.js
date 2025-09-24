@@ -24,8 +24,8 @@ export const useNetworkInterceptor = () => {
       
       setHasShownAlert(true)
       
-      // Show alert to user
-      alert(`⚠️ YANLIŞ AĞ UYARISI!\n\nŞu anda ${getNetworkName(chainId)} ağındasınız.\nBaseHub sadece Base ağında çalışır.\n\nLütfen cüzdanınızı Base ağına geçirin!\n\nBu uyarıyı kapatmak için Base ağına geçin.`)
+      // Show alert to user with stronger message
+      alert(`🚫 BASE AĞI GEREKLİ!\n\nŞu anda ${getNetworkName(chainId)} ağındasınız.\nBaseHub SADECE Base ağında çalışır.\n\nLütfen cüzdanınızı Base ağına geçirin!\n\nBase ağına geçmeden işlem yapamazsınız.`)
       
       // Also try to automatically switch
       if (typeof window.ethereum !== 'undefined') {
@@ -38,9 +38,17 @@ export const useNetworkInterceptor = () => {
             setHasShownAlert(false)
           }).catch((error) => {
             console.log('❌ Auto-switch failed:', error)
+            // Show another alert if auto-switch fails
+            setTimeout(() => {
+              alert(`❌ Otomatik ağ geçişi başarısız!\n\nLütfen manuel olarak Base ağına geçin.\n\nBase ağına geçmeden işlem yapamazsınız.`)
+            }, 1000)
           })
         } catch (error) {
           console.log('❌ Auto-switch failed:', error)
+          // Show another alert if auto-switch fails
+          setTimeout(() => {
+            alert(`❌ Otomatik ağ geçişi başarısız!\n\nLütfen manuel olarak Base ağına geçin.\n\nBase ağına geçmeden işlem yapamazsınız.`)
+          }, 1000)
         }
       }
     } else if (isOnBase) {

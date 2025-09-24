@@ -30,6 +30,13 @@ export const useNetworkCheck = () => {
       isOnBase,
       networkName: baseConfig.chainName
     })
+    
+    // If not on Base, show immediate warning
+    if (!isOnBase) {
+      console.warn('⚠️ WRONG NETWORK DETECTED!')
+      console.warn(`Current: ${getNetworkName(chainId)} (Chain ID: ${chainId})`)
+      console.warn(`Required: ${baseConfig.chainName} (Chain ID: ${correctChainId})`)
+    }
   }, [isConnected, chainId, baseConfig.chainId])
 
   const switchToBaseNetwork = async () => {

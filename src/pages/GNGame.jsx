@@ -1,18 +1,30 @@
 import React, { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useTransactions } from '../hooks/useTransactions'
-import { useFarcaster } from '../contexts/FarcasterContext'
 import { useSupabase } from '../hooks/useSupabase'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
+import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { Moon, Send, Star, CheckCircle, ExternalLink, Coins } from 'lucide-react'
 
 const GNGame = () => {
   const { isConnected, address } = useAccount()
   const { sendGNTransaction, isLoading, error } = useTransactions()
-  const { isInFarcaster } = useFarcaster()
   const { calculateTokens } = useSupabase()
+  
+  // Safely get Farcaster context - only if not in web environment
+  let isInFarcaster = false
+  if (!shouldUseRainbowKit()) {
+    try {
+      const { useFarcaster } = require('../contexts/FarcasterContext')
+      const farcasterContext = useFarcaster()
+      isInFarcaster = farcasterContext?.isInFarcaster || false
+    } catch (error) {
+      // If FarcasterProvider is not available, default to false
+      isInFarcaster = false
+    }
+  }
   const [message, setMessage] = useState('GN from BaseHub! 🌙')
   const [lastSent, setLastSent] = useState(null)
   const [totalXP, setTotalXP] = useState(0)
