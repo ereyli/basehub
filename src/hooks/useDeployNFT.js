@@ -5,6 +5,7 @@ import { parseEther } from 'viem'
 import { config } from '../config/wagmi'
 import { addXP, recordTransaction } from '../utils/xpUtils'
 import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/pinata'
+import { useNetworkCheck } from './useNetworkCheck'
 
 // SimpleNFT ABI from Remix compilation
 const SIMPLE_NFT_ABI = [
@@ -141,13 +142,33 @@ const SIMPLE_NFT_ABI = [
 export const useDeployNFT = () => {
   const { address } = useAccount()
   const { writeContractAsync } = useWriteContract()
+  const { isCorrectNetwork, networkName, baseNetworkName, switchToBaseNetwork } = useNetworkCheck()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  // Network validation and auto-switch function
+  const validateAndSwitchNetwork = async () => {
+    if (!isCorrectNetwork) {
+      console.log(`🔄 Wrong network detected! Switching from ${networkName} to ${baseNetworkName}...`)
+      try {
+        await switchToBaseNetwork()
+        console.log('✅ Successfully switched to Base network')
+        // Wait a moment for the network switch to complete
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      } catch (switchError) {
+        console.error('❌ Failed to switch network:', switchError)
+        throw new Error(`Failed to switch to Base network. Please manually switch to ${baseNetworkName} and try again.`)
+      }
+    }
+  }
 
   const deployNFT = async (name, symbol, imageFile) => {
     if (!address) {
       throw new Error('Wallet not connected')
     }
+
+    // Validate and auto-switch network before proceeding
+    await validateAndSwitchNetwork()
 
     setIsLoading(true)
     setError(null)

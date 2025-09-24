@@ -12,14 +12,23 @@ export const useTransactions = () => {
   const { isInFarcaster } = useFarcaster()
   const { address, chainId } = useAccount()
   const { writeContractAsync, data: txData } = useWriteContract()
-  const { isCorrectNetwork, networkName, baseNetworkName } = useNetworkCheck()
+  const { isCorrectNetwork, networkName, baseNetworkName, switchToBaseNetwork } = useNetworkCheck()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  // Network validation function
-  const validateNetwork = () => {
+  // Network validation and auto-switch function
+  const validateAndSwitchNetwork = async () => {
     if (!isCorrectNetwork) {
-      throw new Error(`Wrong network detected! You're on ${networkName} but BaseHub requires ${baseNetworkName}. Please switch to Base network to continue.`)
+      console.log(`🔄 Wrong network detected! Switching from ${networkName} to ${baseNetworkName}...`)
+      try {
+        await switchToBaseNetwork()
+        console.log('✅ Successfully switched to Base network')
+        // Wait a moment for the network switch to complete
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      } catch (switchError) {
+        console.error('❌ Failed to switch network:', switchError)
+        throw new Error(`Failed to switch to Base network. Please manually switch to ${baseNetworkName} and try again.`)
+      }
     }
   }
 
@@ -28,8 +37,8 @@ export const useTransactions = () => {
       throw new Error('Wallet not connected')
     }
 
-    // Validate network before proceeding
-    validateNetwork()
+    // Validate and auto-switch network before proceeding
+    await validateAndSwitchNetwork()
 
     setIsLoading(true)
     setError(null)
@@ -108,8 +117,8 @@ export const useTransactions = () => {
       throw new Error('Wallet not connected')
     }
 
-    // Validate network before proceeding
-    validateNetwork()
+    // Validate and auto-switch network before proceeding
+    await validateAndSwitchNetwork()
 
     setIsLoading(true)
     setError(null)
@@ -182,8 +191,8 @@ export const useTransactions = () => {
       throw new Error('Wallet not connected')
     }
 
-    // Validate network before proceeding
-    validateNetwork()
+    // Validate and auto-switch network before proceeding
+    await validateAndSwitchNetwork()
 
     setIsLoading(true)
     setError(null)
@@ -272,8 +281,8 @@ export const useTransactions = () => {
       throw new Error('Wallet not connected')
     }
 
-    // Validate network before proceeding
-    validateNetwork()
+    // Validate and auto-switch network before proceeding
+    await validateAndSwitchNetwork()
 
     setIsLoading(true)
     setError(null)
@@ -357,8 +366,8 @@ export const useTransactions = () => {
       throw new Error('Wallet not connected')
     }
 
-    // Validate network before proceeding
-    validateNetwork()
+    // Validate and auto-switch network before proceeding
+    await validateAndSwitchNetwork()
 
     setIsLoading(true)
     setError(null)
@@ -446,8 +455,8 @@ export const useTransactions = () => {
       throw new Error('Wallet not connected')
     }
 
-    // Validate network before proceeding
-    validateNetwork()
+    // Validate and auto-switch network before proceeding
+    await validateAndSwitchNetwork()
 
     setIsLoading(true)
     setError(null)

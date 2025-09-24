@@ -4,6 +4,7 @@ import { waitForTransactionReceipt, sendTransaction } from 'wagmi/actions'
 import { parseEther, encodeAbiParameters, parseAbiParameters } from 'viem'
 import { config } from '../config/wagmi'
 import { addXP, recordTransaction } from '../utils/xpUtils'
+import { useNetworkCheck } from './useNetworkCheck'
 
 // ERC20 ABI with constructor for writeContractAsync
 const ERC20_ABI = [
@@ -344,13 +345,33 @@ const ERC20_BYTECODE = "0x608060405234801561000f575f5ffd5b5060405161174138038061
 export const useDeployToken = () => {
   const { address } = useAccount()
   const { writeContractAsync } = useWriteContract()
+  const { isCorrectNetwork, networkName, baseNetworkName, switchToBaseNetwork } = useNetworkCheck()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  // Network validation and auto-switch function
+  const validateAndSwitchNetwork = async () => {
+    if (!isCorrectNetwork) {
+      console.log(`🔄 Wrong network detected! Switching from ${networkName} to ${baseNetworkName}...`)
+      try {
+        await switchToBaseNetwork()
+        console.log('✅ Successfully switched to Base network')
+        // Wait a moment for the network switch to complete
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      } catch (switchError) {
+        console.error('❌ Failed to switch network:', switchError)
+        throw new Error(`Failed to switch to Base network. Please manually switch to ${baseNetworkName} and try again.`)
+      }
+    }
+  }
 
   const deployToken = async (name, symbol, initialSupply, decimals = 18) => {
     if (!address) {
       throw new Error('Wallet not connected')
     }
+
+    // Validate and auto-switch network before proceeding
+    await validateAndSwitchNetwork()
 
     setIsLoading(true)
     setError(null)
