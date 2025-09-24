@@ -13,6 +13,8 @@ body {
   background: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%);
   min-height: 100vh;
   color: #333;
+  zoom: 0.8; /* Uygulamayı %80 boyutunda göster - daha uzaklaştır */
+  transform-origin: top left;
 }
 
 #root {

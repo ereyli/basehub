@@ -16,22 +16,7 @@ export const BASE_CONFIG = {
   iconUrls: ['https://base.org/favicon.ico'],
 }
 
-// Base Testnet Configuration (for development)
-export const BASE_TESTNET_CONFIG = {
-  chainId: 84532, // Base Sepolia testnet
-  chainName: 'Base Sepolia',
-  nativeCurrency: {
-    name: 'Ethereum',
-    symbol: 'ETH',
-    decimals: 18,
-  },
-  rpcUrls: [
-    'https://sepolia.base.org',
-    'https://base-sepolia.g.alchemy.com/v2/demo',
-  ],
-  blockExplorerUrls: ['https://sepolia.basescan.org'],
-  iconUrls: ['https://base.org/favicon.ico'],
-}
+// Base Testnet Configuration removed - only mainnet supported
 
 // Contract addresses for our games (Base Mainnet - DEPLOYED!)
 export const CONTRACT_ADDRESSES = {
@@ -43,13 +28,7 @@ export const CONTRACT_ADDRESSES = {
   DICE_ROLL: '0x4E99ACaAAfa3fD8d996811d79ae4a960923e51e1',
   TOKEN_CONTRACT: '0xB2b2c587E51175a2aE4713d8Ea68A934a8527a4b', // Token contract unchanged
   
-  // Testnet addresses (to be deployed)
-  GM_GAME_TESTNET: '0x0000000000000000000000000000000000000000',
-  GN_GAME_TESTNET: '0x0000000000000000000000000000000000000000',
-  FLIP_GAME_TESTNET: '0x0000000000000000000000000000000000000000',
-  LUCKY_NUMBER_TESTNET: '0x0000000000000000000000000000000000000000',
-  DICE_ROLL_TESTNET: '0x0000000000000000000000000000000000000000',
-  TOKEN_CONTRACT_TESTNET: '0x0000000000000000000000000000000000000000',
+  // Testnet addresses removed - only mainnet supported
 }
 
 // Game configurations
@@ -71,14 +50,13 @@ export const GAS_CONFIG = {
   MAX_PRIORITY_FEE_PER_GAS: '2000000000', // 2 gwei
 }
 
-// Use testnet for development, mainnet for production
-export const IS_TESTNET = false // Force mainnet for deployed contracts
+// Only mainnet supported - no testnet
+export const IS_TESTNET = false // Always false - only mainnet supported
 
 export const getCurrentConfig = () => {
-  return IS_TESTNET ? BASE_TESTNET_CONFIG : BASE_CONFIG
+  return BASE_CONFIG // Always return mainnet config
 }
 
 export const getContractAddress = (contractName) => {
-  const suffix = IS_TESTNET ? '_TESTNET' : ''
-  return CONTRACT_ADDRESSES[`${contractName}${suffix}`]
+  return CONTRACT_ADDRESSES[contractName] // Direct access to mainnet addresses
 }

@@ -33,7 +33,7 @@ const NetworkGuard = ({ children, showWarning = false }) => {
         <h3 style={{ margin: '0 0 10px 0', fontSize: '18px' }}>⚠️ Yanlış Ağ Uyarısı</h3>
         <p style={{ margin: '0 0 15px 0', opacity: 0.9 }}>
           Şu anda <strong>{networkName}</strong> ağındasınız.<br/>
-          BaseHub sadece <strong>{baseNetworkName}</strong> ağında çalışır.
+          BaseHub sadece <strong>Base</strong> ağında çalışır.
         </p>
         {!isInFarcaster && (
           <button 

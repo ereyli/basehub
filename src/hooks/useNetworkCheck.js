@@ -78,18 +78,11 @@ export const useNetworkCheck = () => {
   }
 
   const getNetworkName = (chainId) => {
-    const networks = {
-      1: 'Ethereum Mainnet',
-      5: 'Goerli Testnet',
-      10: 'Optimism',
-      56: 'BSC',
-      137: 'Polygon',
-      8453: 'Base',
-      84532: 'Base Sepolia',
-      42161: 'Arbitrum',
-      421614: 'Arbitrum Sepolia',
+    // Only support Base mainnet
+    if (chainId === 8453) {
+      return 'Base'
     }
-    return networks[chainId] || `Chain ID: ${chainId}`
+    return `Unsupported Network (Chain ID: ${chainId})`
   }
 
   return {
