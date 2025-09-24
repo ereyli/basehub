@@ -4,6 +4,7 @@ import { useAccount } from 'wagmi'
 import { getLeaderboard } from '../utils/xpUtils'
 import { useTransactions } from '../hooks/useTransactions'
 import EmbedMeta from '../components/EmbedMeta'
+import TwitterShareButton from '../components/TwitterShareButton'
 import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink } from 'lucide-react'
 
 const Home = () => {
@@ -221,6 +222,19 @@ const Home = () => {
             }}>
               Play games and earn XP on the Base network through Farcaster
             </p>
+            
+            {/* Twitter Share Button for Web Users */}
+            <div style={{ 
+              marginBottom: '24px',
+              display: 'flex',
+              justifyContent: 'center'
+            }}>
+              <TwitterShareButton 
+                title="BaseHub"
+                description="Play games and earn XP on Base network!"
+                hashtags={["BaseHub", "BaseNetwork", "Web3", "Gaming", "XP", "Farcaster"]}
+              />
+            </div>
             
             {!isConnected && (
               <div style={{

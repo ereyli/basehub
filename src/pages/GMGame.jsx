@@ -4,6 +4,8 @@ import { useTransactions } from '../hooks/useTransactions'
 import { useSupabase } from '../hooks/useSupabase'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
+import ShareButton from '../components/ShareButton'
+import XPShareButton from '../components/XPShareButton'
 import NetworkGuard from '../components/NetworkGuard'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { Sun, Send, Star, CheckCircle, ExternalLink, Coins } from 'lucide-react'
@@ -81,11 +83,12 @@ const GMGame = () => {
   return (
     <NetworkGuard showWarning={true}>
       <div className="card">
-        <EmbedMeta 
-          title="GM Game - BaseHub"
-          description="Say GM and earn 10 XP! Always wins. Play now on BaseHub!"
-          buttonText="Say GM"
-        />
+               <EmbedMeta 
+                 title="GM Game - BaseHub"
+                 description="Say GM and earn 10 XP! Always wins. Play now on BaseHub!"
+                 buttonText="🎮 Say GM!"
+                 image="/image.svg"
+               />
         
         <BackButton />
         
@@ -145,6 +148,20 @@ const GMGame = () => {
             wordBreak: 'break-all'
           }}>
             {lastTransaction.hash || lastTransaction.transactionHash}
+          </div>
+          
+          {/* XP Share Button */}
+          <div style={{ 
+            marginTop: '12px',
+            display: 'flex',
+            justifyContent: 'center'
+          }}>
+            <XPShareButton 
+              gameType="gm"
+              xpEarned={10}
+              totalXP={totalXP}
+              transactionHash={lastTransaction.hash || lastTransaction.transactionHash}
+            />
           </div>
         </div>
       )}
@@ -211,6 +228,18 @@ const GMGame = () => {
             {error}
           </div>
         )}
+      </div>
+
+      <div style={{ 
+        marginTop: '24px',
+        display: 'flex',
+        justifyContent: 'center'
+      }}>
+        <ShareButton 
+          title="GM Game"
+          description="Say GM and earn 10 XP! Always wins. Play now on BaseHub!"
+          gameType="gm"
+        />
       </div>
 
       <div style={{ 

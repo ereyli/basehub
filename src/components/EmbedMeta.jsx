@@ -4,12 +4,12 @@ import { Helmet } from 'react-helmet-async'
 const EmbedMeta = ({ 
   title, 
   description, 
-  image = "/icon.svg", 
+  image = "/image.svg", 
   url, 
   buttonText = "Play BaseHub",
   gameType = "game"
 }) => {
-  const fullUrl = url || window.location.href
+  const fullUrl = url || 'https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub'
   const fullTitle = title ? `${title} - BaseHub` : "BaseHub - Play Games and Earn XP"
   const fullDescription = description || "Play games and earn XP on Base network through Farcaster"
 
@@ -19,11 +19,23 @@ const EmbedMeta = ({
     button: {
       title: buttonText,
       action: {
-        type: "launch_frame",
-        name: fullTitle,
+        type: "launch_miniapp",
+        name: "BaseHub",
         url: fullUrl,
         splashImageUrl: image,
-        splashBackgroundColor: "#6B76D9"
+        splashBackgroundColor: "#0052ff"
+      }
+    }
+  }
+
+  // Backward compatibility embed content
+  const frameEmbedContent = {
+    ...embedContent,
+    button: {
+      ...embedContent.button,
+      action: {
+        ...embedContent.button.action,
+        type: "launch_frame"
       }
     }
   }
@@ -32,6 +44,8 @@ const EmbedMeta = ({
     <Helmet>
       {/* Farcaster Mini App Embed Meta Tags */}
       <meta name="fc:miniapp" content={JSON.stringify(embedContent)} />
+      {/* For backward compatibility */}
+      <meta name="fc:frame" content={JSON.stringify(frameEmbedContent)} />
       
       {/* Open Graph Meta Tags for Social Sharing */}
       <meta property="og:title" content={fullTitle} />

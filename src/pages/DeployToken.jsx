@@ -4,6 +4,8 @@ import { useDeployToken } from '../hooks/useDeployToken'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Coins, Zap, CheckCircle, ExternalLink } from 'lucide-react'
 import EmbedMeta from '../components/EmbedMeta'
+import BackButton from '../components/BackButton'
+import ShareButton from '../components/ShareButton'
 import NetworkGuard from '../components/NetworkGuard'
 
 const DeployToken = () => {
@@ -58,18 +60,15 @@ const DeployToken = () => {
   return (
     <NetworkGuard showWarning={true}>
       <div className="deploy-token-page">
-        <EmbedMeta 
-          title="Deploy Token - BaseHub"
-          description="Deploy your own ERC20 token on Base network"
-          buttonText="Deploy Token"
-        />
-        
-        <div className="back-button" onClick={() => navigate('/')}>
-          <ArrowLeft size={16} />
-          <span>Home</span>
-        </div>
+               <EmbedMeta 
+                 title="Deploy Token - BaseHub"
+                 description="Deploy your own ERC20 token on Base network"
+                 buttonText="🪙 Deploy Token!"
+                 image="/image.svg"
+               />
 
       <div className="deploy-container">
+        <BackButton />
         <div className="deploy-header">
           <div className="deploy-icon">
             <Coins size={32} />
@@ -162,6 +161,21 @@ const DeployToken = () => {
                 ❌ {error}
               </div>
             )}
+
+            {/* Share Button - More visible placement */}
+            <div style={{ 
+              marginTop: '24px',
+              marginBottom: '20px',
+              display: 'flex',
+              justifyContent: 'center'
+            }}>
+              <ShareButton 
+                title="Deploy Token - BaseHub"
+                description="Deploy your own ERC20 token on Base network"
+                gameType="deploy"
+                customUrl="https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub"
+              />
+            </div>
 
             <button 
               type="submit" 

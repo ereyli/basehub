@@ -4,6 +4,8 @@ import { useTransactions } from '../hooks/useTransactions'
 import { useSupabase } from '../hooks/useSupabase'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
+import ShareButton from '../components/ShareButton'
+import XPShareButton from '../components/XPShareButton'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { Dice6, Send, Star, CheckCircle, ExternalLink, Coins, TrendingUp, TrendingDown } from 'lucide-react'
 
@@ -92,7 +94,8 @@ const DiceRollGame = () => {
       <EmbedMeta 
         title="Dice Roll Game - BaseHub"
         description="Roll two dice and win XP! 1/36 chance to win 1500 bonus XP. Play now on BaseHub!"
-        buttonText="Play Dice Roll"
+        buttonText="🎲 Play Dice Roll!"
+        image="/image.svg"
       />
       
       <BackButton />
@@ -181,6 +184,26 @@ const DiceRollGame = () => {
           }}>
             {lastTransaction.hash || lastTransaction.transactionHash}
           </div>
+          
+          {/* XP Share Button */}
+          <div style={{ 
+            marginTop: '12px',
+            display: 'flex',
+            justifyContent: 'center'
+          }}>
+            <XPShareButton 
+              gameType="dice"
+              xpEarned={lastTransaction.xpEarned || 10}
+              totalXP={totalXP}
+              transactionHash={lastTransaction.hash || lastTransaction.transactionHash}
+              gameResult={{
+                won: lastTransaction.isWin,
+                selectedNumber: lastTransaction.selectedNumber,
+                dice1: lastTransaction.dice1,
+                dice2: lastTransaction.dice2
+              }}
+            />
+          </div>
         </div>
       )}
 
@@ -257,6 +280,18 @@ const DiceRollGame = () => {
             {error}
           </div>
         )}
+      </div>
+
+      <div style={{ 
+        marginTop: '24px',
+        display: 'flex',
+        justifyContent: 'center'
+      }}>
+        <ShareButton 
+          title="Dice Roll Game"
+          description="Roll two dice and win XP! 1/36 chance to win 1500 bonus XP. Play now on BaseHub!"
+          gameType="dice"
+        />
       </div>
 
       <div style={{ 

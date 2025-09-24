@@ -4,6 +4,8 @@ import { useTransactions } from '../hooks/useTransactions'
 import { useSupabase } from '../hooks/useSupabase'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
+import ShareButton from '../components/ShareButton'
+import XPShareButton from '../components/XPShareButton'
 import NetworkGuard from '../components/NetworkGuard'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { Coins, RotateCcw, TrendingUp, TrendingDown, Star } from 'lucide-react'
@@ -84,7 +86,8 @@ const FlipGame = () => {
       <EmbedMeta 
         title="Flip Game - BaseHub"
         description="Flip a coin and win XP! 50% chance to win 500 bonus XP. Play now on BaseHub!"
-        buttonText="Play Flip Game"
+        buttonText="🪙 Play Flip Game!"
+        image="/image.svg"
       />
       
       <BackButton />
@@ -176,6 +179,25 @@ const FlipGame = () => {
           }}>
             {lastTransaction.txHash || lastTransaction.hash || lastTransaction.transactionHash}
           </div>
+          
+          {/* XP Share Button */}
+          <div style={{ 
+            marginTop: '12px',
+            display: 'flex',
+            justifyContent: 'center'
+          }}>
+            <XPShareButton 
+              gameType="flip"
+              xpEarned={lastTransaction.xpEarned || 10}
+              totalXP={totalXP}
+              transactionHash={lastTransaction.txHash || lastTransaction.hash || lastTransaction.transactionHash}
+              gameResult={{
+                won: lastTransaction.isWin,
+                playerChoice: lastTransaction.playerChoice,
+                result: lastTransaction.result
+              }}
+            />
+          </div>
         </div>
       )}
 
@@ -262,6 +284,18 @@ const FlipGame = () => {
             {error}
           </div>
         )}
+      </div>
+
+      <div style={{ 
+        marginTop: '24px',
+        display: 'flex',
+        justifyContent: 'center'
+      }}>
+        <ShareButton 
+          title="Flip Game"
+          description="Flip a coin and win XP! 50% chance to win 500 bonus XP. Play now on BaseHub!"
+          gameType="flip"
+        />
       </div>
 
       <div style={{ 

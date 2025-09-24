@@ -4,6 +4,8 @@ import { useDeployERC721 } from '../hooks/useDeployERC721'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Image, Zap, CheckCircle, ExternalLink, Upload, X } from 'lucide-react'
 import EmbedMeta from '../components/EmbedMeta'
+import BackButton from '../components/BackButton'
+import ShareButton from '../components/ShareButton'
 
 const DeployNFT = () => {
   const { isConnected } = useAccount()
@@ -91,18 +93,15 @@ const DeployNFT = () => {
 
   return (
     <div className="deploy-nft-page">
-      <EmbedMeta 
-        title="Deploy NFT Collection - BaseHub"
-        description="Deploy your own NFT collection on Base network"
-        buttonText="Deploy NFT"
-      />
-      
-      <div className="back-button" onClick={() => navigate('/')}>
-        <ArrowLeft size={16} />
-        <span>Home</span>
-      </div>
+        <EmbedMeta 
+          title="Deploy NFT Collection - BaseHub"
+          description="Deploy your own NFT collection on Base network"
+          buttonText="🖼️ Deploy NFT!"
+          image="/image.svg"
+        />
 
       <div className="deploy-container">
+        <BackButton />
         <div className="deploy-header">
           <div className="deploy-icon">
             <Image size={32} />
@@ -203,6 +202,21 @@ const DeployNFT = () => {
                 ❌ {error}
               </div>
             )}
+
+            {/* Share Button - More visible placement */}
+            <div style={{ 
+              marginTop: '24px',
+              marginBottom: '20px',
+              display: 'flex',
+              justifyContent: 'center'
+            }}>
+              <ShareButton 
+                title="Deploy NFT Collection - BaseHub"
+                description="Deploy your own NFT collection on Base network"
+                gameType="deploy"
+                customUrl="https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub"
+              />
+            </div>
 
             <button 
               type="submit" 

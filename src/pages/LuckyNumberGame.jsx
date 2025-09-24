@@ -5,6 +5,8 @@ import { useTransactions } from '../hooks/useTransactions'
 import { useSupabase } from '../hooks/useSupabase'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
+import ShareButton from '../components/ShareButton'
+import XPShareButton from '../components/XPShareButton'
 import NetworkGuard from '../components/NetworkGuard'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { Target, Send, Star, CheckCircle, ExternalLink, Coins, TrendingUp, TrendingDown } from 'lucide-react'
@@ -97,7 +99,8 @@ const LuckyNumberGame = () => {
       <EmbedMeta 
         title="Lucky Number Game - BaseHub"
         description="Pick a number 1-10 and win XP! 10% chance to win 1000 bonus XP. Play now on BaseHub!"
-        buttonText="Play Lucky Number"
+        buttonText="🍀 Play Lucky Number!"
+        image="/image.svg"
       />
       
       <BackButton />
@@ -186,6 +189,25 @@ const LuckyNumberGame = () => {
           }}>
             {lastTransaction.hash || lastTransaction.transactionHash}
           </div>
+          
+          {/* XP Share Button */}
+          <div style={{ 
+            marginTop: '12px',
+            display: 'flex',
+            justifyContent: 'center'
+          }}>
+            <XPShareButton 
+              gameType="lucky"
+              xpEarned={lastTransaction.xpEarned || 10}
+              totalXP={totalXP}
+              transactionHash={lastTransaction.hash || lastTransaction.transactionHash}
+              gameResult={{
+                won: lastTransaction.isWin,
+                selectedNumber: lastTransaction.selectedNumber,
+                result: lastTransaction.result
+              }}
+            />
+          </div>
         </div>
       )}
 
@@ -262,6 +284,18 @@ const LuckyNumberGame = () => {
             {error}
           </div>
         )}
+      </div>
+
+      <div style={{ 
+        marginTop: '24px',
+        display: 'flex',
+        justifyContent: 'center'
+      }}>
+        <ShareButton 
+          title="Lucky Number Game"
+          description="Pick a number 1-10 and win XP! 10% chance to win 1000 bonus XP. Play now on BaseHub!"
+          gameType="lucky"
+        />
       </div>
 
       <div style={{ 

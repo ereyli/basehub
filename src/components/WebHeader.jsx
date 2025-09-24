@@ -61,16 +61,6 @@ const WebHeader = () => {
                 <Twitter size={16} />
                 <span>X</span>
               </a>
-              <a 
-                href="https://basehub.fun" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="social-link website"
-                title="Visit our website"
-              >
-                <ExternalLink size={16} />
-                <span>Website</span>
-              </a>
             </div>
 
             {/* Network Status */}

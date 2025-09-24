@@ -4,6 +4,8 @@ import { useAccount } from 'wagmi'
 import { useDeployERC1155 } from '../hooks/useDeployERC1155'
 import { Layers, Zap } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
+import BackButton from '../components/BackButton'
+import ShareButton from '../components/ShareButton'
 
 const DeployERC1155 = () => {
   const { isConnected } = useAccount()
@@ -46,11 +48,13 @@ const DeployERC1155 = () => {
 
   return (
     <div className="deploy-nft-page">
-      <Helmet>
-        <title>Deploy ERC1155 - BaseHub</title>
-        <meta name="description" content="Deploy your own ERC1155 multi-token contract on Base network." />
-      </Helmet>
+            <Helmet>
+              <title>Deploy ERC1155 - BaseHub</title>
+              <meta name="description" content="Deploy your own ERC1155 multi-token contract on Base network." />
+            </Helmet>
+            
       <div className="deploy-container">
+        <BackButton />
         <h2 className="title">Deploy ERC1155 Contract</h2>
         <p className="description">
           Deploy your own ERC1155 multi-token contract on the Base network. Upload an image, define a name, symbol, and URI, and deploy your contract.
@@ -127,6 +131,21 @@ const DeployERC1155 = () => {
               ❌ {error}
             </div>
           )}
+
+          {/* Share Button - More visible placement */}
+          <div style={{ 
+            marginTop: '24px',
+            marginBottom: '20px',
+            display: 'flex',
+            justifyContent: 'center'
+          }}>
+            <ShareButton 
+              title="Deploy ERC1155 - BaseHub"
+              description="Deploy your own ERC1155 multi-token contract on Base network"
+              gameType="deploy"
+              customUrl="https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub"
+            />
+          </div>
 
           <button 
             type="submit" 
