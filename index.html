@@ -43,6 +43,10 @@
 </head>
 <body>
   <div id="root"></div>
+  
+  <!-- Farcaster SDK -->
+  <script src="https://unpkg.com/@farcaster/miniapp-sdk@0.1.10/dist/index.umd.js"></script>
+  
   <script type="module" src="/src/main.jsx"></script>
   
   <!-- Block Coinbase analytics errors -->
@@ -53,17 +57,24 @@
       const message = args.join(' ');
       if (message.includes('cca-lite.coinbase.com') || 
           message.includes('ERR_BLOCKED_BY_CLIENT') ||
-          message.includes('ERR_ABORTED 401')) {
+          message.includes('ERR_ABORTED 401') ||
+          message.includes('warpcast.com') ||
+          message.includes('user-app-context') ||
+          message.includes('onboarding-state')) {
         return; // Don't log these errors
       }
       originalError.apply(console, args);
     };
     
-    // Block fetch requests to Coinbase analytics
+    // Block fetch requests to Coinbase analytics and Farcaster API
     const originalFetch = window.fetch;
     window.fetch = function(url, options) {
-      if (typeof url === 'string' && url.includes('cca-lite.coinbase.com')) {
-        return Promise.reject(new Error('Blocked analytics request'));
+      if (typeof url === 'string' && 
+          (url.includes('cca-lite.coinbase.com') ||
+           url.includes('warpcast.com') ||
+           url.includes('user-app-context') ||
+           url.includes('onboarding-state'))) {
+        return Promise.reject(new Error('Blocked analytics/API request'));
       }
       return originalFetch.call(this, url, options);
     };

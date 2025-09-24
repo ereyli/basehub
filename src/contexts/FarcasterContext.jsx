@@ -16,12 +16,31 @@ export const FarcasterProvider = ({ children }) => {
   const [isReady, setIsReady] = useState(false)
   const [user, setUser] = useState(null)
   const [error, setError] = useState(null)
-  const [isInFarcaster] = useState(true) // Force true for Farcaster-only app
+  
+  // Check if we're actually in Farcaster environment
+  const [isInFarcaster, setIsInFarcaster] = useState(() => {
+    // Check if we're in Farcaster Mini App environment
+    return typeof window !== 'undefined' && 
+           (window.location !== window.parent.location || 
+            window.parent !== window ||
+            window.location.href.includes('farcaster.xyz') ||
+            window.location.href.includes('warpcast.com'))
+  })
 
   useEffect(() => {
     const initializeFarcaster = async () => {
       try {
         console.log('🚀 Initializing Farcaster Mini App...')
+        
+        // Check if we're actually in Farcaster environment
+        const actuallyInFarcaster = typeof window !== 'undefined' && 
+          (window.location !== window.parent.location || 
+           window.parent !== window ||
+           window.location.href.includes('farcaster.xyz') ||
+           window.location.href.includes('warpcast.com'))
+        
+        setIsInFarcaster(actuallyInFarcaster)
+        console.log('🔍 Farcaster environment check:', actuallyInFarcaster)
         
         // Mark as initialized immediately
         setIsInitialized(true)
@@ -44,6 +63,13 @@ export const FarcasterProvider = ({ children }) => {
     const handleReady = async () => {
       try {
         console.log('⏳ Waiting for DOM to be fully ready...')
+        
+        // Only call ready() if we're actually in Farcaster
+        if (!isInFarcaster) {
+          console.log('ℹ️ Not in Farcaster environment, skipping ready() call')
+          setIsReady(true)
+          return
+        }
         
         // Wait for complete DOM load
         if (document.readyState !== 'complete') {
@@ -86,7 +112,7 @@ export const FarcasterProvider = ({ children }) => {
 
     // Start the ready process
     handleReady()
-  }, [isInitialized, isReady])
+  }, [isInitialized, isReady, isInFarcaster])
 
   const sendTransaction = async (transaction) => {
     if (!isInFarcaster) {
