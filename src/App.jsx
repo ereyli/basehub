@@ -7,6 +7,7 @@ import { FarcasterProvider, useFarcaster } from './contexts/FarcasterContext'
 import { config } from './config/wagmi'
 import FarcasterXPDisplay from './components/FarcasterXPDisplay'
 import SkeletonLoader from './components/SkeletonLoader'
+import { useNetworkInterceptor } from './hooks/useNetworkInterceptor'
 import Home from './pages/Home'
 import GMGame from './pages/GMGame'
 import GNGame from './pages/GNGame'
@@ -25,6 +26,9 @@ const queryClient = new QueryClient()
 // AppContent component - Farcaster Only
 function AppContent() {
   const { isInitialized, isReady } = useFarcaster()
+  
+  // Network interceptor - checks network on every render
+  useNetworkInterceptor()
 
   // Show loading while initializing or not ready
   if (!isInitialized || !isReady) {

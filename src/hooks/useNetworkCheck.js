@@ -37,16 +37,24 @@ export const useNetworkCheck = () => {
       throw new Error('MetaMask not detected. Please install MetaMask to switch networks.')
     }
 
+    console.log('🔄 Attempting to switch to Base network...')
+    console.log('Current chain ID:', chainId)
+    console.log('Required chain ID:', baseConfig.chainId)
+
     try {
       // Try to switch to Base network
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: `0x${baseConfig.chainId.toString(16)}` }],
       })
+      console.log('✅ Successfully switched to Base network')
     } catch (switchError) {
+      console.log('❌ Switch failed, attempting to add network...', switchError)
+      
       // If the chain hasn't been added to MetaMask, add it
       if (switchError.code === 4902) {
         try {
+          console.log('➕ Adding Base network to wallet...')
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [{
@@ -57,12 +65,13 @@ export const useNetworkCheck = () => {
               blockExplorerUrls: baseConfig.blockExplorerUrls,
             }],
           })
+          console.log('✅ Successfully added Base network')
         } catch (addError) {
-          console.error('Failed to add Base network:', addError)
+          console.error('❌ Failed to add Base network:', addError)
           throw new Error('Failed to add Base network to your wallet. Please add it manually.')
         }
       } else {
-        console.error('Failed to switch to Base network:', switchError)
+        console.error('❌ Failed to switch to Base network:', switchError)
         throw new Error('Failed to switch to Base network. Please switch manually.')
       }
     }
