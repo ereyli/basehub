@@ -37,12 +37,16 @@ export const FarcasterProvider = ({ children }) => {
           (window.location !== window.parent.location || 
            window.parent !== window ||
            window.location.href.includes('farcaster.xyz') ||
-           window.location.href.includes('warpcast.com'))
+           window.location.href.includes('warpcast.com') ||
+           window.location.href.includes('basehub-alpha.vercel.app'))
         
         setIsInFarcaster(actuallyInFarcaster)
         console.log('🔍 Farcaster environment check:', actuallyInFarcaster)
         
-        // Mark as initialized immediately
+        // Wait a bit for SDK to load properly
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // Mark as initialized
         setIsInitialized(true)
         console.log('✅ Farcaster context initialized')
         
@@ -86,8 +90,15 @@ export const FarcasterProvider = ({ children }) => {
           })
         }
 
-        // Wait a bit more for React hydration
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // Wait for React hydration and SDK to be ready
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        // Check if SDK is available before calling ready
+        if (typeof sdk === 'undefined' || !sdk.actions) {
+          console.log('⚠️ SDK not available, setting ready anyway')
+          setIsReady(true)
+          return
+        }
         
         console.log('📞 Calling sdk.actions.ready()...')
         await sdk.actions.ready()

@@ -2,13 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
   <meta name="format-detection" content="telephone=no">
   <meta name="msapplication-tap-highlight" content="no">
-  <meta name="theme-color" content="#6B76D9">
+  <meta name="theme-color" content="#3b82f6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="BaseHub">
   <title>BaseHub - Farcaster Mini App</title>
   <meta name="description" content="Play games and earn XP on Base network through Farcaster">
   <link rel="icon" type="image/png" href="/icon.png" />
+  <link rel="apple-touch-icon" href="/icon.png" />
   
     <!-- Farcaster Mini App Embed Meta Tags -->
     <meta name="fc:frame" content='miniapp' />
@@ -43,10 +47,6 @@
 </head>
 <body>
   <div id="root"></div>
-  
-  <!-- Farcaster SDK -->
-  <script src="https://unpkg.com/@farcaster/miniapp-sdk@0.1.10/dist/index.umd.js"></script>
-  
   <script type="module" src="/src/main.jsx"></script>
   
   <!-- Block Coinbase analytics errors -->

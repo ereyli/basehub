@@ -50,10 +50,42 @@ function FarcasterAppContent() {
         textAlign: 'center',
         padding: '20px'
       }}>
-        <SkeletonLoader />
-        <p style={{ marginTop: '20px', opacity: 0.8 }}>
+        <div style={{
+          width: '80px',
+          height: '80px',
+          background: 'rgba(255, 255, 255, 0.2)',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: '20px',
+          animation: 'pulse 2s infinite'
+        }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '3px solid rgba(255, 255, 255, 0.3)',
+            borderTop: '3px solid white',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }} />
+        </div>
+        <h2 style={{ margin: '0 0 10px 0', fontSize: '24px', fontWeight: 'bold' }}>
+          BaseHub
+        </h2>
+        <p style={{ margin: '0', opacity: 0.8, fontSize: '16px' }}>
           {!isInitialized ? 'Initializing Farcaster...' : 'Loading Mini App...'}
         </p>
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+          }
+        `}</style>
       </div>
     )
   }
