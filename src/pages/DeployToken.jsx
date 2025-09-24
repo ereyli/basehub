@@ -4,6 +4,7 @@ import { useDeployToken } from '../hooks/useDeployToken'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Coins, Zap, CheckCircle, ExternalLink } from 'lucide-react'
 import EmbedMeta from '../components/EmbedMeta'
+import NetworkGuard from '../components/NetworkGuard'
 
 const DeployToken = () => {
   const { isConnected } = useAccount()
@@ -55,17 +56,18 @@ const DeployToken = () => {
   }
 
   return (
-    <div className="deploy-token-page">
-      <EmbedMeta 
-        title="Deploy Token - BaseHub"
-        description="Deploy your own ERC20 token on Base network"
-        buttonText="Deploy Token"
-      />
-      
-      <div className="back-button" onClick={() => navigate('/')}>
-        <ArrowLeft size={16} />
-        <span>Home</span>
-      </div>
+    <NetworkGuard showWarning={true}>
+      <div className="deploy-token-page">
+        <EmbedMeta 
+          title="Deploy Token - BaseHub"
+          description="Deploy your own ERC20 token on Base network"
+          buttonText="Deploy Token"
+        />
+        
+        <div className="back-button" onClick={() => navigate('/')}>
+          <ArrowLeft size={16} />
+          <span>Home</span>
+        </div>
 
       <div className="deploy-container">
         <div className="deploy-header">
@@ -265,8 +267,9 @@ const DeployToken = () => {
             </div>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </NetworkGuard>
   )
 }
 

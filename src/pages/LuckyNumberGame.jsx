@@ -6,6 +6,7 @@ import { useFarcaster } from '../contexts/FarcasterContext'
 import { useSupabase } from '../hooks/useSupabase'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
+import NetworkGuard from '../components/NetworkGuard'
 import { Target, Send, Star, CheckCircle, ExternalLink, Coins, TrendingUp, TrendingDown } from 'lucide-react'
 
 const LuckyNumberGame = () => {
@@ -79,7 +80,8 @@ const LuckyNumberGame = () => {
   }
 
   return (
-    <div className="card">
+    <NetworkGuard showWarning={true}>
+      <div className="card">
       <EmbedMeta 
         title="Lucky Number Game - BaseHub"
         description="Pick a number 1-10 and win XP! 10% chance to win 1000 bonus XP. Play now on BaseHub!"
@@ -280,7 +282,7 @@ const LuckyNumberGame = () => {
           <li>Your wallet address: {address?.slice(0, 6)}...{address?.slice(-4)}</li>
         </ul>
       </div>
-    </div>
+    </NetworkGuard>
   )
 }
 

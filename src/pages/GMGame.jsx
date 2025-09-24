@@ -5,6 +5,7 @@ import { useFarcaster } from '../contexts/FarcasterContext'
 import { useSupabase } from '../hooks/useSupabase'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
+import NetworkGuard from '../components/NetworkGuard'
 import { Sun, Send, Star, CheckCircle, ExternalLink, Coins } from 'lucide-react'
 
 const GMGame = () => {
@@ -66,16 +67,17 @@ const GMGame = () => {
   }
 
   return (
-    <div className="card">
-      <EmbedMeta 
-        title="GM Game - BaseHub"
-        description="Say GM and earn 10 XP! Always wins. Play now on BaseHub!"
-        buttonText="Say GM"
-      />
-      
-      <BackButton />
-      
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+    <NetworkGuard showWarning={true}>
+      <div className="card">
+        <EmbedMeta 
+          title="GM Game - BaseHub"
+          description="Say GM and earn 10 XP! Always wins. Play now on BaseHub!"
+          buttonText="Say GM"
+        />
+        
+        <BackButton />
+        
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <div 
           className="game-icon"
           style={{ 
@@ -229,7 +231,7 @@ const GMGame = () => {
           <li>Your wallet address: {address?.slice(0, 6)}...{address?.slice(-4)}</li>
         </ul>
       </div>
-    </div>
+    </NetworkGuard>
   )
 }
 
