@@ -10,7 +10,7 @@
     "splashBackgroundColor": "#2563eb",
     "webhookUrl": "https://basehub-alpha.vercel.app/api/webhook",
     "subtitle": "BaseHub",
-    "description": "BaseHub - Play games",
+    "description": "BaseHub - Play games",  
     "primaryCategory": "games",
     "tags": ["gaming", "l2"],
     "tagline": ["gaming", "tx", "airdrop"],
