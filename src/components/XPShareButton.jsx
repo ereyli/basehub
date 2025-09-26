@@ -99,10 +99,30 @@ const XPShareButton = ({
     }
   }
 
-  const handleFarcasterXPShare = () => {
+  const handleFarcasterXPShare = async () => {
     if (isInFarcaster) {
-      // In Farcaster, we'll create a dynamic embed for XP sharing
-      handleCopyXPShare()
+      try {
+        // Safely get Farcaster context
+        const farcasterContext = useFarcaster()
+        const { sdk } = farcasterContext || {}
+        
+        if (sdk && sdk.actions && sdk.actions.composeCast) {
+          const shareText = generateXPContent()
+          const shareUrl = generateShareUrl()
+          
+          await sdk.actions.composeCast({
+            text: shareText,
+            embeds: [shareUrl]
+          })
+        } else {
+          // Fallback to copy if SDK not available
+          handleCopyXPShare()
+        }
+      } catch (error) {
+        console.error('Failed to compose XP cast:', error)
+        // Fallback to copy on error
+        handleCopyXPShare()
+      }
     }
   }
 
@@ -192,7 +212,7 @@ const XPShareButton = ({
         ) : (
           <>
             <Star size={16} />
-            <span>Share {xpEarned} XP!</span>
+            <span>{isInFarcaster ? `Compose ${xpEarned} XP Cast!` : `Share ${xpEarned} XP!`}</span>
           </>
         )}
       </button>

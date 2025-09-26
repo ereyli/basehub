@@ -57,23 +57,37 @@ const ShareButton = ({
     }
   }
 
-  const handleFarcasterShare = () => {
+  const handleFarcasterShare = async () => {
     if (isInFarcaster) {
-      if (isCastShare && castData) {
-        // For cast sharing, create a more specific share
-        const castShareText = `🎮 Shared from BaseHub: ${castData.text?.slice(0, 200)}${castData.text?.length > 200 ? '...' : ''}\n\nPlay games and earn XP on Base network!`
-        const castShareUrl = `https://basehub-alpha.vercel.app/share?castHash=${castData.hash}&castFid=${castData.author?.fid}`
+      try {
+        // Safely get Farcaster context
+        const farcasterContext = useFarcaster()
+        const { sdk } = farcasterContext || {}
         
-        try {
-          navigator.clipboard.writeText(`${castShareText}\n\n${castShareUrl}`)
-          setIsCopied(true)
-          setTimeout(() => setIsCopied(false), 2000)
-        } catch (error) {
-          console.error('Failed to copy cast share:', error)
+        if (sdk && sdk.actions && sdk.actions.composeCast) {
+          if (isCastShare && castData) {
+            // For cast sharing, create a compose cast with the shared cast context
+            const castText = `🎮 Check out this cast from @${castData.author?.username || 'unknown'} on BaseHub!\n\n${castData.text?.slice(0, 200)}${castData.text?.length > 200 ? '...' : ''}\n\nPlay games and earn XP on Base network! 🚀`
+            
+            await sdk.actions.composeCast({
+              text: castText,
+              embeds: [`https://basehub-alpha.vercel.app/share?castHash=${castData.hash}&castFid=${castData.author?.fid}`]
+            })
+          } else {
+            // Regular share with compose cast
+            const composeText = `${shareText}\n\n${currentUrl}`
+            
+            await sdk.actions.composeCast({
+              text: composeText
+            })
+          }
+        } else {
+          // Fallback to copy if SDK not available
           handleCopyLink()
         }
-      } else {
-        // Regular share
+      } catch (error) {
+        console.error('Failed to compose cast:', error)
+        // Fallback to copy on error
         handleCopyLink()
       }
     }
@@ -152,7 +166,7 @@ const ShareButton = ({
         ) : (
           <>
             <Share2 size={16} />
-            <span>{isInFarcaster ? 'Share on Farcaster' : 'Share'}</span>
+            <span>{isInFarcaster ? 'Compose Cast' : 'Share'}</span>
           </>
         )}
       </button>
