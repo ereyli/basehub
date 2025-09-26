@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS quest_progress (
     weekly_bonus_earned BOOLEAN DEFAULT FALSE,
     quest_stats JSONB DEFAULT '{}',
     total_quest_xp INTEGER DEFAULT 0,
+    next_day_unlock_time TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(wallet_address)
@@ -48,6 +49,19 @@ GRANT ALL ON quest_rewards TO authenticated;
 -- 7. Enable realtime for quest_progress (optional - for live updates)
 ALTER PUBLICATION supabase_realtime ADD TABLE quest_progress;
 
+-- 8. Add next_day_unlock_time column to existing quest_progress table (if not exists)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'quest_progress' 
+        AND column_name = 'next_day_unlock_time'
+    ) THEN
+        ALTER TABLE quest_progress ADD COLUMN next_day_unlock_time TIMESTAMP WITH TIME ZONE;
+    END IF;
+END $$;
+
 -- Note: This script is safe to run multiple times
 -- It will not affect existing players or transactions tables
 -- Quest XP is tracked separately from main XP system
+-- 24-hour timer system for daily quest progression

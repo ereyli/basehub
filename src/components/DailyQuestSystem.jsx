@@ -14,6 +14,8 @@ const DailyQuestSystem = () => {
   const [weeklyBonus, setWeeklyBonus] = useState(false)
   const [totalXP, setTotalXP] = useState(0)
   const [isInFarcaster, setIsInFarcaster] = useState(false)
+  const [nextDayUnlockTime, setNextDayUnlockTime] = useState(null)
+  const [timeUntilNextDay, setTimeUntilNextDay] = useState(null)
 
   // Check if in Farcaster environment
   useEffect(() => {
@@ -38,8 +40,40 @@ const DailyQuestSystem = () => {
       setCurrentDay(questProgress.current_day || 1)
       setWeeklyBonus(questProgress.weekly_bonus_earned || false)
       setTotalXP(questProgress.total_quest_xp || 0)
+      
+      // Check if there's a next day unlock time
+      if (questProgress.next_day_unlock_time) {
+        setNextDayUnlockTime(new Date(questProgress.next_day_unlock_time))
+      }
     }
   }, [questProgress])
+
+  // Countdown timer for next day
+  useEffect(() => {
+    if (!nextDayUnlockTime) return
+
+    const updateCountdown = () => {
+      const now = new Date()
+      const timeLeft = nextDayUnlockTime.getTime() - now.getTime()
+      
+      if (timeLeft <= 0) {
+        setTimeUntilNextDay(null)
+        setNextDayUnlockTime(null)
+        // Check if we can unlock next day
+        checkAndUnlockNextDay()
+      } else {
+        const hours = Math.floor(timeLeft / (1000 * 60 * 60))
+        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60))
+        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000)
+        setTimeUntilNextDay(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`)
+      }
+    }
+
+    updateCountdown()
+    const interval = setInterval(updateCountdown, 1000)
+
+    return () => clearInterval(interval)
+  }, [nextDayUnlockTime])
 
   useEffect(() => {
     checkQuestCompletion()
@@ -533,13 +567,62 @@ const DailyQuestSystem = () => {
       await awardQuestXP(dayXP, 'quest_completion', currentDay)
       console.log(`🎉 Day ${currentDay} completed! +${dayXP} XP`)
       
-      // All quests for current day completed
+      // Set 24-hour timer for next day
       if (currentDay < 7) {
-        await completeQuestDay(currentDay)
+        await setNextDayTimer()
       } else {
         // Week completed!
         await awardWeeklyBonus()
       }
+    }
+  }
+
+  const setNextDayTimer = async () => {
+    if (!address || !supabase) return
+
+    try {
+      const nextUnlockTime = new Date()
+      nextUnlockTime.setHours(nextUnlockTime.getHours() + 24) // 24 hours from now
+
+      const { error } = await supabase
+        .from('quest_progress')
+        .update({
+          next_day_unlock_time: nextUnlockTime.toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('wallet_address', address)
+
+      if (error) throw error
+
+      setNextDayUnlockTime(nextUnlockTime)
+      console.log(`⏰ Next day unlocks in 24 hours: ${nextUnlockTime.toLocaleString()}`)
+    } catch (err) {
+      console.error('Error setting next day timer:', err)
+    }
+  }
+
+  const checkAndUnlockNextDay = async () => {
+    if (!address || !supabase) return
+
+    try {
+      const { data, error } = await supabase
+        .from('quest_progress')
+        .update({
+          current_day: currentDay + 1,
+          next_day_unlock_time: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('wallet_address', address)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setCurrentDay(currentDay + 1)
+      setNextDayUnlockTime(null)
+      console.log(`🎉 Day ${currentDay + 1} unlocked!`)
+    } catch (err) {
+      console.error('Error unlocking next day:', err)
     }
   }
 
@@ -548,6 +631,10 @@ const DailyQuestSystem = () => {
   }
 
   const getCurrentDayQuests = () => {
+    // If there's a countdown timer, show current day quests as locked
+    if (timeUntilNextDay) {
+      return []
+    }
     return quests.filter(q => q.day === currentDay)
   }
 
@@ -634,7 +721,11 @@ const DailyQuestSystem = () => {
               fontSize: '12px',
               color: '#6b7280'
             }}>
-              Day {currentDay}/7 • {progress.completed}/{progress.total} done
+              {timeUntilNextDay ? (
+                `Next day in: ${timeUntilNextDay}`
+              ) : (
+                `Day ${currentDay}/7 • ${progress.completed}/${progress.total} done`
+              )}
             </p>
           </div>
         </div>
@@ -670,7 +761,41 @@ const DailyQuestSystem = () => {
         gap: '8px',
         marginBottom: weeklyBonus ? '12px' : '0'
       }}>
-          {getCurrentDayQuests().map((quest, index) => {
+          {timeUntilNextDay ? (
+            <div style={{
+              gridColumn: '1 / -1',
+              background: 'white',
+              borderRadius: '8px',
+              padding: '20px',
+              textAlign: 'center',
+              border: '1px solid #e5e7eb'
+            }}>
+              <div style={{
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: '#1f2937',
+                marginBottom: '8px'
+              }}>
+                🎉 Day {currentDay} Completed!
+              </div>
+              <div style={{
+                fontSize: '14px',
+                color: '#6b7280',
+                marginBottom: '12px'
+              }}>
+                All quests completed. Next day unlocks in:
+              </div>
+              <div style={{
+                fontSize: '24px',
+                fontWeight: 'bold',
+                color: '#3b82f6',
+                fontFamily: 'monospace'
+              }}>
+                {timeUntilNextDay}
+              </div>
+            </div>
+          ) : (
+            getCurrentDayQuests().map((quest, index) => {
             const questStats = questProgress?.quest_stats || {}
             const requirement = Object.keys(quest.requirements)[0]
             const required = quest.requirements[requirement]
@@ -744,7 +869,7 @@ const DailyQuestSystem = () => {
                 </div>
               </div>
             )
-          })}
+          }))}
         </div>
 
       {/* Compact Weekly Bonus */}
