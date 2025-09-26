@@ -127,6 +127,7 @@ export const useQuestSystem = () => {
       }
 
       console.log('📊 Current quest data:', currentData)
+      console.log('📊 Current quest stats:', currentData.quest_stats)
 
       const currentStats = currentData.quest_stats || {}
       const newStats = {

@@ -588,11 +588,7 @@ const DailyQuestSystem = () => {
     console.log(`✅ All quests completed: ${allCompleted}`)
     
     if (allCompleted && currentDayQuests.length > 0) {
-      // Award XP for completing the day
-      const dayXP = currentDayQuests.length * 50 // 50 XP per quest
-      console.log(`🎁 Awarding day completion XP: ${dayXP} XP`)
-      await awardQuestXP(dayXP, 'quest_completion', currentDay)
-      console.log(`🎉 Day ${currentDay} completed! +${dayXP} XP`)
+      console.log(`🎉 Day ${currentDay} completed! All quests done.`)
       
       // Set 24-hour timer for next day
       if (currentDay < 7) {
