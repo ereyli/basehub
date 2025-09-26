@@ -54,7 +54,7 @@ const FlipGame = () => {
       // No need to manually add XP here - it's handled securely in useTransactions
       
       // Update quest progress
-      updateQuestProgress('gamesPlayed', 1)
+      updateQuestProgress('coinFlipUsed', 1)
       updateQuestProgress('transactions', 1)
       
     } catch (error) {
