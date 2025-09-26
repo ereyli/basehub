@@ -56,7 +56,7 @@ const GNGame = () => {
       // No need to manually add XP here - it's handled securely in useTransactions
       
       // Update quest progress
-      await updateQuestProgress('gmGnUsed', 1)
+      await updateQuestProgress('gnUsed', 1)
       await updateQuestProgress('transactions', 1)
       
       // Reload quest progress to trigger completion check

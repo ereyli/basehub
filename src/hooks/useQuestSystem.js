@@ -275,6 +275,11 @@ export const useQuestSystem = () => {
       // Save to localStorage
       localStorage.setItem(storageKey, JSON.stringify(player))
       console.log(`✅ Player data saved to localStorage:`, player)
+      
+      // Trigger a custom event to notify other components of XP change
+      window.dispatchEvent(new CustomEvent('questXPAdded', { 
+        detail: { xpAmount, newTotalXP: player.total_xp, newLevel: player.level } 
+      }))
     } catch (err) {
       console.error('Error adding quest XP to main XP:', err)
       // Don't throw error here to avoid breaking quest system

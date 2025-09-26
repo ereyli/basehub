@@ -90,12 +90,21 @@ const DailyQuestSystem = () => {
       // Day 1 - Use all features 1 time
       {
         day: 1,
-        title: "GM/GN Game",
-        description: "Use GM or GN game 1 time",
+        title: "GM Game",
+        description: "Use GM game 1 time",
         xpReward: 50,
         icon: <MessageSquare size={20} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-        requirements: { gmGnUsed: 1 }
+        requirements: { gmUsed: 1 }
+      },
+      {
+        day: 1,
+        title: "GN Game",
+        description: "Use GN game 1 time",
+        xpReward: 50,
+        icon: <MessageSquare size={20} />,
+        color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+        requirements: { gnUsed: 1 }
       },
       {
         day: 1,
@@ -155,12 +164,21 @@ const DailyQuestSystem = () => {
       // Day 2 - Use all features 2 times
       {
         day: 2,
-        title: "GM/GN Game",
-        description: "Use GM or GN game 2 times",
+        title: "GM Game",
+        description: "Use GM game 2 times",
         xpReward: 50,
         icon: <MessageSquare size={20} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-        requirements: { gmGnUsed: 2 }
+        requirements: { gmUsed: 2 }
+      },
+      {
+        day: 2,
+        title: "GN Game",
+        description: "Use GN game 2 times",
+        xpReward: 50,
+        icon: <MessageSquare size={20} />,
+        color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+        requirements: { gnUsed: 2 }
       },
       {
         day: 2,
@@ -220,12 +238,21 @@ const DailyQuestSystem = () => {
       // Day 3 - Use all features 3 times
       {
         day: 3,
-        title: "GM/GN Game",
-        description: "Use GM or GN game 3 times",
+        title: "GM Game",
+        description: "Use GM game 3 times",
         xpReward: 50,
         icon: <MessageSquare size={20} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-        requirements: { gmGnUsed: 3 }
+        requirements: { gmUsed: 3 }
+      },
+      {
+        day: 3,
+        title: "GN Game",
+        description: "Use GN game 3 times",
+        xpReward: 50,
+        icon: <MessageSquare size={20} />,
+        color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+        requirements: { gnUsed: 3 }
       },
       {
         day: 3,
@@ -285,12 +312,21 @@ const DailyQuestSystem = () => {
       // Day 4 - Use all features 4 times
       {
         day: 4,
-        title: "GM/GN Game",
-        description: "Use GM or GN game 4 times",
+        title: "GM Game",
+        description: "Use GM game 4 times",
         xpReward: 50,
         icon: <MessageSquare size={20} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-        requirements: { gmGnUsed: 4 }
+        requirements: { gmUsed: 4 }
+      },
+      {
+        day: 4,
+        title: "GN Game",
+        description: "Use GN game 4 times",
+        xpReward: 50,
+        icon: <MessageSquare size={20} />,
+        color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+        requirements: { gnUsed: 4 }
       },
       {
         day: 4,
@@ -350,12 +386,21 @@ const DailyQuestSystem = () => {
       // Day 5 - Use all features 5 times
       {
         day: 5,
-        title: "GM/GN Game",
-        description: "Use GM or GN game 5 times",
+        title: "GM Game",
+        description: "Use GM game 5 times",
         xpReward: 50,
         icon: <MessageSquare size={20} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-        requirements: { gmGnUsed: 5 }
+        requirements: { gmUsed: 5 }
+      },
+      {
+        day: 5,
+        title: "GN Game",
+        description: "Use GN game 5 times",
+        xpReward: 50,
+        icon: <MessageSquare size={20} />,
+        color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+        requirements: { gnUsed: 5 }
       },
       {
         day: 5,
@@ -415,12 +460,21 @@ const DailyQuestSystem = () => {
       // Day 6 - Use all features 6 times
       {
         day: 6,
-        title: "GM/GN Game",
-        description: "Use GM or GN game 6 times",
+        title: "GM Game",
+        description: "Use GM game 6 times",
         xpReward: 50,
         icon: <MessageSquare size={20} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-        requirements: { gmGnUsed: 6 }
+        requirements: { gmUsed: 6 }
+      },
+      {
+        day: 6,
+        title: "GN Game",
+        description: "Use GN game 6 times",
+        xpReward: 50,
+        icon: <MessageSquare size={20} />,
+        color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+        requirements: { gnUsed: 6 }
       },
       {
         day: 6,
@@ -480,12 +534,21 @@ const DailyQuestSystem = () => {
       // Day 7 - Use all features 7 times
       {
         day: 7,
-        title: "GM/GN Game",
-        description: "Use GM or GN game 7 times",
+        title: "GM Game",
+        description: "Use GM game 7 times",
         xpReward: 50,
         icon: <MessageSquare size={20} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-        requirements: { gmGnUsed: 7 }
+        requirements: { gmUsed: 7 }
+      },
+      {
+        day: 7,
+        title: "GN Game",
+        description: "Use GN game 7 times",
+        xpReward: 50,
+        icon: <MessageSquare size={20} />,
+        color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+        requirements: { gnUsed: 7 }
       },
       {
         day: 7,
