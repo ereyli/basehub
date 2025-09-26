@@ -53,10 +53,27 @@ const FlipGame = () => {
       // XP is already added by useTransactions hook after confirmation
       // No need to manually add XP here - it's handled securely in useTransactions
       
+      // Update quest progress
+      updateQuestProgress('gamesPlayed', 1)
+      updateQuestProgress('transactions', 1)
+      
     } catch (error) {
       console.error('❌ Coin flip failed (transaction cancelled or failed):', error)
       // No XP given on failed transactions - this is secure!
     }
+  }
+
+  const updateQuestProgress = (questType, amount) => {
+    // Update quest progress in localStorage
+    const questProgress = JSON.parse(localStorage.getItem('basehub-quest-progress') || '{}')
+    
+    if (!questProgress.questStats) {
+      questProgress.questStats = {}
+    }
+    
+    questProgress.questStats[questType] = (questProgress.questStats[questType] || 0) + amount
+    
+    localStorage.setItem('basehub-quest-progress', JSON.stringify(questProgress))
   }
 
   if (!isConnected) {

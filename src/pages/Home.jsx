@@ -5,6 +5,7 @@ import { getLeaderboard } from '../utils/xpUtils'
 import { useTransactions } from '../hooks/useTransactions'
 import EmbedMeta from '../components/EmbedMeta'
 import TwitterShareButton from '../components/TwitterShareButton'
+import DailyQuestSystem from '../components/DailyQuestSystem'
 import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink } from 'lucide-react'
 
 const Home = () => {
@@ -272,6 +273,9 @@ const Home = () => {
               </div>
             )}
           </div>
+
+          {/* Daily Quest System */}
+          <DailyQuestSystem />
 
           <div className="games-grid">
             {games.map((game) => {

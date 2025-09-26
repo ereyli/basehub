@@ -78,6 +78,9 @@ const ShareButton = ({
               embeds: [`https://basehub-alpha.vercel.app/share?castHash=${castData.hash}&castFid=${castData.author?.fid}`]
             })
             console.log('✅ Cast composed successfully!')
+            
+            // Award XP for cast sharing
+            awardCastShareXP()
           } else {
             // Regular share with compose cast
             const composeText = `${shareText}\n\n${currentUrl}`
@@ -87,6 +90,9 @@ const ShareButton = ({
               text: composeText
             })
             console.log('✅ Regular cast composed successfully!')
+            
+            // Award XP for cast sharing
+            awardCastShareXP()
           }
         } else {
           console.log('⚠️ SDK or composeCast not available, falling back to copy')
@@ -102,6 +108,63 @@ const ShareButton = ({
       console.log('⚠️ Not in Farcaster or context not available, falling back to copy')
       handleCopyLink()
     }
+  }
+
+  const awardCastShareXP = () => {
+    // Award XP for cast sharing
+    const castShareXP = 50 // Base XP for sharing
+    const bonusXP = Math.floor(Math.random() * 25) + 25 // Random bonus 25-50 XP
+    const totalXP = castShareXP + bonusXP
+    
+    // Update quest progress
+    updateQuestProgress('castsShared', 1)
+    
+    // Show XP notification
+    showXPNotification(totalXP, 'Cast Shared!')
+    
+    console.log(`🎉 Awarded ${totalXP} XP for cast sharing!`)
+  }
+
+  const updateQuestProgress = (questType, amount) => {
+    // Update quest progress in localStorage
+    const questProgress = JSON.parse(localStorage.getItem('basehub-quest-progress') || '{}')
+    
+    if (!questProgress.questStats) {
+      questProgress.questStats = {}
+    }
+    
+    questProgress.questStats[questType] = (questProgress.questStats[questType] || 0) + amount
+    
+    localStorage.setItem('basehub-quest-progress', JSON.stringify(questProgress))
+  }
+
+  const showXPNotification = (xp, message) => {
+    // Create XP notification
+    const notification = document.createElement('div')
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      z-index: 10000;
+      animation: slideIn 0.3s ease;
+    `
+    notification.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span>+${xp} XP</span>
+        <span>${message}</span>
+      </div>
+    `
+    
+    document.body.appendChild(notification)
+    
+    setTimeout(() => {
+      notification.remove()
+    }, 3000)
   }
 
   const handleTwitterShare = () => {
