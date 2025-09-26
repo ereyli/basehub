@@ -49,17 +49,29 @@ GRANT ALL ON quest_rewards TO authenticated;
 -- 7. Enable realtime for quest_progress (optional - for live updates)
 ALTER PUBLICATION supabase_realtime ADD TABLE quest_progress;
 
--- 8. Add next_day_unlock_time column to existing quest_progress table (if not exists)
-DO $$ 
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'quest_progress' 
-        AND column_name = 'next_day_unlock_time'
-    ) THEN
-        ALTER TABLE quest_progress ADD COLUMN next_day_unlock_time TIMESTAMP WITH TIME ZONE;
-    END IF;
-END $$;
+    -- 8. Add next_day_unlock_time column to existing quest_progress table (if not exists)
+    DO $$
+    BEGIN
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'quest_progress'
+            AND column_name = 'next_day_unlock_time'
+        ) THEN
+            ALTER TABLE quest_progress ADD COLUMN next_day_unlock_time TIMESTAMP WITH TIME ZONE;
+        END IF;
+    END $$;
+
+    -- 9. Add completed_quests column to existing quest_progress table (if not exists)
+    DO $$
+    BEGIN
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'quest_progress'
+            AND column_name = 'completed_quests'
+        ) THEN
+            ALTER TABLE quest_progress ADD COLUMN completed_quests TEXT[] DEFAULT '{}';
+        END IF;
+    END $$;
 
 -- Note: This script is safe to run multiple times
 -- It will not affect existing players or transactions tables

@@ -41,6 +41,7 @@ export const useQuestSystem = () => {
           totalXP: data.total_quest_xp,
           questStats: data.quest_stats,
           nextDayUnlockTime: data.next_day_unlock_time,
+          completedQuests: data.completed_quests || [],
           lastUpdated: data.updated_at
         }))
       } else {
@@ -71,7 +72,8 @@ export const useQuestSystem = () => {
         weekly_bonus_earned: false,
         quest_stats: {},
         total_quest_xp: 0,
-        next_day_unlock_time: null
+        next_day_unlock_time: null,
+        completed_quests: []
       }
 
       console.log('📝 Inserting initial quest progress:', initialProgress)
@@ -87,14 +89,15 @@ export const useQuestSystem = () => {
       setQuestProgress(data)
       
       // Initialize localStorage
-      localStorage.setItem('basehub-quest-progress', JSON.stringify({
-        currentDay: 1,
-        weeklyBonus: false,
-        totalXP: 0,
-        questStats: {},
-        nextDayUnlockTime: null,
-        lastUpdated: new Date().toISOString()
-      }))
+        localStorage.setItem('basehub-quest-progress', JSON.stringify({
+          currentDay: 1,
+          weeklyBonus: false,
+          totalXP: 0,
+          questStats: {},
+          nextDayUnlockTime: null,
+          completedQuests: [],
+          lastUpdated: new Date().toISOString()
+        }))
     } catch (err) {
       console.error('❌ Error initializing quest progress:', err)
       setError(err.message)

@@ -569,6 +569,18 @@ const DailyQuestSystem = () => {
       
       console.log(`🎯 Quest: ${quest.title} - ${current}/${required}`)
       
+      // Award XP for individual quest completion
+      if (current >= required && !questProgress.completed_quests?.includes(`${currentDay}-${quest.title}`)) {
+        console.log(`🎁 Quest completed! Awarding ${quest.xpReward} XP for: ${quest.title}`)
+        await awardQuestXP(quest.xpReward, 'quest_completion', currentDay, quest.title)
+        
+        // Mark quest as completed (this should be handled by Supabase)
+        if (!questProgress.completed_quests) {
+          questProgress.completed_quests = []
+        }
+        questProgress.completed_quests.push(`${currentDay}-${quest.title}`)
+      }
+      
       if (current < required) {
         allCompleted = false
       }
