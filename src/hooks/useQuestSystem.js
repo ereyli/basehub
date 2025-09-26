@@ -134,7 +134,7 @@ export const useQuestSystem = () => {
     }
   }
 
-  // Award quest XP
+  // Award quest XP and add to main XP
   const awardQuestXP = async (xpAmount, rewardType, questDay = null, questType = null) => {
     if (!address || !supabase) return
 
@@ -177,6 +177,9 @@ export const useQuestSystem = () => {
 
       setQuestProgress(data)
 
+      // Add quest XP to main players table
+      await addQuestXPToMainXP(xpAmount)
+
       // Update localStorage
       const localProgress = JSON.parse(localStorage.getItem('basehub-quest-progress') || '{}')
       localStorage.setItem('basehub-quest-progress', JSON.stringify({
@@ -189,6 +192,60 @@ export const useQuestSystem = () => {
     } catch (err) {
       console.error('Error awarding quest XP:', err)
       setError(err.message)
+    }
+  }
+
+  // Add quest XP to main players table
+  const addQuestXPToMainXP = async (xpAmount) => {
+    if (!address || !supabase) return
+
+    try {
+      // Get current player data
+      const { data: playerData, error: fetchError } = await supabase
+        .from('players')
+        .select('total_xp, level')
+        .eq('wallet_address', address)
+        .single()
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError
+      }
+
+      if (playerData) {
+        // Update existing player
+        const newTotalXP = (playerData.total_xp || 0) + xpAmount
+        const newLevel = Math.floor(newTotalXP / 1000) + 1 // 1000 XP per level
+
+        const { error: updateError } = await supabase
+          .from('players')
+          .update({
+            total_xp: newTotalXP,
+            level: newLevel,
+            updated_at: new Date().toISOString()
+          })
+          .eq('wallet_address', address)
+
+        if (updateError) throw updateError
+
+        console.log(`✅ Added ${xpAmount} quest XP to main XP. New total: ${newTotalXP}, Level: ${newLevel}`)
+      } else {
+        // Create new player record
+        const { error: insertError } = await supabase
+          .from('players')
+          .insert({
+            wallet_address: address,
+            total_xp: xpAmount,
+            level: 1,
+            total_transactions: 0
+          })
+
+        if (insertError) throw insertError
+
+        console.log(`✅ Created new player with ${xpAmount} quest XP`)
+      }
+    } catch (err) {
+      console.error('Error adding quest XP to main XP:', err)
+      // Don't throw error here to avoid breaking quest system
     }
   }
 
@@ -245,6 +302,9 @@ export const useQuestSystem = () => {
       if (error) throw error
 
       setQuestProgress(data)
+
+      // Add weekly bonus to main XP
+      await addQuestXPToMainXP(10000)
 
       // Update localStorage
       const localProgress = JSON.parse(localStorage.getItem('basehub-quest-progress') || '{}')
@@ -315,6 +375,7 @@ export const useQuestSystem = () => {
     completeQuestDay,
     awardWeeklyBonus,
     resetQuestWeek,
-    loadQuestProgress
+    loadQuestProgress,
+    addQuestXPToMainXP
   }
 }
