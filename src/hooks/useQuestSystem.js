@@ -237,54 +237,44 @@ export const useQuestSystem = () => {
     }
   }
 
-  // Add quest XP to main players table
+  // Add quest XP to main players table (localStorage compatible)
   const addQuestXPToMainXP = async (xpAmount) => {
-    if (!address || !supabase) return
+    if (!address) return
 
     try {
-      // Get current player data
-      const { data: playerData, error: fetchError } = await supabase
-        .from('players')
-        .select('total_xp, level')
-        .eq('wallet_address', address)
-        .single()
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        throw fetchError
-      }
-
-      if (playerData) {
+      console.log(`🔄 Adding ${xpAmount} quest XP to main XP for address: ${address}`)
+      
+      // Use localStorage like useSupabase hook
+      const storageKey = `player_${address}`
+      let player = JSON.parse(localStorage.getItem(storageKey) || 'null')
+      
+      if (!player) {
+        // Create new player record
+        player = {
+          id: Date.now().toString(),
+          wallet_address: address,
+          total_xp: xpAmount,
+          level: 1,
+          total_transactions: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+        console.log(`✅ Created new player with ${xpAmount} quest XP`)
+      } else {
         // Update existing player
-        const newTotalXP = (playerData.total_xp || 0) + xpAmount
+        const newTotalXP = (player.total_xp || 0) + xpAmount
         const newLevel = Math.floor(newTotalXP / 1000) + 1 // 1000 XP per level
 
-        const { error: updateError } = await supabase
-          .from('players')
-          .update({
-            total_xp: newTotalXP,
-            level: newLevel,
-            updated_at: new Date().toISOString()
-          })
-          .eq('wallet_address', address)
-
-        if (updateError) throw updateError
+        player.total_xp = newTotalXP
+        player.level = newLevel
+        player.updated_at = new Date().toISOString()
 
         console.log(`✅ Added ${xpAmount} quest XP to main XP. New total: ${newTotalXP}, Level: ${newLevel}`)
-      } else {
-        // Create new player record
-        const { error: insertError } = await supabase
-          .from('players')
-          .insert({
-            wallet_address: address,
-            total_xp: xpAmount,
-            level: 1,
-            total_transactions: 0
-          })
-
-        if (insertError) throw insertError
-
-        console.log(`✅ Created new player with ${xpAmount} quest XP`)
       }
+
+      // Save to localStorage
+      localStorage.setItem(storageKey, JSON.stringify(player))
+      console.log(`✅ Player data saved to localStorage:`, player)
     } catch (err) {
       console.error('Error adding quest XP to main XP:', err)
       // Don't throw error here to avoid breaking quest system

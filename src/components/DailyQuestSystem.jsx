@@ -576,8 +576,11 @@ const DailyQuestSystem = () => {
         console.log(`🎁 Quest completed! Awarding ${quest.xpReward} XP for: ${quest.title}`)
         await awardQuestXP(quest.xpReward, 'quest_completion', currentDay, quest.title)
         
-        // Mark quest as completed in Supabase
-        await markQuestAsCompleted(currentDay, quest.title)
+        // Mark quest as completed in Supabase and update local state
+        const updatedQuestProgress = await markQuestAsCompleted(currentDay, quest.title)
+        if (updatedQuestProgress) {
+          setQuestProgress(updatedQuestProgress)
+        }
       }
       
       if (current < required) {
@@ -658,7 +661,7 @@ const DailyQuestSystem = () => {
       
       if (currentCompletedQuests.includes(questId)) {
         console.log(`Quest ${questId} already marked as completed`)
-        return
+        return questProgress
       }
 
       const newCompletedQuests = [...currentCompletedQuests, questId]
@@ -675,10 +678,11 @@ const DailyQuestSystem = () => {
 
       if (error) throw error
 
-      setQuestProgress(data)
       console.log(`✅ Quest ${questId} marked as completed in Supabase`)
+      return data
     } catch (err) {
       console.error('Error marking quest as completed:', err)
+      return null
     }
   }
 
