@@ -137,14 +137,12 @@ const ShareButton = ({
     if (isInFarcaster) {
       handleFarcasterShare()
     } else {
-      handleWebShare()
+      // For web users, directly open Twitter compose
+      handleTwitterShare()
     }
   }
 
-  // Don't show share button if not in Farcaster and no web share support
-  if (!isInFarcaster && !navigator.share) {
-    return null
-  }
+  // Always show share button
 
   return (
     <div className="share-button-container" style={{ position: 'relative', ...style }}>
@@ -187,13 +185,13 @@ const ShareButton = ({
         ) : (
           <>
             <Share2 size={16} />
-            <span>{isInFarcaster ? 'Compose Cast' : 'Share'}</span>
+            <span>{isInFarcaster ? 'Compose Cast' : 'Share on X'}</span>
           </>
         )}
       </button>
 
-      {/* Share options dropdown for web users */}
-      {!isInFarcaster && (
+      {/* Share options dropdown removed - web users go directly to Twitter */}
+      {false && (
         <div 
           className="share-options"
           style={{
