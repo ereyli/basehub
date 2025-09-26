@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useTransactions } from '../hooks/useTransactions'
 import { useSupabase } from '../hooks/useSupabase'
-import { useQuestSystem } from '../hooks/useQuestSystem'
+// Quest system is now handled in useTransactions hook
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
@@ -15,7 +15,7 @@ const GMGame = () => {
   const { isConnected, address } = useAccount()
   const { sendGMTransaction, isLoading, error } = useTransactions()
   const { calculateTokens } = useSupabase()
-  const { updateQuestProgress } = useQuestSystem()
+  // Quest progress is now handled in useTransactions hook
   
   // Safely get Farcaster context - only if not in web environment
   let isInFarcaster = false
@@ -55,9 +55,7 @@ const GMGame = () => {
       // XP is already added by useTransactions hook after confirmation
       // No need to manually add XP here - it's handled securely in useTransactions
       
-      // Update quest progress
-      await updateQuestProgress('gmUsed', 1)
-      await updateQuestProgress('transactions', 1)
+      // Quest progress is now updated in useTransactions hook
       
     } catch (error) {
       console.error('❌ GM transaction failed (transaction cancelled or failed):', error)

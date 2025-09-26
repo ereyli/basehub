@@ -8,6 +8,7 @@ import { getCurrentConfig, getContractAddress, GAS_CONFIG, GAME_CONFIG } from '.
 import { parseEther } from 'viem'
 import { config } from '../config/wagmi'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
+import { useQuestSystem } from './useQuestSystem'
 
 export const useTransactions = () => {
   // Check if we're in web environment
@@ -27,6 +28,7 @@ export const useTransactions = () => {
   const { address, chainId } = useAccount()
   const { writeContractAsync, data: txData } = useWriteContract()
   const { isCorrectNetwork, networkName, baseNetworkName, switchToBaseNetwork } = useNetworkCheck()
+  const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -110,9 +112,11 @@ export const useTransactions = () => {
         try {
           await addXP(address, 10) // GM gives 10 XP
           await recordTransaction(address, 'GM_GAME', 10, txHash) // Record transaction
-          console.log('✅ XP added and transaction recorded after confirmation')
+          await updateQuestProgress('gmUsed', 1) // Update quest progress
+          await updateQuestProgress('transactions', 1) // Update transaction count
+          console.log('✅ XP added, transaction recorded, and quest progress updated after confirmation')
         } catch (xpError) {
-          console.error('Error adding XP or recording transaction:', xpError)
+          console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
         }
         
         return { 
@@ -184,9 +188,11 @@ export const useTransactions = () => {
         try {
           await addXP(address, 10) // GN gives 10 XP
           await recordTransaction(address, 'GN_GAME', 10, txHash) // Record transaction
-          console.log('✅ XP added and transaction recorded after confirmation')
+          await updateQuestProgress('gnUsed', 1) // Update quest progress
+          await updateQuestProgress('transactions', 1) // Update transaction count
+          console.log('✅ XP added, transaction recorded, and quest progress updated after confirmation')
         } catch (xpError) {
-          console.error('Error adding XP or recording transaction:', xpError)
+          console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
         }
         
         return { 
@@ -270,9 +276,11 @@ export const useTransactions = () => {
                  await addBonusXP(address, 'flip', playerWon)
                  const xpEarned = playerWon ? 10 + 500 : 10
                  await recordTransaction(address, 'FLIP_GAME', xpEarned, txHash) // Record transaction
-                 console.log(`✅ XP added and transaction recorded: ${xpEarned} (${playerWon ? 'WIN' : 'LOSS'})`)
+                 await updateQuestProgress('coinFlipUsed', 1) // Update quest progress
+                 await updateQuestProgress('transactions', 1) // Update transaction count
+                 console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${playerWon ? 'WIN' : 'LOSS'})`)
                } catch (xpError) {
-                 console.error('Error adding XP or recording transaction:', xpError)
+                 console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
                }
         
         return { 
@@ -356,9 +364,11 @@ export const useTransactions = () => {
                  await addBonusXP(address, 'luckynumber', playerWon)
                  const xpEarned = playerWon ? 10 + 1000 : 10
                  await recordTransaction(address, 'LUCKY_NUMBER', xpEarned, txHash) // Record transaction
-                 console.log(`✅ XP added and transaction recorded: ${xpEarned} (${playerWon ? 'WIN' : 'LOSS'})`)
+                 await updateQuestProgress('luckyNumberUsed', 1) // Update quest progress
+                 await updateQuestProgress('transactions', 1) // Update transaction count
+                 console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${playerWon ? 'WIN' : 'LOSS'})`)
                } catch (xpError) {
-                 console.error('Error adding XP or recording transaction:', xpError)
+                 console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
                }
         
         return { 
@@ -443,9 +453,11 @@ export const useTransactions = () => {
                  await addBonusXP(address, 'diceroll', playerWon)
                  const xpEarned = playerWon ? 10 + 1500 : 10
                  await recordTransaction(address, 'DICE_ROLL', xpEarned, txHash) // Record transaction
-                 console.log(`✅ XP added and transaction recorded: ${xpEarned} (${playerWon ? 'WIN' : 'LOSS'})`)
+                 await updateQuestProgress('diceRollUsed', 1) // Update quest progress
+                 await updateQuestProgress('transactions', 1) // Update transaction count
+                 console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${playerWon ? 'WIN' : 'LOSS'})`)
                } catch (xpError) {
-                 console.error('Error adding XP or recording transaction:', xpError)
+                 console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
                }
         
         return { 

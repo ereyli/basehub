@@ -645,7 +645,11 @@ const DailyQuestSystem = () => {
         // Mark quest as completed in Supabase and update local state
         const updatedQuestProgress = await markQuestAsCompleted(currentDay, quest.title)
         if (updatedQuestProgress) {
-          setQuestProgress(updatedQuestProgress)
+          // Update local state immediately to prevent duplicate XP awards
+          setQuestProgress(prev => ({
+            ...prev,
+            completed_quests: [...(prev.completed_quests || []), `${currentDay}-${quest.title}`]
+          }))
         }
       }
       
