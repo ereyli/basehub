@@ -17,9 +17,10 @@ const ShareButton = ({
   
   // Safely get Farcaster context - only if not in web environment
   let isInFarcaster = false
+  let farcasterContext = null
   if (!shouldUseRainbowKit()) {
     try {
-      const farcasterContext = useFarcaster()
+      farcasterContext = useFarcaster()
       isInFarcaster = farcasterContext?.isInFarcaster || false
     } catch (error) {
       isInFarcaster = false
@@ -58,38 +59,48 @@ const ShareButton = ({
   }
 
   const handleFarcasterShare = async () => {
-    if (isInFarcaster) {
+    if (isInFarcaster && farcasterContext) {
       try {
-        // Safely get Farcaster context
-        const farcasterContext = useFarcaster()
-        const { sdk } = farcasterContext || {}
+        const { sdk } = farcasterContext
+        
+        console.log('🎭 Attempting to compose cast with SDK:', !!sdk)
+        console.log('🎭 SDK actions available:', !!sdk?.actions)
+        console.log('🎭 Compose cast available:', !!sdk?.actions?.composeCast)
         
         if (sdk && sdk.actions && sdk.actions.composeCast) {
           if (isCastShare && castData) {
             // For cast sharing, create a compose cast with the shared cast context
             const castText = `🎮 Check out this cast from @${castData.author?.username || 'unknown'} on BaseHub!\n\n${castData.text?.slice(0, 200)}${castData.text?.length > 200 ? '...' : ''}\n\nPlay games and earn XP on Base network! 🚀`
             
+            console.log('🎭 Composing cast with text:', castText)
             await sdk.actions.composeCast({
               text: castText,
               embeds: [`https://basehub-alpha.vercel.app/share?castHash=${castData.hash}&castFid=${castData.author?.fid}`]
             })
+            console.log('✅ Cast composed successfully!')
           } else {
             // Regular share with compose cast
             const composeText = `${shareText}\n\n${currentUrl}`
             
+            console.log('🎭 Composing regular cast with text:', composeText)
             await sdk.actions.composeCast({
               text: composeText
             })
+            console.log('✅ Regular cast composed successfully!')
           }
         } else {
+          console.log('⚠️ SDK or composeCast not available, falling back to copy')
           // Fallback to copy if SDK not available
           handleCopyLink()
         }
       } catch (error) {
-        console.error('Failed to compose cast:', error)
+        console.error('❌ Failed to compose cast:', error)
         // Fallback to copy on error
         handleCopyLink()
       }
+    } else {
+      console.log('⚠️ Not in Farcaster or context not available, falling back to copy')
+      handleCopyLink()
     }
   }
 

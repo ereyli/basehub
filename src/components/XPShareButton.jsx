@@ -15,9 +15,10 @@ const XPShareButton = ({
   
   // Safely get Farcaster context - only if not in web environment
   let isInFarcaster = false
+  let farcasterContext = null
   if (!shouldUseRainbowKit()) {
     try {
-      const farcasterContext = useFarcaster()
+      farcasterContext = useFarcaster()
       isInFarcaster = farcasterContext?.isInFarcaster || false
     } catch (error) {
       isInFarcaster = false
@@ -100,29 +101,37 @@ const XPShareButton = ({
   }
 
   const handleFarcasterXPShare = async () => {
-    if (isInFarcaster) {
+    if (isInFarcaster && farcasterContext) {
       try {
-        // Safely get Farcaster context
-        const farcasterContext = useFarcaster()
-        const { sdk } = farcasterContext || {}
+        const { sdk } = farcasterContext
+        
+        console.log('🎮 Attempting to compose XP cast with SDK:', !!sdk)
+        console.log('🎮 SDK actions available:', !!sdk?.actions)
+        console.log('🎮 Compose cast available:', !!sdk?.actions?.composeCast)
         
         if (sdk && sdk.actions && sdk.actions.composeCast) {
           const shareText = generateXPContent()
           const shareUrl = generateShareUrl()
           
+          console.log('🎮 Composing XP cast with text:', shareText)
           await sdk.actions.composeCast({
             text: shareText,
             embeds: [shareUrl]
           })
+          console.log('✅ XP cast composed successfully!')
         } else {
+          console.log('⚠️ SDK or composeCast not available for XP, falling back to copy')
           // Fallback to copy if SDK not available
           handleCopyXPShare()
         }
       } catch (error) {
-        console.error('Failed to compose XP cast:', error)
+        console.error('❌ Failed to compose XP cast:', error)
         // Fallback to copy on error
         handleCopyXPShare()
       }
+    } else {
+      console.log('⚠️ Not in Farcaster or context not available for XP, falling back to copy')
+      handleCopyXPShare()
     }
   }
 
