@@ -562,7 +562,7 @@ const DailyQuestSystem = () => {
     
     let allCompleted = true
     
-    currentDayQuests.forEach(quest => {
+    for (const quest of currentDayQuests) {
       const requirement = Object.keys(quest.requirements)[0]
       const required = quest.requirements[requirement]
       const current = questStats[requirement] || 0
@@ -584,7 +584,7 @@ const DailyQuestSystem = () => {
       if (current < required) {
         allCompleted = false
       }
-    })
+    }
     
     console.log(`✅ All quests completed: ${allCompleted}`)
     
