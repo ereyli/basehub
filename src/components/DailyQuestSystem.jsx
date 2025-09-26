@@ -82,7 +82,9 @@ const DailyQuestSystem = () => {
   }, [nextDayUnlockTime])
 
   useEffect(() => {
-    checkQuestCompletion()
+    if (questProgress && quests.length > 0) {
+      checkQuestCompletion()
+    }
   }, [currentDay, quests, questProgress])
 
   const initializeQuests = () => {

@@ -15,7 +15,7 @@ const GNGame = () => {
   const { isConnected, address } = useAccount()
   const { sendGNTransaction, isLoading, error } = useTransactions()
   const { calculateTokens } = useSupabase()
-  const { updateQuestProgress, loadQuestProgress } = useQuestSystem()
+  const { updateQuestProgress } = useQuestSystem()
   
   // Safely get Farcaster context - only if not in web environment
   let isInFarcaster = false
@@ -58,9 +58,6 @@ const GNGame = () => {
       // Update quest progress
       await updateQuestProgress('gnUsed', 1)
       await updateQuestProgress('transactions', 1)
-      
-      // Reload quest progress to trigger completion check
-      await loadQuestProgress()
       
     } catch (error) {
       console.error('❌ GN transaction failed (transaction cancelled or failed):', error)

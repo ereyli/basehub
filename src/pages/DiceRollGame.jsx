@@ -14,7 +14,7 @@ const DiceRollGame = () => {
   const { isConnected, address } = useAccount()
   const { sendDiceRollTransaction, isLoading, error } = useTransactions()
   const { calculateTokens } = useSupabase()
-  const { updateQuestProgress, loadQuestProgress } = useQuestSystem()
+  const { updateQuestProgress } = useQuestSystem()
   
   // Safely get Farcaster context - only if not in web environment
   let isInFarcaster = false
@@ -67,9 +67,6 @@ const DiceRollGame = () => {
       // Update quest progress
       await updateQuestProgress('diceRollUsed', 1)
       await updateQuestProgress('transactions', 1)
-      
-      // Reload quest progress to trigger completion check
-      await loadQuestProgress()
       
     } catch (error) {
       console.error('❌ Dice roll failed (transaction cancelled or failed):', error)
