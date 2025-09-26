@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Share2, Copy, Check, ExternalLink } from 'lucide-react'
 import { useFarcaster } from '../contexts/FarcasterContext'
+import { useQuestSystem } from '../hooks/useQuestSystem'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 
 const ShareButton = ({ 
@@ -26,6 +27,8 @@ const ShareButton = ({
       isInFarcaster = false
     }
   }
+
+  const { awardQuestXP } = useQuestSystem()
 
   const currentUrl = customUrl || (isInFarcaster ? 'https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub' : window.location.href)
   
@@ -80,7 +83,7 @@ const ShareButton = ({
             console.log('✅ Cast composed successfully!')
             
             // Award XP for cast sharing
-            awardCastShareXP()
+            await awardCastShareXP()
           } else {
             // Regular share with compose cast
             const composeText = `${shareText}\n\n${currentUrl}`
@@ -92,7 +95,7 @@ const ShareButton = ({
             console.log('✅ Regular cast composed successfully!')
             
             // Award XP for cast sharing
-            awardCastShareXP()
+            await awardCastShareXP()
           }
         } else {
           console.log('⚠️ SDK or composeCast not available, falling back to copy')
@@ -110,14 +113,14 @@ const ShareButton = ({
     }
   }
 
-  const awardCastShareXP = () => {
+  const awardCastShareXP = async () => {
     // Award XP for cast sharing
     const castShareXP = 50 // Base XP for sharing
     const bonusXP = Math.floor(Math.random() * 25) + 25 // Random bonus 25-50 XP
     const totalXP = castShareXP + bonusXP
     
-    // Update quest progress
-    updateQuestProgress('castsShared', 1)
+    // Award XP in Supabase
+    await awardQuestXP(totalXP, 'cast_share')
     
     // Show XP notification
     showXPNotification(totalXP, 'Cast Shared!')
@@ -125,18 +128,7 @@ const ShareButton = ({
     console.log(`🎉 Awarded ${totalXP} XP for cast sharing!`)
   }
 
-  const updateQuestProgress = (questType, amount) => {
-    // Update quest progress in localStorage
-    const questProgress = JSON.parse(localStorage.getItem('basehub-quest-progress') || '{}')
-    
-    if (!questProgress.questStats) {
-      questProgress.questStats = {}
-    }
-    
-    questProgress.questStats[questType] = (questProgress.questStats[questType] || 0) + amount
-    
-    localStorage.setItem('basehub-quest-progress', JSON.stringify(questProgress))
-  }
+  // Quest progress now handled by useQuestSystem hook
 
   const showXPNotification = (xp, message) => {
     // Create XP notification

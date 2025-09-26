@@ -2,8 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { Calendar, CheckCircle, Star, Trophy, Zap, Target, Gift, RotateCcw, MessageSquare, Coins, Dice1, Dice6, Image, Layers } from 'lucide-react'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
+import { useQuestSystem } from '../hooks/useQuestSystem'
+import { useAccount } from 'wagmi'
 
 const DailyQuestSystem = () => {
+  const { address } = useAccount()
+  const { questProgress, updateQuestProgress, awardQuestXP, completeQuestDay, awardWeeklyBonus, resetQuestWeek } = useQuestSystem()
   const [quests, setQuests] = useState([])
   const [currentDay, setCurrentDay] = useState(1)
   const [completedQuests, setCompletedQuests] = useState([])
@@ -26,12 +30,20 @@ const DailyQuestSystem = () => {
   // Initialize 7-day quest system
   useEffect(() => {
     initializeQuests()
-    loadProgress()
   }, [])
+
+  // Sync with Supabase quest progress
+  useEffect(() => {
+    if (questProgress) {
+      setCurrentDay(questProgress.current_day || 1)
+      setWeeklyBonus(questProgress.weekly_bonus_earned || false)
+      setTotalXP(questProgress.total_quest_xp || 0)
+    }
+  }, [questProgress])
 
   useEffect(() => {
     checkQuestCompletion()
-  }, [currentDay, quests])
+  }, [currentDay, quests, questProgress])
 
   const initializeQuests = () => {
     const questTemplates = [
@@ -494,32 +506,12 @@ const DailyQuestSystem = () => {
     setQuests(questTemplates)
   }
 
-  const loadProgress = () => {
-    // Load from localStorage
-    const savedProgress = localStorage.getItem('basehub-quest-progress')
-    if (savedProgress) {
-      const progress = JSON.parse(savedProgress)
-      setCompletedQuests(progress.completedQuests || [])
-      setCurrentDay(progress.currentDay || 1)
-      setWeeklyBonus(progress.weeklyBonus || false)
-      setTotalXP(progress.totalXP || 0)
-    }
-  }
+  // Remove old localStorage functions - now handled by useQuestSystem hook
 
-  const saveProgress = () => {
-    const progress = {
-      completedQuests,
-      currentDay,
-      weeklyBonus,
-      totalXP,
-      lastUpdated: new Date().toISOString()
-    }
-    localStorage.setItem('basehub-quest-progress', JSON.stringify(progress))
-  }
-
-  const checkQuestCompletion = () => {
-    const questProgress = JSON.parse(localStorage.getItem('basehub-quest-progress') || '{}')
-    const questStats = questProgress.questStats || {}
+  const checkQuestCompletion = async () => {
+    if (!questProgress || !quests.length) return
+    
+    const questStats = questProgress.quest_stats || {}
     
     // Check current day quests
     const currentDayQuests = quests.filter(q => q.day === currentDay)
@@ -536,23 +528,22 @@ const DailyQuestSystem = () => {
     })
     
     if (allCompleted && currentDayQuests.length > 0) {
+      // Award XP for completing the day
+      const dayXP = currentDayQuests.length * 50 // 50 XP per quest
+      await awardQuestXP(dayXP, 'quest_completion', currentDay)
+      
       // All quests for current day completed
       if (currentDay < 7) {
-        setCurrentDay(currentDay + 1)
+        await completeQuestDay(currentDay)
       } else {
         // Week completed!
-        setWeeklyBonus(true)
-        setTotalXP(totalXP + 10000) // 10k XP bonus
+        await awardWeeklyBonus()
       }
     }
   }
 
-  const resetWeek = () => {
-    setCompletedQuests([])
-    setCurrentDay(1)
-    setWeeklyBonus(false)
-    setTotalXP(0)
-    saveProgress()
+  const resetWeek = async () => {
+    await resetQuestWeek()
   }
 
   const getCurrentDayQuests = () => {
@@ -561,8 +552,7 @@ const DailyQuestSystem = () => {
 
   const getQuestProgress = () => {
     const dayQuests = getCurrentDayQuests()
-    const questProgress = JSON.parse(localStorage.getItem('basehub-quest-progress') || '{}')
-    const questStats = questProgress.questStats || {}
+    const questStats = questProgress?.quest_stats || {}
     
     let completed = 0
     dayQuests.forEach(quest => {
@@ -579,6 +569,27 @@ const DailyQuestSystem = () => {
   }
 
   const progress = getQuestProgress()
+
+  if (!address) {
+    return (
+      <div style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        borderRadius: '16px',
+        padding: '24px',
+        marginBottom: '24px',
+        color: 'white',
+        textAlign: 'center'
+      }}>
+        <Calendar size={32} style={{ marginBottom: '12px' }} />
+        <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 'bold' }}>
+          7-Day Quest System
+        </h3>
+        <p style={{ margin: '0', fontSize: '14px', opacity: 0.9 }}>
+          Connect your wallet to start earning XP through daily quests!
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div style={{
@@ -681,8 +692,7 @@ const DailyQuestSystem = () => {
           gap: '12px'
         }}>
           {getCurrentDayQuests().map((quest, index) => {
-            const questProgress = JSON.parse(localStorage.getItem('basehub-quest-progress') || '{}')
-            const questStats = questProgress.questStats || {}
+            const questStats = questProgress?.quest_stats || {}
             const requirement = Object.keys(quest.requirements)[0]
             const required = quest.requirements[requirement]
             const current = questStats[requirement] || 0

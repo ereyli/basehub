@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useTransactions } from '../hooks/useTransactions'
 import { useSupabase } from '../hooks/useSupabase'
+import { useQuestSystem } from '../hooks/useQuestSystem'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
@@ -14,6 +15,7 @@ const GNGame = () => {
   const { isConnected, address } = useAccount()
   const { sendGNTransaction, isLoading, error } = useTransactions()
   const { calculateTokens } = useSupabase()
+  const { updateQuestProgress } = useQuestSystem()
   
   // Safely get Farcaster context - only if not in web environment
   let isInFarcaster = false
@@ -54,8 +56,8 @@ const GNGame = () => {
       // No need to manually add XP here - it's handled securely in useTransactions
       
       // Update quest progress
-      updateQuestProgress('gmGnUsed', 1)
-      updateQuestProgress('transactions', 1)
+      await updateQuestProgress('gmGnUsed', 1)
+      await updateQuestProgress('transactions', 1)
       
     } catch (error) {
       console.error('❌ GN transaction failed (transaction cancelled or failed):', error)
@@ -63,18 +65,7 @@ const GNGame = () => {
     }
   }
 
-  const updateQuestProgress = (questType, amount) => {
-    // Update quest progress in localStorage
-    const questProgress = JSON.parse(localStorage.getItem('basehub-quest-progress') || '{}')
-    
-    if (!questProgress.questStats) {
-      questProgress.questStats = {}
-    }
-    
-    questProgress.questStats[questType] = (questProgress.questStats[questType] || 0) + amount
-    
-    localStorage.setItem('basehub-quest-progress', JSON.stringify(questProgress))
-  }
+  // Quest progress now handled by useQuestSystem hook
 
   if (!isConnected) {
     return (
