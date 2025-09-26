@@ -291,6 +291,7 @@ export const useSupabase = () => {
   };
 
   return {
+    supabase, // Add supabase client
     loading,
     error,
     getOrCreatePlayer,
