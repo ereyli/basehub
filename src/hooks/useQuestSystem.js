@@ -106,10 +106,13 @@ export const useQuestSystem = () => {
 
   // Update quest progress
   const updateQuestProgress = async (questType, amount) => {
-    if (!address || !supabase) return
+    if (!address || !supabase) {
+      console.log('❌ updateQuestProgress skipped: missing address or supabase', { address: !!address, supabase: !!supabase })
+      return
+    }
 
     try {
-      console.log(`🔄 Updating quest progress: ${questType} +${amount}`)
+      console.log(`🔄 Updating quest progress: ${questType} +${amount} for address: ${address}`)
       
       // Get current progress
       const { data: currentData, error: fetchError } = await supabase
@@ -118,7 +121,12 @@ export const useQuestSystem = () => {
         .eq('wallet_address', address)
         .single()
 
-      if (fetchError) throw fetchError
+      if (fetchError) {
+        console.error('❌ Error fetching current quest progress:', fetchError)
+        throw fetchError
+      }
+
+      console.log('📊 Current quest data:', currentData)
 
       const currentStats = currentData.quest_stats || {}
       const newStats = {
@@ -126,7 +134,7 @@ export const useQuestSystem = () => {
         [questType]: (currentStats[questType] || 0) + amount
       }
 
-      console.log(`📊 Quest stats updated:`, newStats)
+      console.log(`📊 Quest stats updated:`, { old: currentStats, new: newStats })
 
       // Update in Supabase
       const { data, error } = await supabase
@@ -139,7 +147,10 @@ export const useQuestSystem = () => {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ Error updating quest progress in Supabase:', error)
+        throw error
+      }
 
       setQuestProgress(data)
       console.log(`✅ Quest progress updated in Supabase:`, data)
@@ -154,7 +165,7 @@ export const useQuestSystem = () => {
 
       return data
     } catch (err) {
-      console.error('Error updating quest progress:', err)
+      console.error('❌ Error updating quest progress:', err)
       setError(err.message)
     }
   }

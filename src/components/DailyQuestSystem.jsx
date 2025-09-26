@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Calendar, CheckCircle, Star, Trophy, Zap, Target, Gift, RotateCcw, MessageSquare, Coins, Dice1, Dice6, Image, Layers } from 'lucide-react'
+import { Calendar, CheckCircle, Star, Trophy, Zap, Target, Gift, MessageSquare, Coins, Dice1, Dice6, Image, Layers } from 'lucide-react'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { useQuestSystem } from '../hooks/useQuestSystem'
@@ -7,7 +7,7 @@ import { useAccount } from 'wagmi'
 
 const DailyQuestSystem = () => {
   const { address } = useAccount()
-  const { questProgress, updateQuestProgress, awardQuestXP, completeQuestDay, awardWeeklyBonus, resetQuestWeek } = useQuestSystem()
+  const { questProgress, updateQuestProgress, awardQuestXP, completeQuestDay, awardWeeklyBonus } = useQuestSystem()
   const [quests, setQuests] = useState([])
   const [currentDay, setCurrentDay] = useState(1)
   const [completedQuests, setCompletedQuests] = useState([])
@@ -654,9 +654,6 @@ const DailyQuestSystem = () => {
     }
   }
 
-  const resetWeek = async () => {
-    await resetQuestWeek()
-  }
 
   const getCurrentDayQuests = () => {
     // If there's a countdown timer, show current day quests as locked
@@ -919,31 +916,6 @@ const DailyQuestSystem = () => {
         </div>
       )}
 
-      {/* Reset Button */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        marginTop: '12px'
-      }}>
-        <button
-          onClick={resetWeek}
-          style={{
-            background: 'white',
-            border: '1px solid #d1d5db',
-            borderRadius: '6px',
-            padding: '6px 12px',
-            fontSize: '11px',
-            color: '#6b7280',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px'
-          }}
-        >
-          <RotateCcw size={12} />
-          Reset Week
-        </button>
-      </div>
     </div>
   )
 }
