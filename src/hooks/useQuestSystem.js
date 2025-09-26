@@ -181,6 +181,22 @@ export const useQuestSystem = () => {
     try {
       console.log(`🎁 Awarding quest XP: ${xpAmount} XP for ${rewardType} (Day: ${questDay}, Type: ${questType})`)
       
+      // Check if this quest reward already exists to prevent duplicates
+      if (questDay && questType) {
+        const { data: existingReward, error: checkError } = await supabase
+          .from('quest_rewards')
+          .select('id')
+          .eq('wallet_address', address)
+          .eq('quest_day', questDay)
+          .eq('quest_type', questType)
+          .single()
+
+        if (existingReward) {
+          console.log(`⚠️ Quest reward already exists for ${questType} (Day ${questDay}), skipping duplicate`)
+          return
+        }
+      }
+      
       // Add to quest_rewards table
       const { error: rewardError } = await supabase
         .from('quest_rewards')

@@ -101,7 +101,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
   }
 }
 
-// Get XP for user's wallet address (now includes quest XP from Supabase)
+// Get XP for user's wallet address (includes game XP + quest XP from players table)
 export const getXP = async (walletAddress) => {
   if (!walletAddress) return 0
   
@@ -113,7 +113,7 @@ export const getXP = async (walletAddress) => {
   }
   
   try {
-    // Get total XP from Supabase (includes both game XP and quest XP)
+    // Get total XP from players table (includes both game XP and quest XP)
     const { data: player, error } = await supabase
       .from('players')
       .select('total_xp')
@@ -124,7 +124,7 @@ export const getXP = async (walletAddress) => {
     if (error) throw error
 
     const totalXP = player?.total_xp || 0
-    console.log(`📊 Total XP from Supabase: ${totalXP}`)
+    console.log(`📊 Total XP from players table: ${totalXP}`)
     
     return totalXP
   } catch (error) {
