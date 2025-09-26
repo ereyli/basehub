@@ -33,6 +33,7 @@ export const useQuestSystem = () => {
           weeklyBonus: data.weekly_bonus_earned,
           totalXP: data.total_quest_xp,
           questStats: data.quest_stats,
+          nextDayUnlockTime: data.next_day_unlock_time,
           lastUpdated: data.updated_at
         }))
       } else {
@@ -57,7 +58,8 @@ export const useQuestSystem = () => {
         current_day: 1,
         weekly_bonus_earned: false,
         quest_stats: {},
-        total_quest_xp: 0
+        total_quest_xp: 0,
+        next_day_unlock_time: null
       }
 
       const { data, error } = await supabase
@@ -76,6 +78,7 @@ export const useQuestSystem = () => {
         weeklyBonus: false,
         totalXP: 0,
         questStats: {},
+        nextDayUnlockTime: null,
         lastUpdated: new Date().toISOString()
       }))
     } catch (err) {
@@ -89,6 +92,8 @@ export const useQuestSystem = () => {
     if (!address || !supabase) return
 
     try {
+      console.log(`🔄 Updating quest progress: ${questType} +${amount}`)
+      
       // Get current progress
       const { data: currentData, error: fetchError } = await supabase
         .from('quest_progress')
@@ -104,6 +109,8 @@ export const useQuestSystem = () => {
         [questType]: (currentStats[questType] || 0) + amount
       }
 
+      console.log(`📊 Quest stats updated:`, newStats)
+
       // Update in Supabase
       const { data, error } = await supabase
         .from('quest_progress')
@@ -118,6 +125,7 @@ export const useQuestSystem = () => {
       if (error) throw error
 
       setQuestProgress(data)
+      console.log(`✅ Quest progress updated in Supabase:`, data)
 
       // Update localStorage
       const localProgress = JSON.parse(localStorage.getItem('basehub-quest-progress') || '{}')
@@ -139,6 +147,8 @@ export const useQuestSystem = () => {
     if (!address || !supabase) return
 
     try {
+      console.log(`🎁 Awarding quest XP: ${xpAmount} XP for ${rewardType}`)
+      
       // Add to quest_rewards table
       const { error: rewardError } = await supabase
         .from('quest_rewards')
@@ -151,6 +161,7 @@ export const useQuestSystem = () => {
         })
 
       if (rewardError) throw rewardError
+      console.log(`✅ Quest reward added to quest_rewards table`)
 
       // Update quest_progress total_quest_xp
       const { data: currentData, error: fetchError } = await supabase
@@ -179,6 +190,7 @@ export const useQuestSystem = () => {
 
       // Add quest XP to main players table
       await addQuestXPToMainXP(xpAmount)
+      console.log(`✅ Quest XP added to main players table`)
 
       // Update localStorage
       const localProgress = JSON.parse(localStorage.getItem('basehub-quest-progress') || '{}')
@@ -188,6 +200,7 @@ export const useQuestSystem = () => {
         lastUpdated: new Date().toISOString()
       }))
 
+      console.log(`🎉 Quest XP awarded successfully: ${xpAmount} XP`)
       return data
     } catch (err) {
       console.error('Error awarding quest XP:', err)

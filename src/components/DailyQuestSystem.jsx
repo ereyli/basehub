@@ -543,12 +543,19 @@ const DailyQuestSystem = () => {
   // Remove old localStorage functions - now handled by useQuestSystem hook
 
   const checkQuestCompletion = async () => {
-    if (!questProgress || !quests.length) return
+    if (!questProgress || !quests.length) {
+      console.log('❌ Quest completion check skipped: missing questProgress or quests')
+      return
+    }
     
+    console.log('🔍 Checking quest completion...')
     const questStats = questProgress.quest_stats || {}
+    console.log('📊 Current quest stats:', questStats)
     
     // Check current day quests
     const currentDayQuests = quests.filter(q => q.day === currentDay)
+    console.log(`📅 Current day ${currentDay} quests:`, currentDayQuests.length)
+    
     let allCompleted = true
     
     currentDayQuests.forEach(quest => {
@@ -556,14 +563,19 @@ const DailyQuestSystem = () => {
       const required = quest.requirements[requirement]
       const current = questStats[requirement] || 0
       
+      console.log(`🎯 Quest: ${quest.title} - ${current}/${required}`)
+      
       if (current < required) {
         allCompleted = false
       }
     })
     
+    console.log(`✅ All quests completed: ${allCompleted}`)
+    
     if (allCompleted && currentDayQuests.length > 0) {
       // Award XP for completing the day
       const dayXP = currentDayQuests.length * 50 // 50 XP per quest
+      console.log(`🎁 Awarding day completion XP: ${dayXP} XP`)
       await awardQuestXP(dayXP, 'quest_completion', currentDay)
       console.log(`🎉 Day ${currentDay} completed! +${dayXP} XP`)
       
