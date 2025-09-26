@@ -622,6 +622,7 @@ const DailyQuestSystem = () => {
     console.log('🔍 Checking quest completion...')
     const questStats = questProgress.quest_stats || {}
     console.log('📊 Current quest stats:', questStats)
+    console.log('🔍 GM quest stats:', { gmUsed: questStats.gmUsed, gnUsed: questStats.gnUsed })
     
     // Check current day quests
     const currentDayQuests = quests.filter(q => q.day === currentDay)

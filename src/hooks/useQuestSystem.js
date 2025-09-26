@@ -128,6 +128,7 @@ export const useQuestSystem = () => {
 
       console.log('📊 Current quest data:', currentData)
       console.log('📊 Current quest stats:', currentData.quest_stats)
+      console.log(`🔍 Before update - ${questType}: ${currentData.quest_stats?.[questType] || 0}`)
 
       const currentStats = currentData.quest_stats || {}
       const newStats = {
@@ -136,6 +137,7 @@ export const useQuestSystem = () => {
       }
 
       console.log(`📊 Quest stats updated:`, { old: currentStats, new: newStats })
+      console.log(`🔍 After update - ${questType}: ${newStats[questType]}`)
 
       // Update in Supabase
       const { data, error } = await supabase
@@ -155,6 +157,7 @@ export const useQuestSystem = () => {
 
       setQuestProgress(data)
       console.log(`✅ Quest progress updated in Supabase:`, data)
+      console.log(`🔍 Final quest stats in Supabase:`, data.quest_stats)
 
       // Update localStorage
       const localProgress = JSON.parse(localStorage.getItem('basehub-quest-progress') || '{}')
@@ -176,7 +179,7 @@ export const useQuestSystem = () => {
     if (!address || !supabase) return
 
     try {
-      console.log(`🎁 Awarding quest XP: ${xpAmount} XP for ${rewardType}`)
+      console.log(`🎁 Awarding quest XP: ${xpAmount} XP for ${rewardType} (Day: ${questDay}, Type: ${questType})`)
       
       // Add to quest_rewards table
       const { error: rewardError } = await supabase
@@ -190,7 +193,7 @@ export const useQuestSystem = () => {
         })
 
       if (rewardError) throw rewardError
-      console.log(`✅ Quest reward added to quest_rewards table`)
+      console.log(`✅ Quest reward added to quest_rewards table: ${xpAmount} XP`)
 
       // Update quest_progress total_quest_xp
       const { data: currentData, error: fetchError } = await supabase
@@ -202,6 +205,7 @@ export const useQuestSystem = () => {
       if (fetchError) throw fetchError
 
       const newTotalXP = (currentData.total_quest_xp || 0) + xpAmount
+      console.log(`📊 Quest XP update: ${currentData.total_quest_xp || 0} + ${xpAmount} = ${newTotalXP}`)
 
       const { data, error } = await supabase
         .from('quest_progress')
@@ -216,6 +220,7 @@ export const useQuestSystem = () => {
       if (error) throw error
 
       setQuestProgress(data)
+      console.log(`✅ Quest progress updated with new total_quest_xp: ${newTotalXP}`)
 
       // Add quest XP to main players table
       await addQuestXPToMainXP(xpAmount)
