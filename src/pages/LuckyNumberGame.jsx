@@ -17,7 +17,7 @@ const LuckyNumberGame = () => {
   const navigate = useNavigate()
   const { sendLuckyNumberTransaction, isLoading, error } = useTransactions()
   const { calculateTokens } = useSupabase()
-  const { updateQuestProgress } = useQuestSystem()
+  const { updateQuestProgress, loadQuestProgress } = useQuestSystem()
   
   // Safely get Farcaster context - only if not in web environment
   let isInFarcaster = false
@@ -68,6 +68,9 @@ const LuckyNumberGame = () => {
       // Update quest progress
       await updateQuestProgress('luckyNumberUsed', 1)
       await updateQuestProgress('transactions', 1)
+      
+      // Reload quest progress to trigger completion check
+      await loadQuestProgress()
       
     } catch (error) {
       console.error('❌ Lucky number game failed (transaction cancelled or failed):', error)

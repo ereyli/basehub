@@ -15,7 +15,7 @@ const FlipGame = () => {
   const { isConnected, address } = useAccount()
   const { sendFlipTransaction, isLoading, error } = useTransactions()
   const { calculateTokens } = useSupabase()
-  const { updateQuestProgress } = useQuestSystem()
+  const { updateQuestProgress, loadQuestProgress } = useQuestSystem()
   
   // Safely get Farcaster context - only if not in web environment
   let isInFarcaster = false
@@ -58,6 +58,9 @@ const FlipGame = () => {
       // Update quest progress
       await updateQuestProgress('coinFlipUsed', 1)
       await updateQuestProgress('transactions', 1)
+      
+      // Reload quest progress to trigger completion check
+      await loadQuestProgress()
       
     } catch (error) {
       console.error('❌ Coin flip failed (transaction cancelled or failed):', error)
