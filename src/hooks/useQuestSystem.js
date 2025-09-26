@@ -11,9 +11,13 @@ export const useQuestSystem = () => {
 
   // Load quest progress from Supabase
   const loadQuestProgress = async () => {
-    if (!address || !supabase) return
+    if (!address || !supabase) {
+      console.log('❌ loadQuestProgress skipped: missing address or supabase', { address: !!address, supabase: !!supabase })
+      return
+    }
 
     try {
+      console.log('🔄 Loading quest progress for address:', address)
       setLoading(true)
       const { data, error } = await supabase
         .from('quest_progress')
@@ -21,11 +25,14 @@ export const useQuestSystem = () => {
         .eq('wallet_address', address)
         .single()
 
+      console.log('📊 Quest progress query result:', { data, error })
+
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
         throw error
       }
 
       if (data) {
+        console.log('✅ Found existing quest progress:', data)
         setQuestProgress(data)
         // Sync with localStorage
         localStorage.setItem('basehub-quest-progress', JSON.stringify({
@@ -37,11 +44,12 @@ export const useQuestSystem = () => {
           lastUpdated: data.updated_at
         }))
       } else {
+        console.log('🆕 No quest progress found, initializing new...')
         // Initialize new quest progress
         await initializeQuestProgress()
       }
     } catch (err) {
-      console.error('Error loading quest progress:', err)
+      console.error('❌ Error loading quest progress:', err)
       setError(err.message)
     } finally {
       setLoading(false)
@@ -50,9 +58,13 @@ export const useQuestSystem = () => {
 
   // Initialize quest progress for new user
   const initializeQuestProgress = async () => {
-    if (!address || !supabase) return
+    if (!address || !supabase) {
+      console.log('❌ initializeQuestProgress skipped: missing address or supabase')
+      return
+    }
 
     try {
+      console.log('🆕 Initializing new quest progress for address:', address)
       const initialProgress = {
         wallet_address: address,
         current_day: 1,
@@ -62,6 +74,7 @@ export const useQuestSystem = () => {
         next_day_unlock_time: null
       }
 
+      console.log('📝 Inserting initial quest progress:', initialProgress)
       const { data, error } = await supabase
         .from('quest_progress')
         .insert(initialProgress)
@@ -70,6 +83,7 @@ export const useQuestSystem = () => {
 
       if (error) throw error
 
+      console.log('✅ Quest progress initialized successfully:', data)
       setQuestProgress(data)
       
       // Initialize localStorage
@@ -82,7 +96,7 @@ export const useQuestSystem = () => {
         lastUpdated: new Date().toISOString()
       }))
     } catch (err) {
-      console.error('Error initializing quest progress:', err)
+      console.error('❌ Error initializing quest progress:', err)
       setError(err.message)
     }
   }
@@ -374,8 +388,12 @@ export const useQuestSystem = () => {
 
   // Load quest progress on mount
   useEffect(() => {
+    console.log('🔄 useQuestSystem useEffect triggered:', { address: !!address, supabase: !!supabase })
     if (address && supabase) {
+      console.log('✅ Conditions met, loading quest progress...')
       loadQuestProgress()
+    } else {
+      console.log('❌ Conditions not met for loading quest progress')
     }
   }, [address, supabase])
 

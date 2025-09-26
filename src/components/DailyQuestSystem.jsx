@@ -36,7 +36,9 @@ const DailyQuestSystem = () => {
 
   // Sync with Supabase quest progress
   useEffect(() => {
+    console.log('🔄 DailyQuestSystem questProgress useEffect triggered:', questProgress)
     if (questProgress) {
+      console.log('✅ Quest progress received, updating state:', questProgress)
       setCurrentDay(questProgress.current_day || 1)
       setWeeklyBonus(questProgress.weekly_bonus_earned || false)
       setTotalXP(questProgress.total_quest_xp || 0)
@@ -45,6 +47,8 @@ const DailyQuestSystem = () => {
       if (questProgress.next_day_unlock_time) {
         setNextDayUnlockTime(new Date(questProgress.next_day_unlock_time))
       }
+    } else {
+      console.log('❌ No quest progress available')
     }
   }, [questProgress])
 
