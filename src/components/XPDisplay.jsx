@@ -32,7 +32,18 @@ const XPDisplay = () => {
     loadXP()
     const interval = setInterval(loadXP, 3000) // Refresh every 3 seconds
     
-    return () => clearInterval(interval)
+    // Listen for quest XP updates
+    const handleQuestXPAdded = () => {
+      console.log('🎉 Quest XP added, refreshing XP display')
+      loadXP()
+    }
+    
+    window.addEventListener('questXPAdded', handleQuestXPAdded)
+    
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('questXPAdded', handleQuestXPAdded)
+    }
   }, [isConnected, address])
 
   // Handle scroll detection
