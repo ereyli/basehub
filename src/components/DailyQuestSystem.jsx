@@ -3,11 +3,13 @@ import { Calendar, CheckCircle, Star, Trophy, Zap, Target, Gift, MessageSquare, 
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { useQuestSystem } from '../hooks/useQuestSystem'
+import { useSupabase } from '../hooks/useSupabase'
 import { useAccount } from 'wagmi'
 
 const DailyQuestSystem = () => {
   const { address } = useAccount()
   const { questProgress, updateQuestProgress, awardQuestXP, completeQuestDay, awardWeeklyBonus } = useQuestSystem()
+  const { supabase } = useSupabase()
   const [quests, setQuests] = useState([])
   const [currentDay, setCurrentDay] = useState(1)
   const [completedQuests, setCompletedQuests] = useState([])
@@ -574,11 +576,8 @@ const DailyQuestSystem = () => {
         console.log(`🎁 Quest completed! Awarding ${quest.xpReward} XP for: ${quest.title}`)
         await awardQuestXP(quest.xpReward, 'quest_completion', currentDay, quest.title)
         
-        // Mark quest as completed (this should be handled by Supabase)
-        if (!questProgress.completed_quests) {
-          questProgress.completed_quests = []
-        }
-        questProgress.completed_quests.push(`${currentDay}-${quest.title}`)
+        // Mark quest as completed in Supabase
+        await markQuestAsCompleted(currentDay, quest.title)
       }
       
       if (current < required) {
@@ -651,6 +650,39 @@ const DailyQuestSystem = () => {
       console.log(`🎉 Day ${currentDay + 1} unlocked!`)
     } catch (err) {
       console.error('Error unlocking next day:', err)
+    }
+  }
+
+  const markQuestAsCompleted = async (day, questTitle) => {
+    if (!address || !supabase) return
+
+    try {
+      const questId = `${day}-${questTitle}`
+      const currentCompletedQuests = questProgress.completed_quests || []
+      
+      if (currentCompletedQuests.includes(questId)) {
+        console.log(`Quest ${questId} already marked as completed`)
+        return
+      }
+
+      const newCompletedQuests = [...currentCompletedQuests, questId]
+
+      const { data, error } = await supabase
+        .from('quest_progress')
+        .update({
+          completed_quests: newCompletedQuests,
+          updated_at: new Date().toISOString()
+        })
+        .eq('wallet_address', address)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setQuestProgress(data)
+      console.log(`✅ Quest ${questId} marked as completed in Supabase`)
+    } catch (err) {
+      console.error('Error marking quest as completed:', err)
     }
   }
 
