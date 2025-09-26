@@ -594,103 +594,81 @@ const DailyQuestSystem = () => {
   return (
     <div style={{
       background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-      borderRadius: '16px',
-      padding: '24px',
-      margin: '20px 0',
+      borderRadius: '12px',
+      padding: '16px',
+      margin: '16px 0',
       border: '1px solid #e2e8f0'
     }}>
-      {/* Header */}
+      {/* Compact Header */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: '24px'
+        marginBottom: '12px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div style={{
-            width: '48px',
-            height: '48px',
+            width: '32px',
+            height: '32px',
             background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-            borderRadius: '12px',
+            borderRadius: '8px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: 'white'
           }}>
-            <Calendar size={24} />
+            <Calendar size={16} />
           </div>
           <div>
-            <h2 style={{
+            <h3 style={{
               margin: '0',
-              fontSize: '20px',
+              fontSize: '16px',
               fontWeight: 'bold',
               color: '#1f2937'
             }}>
-              7-Day Quest System
-            </h2>
+              Daily Quests
+            </h3>
             <p style={{
               margin: '0',
-              fontSize: '14px',
+              fontSize: '12px',
               color: '#6b7280'
             }}>
-              Day {currentDay}/7 • {progress.completed}/{progress.total} completed
+              Day {currentDay}/7 • {progress.completed}/{progress.total} done
             </p>
           </div>
         </div>
-
-        {weeklyBonus && (
-          <button
-            onClick={resetWeek}
-            style={{
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '8px 16px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px',
-              fontWeight: '600'
-            }}
-          >
-            <RotateCcw size={16} />
-            New Week
-          </button>
-        )}
+        <div style={{
+          fontSize: '14px',
+          fontWeight: 'bold',
+          color: '#10b981'
+        }}>
+          {totalXP} XP
+        </div>
       </div>
 
-      {/* Progress Bar */}
+      {/* Compact Progress Bar */}
       <div style={{
         background: '#e5e7eb',
-        borderRadius: '8px',
-        height: '8px',
-        marginBottom: '24px',
+        borderRadius: '6px',
+        height: '6px',
+        marginBottom: '12px',
         overflow: 'hidden'
       }}>
         <div style={{
-          background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+          background: 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
           height: '100%',
           width: `${(progress.completed / progress.total) * 100}%`,
           transition: 'width 0.3s ease'
         }} />
       </div>
 
-      {/* Current Day Quests */}
-      <div style={{ marginBottom: '24px' }}>
-        <h3 style={{
-          margin: '0 0 16px 0',
-          fontSize: '16px',
-          fontWeight: '600',
-          color: '#1f2937'
-        }}>
-          Day {currentDay} Quests
-        </h3>
-        <div style={{
-          display: 'grid',
-          gap: '12px'
-        }}>
+      {/* Compact Quest Grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '8px',
+        marginBottom: weeklyBonus ? '12px' : '0'
+      }}>
           {getCurrentDayQuests().map((quest, index) => {
             const questStats = questProgress?.quest_stats || {}
             const requirement = Object.keys(quest.requirements)[0]
@@ -703,106 +681,114 @@ const DailyQuestSystem = () => {
                 key={`${quest.day}-${index}`}
                 style={{
                   background: 'white',
-                  borderRadius: '12px',
-                  padding: '16px',
+                  borderRadius: '8px',
+                  padding: '10px',
                   border: '1px solid #e5e7eb',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
-                  opacity: isCompleted ? 0.6 : 1
+                  gap: '8px',
+                  opacity: isCompleted ? 0.6 : 1,
+                  minHeight: '48px'
                 }}
               >
                 <div style={{
-                  width: '40px',
-                  height: '40px',
+                  width: '28px',
+                  height: '28px',
                   background: quest.color,
-                  borderRadius: '8px',
+                  borderRadius: '6px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'white'
+                  color: 'white',
+                  flexShrink: 0
                 }}>
                   {quest.icon}
                 </div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <h4 style={{
-                    margin: '0 0 4px 0',
-                    fontSize: '14px',
+                    margin: '0 0 2px 0',
+                    fontSize: '12px',
                     fontWeight: '600',
-                    color: '#1f2937'
+                    color: '#1f2937',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
                   }}>
                     {quest.title}
                   </h4>
                   <p style={{
                     margin: '0',
-                    fontSize: '12px',
+                    fontSize: '10px',
                     color: '#6b7280'
                   }}>
-                    {quest.description} ({current}/{required})
+                    {current}/{required}
                   </p>
                 </div>
                 <div style={{
-                  textAlign: 'right'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  flexShrink: 0
                 }}>
                   <div style={{
-                    fontSize: '14px',
+                    fontSize: '11px',
                     fontWeight: 'bold',
                     color: '#10b981'
                   }}>
-                    +{quest.xpReward} XP
+                    +{quest.xpReward}
                   </div>
                   {isCompleted && (
-                    <CheckCircle size={16} style={{ color: '#10b981', marginTop: '4px' }} />
+                    <CheckCircle size={12} style={{ color: '#10b981' }} />
                   )}
                 </div>
               </div>
             )
           })}
         </div>
-      </div>
 
-      {/* Weekly Bonus */}
+      {/* Compact Weekly Bonus */}
       {weeklyBonus && (
         <div style={{
           background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-          borderRadius: '12px',
-          padding: '16px',
-          color: 'white',
+          borderRadius: '8px',
+          padding: '12px',
           textAlign: 'center',
-          marginBottom: '16px'
+          color: 'white',
+          marginBottom: '12px'
         }}>
-          <Trophy size={24} style={{ marginBottom: '8px' }} />
-          <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 'bold' }}>
-            🎉 Week Completed!
-          </h3>
-          <p style={{ margin: '0', fontSize: '14px', opacity: 0.9 }}>
-            You earned +10,000 XP bonus! Start a new week for more rewards.
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <Trophy size={16} />
+            <span style={{ fontSize: '14px', fontWeight: 'bold' }}>
+              Week Complete! +10,000 XP
+            </span>
+          </div>
         </div>
       )}
 
-      {/* Total XP */}
+      {/* Reset Button */}
       <div style={{
-        background: 'white',
-        borderRadius: '8px',
-        padding: '12px',
-        textAlign: 'center',
-        border: '1px solid #e5e7eb'
+        display: 'flex',
+        justifyContent: 'center',
+        marginTop: '12px'
       }}>
-        <div style={{
-          fontSize: '24px',
-          fontWeight: 'bold',
-          color: '#1f2937',
-          marginBottom: '4px'
-        }}>
-          {totalXP.toLocaleString()} XP
-        </div>
-        <div style={{
-          fontSize: '12px',
-          color: '#6b7280'
-        }}>
-          Total Quest XP Earned
-        </div>
+        <button
+          onClick={resetWeek}
+          style={{
+            background: 'white',
+            border: '1px solid #d1d5db',
+            borderRadius: '6px',
+            padding: '6px 12px',
+            fontSize: '11px',
+            color: '#6b7280',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+        >
+          <RotateCcw size={12} />
+          Reset Week
+        </button>
       </div>
     </div>
   )
