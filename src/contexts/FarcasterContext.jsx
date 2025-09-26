@@ -16,6 +16,8 @@ export const FarcasterProvider = ({ children }) => {
   const [isReady, setIsReady] = useState(false)
   const [user, setUser] = useState(null)
   const [error, setError] = useState(null)
+  const [sharedCast, setSharedCast] = useState(null)
+  const [isShareContext, setIsShareContext] = useState(false)
   
   // Check if we're actually in Farcaster environment
   const [isInFarcaster, setIsInFarcaster] = useState(() => {
@@ -119,6 +121,17 @@ export const FarcasterProvider = ({ children }) => {
         } catch (userError) {
           console.log('ℹ️ User context not available:', userError.message)
         }
+
+        // Check if we're in a cast share context
+        try {
+          if (sdk.context.location && sdk.context.location.type === 'cast_share') {
+            console.log('📤 Cast share context detected:', sdk.context.location.cast)
+            setIsShareContext(true)
+            setSharedCast(sdk.context.location.cast)
+          }
+        } catch (shareError) {
+          console.log('ℹ️ No cast share context:', shareError.message)
+        }
         
       } catch (err) {
         console.error('❌ Failed to call ready():', err)
@@ -168,6 +181,8 @@ export const FarcasterProvider = ({ children }) => {
     sendTransaction,
     sendNotification,
     sdk,
+    sharedCast,
+    isShareContext,
   }
 
   return (

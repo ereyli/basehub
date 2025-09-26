@@ -9,6 +9,7 @@
     "splashImageUrl": "https://basehub-alpha.vercel.app/splash.png",
     "splashBackgroundColor": "#2563eb",
     "webhookUrl": "https://basehub-alpha.vercel.app/api/webhook",
+    "castShareUrl": "https://basehub-alpha.vercel.app/share",
     "subtitle": "BaseHub",
     "description": "BaseHub - Play games",  
     "primaryCategory": "games",

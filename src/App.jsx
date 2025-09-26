@@ -24,6 +24,7 @@ import DeployToken from './pages/DeployToken'
 import DeployNFT from './pages/DeployNFT'
 import DeployERC721 from './pages/DeployERC721'
 import DeployERC1155 from './pages/DeployERC1155'
+import SharePage from './pages/SharePage'
 import './styles/index.css'
 
 const queryClient = new QueryClient()
@@ -108,6 +109,7 @@ function FarcasterAppContent() {
             <Route path="/deploy-nft" element={<DeployNFT />} />
             <Route path="/deploy-erc721" element={<DeployERC721 />} />
             <Route path="/deploy-erc1155" element={<DeployERC1155 />} />
+            <Route path="/share" element={<SharePage />} />
           </Routes>
         </main>
       </div>
@@ -138,6 +140,7 @@ function WebAppContent() {
             <Route path="/deploy-nft" element={<DeployNFT />} />
             <Route path="/deploy-erc721" element={<DeployERC721 />} />
             <Route path="/deploy-erc1155" element={<DeployERC1155 />} />
+            <Route path="/share" element={<SharePage />} />
           </Routes>
         </main>
       </div>

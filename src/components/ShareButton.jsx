@@ -8,7 +8,9 @@ const ShareButton = ({
   description, 
   gameType = "game",
   customUrl,
-  style = {} 
+  style = {},
+  castData = null,
+  isCastShare = false
 }) => {
   const [isCopied, setIsCopied] = useState(false)
   const [showShareOptions, setShowShareOptions] = useState(false)
@@ -26,7 +28,15 @@ const ShareButton = ({
 
   const currentUrl = customUrl || (isInFarcaster ? 'https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub' : window.location.href)
   
-  const shareText = `${title || 'BaseHub'} - ${description || 'Play games and earn XP on Base network!'}`
+  // Generate share text based on context
+  const generateShareText = () => {
+    if (isCastShare && castData) {
+      return `Check out this cast from @${castData.author?.username || 'unknown'} on BaseHub! ${castData.text?.slice(0, 100)}${castData.text?.length > 100 ? '...' : ''}`
+    }
+    return `${title || 'BaseHub'} - ${description || 'Play games and earn XP on Base network!'}`
+  }
+  
+  const shareText = generateShareText()
   
   const handleCopyLink = async () => {
     try {
@@ -49,8 +59,23 @@ const ShareButton = ({
 
   const handleFarcasterShare = () => {
     if (isInFarcaster) {
-      // In Farcaster, the embed will be automatically generated from meta tags
-      handleCopyLink()
+      if (isCastShare && castData) {
+        // For cast sharing, create a more specific share
+        const castShareText = `🎮 Shared from BaseHub: ${castData.text?.slice(0, 200)}${castData.text?.length > 200 ? '...' : ''}\n\nPlay games and earn XP on Base network!`
+        const castShareUrl = `https://basehub-alpha.vercel.app/share?castHash=${castData.hash}&castFid=${castData.author?.fid}`
+        
+        try {
+          navigator.clipboard.writeText(`${castShareText}\n\n${castShareUrl}`)
+          setIsCopied(true)
+          setTimeout(() => setIsCopied(false), 2000)
+        } catch (error) {
+          console.error('Failed to copy cast share:', error)
+          handleCopyLink()
+        }
+      } else {
+        // Regular share
+        handleCopyLink()
+      }
     }
   }
 
