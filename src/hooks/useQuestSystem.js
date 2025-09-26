@@ -237,49 +237,85 @@ export const useQuestSystem = () => {
     }
   }
 
-  // Add quest XP to main players table (localStorage compatible)
+  // Add quest XP to main players table in Supabase
   const addQuestXPToMainXP = async (xpAmount) => {
-    if (!address) return
+    if (!address || !supabase) return
 
     try {
       console.log(`🔄 Adding ${xpAmount} quest XP to main XP for address: ${address}`)
       
-      // Use localStorage like useSupabase hook
-      const storageKey = `player_${address}`
-      let player = JSON.parse(localStorage.getItem(storageKey) || 'null')
-      
-      if (!player) {
-        // Create new player record
-        player = {
-          id: Date.now().toString(),
+      // Check if player exists in Supabase
+      const { data: existingPlayer, error: fetchError } = await supabase
+        .from('players')
+        .select('*')
+        .eq('wallet_address', address)
+        .single()
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('❌ Error fetching player for quest XP:', fetchError)
+        throw fetchError
+      }
+
+      if (existingPlayer) {
+        // Update existing player - add quest XP
+        const newTotalXP = existingPlayer.total_xp + xpAmount
+        const newLevel = Math.floor(newTotalXP / 100) + 1 // 100 XP per level
+
+        console.log(`📈 Adding quest XP to existing player: ${existingPlayer.total_xp} + ${xpAmount} = ${newTotalXP}`)
+
+        const { data, error } = await supabase
+          .from('players')
+          .update({
+            total_xp: newTotalXP,
+            level: newLevel,
+            updated_at: new Date().toISOString()
+          })
+          .eq('wallet_address', address)
+          .select()
+          .single()
+
+        if (error) {
+          console.error('❌ Error updating player with quest XP:', error)
+          throw error
+        }
+
+        console.log(`✅ Added ${xpAmount} quest XP to main XP. New total: ${newTotalXP}, Level: ${newLevel}`)
+        
+        // Trigger a custom event to notify other components of XP change
+        window.dispatchEvent(new CustomEvent('questXPAdded', { 
+          detail: { xpAmount, newTotalXP, newLevel } 
+        }))
+      } else {
+        // Create new player with quest XP
+        const newPlayerData = {
           wallet_address: address,
           total_xp: xpAmount,
-          level: 1,
+          level: Math.floor(xpAmount / 100) + 1,
           total_transactions: 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }
+
+        console.log(`🆕 Creating new player with quest XP:`, newPlayerData)
+
+        const { data, error } = await supabase
+          .from('players')
+          .insert([newPlayerData])
+          .select()
+          .single()
+
+        if (error) {
+          console.error('❌ Error creating player with quest XP:', error)
+          throw error
+        }
+
         console.log(`✅ Created new player with ${xpAmount} quest XP`)
-      } else {
-        // Update existing player
-        const newTotalXP = (player.total_xp || 0) + xpAmount
-        const newLevel = Math.floor(newTotalXP / 1000) + 1 // 1000 XP per level
-
-        player.total_xp = newTotalXP
-        player.level = newLevel
-        player.updated_at = new Date().toISOString()
-
-        console.log(`✅ Added ${xpAmount} quest XP to main XP. New total: ${newTotalXP}, Level: ${newLevel}`)
+        
+        // Trigger a custom event to notify other components of XP change
+        window.dispatchEvent(new CustomEvent('questXPAdded', { 
+          detail: { xpAmount, newTotalXP: xpAmount, newLevel: newPlayerData.level } 
+        }))
       }
-
-      // Save to localStorage
-      localStorage.setItem(storageKey, JSON.stringify(player))
-      console.log(`✅ Player data saved to localStorage:`, player)
-      
-      // Trigger a custom event to notify other components of XP change
-      window.dispatchEvent(new CustomEvent('questXPAdded', { 
-        detail: { xpAmount, newTotalXP: player.total_xp, newLevel: player.level } 
-      }))
     } catch (err) {
       console.error('Error adding quest XP to main XP:', err)
       // Don't throw error here to avoid breaking quest system

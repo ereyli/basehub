@@ -101,7 +101,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
   }
 }
 
-// Get XP for user's wallet address (includes quest XP from localStorage)
+// Get XP for user's wallet address (now includes quest XP from Supabase)
 export const getXP = async (walletAddress) => {
   if (!walletAddress) return 0
   
@@ -113,29 +113,18 @@ export const getXP = async (walletAddress) => {
   }
   
   try {
-    // Get XP from Supabase
+    // Get total XP from Supabase (includes both game XP and quest XP)
     const { data: player, error } = await supabase
       .from('players')
       .select('total_xp')
       .eq('wallet_address', walletAddress)
       .single()
 
-    let supabaseXP = 0
-    if (error && error.code === 'PGRST116') {
-      supabaseXP = 0 // No player found
-    } else if (error) {
-      throw error
-    } else {
-      supabaseXP = player?.total_xp || 0
-    }
+    if (error && error.code === 'PGRST116') return 0 // No player found
+    if (error) throw error
 
-    // Get quest XP from localStorage (quest system uses localStorage)
-    const storageKey = `player_${walletAddress}`
-    const questPlayer = JSON.parse(localStorage.getItem(storageKey) || 'null')
-    const questXP = questPlayer?.total_xp || 0
-
-    const totalXP = supabaseXP + questXP
-    console.log(`📊 XP calculation: Supabase ${supabaseXP} + Quest ${questXP} = ${totalXP} total`)
+    const totalXP = player?.total_xp || 0
+    console.log(`📊 Total XP from Supabase: ${totalXP}`)
     
     return totalXP
   } catch (error) {
