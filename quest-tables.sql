@@ -32,9 +32,12 @@ CREATE INDEX IF NOT EXISTS idx_quest_progress_wallet_address ON quest_progress(w
 CREATE INDEX IF NOT EXISTS idx_quest_rewards_wallet_address ON quest_rewards(wallet_address);
 CREATE INDEX IF NOT EXISTS idx_quest_rewards_created_at ON quest_rewards(created_at DESC);
 
--- 4. Disable Row Level Security for quest tables
+-- 4. Disable Row Level Security for all tables (wallet-based app)
+-- Note: Security is handled at application level with wallet address validation
 ALTER TABLE quest_progress DISABLE ROW LEVEL SECURITY;
 ALTER TABLE quest_rewards DISABLE ROW LEVEL SECURITY;
+ALTER TABLE players DISABLE ROW LEVEL SECURITY;
+ALTER TABLE transactions DISABLE ROW LEVEL SECURITY;
 
 -- 5. Create trigger for quest_progress updated_at
 CREATE TRIGGER update_quest_progress_updated_at 
@@ -42,9 +45,11 @@ CREATE TRIGGER update_quest_progress_updated_at
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
 
--- 6. Grant permissions for quest tables
+-- 6. Grant permissions for all tables
 GRANT ALL ON quest_progress TO authenticated;
 GRANT ALL ON quest_rewards TO authenticated;
+GRANT ALL ON players TO authenticated;
+GRANT ALL ON transactions TO authenticated;
 
 -- 7. Enable realtime for quest_progress (optional - for live updates)
 ALTER PUBLICATION supabase_realtime ADD TABLE quest_progress;
