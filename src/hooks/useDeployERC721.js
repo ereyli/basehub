@@ -556,6 +556,7 @@ export const useDeployERC721 = () => {
       
       const deployTxHash = await sendTransaction(config, {
         data: deployData,
+        gas: 2000000n, // 2M gas limit for contract deployment
       })
       
       console.log('✅ Deploy transaction sent:', deployTxHash)
@@ -575,7 +576,7 @@ export const useDeployERC721 = () => {
         await addXP(address, 100, 'ERC721 Deployment')
         
         // Update quest progress for ERC721 deployment
-        // await updateQuestProgress('erc721Deployed', 1) // Temporarily disabled for testing
+        await updateQuestProgress('erc721Deployed', 1)
       } catch (xpError) {
         console.error('❌ Failed to add XP or update quest progress:', xpError)
       }
