@@ -450,13 +450,18 @@ export const useDeployToken = () => {
           initial_supply: initialSupply.toString()
         })
         
-        // Update quest progress for token deployment
-        await updateQuestProgress('tokenDeployed', 1)
-        
-        console.log('✅ XP awarded, transaction recorded, and quest progress updated!')
+        console.log('✅ XP awarded and transaction recorded!')
       } catch (xpError) {
-        console.error('⚠️ Failed to award XP or update quest progress:', xpError)
+        console.error('⚠️ Failed to award XP:', xpError)
         // Don't throw here, deployment was successful
+      }
+
+      // Update quest progress for token deployment (independent of XP)
+      try {
+        console.log('🎯 Updating quest progress for token deployment!')
+        await updateQuestProgress('tokenDeployed', 1)
+      } catch (questError) {
+        console.error('❌ Failed to update quest progress:', questError)
       }
       
       return {
