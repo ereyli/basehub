@@ -5,6 +5,7 @@ import { parseEther, encodeAbiParameters, parseAbiParameters } from 'viem'
 import { config } from '../config/wagmi'
 import { addXP, recordTransaction } from '../utils/xpUtils'
 import { useNetworkCheck } from './useNetworkCheck'
+import { useQuestSystem } from './useQuestSystem'
 
 // ERC20 ABI with constructor for writeContractAsync
 const ERC20_ABI = [
@@ -346,6 +347,7 @@ export const useDeployToken = () => {
   const { address } = useAccount()
   const { writeContractAsync } = useWriteContract()
   const { isCorrectNetwork, networkName, baseNetworkName, switchToBaseNetwork } = useNetworkCheck()
+  const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -448,9 +450,12 @@ export const useDeployToken = () => {
           initial_supply: initialSupply.toString()
         })
         
-        console.log('✅ XP awarded and transaction recorded!')
+        // Update quest progress for token deployment
+        await updateQuestProgress('tokenDeployed', 1)
+        
+        console.log('✅ XP awarded, transaction recorded, and quest progress updated!')
       } catch (xpError) {
-        console.error('⚠️ Failed to award XP:', xpError)
+        console.error('⚠️ Failed to award XP or update quest progress:', xpError)
         // Don't throw here, deployment was successful
       }
       

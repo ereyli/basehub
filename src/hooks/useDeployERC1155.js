@@ -5,6 +5,7 @@ import { parseEther } from 'viem'
 import { config } from '../config/wagmi'
 import { addXP, recordTransaction } from '../utils/xpUtils'
 import { useNetworkCheck } from './useNetworkCheck'
+import { useQuestSystem } from './useQuestSystem'
 // ERC1155 doesn't need IPFS uploads - uses URI system instead
 
 // ERC1155 Contract ABI
@@ -433,6 +434,7 @@ const ERC1155_ABI = [
 export const useDeployERC1155 = () => {
   const { address } = useAccount()
   const { isCorrectNetwork, networkName, baseNetworkName, switchToBaseNetwork } = useNetworkCheck()
+  const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -470,10 +472,12 @@ export const useDeployERC1155 = () => {
       const feeWallet = '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
 
       console.log('💰 Sending fee to wallet:', feeWallet)
-              const feeTxHash = await sendTransaction(config, {
-                to: feeWallet,
-                value: parseEther('0.00007'),
-              })
+      const feeTxHash = await sendTransaction(config, {
+        to: feeWallet,
+        value: parseEther('0.00007'),
+        gas: 21000n, // Standard gas limit for ETH transfer
+        gasPrice: 1000000000n, // 1 gwei gas price
+      })
 
       console.log('✅ Fee transaction sent:', feeTxHash)
 
@@ -503,7 +507,8 @@ export const useDeployERC1155 = () => {
       
       const deployTxHash = await sendTransaction(config, {
         data: deployData,
-        gas: 2000000n, // 2M gas limit for contract deployment
+        gas: 3000000n, // 3M gas limit for contract deployment
+        gasPrice: 1000000000n, // 1 gwei gas price
       })
       
       console.log('✅ Deploy transaction sent:', deployTxHash)
@@ -521,8 +526,11 @@ export const useDeployERC1155 = () => {
       try {
         console.log('🎉 Awarding 100 XP for ERC1155 deployment!')
         await addXP(address, 100, 'ERC1155 Deployment')
+        
+        // Update quest progress for ERC1155 deployment
+        await updateQuestProgress('erc1155Deployed', 1)
       } catch (xpError) {
-        console.error('❌ Failed to add XP:', xpError)
+        console.error('❌ Failed to add XP or update quest progress:', xpError)
       }
 
       // Record transaction
