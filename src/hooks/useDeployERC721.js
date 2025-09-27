@@ -574,11 +574,16 @@ export const useDeployERC721 = () => {
       try {
         console.log('🎉 Awarding 100 XP for ERC721 deployment!')
         await addXP(address, 100, 'ERC721 Deployment')
-        
-        // Update quest progress for ERC721 deployment
-        await updateQuestProgress('erc721Deployed', 1)
       } catch (xpError) {
-        console.error('❌ Failed to add XP or update quest progress:', xpError)
+        console.error('❌ Failed to add XP:', xpError)
+      }
+
+      // Update quest progress for ERC721 deployment (independent of XP)
+      try {
+        console.log('🎯 Updating quest progress for ERC721 deployment!')
+        await updateQuestProgress('erc721Deployed', 1)
+      } catch (questError) {
+        console.error('❌ Failed to update quest progress:', questError)
       }
 
       // Record transaction
