@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { waitForTransactionReceipt, sendTransaction } from 'wagmi/actions'
-import { parseEther } from 'viem'
+import { parseEther, encodeAbiParameters, parseAbiParameters } from 'viem'
 import { config } from '../config/wagmi'
 import { addXP, recordTransaction } from '../utils/xpUtils'
 import { useNetworkCheck } from './useNetworkCheck'
