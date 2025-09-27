@@ -529,7 +529,7 @@ export const useDeployERC1155 = () => {
         await addXP(address, 100, 'ERC1155 Deployment')
         
         // Update quest progress for ERC1155 deployment
-        await updateQuestProgress('erc1155Deployed', 1)
+        // await updateQuestProgress('erc1155Deployed', 1) // Temporarily disabled for testing
       } catch (xpError) {
         console.error('❌ Failed to add XP or update quest progress:', xpError)
       }
