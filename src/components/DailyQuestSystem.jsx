@@ -716,8 +716,10 @@ const DailyQuestSystem = () => {
     if (allCompleted && currentDayQuests.length > 0) {
       console.log(`🎉 Day ${currentDay} completed! All quests done.`)
       
-      // Check if timer is already set to avoid resetting
-      if (!nextDayUnlockTime) {
+      // Check if timer is already set in questProgress to avoid resetting
+      const hasExistingTimer = questProgress?.next_day_unlock_time
+      if (!hasExistingTimer) {
+        console.log('⏰ No existing timer found, setting new timer')
         // Set 24-hour timer for next day
         if (currentDay < 7) {
           await setNextDayTimer()
@@ -726,7 +728,7 @@ const DailyQuestSystem = () => {
           await awardWeeklyBonus()
         }
       } else {
-        console.log('⏰ Timer already set, skipping timer creation')
+        console.log('⏰ Timer already exists in database, skipping timer creation')
       }
     }
   }
@@ -735,6 +737,23 @@ const DailyQuestSystem = () => {
     if (!address || !supabase) return
 
     try {
+      // Double check if timer already exists in database
+      const { data: existingData, error: checkError } = await supabase
+        .from('quest_progress')
+        .select('next_day_unlock_time')
+        .eq('wallet_address', address)
+        .single()
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('❌ Error checking existing timer:', checkError)
+        return
+      }
+
+      if (existingData?.next_day_unlock_time) {
+        console.log('⏰ Timer already exists in database, skipping timer creation')
+        return
+      }
+
       const nextUnlockTime = new Date()
       nextUnlockTime.setHours(nextUnlockTime.getHours() + 24) // 24 hours from now
 
