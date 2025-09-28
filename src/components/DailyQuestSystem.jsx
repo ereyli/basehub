@@ -47,7 +47,12 @@ const DailyQuestSystem = () => {
       
       // Check if there's a next day unlock time
       if (questProgress.next_day_unlock_time) {
-        setNextDayUnlockTime(new Date(questProgress.next_day_unlock_time))
+        const unlockTime = new Date(questProgress.next_day_unlock_time)
+        console.log('⏰ Setting next day unlock time from database:', unlockTime.toISOString())
+        setNextDayUnlockTime(unlockTime)
+      } else {
+        console.log('❌ No next day unlock time in database')
+        setNextDayUnlockTime(null)
       }
     } else {
       console.log('❌ No quest progress available')
@@ -56,13 +61,34 @@ const DailyQuestSystem = () => {
 
   // Countdown timer for next day
   useEffect(() => {
-    if (!nextDayUnlockTime) return
+    if (!nextDayUnlockTime) {
+      // Try to get timer from localStorage as fallback
+      const localProgress = localStorage.getItem('basehub-quest-progress')
+      if (localProgress) {
+        try {
+          const parsed = JSON.parse(localProgress)
+          if (parsed.nextDayUnlockTime) {
+            const storedTime = new Date(parsed.nextDayUnlockTime)
+            const now = new Date()
+            if (storedTime > now) {
+              console.log('⏰ Restoring timer from localStorage:', storedTime.toISOString())
+              setNextDayUnlockTime(storedTime)
+              return
+            }
+          }
+        } catch (err) {
+          console.error('Error parsing localStorage quest progress:', err)
+        }
+      }
+      return
+    }
 
     const updateCountdown = () => {
       const now = new Date()
       const timeLeft = nextDayUnlockTime.getTime() - now.getTime()
       
       if (timeLeft <= 0) {
+        console.log('⏰ Timer expired, unlocking next day')
         setTimeUntilNextDay(null)
         setNextDayUnlockTime(null)
         // Check if we can unlock next day
@@ -691,6 +717,15 @@ const DailyQuestSystem = () => {
       if (error) throw error
 
       setNextDayUnlockTime(nextUnlockTime)
+      
+      // Also store in localStorage for persistence
+      const localProgress = JSON.parse(localStorage.getItem('basehub-quest-progress') || '{}')
+      localStorage.setItem('basehub-quest-progress', JSON.stringify({
+        ...localProgress,
+        nextDayUnlockTime: nextUnlockTime.toISOString(),
+        lastUpdated: new Date().toISOString()
+      }))
+      
       console.log(`⏰ Next day unlocks in 24 hours: ${nextUnlockTime.toLocaleString()}`)
     } catch (err) {
       console.error('Error setting next day timer:', err)
@@ -716,6 +751,16 @@ const DailyQuestSystem = () => {
 
       setCurrentDay(currentDay + 1)
       setNextDayUnlockTime(null)
+      
+      // Clear timer from localStorage
+      const localProgress = JSON.parse(localStorage.getItem('basehub-quest-progress') || '{}')
+      localStorage.setItem('basehub-quest-progress', JSON.stringify({
+        ...localProgress,
+        nextDayUnlockTime: null,
+        currentDay: currentDay + 1,
+        lastUpdated: new Date().toISOString()
+      }))
+      
       console.log(`🎉 Day ${currentDay + 1} unlocked!`)
     } catch (err) {
       console.error('Error unlocking next day:', err)
