@@ -45,24 +45,27 @@ const DailyQuestSystem = () => {
       setWeeklyBonus(questProgress.weekly_bonus_earned || false)
       setTotalXP(questProgress.total_quest_xp || 0)
       
-      // Check if there's a next day unlock time
-      if (questProgress.next_day_unlock_time) {
+      // Only set timer if not already set (avoid overriding direct Supabase load)
+      if (questProgress.next_day_unlock_time && !nextDayUnlockTime) {
         const unlockTime = new Date(questProgress.next_day_unlock_time)
-        console.log('⏰ Setting next day unlock time from database:', unlockTime.toISOString())
+        console.log('⏰ Setting next day unlock time from questProgress:', unlockTime.toISOString())
         setNextDayUnlockTime(unlockTime)
-      } else {
-        console.log('❌ No next day unlock time in database')
+      } else if (!questProgress.next_day_unlock_time) {
+        console.log('❌ No next day unlock time in questProgress')
         setNextDayUnlockTime(null)
       }
     } else {
       console.log('❌ No quest progress available')
     }
-  }, [questProgress])
+  }, [questProgress, nextDayUnlockTime])
 
-  // Load timer directly from Supabase on component mount
+  // Load timer directly from Supabase on component mount (only if no timer exists)
   useEffect(() => {
     const loadTimerFromSupabase = async () => {
-      if (!address || !supabase) return
+      if (!address || !supabase || nextDayUnlockTime) {
+        console.log('⏰ Timer already exists or missing dependencies, skipping direct load')
+        return
+      }
 
       try {
         console.log('🔄 Loading timer directly from Supabase...')
@@ -101,7 +104,7 @@ const DailyQuestSystem = () => {
     }
 
     loadTimerFromSupabase()
-  }, [address, supabase])
+  }, [address, supabase, nextDayUnlockTime])
 
   // Countdown timer for next day
   useEffect(() => {
@@ -713,12 +716,17 @@ const DailyQuestSystem = () => {
     if (allCompleted && currentDayQuests.length > 0) {
       console.log(`🎉 Day ${currentDay} completed! All quests done.`)
       
-      // Set 24-hour timer for next day
-      if (currentDay < 7) {
-        await setNextDayTimer()
+      // Check if timer is already set to avoid resetting
+      if (!nextDayUnlockTime) {
+        // Set 24-hour timer for next day
+        if (currentDay < 7) {
+          await setNextDayTimer()
+        } else {
+          // Week completed!
+          await awardWeeklyBonus()
+        }
       } else {
-        // Week completed!
-        await awardWeeklyBonus()
+        console.log('⏰ Timer already set, skipping timer creation')
       }
     }
   }
