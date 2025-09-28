@@ -59,29 +59,53 @@ const DailyQuestSystem = () => {
     }
   }, [questProgress])
 
+  // Load timer directly from Supabase on component mount
+  useEffect(() => {
+    const loadTimerFromSupabase = async () => {
+      if (!address || !supabase) return
+
+      try {
+        console.log('🔄 Loading timer directly from Supabase...')
+        const { data, error } = await supabase
+          .from('quest_progress')
+          .select('next_day_unlock_time, current_day')
+          .eq('wallet_address', address)
+          .single()
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('❌ Error loading timer from Supabase:', error)
+          return
+        }
+
+        if (data && data.next_day_unlock_time) {
+          const unlockTime = new Date(data.next_day_unlock_time)
+          const now = new Date()
+          
+          console.log('⏰ Timer from Supabase:', unlockTime.toISOString())
+          console.log('⏰ Current time:', now.toISOString())
+          console.log('⏰ Time difference (ms):', unlockTime.getTime() - now.getTime())
+          
+          if (unlockTime > now) {
+            console.log('✅ Timer is valid, setting countdown')
+            setNextDayUnlockTime(unlockTime)
+          } else {
+            console.log('⏰ Timer expired, unlocking next day')
+            await checkAndUnlockNextDay()
+          }
+        } else {
+          console.log('❌ No timer found in Supabase')
+        }
+      } catch (err) {
+        console.error('❌ Error loading timer from Supabase:', err)
+      }
+    }
+
+    loadTimerFromSupabase()
+  }, [address, supabase])
+
   // Countdown timer for next day
   useEffect(() => {
-    if (!nextDayUnlockTime) {
-      // Try to get timer from localStorage as fallback
-      const localProgress = localStorage.getItem('basehub-quest-progress')
-      if (localProgress) {
-        try {
-          const parsed = JSON.parse(localProgress)
-          if (parsed.nextDayUnlockTime) {
-            const storedTime = new Date(parsed.nextDayUnlockTime)
-            const now = new Date()
-            if (storedTime > now) {
-              console.log('⏰ Restoring timer from localStorage:', storedTime.toISOString())
-              setNextDayUnlockTime(storedTime)
-              return
-            }
-          }
-        } catch (err) {
-          console.error('Error parsing localStorage quest progress:', err)
-        }
-      }
-      return
-    }
+    if (!nextDayUnlockTime) return
 
     const updateCountdown = () => {
       const now = new Date()
@@ -706,6 +730,8 @@ const DailyQuestSystem = () => {
       const nextUnlockTime = new Date()
       nextUnlockTime.setHours(nextUnlockTime.getHours() + 24) // 24 hours from now
 
+      console.log(`⏰ Setting 24-hour timer: ${nextUnlockTime.toISOString()}`)
+
       const { error } = await supabase
         .from('quest_progress')
         .update({
@@ -717,16 +743,7 @@ const DailyQuestSystem = () => {
       if (error) throw error
 
       setNextDayUnlockTime(nextUnlockTime)
-      
-      // Also store in localStorage for persistence
-      const localProgress = JSON.parse(localStorage.getItem('basehub-quest-progress') || '{}')
-      localStorage.setItem('basehub-quest-progress', JSON.stringify({
-        ...localProgress,
-        nextDayUnlockTime: nextUnlockTime.toISOString(),
-        lastUpdated: new Date().toISOString()
-      }))
-      
-      console.log(`⏰ Next day unlocks in 24 hours: ${nextUnlockTime.toLocaleString()}`)
+      console.log(`✅ Timer set in Supabase: ${nextUnlockTime.toLocaleString()}`)
     } catch (err) {
       console.error('Error setting next day timer:', err)
     }
@@ -736,6 +753,7 @@ const DailyQuestSystem = () => {
     if (!address || !supabase) return
 
     try {
+      console.log(`🔄 Unlocking next day for address: ${address}`)
       const { data, error } = await supabase
         .from('quest_progress')
         .update({
@@ -751,15 +769,7 @@ const DailyQuestSystem = () => {
 
       setCurrentDay(currentDay + 1)
       setNextDayUnlockTime(null)
-      
-      // Clear timer from localStorage
-      const localProgress = JSON.parse(localStorage.getItem('basehub-quest-progress') || '{}')
-      localStorage.setItem('basehub-quest-progress', JSON.stringify({
-        ...localProgress,
-        nextDayUnlockTime: null,
-        currentDay: currentDay + 1,
-        lastUpdated: new Date().toISOString()
-      }))
+      setTimeUntilNextDay(null)
       
       console.log(`🎉 Day ${currentDay + 1} unlocked!`)
     } catch (err) {
