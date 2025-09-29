@@ -12,9 +12,9 @@
     "castShareUrl": "https://basehub-alpha.vercel.app/share",
     "subtitle": "BaseHub",
     "description": "BaseHub - Play games",  
-    "primaryCategory": "games",
+    "primaryCategory": "games","social", "finance", "utility", "productivity",
     "tags": "gaming", "l2",
-    "tagline": "gaming","tx","airdrop",
+    "tagline": "gaming","base","airdrop",
     "ogTitle": "BaseHub",
     "ogDescription": "BaseHub - Play games "
   },
