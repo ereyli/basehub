@@ -682,6 +682,7 @@ const DailyQuestSystem = () => {
     console.log(`📅 Current day ${currentDay} quests:`, currentDayQuests.length)
     
     let allCompleted = true
+    let completedQuestsCount = 0
     
     for (const quest of currentDayQuests) {
       const requirement = Object.keys(quest.requirements)[0]
@@ -704,6 +705,7 @@ const DailyQuestSystem = () => {
             completed_quests: [...(prev.completed_quests || []), `${currentDay}-${quest.title}`]
           }))
         }
+        completedQuestsCount++
       }
       
       if (current < required) {
@@ -712,8 +714,10 @@ const DailyQuestSystem = () => {
     }
     
     console.log(`✅ All quests completed: ${allCompleted}`)
+    console.log(`📊 Completed quests: ${completedQuestsCount}/${currentDayQuests.length}`)
     
-    if (allCompleted && currentDayQuests.length > 0) {
+    // Only trigger day completion if ALL quests are actually completed
+    if (allCompleted && currentDayQuests.length > 0 && completedQuestsCount === currentDayQuests.length) {
       console.log(`🎉 Day ${currentDay} completed! All quests done.`)
       
       // Check if timer is already set in questProgress to avoid resetting
@@ -730,6 +734,8 @@ const DailyQuestSystem = () => {
       } else {
         console.log('⏰ Timer already exists in database, skipping timer creation')
       }
+    } else {
+      console.log(`⏳ Day ${currentDay} not completed yet. Progress: ${completedQuestsCount}/${currentDayQuests.length}`)
     }
   }
 
@@ -786,6 +792,9 @@ const DailyQuestSystem = () => {
         .update({
           current_day: currentDay + 1,
           next_day_unlock_time: null,
+          // Reset quest stats for new day - this is the key fix!
+          quest_stats: {},
+          completed_quests: [],
           updated_at: new Date().toISOString()
         })
         .eq('wallet_address', address)
@@ -798,7 +807,7 @@ const DailyQuestSystem = () => {
       setNextDayUnlockTime(null)
       setTimeUntilNextDay(null)
       
-      console.log(`🎉 Day ${currentDay + 1} unlocked!`)
+      console.log(`🎉 Day ${currentDay + 1} unlocked! Quest stats reset for new day.`)
     } catch (err) {
       console.error('Error unlocking next day:', err)
     }
