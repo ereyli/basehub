@@ -8,15 +8,13 @@
     "buttonTitle": "Open BaseHub",
     "splashImageUrl": "https://basehub-alpha.vercel.app/splash.png",
     "splashBackgroundColor": "#2563eb",
-    "webhookUrl": "https://basehub-alpha.vercel.app/api/webhook",
-    "castShareUrl": "https://basehub-alpha.vercel.app/share",
     "subtitle": "BaseHub",
-    "description": "BaseHub - Play games",  
-    "primaryCategory": "games","social", "finance", "utility", "productivity",
+    "description": "BaseHub - Play games",
+    "primaryCategory": "games",
     "tags": ["base", "farcaster", "airdrop", "basehub", "game"],
-    "tagline": "game","base","airdrop",
+    "tagline": "game base airdrop",
     "ogTitle": "BaseHub",
-    "ogDescription": "BaseHub Play games "
+    "ogDescription": "BaseHub Play games"
   },
   "accountAssociation": {
     "header": "eyJmaWQiOjI1MTYxOSwidHlwZSI6ImF1dGgiLCJrZXkiOiIweDk3Njc1RjAzRDY1RkFCNzM3MWZhMkJlQjNkYkY5YzY4NDJjOGQ1MjUifQ",
