@@ -455,7 +455,12 @@ export const useQuestSystem = () => {
 
   // Load quest progress on mount
   useEffect(() => {
-    console.log('🔄 useQuestSystem useEffect triggered:', { address: !!address, supabase: !!supabase })
+    console.log('🔄 useQuestSystem useEffect triggered:', { 
+      address: !!address, 
+      supabase: !!supabase,
+      addressValue: address,
+      supabaseValue: !!supabase
+    })
     if (address && supabase) {
       console.log('✅ Conditions met, loading quest progress...')
       loadQuestProgress()
