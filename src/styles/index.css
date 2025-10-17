@@ -10,10 +10,10 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%);
+  background: #3b82f6;
   min-height: 100vh;
   color: #333;
-  zoom: 0.8; /* Uygulamayı %80 boyutunda göster - daha uzaklaştır */
+  zoom: 0.8;
   transform-origin: top left;
 }
 
@@ -41,7 +41,7 @@ body {
   align-items: center;
   gap: 4px;
   padding: 6px 10px;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: #f59e0b;
   color: white;
   border: none;
   border-radius: 6px;
@@ -74,7 +74,7 @@ body {
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%);
+  background: #3b82f6;
   color: white;
   border: none;
   border-radius: 12px;
@@ -114,7 +114,7 @@ body {
 }
 
 .farcaster-badge {
-  background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
+  background: #8B5CF6;
   color: white;
   padding: 2px 8px;
   border-radius: 6px;
@@ -204,7 +204,7 @@ body {
 }
 
 .farcaster-app .game-card .xp-reward {
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%);
+  background: #3b82f6;
   color: white;
   padding: 4px 8px;
   border-radius: 8px;
@@ -213,7 +213,7 @@ body {
 }
 
 .farcaster-app .game-card .bonus-xp {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: #10b981;
   color: white;
   padding: 4px 8px;
   border-radius: 8px;
@@ -252,7 +252,7 @@ body {
 .farcaster-app .welcome-section h1 {
   font-size: 32px;
   margin-bottom: 16px;
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%);
+  background: #3b82f6;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -377,7 +377,7 @@ body {
 }
 
 .claim-button {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: #f59e0b;
   border: none;
   border-radius: 8px;
   padding: 6px 12px;
@@ -393,7 +393,7 @@ body {
 }
 
 .claim-button.coming-soon {
-  background: linear-gradient(135deg, #9ca3af, #6b7280);
+  background: #9ca3af;
   cursor: not-allowed;
   opacity: 0.8;
   box-shadow: 0 2px 4px rgba(156, 163, 175, 0.2);
@@ -410,7 +410,7 @@ body {
 }
 
 .header-connect-button {
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  background: #3b82f6;
   color: white;
   border: none;
   border-radius: 8px;
@@ -469,7 +469,7 @@ body {
 
 /* Not Connected State */
 .farcaster-xp-display.not-connected {
-  background: linear-gradient(145deg, rgba(103, 118, 234, 0.95), rgba(118, 75, 162, 0.9));
+  background: rgba(103, 118, 234, 0.95);
   color: white;
   text-align: center;
 }
@@ -524,7 +524,7 @@ body {
 
 /* Exciting Token Display */
 .stat-mini.token.exciting {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  background: #fbbf24;
   border: 2px solid #f59e0b;
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
   animation: tokenGlow 2s ease-in-out infinite alternate;
@@ -577,14 +577,14 @@ body {
 /* Deploy Token Page Styles */
 .deploy-token-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%);
+  background: #3b82f6;
   padding: 20px;
 }
 
 /* Deploy NFT Page Styles */
 .deploy-nft-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%);
+  background: #3b82f6;
   padding: 20px;
 }
 
@@ -605,7 +605,7 @@ body {
 .deploy-icon {
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%);
+  background: #3b82f6;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -679,7 +679,7 @@ body {
 }
 
 .deploy-button {
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%);
+  background: #3b82f6;
   color: white;
   border: none;
   border-radius: 12px;
@@ -868,11 +868,11 @@ body {
 }
 
 .xp-stat {
-  background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.05));
+  background: rgba(255, 193, 7, 0.1);
 }
 
 .token-stat {
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(56, 142, 60, 0.05));
+  background: rgba(76, 175, 80, 0.1);
 }
 
 .stat-icon {
@@ -885,12 +885,12 @@ body {
 }
 
 .xp-stat .stat-icon {
-  background: linear-gradient(135deg, #ffc107, #ff9800);
+  background: #ffc107;
   color: white;
 }
 
 .token-stat .stat-icon {
-  background: linear-gradient(135deg, #4caf50, #388e3c);
+  background: #4caf50;
   color: white;
 }
 
@@ -938,7 +938,7 @@ body {
 }
 
 .claim-button.disabled {
-  background: linear-gradient(135deg, #e5e7eb, #d1d5db);
+  background: #e5e7eb;
   color: #9ca3af;
 }
 
@@ -1004,12 +1004,12 @@ body {
 }
 
 .compact-stat.xp {
-  background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(255, 152, 0, 0.1));
+  background: rgba(255, 193, 7, 0.15);
   color: #f57c00;
 }
 
 .compact-stat.token {
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(56, 142, 60, 0.1));
+  background: rgba(76, 175, 80, 0.15);
   color: #388e3c;
 }
 
@@ -1043,7 +1043,7 @@ body {
   font-size: 10px;
   border: none;
   cursor: not-allowed;
-  background: linear-gradient(135deg, #e5e7eb, #d1d5db);
+  background: #e5e7eb;
   color: #9ca3af;
 }
 
@@ -1139,7 +1139,7 @@ body {
 /* Web App Styles */
 .web-app {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0052ff 0%, #0039cc 50%, #002699 100%);
+  background: #0052ff;
   padding-top: 80px; /* Space for fixed header */
   position: relative;
   overflow-x: hidden;
@@ -1244,7 +1244,7 @@ body {
 .logo-icon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%);
+  background: #3b82f6;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -1270,7 +1270,7 @@ body {
   font-weight: 800;
   color: #1f2937;
   line-height: 1;
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%);
+  background: #3b82f6;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -1366,13 +1366,13 @@ body {
 }
 
 .network-status.connected {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: #10b981;
   color: white;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .network-status.error {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: #ef4444;
   color: white;
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
@@ -1405,7 +1405,7 @@ body {
   justify-content: center;
   gap: 6px;
   padding: 8px 12px;
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  background: #3b82f6;
   color: white;
   border: none;
   border-radius: 8px;
@@ -1438,12 +1438,12 @@ body {
 }
 
 .web-xp-display .xp-stat {
-  background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.05));
+  background: rgba(255, 193, 7, 0.1);
   border: 1px solid rgba(255, 193, 7, 0.2);
 }
 
 .web-xp-display .token-stat {
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(56, 142, 60, 0.05));
+  background: rgba(76, 175, 80, 0.1);
   border: 1px solid rgba(76, 175, 80, 0.2);
 }
 
@@ -1457,12 +1457,12 @@ body {
 }
 
 .web-xp-display .xp-stat .stat-icon {
-  background: linear-gradient(135deg, #ffc107, #ff9800);
+  background: #ffc107;
   color: white;
 }
 
 .web-xp-display .token-stat .stat-icon {
-  background: linear-gradient(135deg, #4caf50, #388e3c);
+  background: #4caf50;
   color: white;
 }
 
@@ -1500,7 +1500,7 @@ body {
   border: none;
   cursor: not-allowed;
   transition: all 0.3s ease;
-  background: linear-gradient(135deg, #e5e7eb, #d1d5db);
+  background: #e5e7eb;
   color: #9ca3af;
 }
 
@@ -1669,7 +1669,7 @@ body {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%);
+  background: #3b82f6;
   color: white;
 }
 
@@ -1776,7 +1776,7 @@ body {
   width: 64px;
   height: 64px;
   margin: 0 auto 16px;
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%);
+  background: #3b82f6;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -1933,7 +1933,7 @@ body {
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  background: #3b82f6;
   color: white;
   border: none;
   border-radius: 8px;

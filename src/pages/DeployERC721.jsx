@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAccount } from 'wagmi'
 import { useDeployERC721 } from '../hooks/useDeployERC721'
-import { Image, Upload, X, Zap } from 'lucide-react'
+import { Image, Zap } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
@@ -18,8 +18,6 @@ const DeployERC721 = () => {
   })
   
   const [deployResult, setDeployResult] = useState(null)
-  const [uploadedImage, setUploadedImage] = useState(null)
-  const [imagePreview, setImagePreview] = useState(null)
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -29,18 +27,6 @@ const DeployERC721 = () => {
     }))
   }
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      setUploadedImage(file)
-      setImagePreview(URL.createObjectURL(file))
-    }
-  }
-
-  const handleRemoveImage = () => {
-    setUploadedImage(null)
-    setImagePreview(null)
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -49,7 +35,7 @@ const DeployERC721 = () => {
       const result = await deployERC721(
         formData.name,
         formData.symbol,
-        uploadedImage || null
+        null
       )
       
       setDeployResult(result)
@@ -69,7 +55,7 @@ const DeployERC721 = () => {
         <BackButton />
         <h2 className="title">Deploy ERC721 Contract</h2>
         <p className="description">
-          Deploy your own ERC721 NFT contract on the Base network. Upload an image, define a name and symbol, and deploy your contract.
+          Deploy your own ERC721 NFT contract on the Base network. Define a name and symbol, and deploy your contract.
         </p>
 
         <form onSubmit={handleSubmit} className="deploy-form">
@@ -105,38 +91,6 @@ const DeployERC721 = () => {
             <small style={{ color: '#6b7280', fontSize: '12px' }}>
               Max 10 characters for Farcaster compatibility
             </small>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="image">Collection Image (Optional)</label>
-            <div className="image-upload-container">
-              {!imagePreview ? (
-                <div className="image-upload-area">
-                  <input
-                    type="file"
-                    id="image"
-                    name="image"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    style={{ display: 'none' }}
-                  />
-                  <label htmlFor="image" className="upload-button">
-                    <Upload size={20} />
-                    Upload Image
-                  </label>
-                  <p style={{ marginTop: '10px', fontSize: '14px', color: '#6b7280' }}>
-                    PNG, JPG, GIF up to 10MB
-                  </p>
-                </div>
-              ) : (
-                <div className="image-preview-container">
-                  <img src={imagePreview} alt="NFT Preview" className="image-preview" />
-                  <button type="button" onClick={handleRemoveImage} className="remove-image-button">
-                    <X size={20} />
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
 
           <div className="deploy-info">
@@ -213,19 +167,6 @@ const DeployERC721 = () => {
                 {deployResult.contractAddress}
               </a>
             </p>
-            {deployResult.imageUrl && (
-              <p>
-                **Image URL (IPFS):**{' '}
-                <a 
-                  href={deployResult.imageUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="link"
-                >
-                  {deployResult.imageUrl}
-                </a>
-              </p>
-            )}
             <p>
               **Metadata URL (IPFS):**{' '}
               <a 

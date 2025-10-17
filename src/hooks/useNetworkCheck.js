@@ -17,7 +17,7 @@ export const useNetworkCheck = () => {
 
     setIsChecking(true)
     
-    // Check if user is on the correct network (Base)
+    // Check if user is on the correct network (Base Mainnet only)
     const correctChainId = baseConfig.chainId
     const isOnBase = chainId === correctChainId
     

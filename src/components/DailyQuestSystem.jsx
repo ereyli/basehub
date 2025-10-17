@@ -199,6 +199,15 @@ const DailyQuestSystem = () => {
       },
       {
         day: 1,
+        title: "AI NFT Launchpad",
+        description: "Mint AI NFT 1 time",
+        xpReward: 100,
+        icon: <Image size={20} />,
+        color: "linear-gradient(135deg, #ec4899 0%, #be185d 100%)",
+        requirements: { nftMinted: 1 }
+      },
+      {
+        day: 1,
         title: "Deploy ERC721",
         description: "Deploy ERC721 NFT 1 time",
         xpReward: 50,

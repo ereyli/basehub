@@ -14,8 +14,7 @@ const DeployERC1155 = () => {
   
   const [formData, setFormData] = useState({
     name: '',
-    symbol: '',
-    uri: ''
+    symbol: ''
   })
   
   const [deployResult, setDeployResult] = useState(null)
@@ -37,7 +36,7 @@ const DeployERC1155 = () => {
       const result = await deployERC1155(
         formData.name,
         formData.symbol,
-        formData.uri
+        '' // Empty URI
       )
       
       setDeployResult(result)
@@ -57,7 +56,7 @@ const DeployERC1155 = () => {
         <BackButton />
         <h2 className="title">Deploy ERC1155 Contract</h2>
         <p className="description">
-          Deploy your own ERC1155 multi-token contract on the Base network. Upload an image, define a name, symbol, and URI, and deploy your contract.
+          Deploy your own ERC1155 multi-token contract on the Base network. Define a name and symbol, and deploy your contract.
         </p>
 
         <form onSubmit={handleSubmit} className="deploy-form">
@@ -95,20 +94,6 @@ const DeployERC1155 = () => {
             </small>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="uri">Base URI (Optional)</label>
-            <input
-              type="text"
-              id="uri"
-              name="uri"
-              value={formData.uri}
-              onChange={handleInputChange}
-              placeholder="e.g., https://api.example.com/metadata/"
-            />
-            <small style={{ color: '#6b7280', fontSize: '12px' }}>
-              Optional base URI for token metadata
-            </small>
-          </div>
 
 
           <div className="deploy-info">
@@ -185,11 +170,6 @@ const DeployERC1155 = () => {
                 {deployResult.contractAddress}
               </a>
             </p>
-            {formData.uri && (
-              <p>
-                **Base URI:** {formData.uri}
-              </p>
-            )}
             <button onClick={() => navigate('/')} className="home-button">
               Go to Home
             </button>

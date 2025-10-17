@@ -24,6 +24,7 @@ import DeployToken from './pages/DeployToken'
 import DeployNFT from './pages/DeployNFT'
 import DeployERC721 from './pages/DeployERC721'
 import DeployERC1155 from './pages/DeployERC1155'
+import AINFTLaunchpad from './pages/AINFTLaunchpad'
 import SharePage from './pages/SharePage'
 import './styles/index.css'
 
@@ -93,7 +94,7 @@ function FarcasterAppContent() {
 
   // Farcaster app
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="App farcaster-app">
         <FarcasterXPDisplay />
         <main className="container farcaster-main">
@@ -109,6 +110,7 @@ function FarcasterAppContent() {
             <Route path="/deploy-nft" element={<DeployNFT />} />
             <Route path="/deploy-erc721" element={<DeployERC721 />} />
             <Route path="/deploy-erc1155" element={<DeployERC1155 />} />
+            <Route path="/ai-nft" element={<AINFTLaunchpad />} />
             <Route path="/share" element={<SharePage />} />
           </Routes>
         </main>
@@ -123,7 +125,7 @@ function WebAppContent() {
   useNetworkInterceptor()
 
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="App web-app">
         <WebHeader />
         <WebXPDisplay />
@@ -140,6 +142,7 @@ function WebAppContent() {
             <Route path="/deploy-nft" element={<DeployNFT />} />
             <Route path="/deploy-erc721" element={<DeployERC721 />} />
             <Route path="/deploy-erc1155" element={<DeployERC1155 />} />
+            <Route path="/ai-nft" element={<AINFTLaunchpad />} />
             <Route path="/share" element={<SharePage />} />
           </Routes>
         </main>

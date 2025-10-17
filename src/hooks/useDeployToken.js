@@ -385,9 +385,16 @@ export const useDeployToken = () => {
       const feeWallet = '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
       
       console.log('💰 Sending fee to wallet:', feeWallet)
-      const feeTxHash = await sendTransaction(config, {
-        to: feeWallet,
-        value: parseEther('0.00005'),
+      
+      // Use a simple ETH transfer instead of sendTransaction
+      const feeTxHash = await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          from: address,
+          to: feeWallet,
+          value: '0x' + parseEther('0.00005').toString(16),
+          gas: '0x5208', // 21000 gas for simple transfer
+        }]
       })
       
       console.log('✅ Fee transaction sent:', feeTxHash)
@@ -417,8 +424,13 @@ export const useDeployToken = () => {
       
       const deployData = ERC20_BYTECODE + constructorData.slice(2)
       
-      const deployTxHash = await sendTransaction(config, {
-        data: deployData,
+      const deployTxHash = await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          from: address,
+          data: deployData,
+          gas: '0x1e8480', // 2M gas for contract deployment
+        }]
       })
       
       console.log('✅ Deploy transaction sent:', deployTxHash)

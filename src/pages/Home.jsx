@@ -6,7 +6,7 @@ import { useTransactions } from '../hooks/useTransactions'
 import EmbedMeta from '../components/EmbedMeta'
 import TwitterShareButton from '../components/TwitterShareButton'
 import DailyQuestSystem from '../components/DailyQuestSystem'
-import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink } from 'lucide-react'
+import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory } from 'lucide-react'
 
 const Home = () => {
   const { isConnected } = useAccount()
@@ -127,6 +127,46 @@ const Home = () => {
       bonusXP: null
     },
     {
+      id: 'ai-nft',
+      title: 'AI NFT Launchpad',
+      description: 'Generate AI art and mint as NFT',
+      icon: <Star size={20} />,
+      path: '/ai-nft',
+      color: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+      xpReward: '500 XP',
+      bonusXP: null
+    },
+    {
+      id: 'deploy-erc721',
+      title: 'Deploy ERC721',
+      description: 'Deploy your own NFT contract',
+      icon: <Image size={20} />,
+      path: '/deploy-erc721',
+      color: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+      xpReward: '100 XP',
+      bonusXP: null
+    },
+    {
+      id: 'deploy',
+      title: 'Deploy Token',
+      description: 'Create your own ERC20 token',
+      icon: <Coins size={20} />,
+      path: '/deploy',
+      color: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+      xpReward: '50 XP',
+      bonusXP: null
+    },
+    {
+      id: 'deploy-erc1155',
+      title: 'Deploy ERC1155',
+      description: 'Deploy multi-token contract',
+      icon: <Layers size={20} />,
+      path: '/deploy-erc1155',
+      color: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+      xpReward: '100 XP',
+      bonusXP: null
+    },
+    {
       id: 'flip',
       title: 'Coin Flip',
       description: 'Flip a coin and earn XP',
@@ -155,36 +195,6 @@ const Home = () => {
       color: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
       xpReward: '10 XP',
       bonusXP: '+1500 XP (Win)'
-    },
-    {
-      id: 'deploy',
-      title: 'Deploy Token',
-      description: 'Create your own ERC20 token',
-      icon: <Coins size={20} />,
-      path: '/deploy',
-      color: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-      xpReward: '50 XP',
-      bonusXP: null
-    },
-    {
-      id: 'deploy-erc721',
-      title: 'Deploy ERC721',
-      description: 'Deploy your own NFT contract',
-      icon: <Image size={20} />,
-      path: '/deploy-erc721',
-      color: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-      xpReward: '100 XP',
-      bonusXP: null
-    },
-    {
-      id: 'deploy-erc1155',
-      title: 'Deploy ERC1155',
-      description: 'Deploy multi-token contract',
-      icon: <Layers size={20} />,
-      path: '/deploy-erc1155',
-      color: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-      xpReward: '100 XP',
-      bonusXP: null
     },
   ]
 

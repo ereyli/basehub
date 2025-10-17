@@ -5,7 +5,7 @@ import { base } from 'wagmi/chains'
 export const rainbowkitConfig = getDefaultConfig({
   appName: 'BaseHub',
   projectId: '21fef48091f12692cad574a6f7753643', // Temporary project ID - replace with your own
-  chains: [base], // Only Base network
+  chains: [base], // Only Base Mainnet
   ssr: false, // Client-side rendering
 })
 
