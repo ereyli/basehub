@@ -10,6 +10,15 @@ const DailyQuestSystem = () => {
   const { address } = useAccount()
   const { questProgress, updateQuestProgress, awardQuestXP, completeQuestDay, awardWeeklyBonus } = useQuestSystem()
   const { supabase } = useSupabase()
+  
+  // Debug logging
+  console.log('🔍 DailyQuestSystem render:', { 
+    address: !!address, 
+    supabase: !!supabase, 
+    questProgress: !!questProgress,
+    currentDay: questProgress?.current_day,
+    questStats: questProgress?.quest_stats
+  })
   const [quests, setQuests] = useState([])
   const [currentDay, setCurrentDay] = useState(1)
   const [completedQuests, setCompletedQuests] = useState([])
