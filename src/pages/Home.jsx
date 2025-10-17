@@ -284,6 +284,9 @@ const Home = () => {
             )}
           </div>
 
+          {/* Daily Quest System */}
+          <DailyQuestSystem />
+
           <div className="games-grid">
             {games.map((game) => {
               // For GM and GN, use direct transaction buttons
@@ -438,13 +441,6 @@ const Home = () => {
             })}
           </div>
 
-        </div>
-      </div>
-
-      {/* Daily Quest System */}
-      <div style={{ marginTop: '32px' }}>
-        <div className="card">
-          <DailyQuestSystem />
         </div>
       </div>
 
