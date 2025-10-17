@@ -1,12 +1,12 @@
 // AI NFT Configuration
 export const AI_NFT_CONFIG = {
   // Google Studio API Key
-  GOOGLE_STUDIO_API_KEY: 'YOUR_GOOGLE_STUDIO_API_KEY',
+  GOOGLE_STUDIO_API_KEY: import.meta.env.VITE_GOOGLE_STUDIO_API_KEY || 'YOUR_GOOGLE_STUDIO_API_KEY',
   
   // Pinata IPFS Configuration
-  PINATA_API_KEY: 'YOUR_PINATA_API_KEY',
-  PINATA_SECRET_KEY: 'YOUR_PINATA_SECRET_KEY',
-  PINATA_JWT: 'YOUR_PINATA_JWT',
+  PINATA_API_KEY: import.meta.env.VITE_PINATA_API_KEY || 'YOUR_PINATA_API_KEY',
+  PINATA_SECRET_KEY: import.meta.env.VITE_PINATA_SECRET_KEY || 'YOUR_PINATA_SECRET_KEY',
+  PINATA_JWT: import.meta.env.VITE_PINATA_JWT || 'YOUR_PINATA_JWT',
   
   // AI NFT Collection Contract Address (Base Mainnet)
   // V2 - Tiered Pricing Model (Fixed: tokenURI before mint)
