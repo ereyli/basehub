@@ -32,7 +32,7 @@ export default function AINFTLaunchpad() {
   
   // Style and quality settings
   const [selectedStyle, setSelectedStyle] = useState('photorealistic');
-  const [qualityCheck, setQualityCheck] = useState(true);
+  const [qualityCheck, setQualityCheck] = useState(false); // Default to false to avoid issues
   
   const {
     isGenerating,
@@ -88,10 +88,13 @@ export default function AINFTLaunchpad() {
           console.log('❌ Poor quality detected:', qualityResult.reason);
           console.log('🔄 Auto-regenerating with different settings...');
           
-          // Auto-regenerate without user confirmation
+          // Only regenerate if image is extremely poor quality
+          // Add a small delay to prevent infinite loops
           setTimeout(() => {
             handleGenerateImage({ preventDefault: () => {} });
-          }, 2000);
+          }, 3000);
+        } else {
+          console.log('✅ Image quality is acceptable');
         }
       }
     }
@@ -221,21 +224,19 @@ export default function AINFTLaunchpad() {
     // This is a basic heuristic - in production you'd use more sophisticated methods
     const imageSize = imageData.length;
     
-    // Very small images are likely low quality
-    if (imageSize < 80000) {
+    // Very small images are likely low quality (lowered threshold)
+    if (imageSize < 50000) {
       return { isGood: false, reason: 'Image too small/low resolution' };
     }
     
     // Very large images might be corrupted
-    if (imageSize > 3000000) {
+    if (imageSize > 5000000) {
       return { isGood: false, reason: 'Image too large/corrupted' };
     }
     
-    // Check for very simple images (low complexity)
-    // This is a basic check - in production you'd analyze image content
-    if (imageSize < 150000) {
-      // Additional check: if image is small and simple, it might be low quality
-      return { isGood: false, reason: 'Image appears to be low complexity/simple' };
+    // Only reject extremely simple images (much higher threshold)
+    if (imageSize < 80000) {
+      return { isGood: false, reason: 'Image appears to be extremely simple' };
     }
     
     return { isGood: true, reason: 'Quality check passed' };
@@ -355,7 +356,7 @@ export default function AINFTLaunchpad() {
                       setCustomDescription('');
                       setUseCustomMetadata(false);
                       setSelectedStyle('photorealistic');
-                      setQualityCheck(true);
+                      setQualityCheck(false);
                       setDetectedCategory('');
                     }}
                     style={{
@@ -386,7 +387,7 @@ export default function AINFTLaunchpad() {
                       setCustomDescription('');
                       setUseCustomMetadata(false);
                       setSelectedStyle('photorealistic');
-                      setQualityCheck(true);
+                      setQualityCheck(false);
                       setDetectedCategory('');
                     }}
                     style={{
@@ -674,7 +675,7 @@ export default function AINFTLaunchpad() {
                           setCustomDescription('');
                           setUseCustomMetadata(false);
                           setSelectedStyle('photorealistic');
-                          setQualityCheck(true);
+                          setQualityCheck(false);
                           setDetectedCategory('');
                           reset();
                         }}
