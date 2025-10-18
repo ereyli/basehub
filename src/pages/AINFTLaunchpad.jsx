@@ -86,12 +86,12 @@ export default function AINFTLaunchpad() {
         
         if (!qualityResult.isGood) {
           console.log('❌ Poor quality detected:', qualityResult.reason);
-          // Auto-regenerate with different parameters
+          console.log('🔄 Auto-regenerating with different settings...');
+          
+          // Auto-regenerate without user confirmation
           setTimeout(() => {
-            if (confirm(`Poor quality image detected: ${qualityResult.reason}\n\nWould you like to regenerate with different settings?`)) {
-              handleGenerateImage({ preventDefault: () => {} });
-            }
-          }, 1000);
+            handleGenerateImage({ preventDefault: () => {} });
+          }, 2000);
         }
       }
     }
@@ -222,13 +222,20 @@ export default function AINFTLaunchpad() {
     const imageSize = imageData.length;
     
     // Very small images are likely low quality
-    if (imageSize < 50000) {
+    if (imageSize < 80000) {
       return { isGood: false, reason: 'Image too small/low resolution' };
     }
     
     // Very large images might be corrupted
-    if (imageSize > 2000000) {
+    if (imageSize > 3000000) {
       return { isGood: false, reason: 'Image too large/corrupted' };
+    }
+    
+    // Check for very simple images (low complexity)
+    // This is a basic check - in production you'd analyze image content
+    if (imageSize < 150000) {
+      // Additional check: if image is small and simple, it might be low quality
+      return { isGood: false, reason: 'Image appears to be low complexity/simple' };
     }
     
     return { isGood: true, reason: 'Quality check passed' };
@@ -522,7 +529,7 @@ export default function AINFTLaunchpad() {
                       fontWeight: '500',
                       color: '#374151'
                     }}>
-                      🔍 Auto Quality Check (regenerate if poor quality detected)
+                      🔍 Auto Quality Check (automatically regenerate poor quality images)
                     </label>
                   </div>
                 </div>
