@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
@@ -33,9 +33,44 @@ const queryClient = new QueryClient()
 // AppContent component for Farcaster users only
 function FarcasterAppContent() {
   const { isInitialized, isReady } = useFarcaster()
+  const [loadingProgress, setLoadingProgress] = useState(0)
+  const [loadingText, setLoadingText] = useState('Initializing BaseHub...')
   
   // Network interceptor - checks network on every render
   useNetworkInterceptor()
+
+  // Progress bar animation
+  useEffect(() => {
+    if (!isInitialized || !isReady) {
+      const progressInterval = setInterval(() => {
+        setLoadingProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(progressInterval)
+            return 100
+          }
+          
+          // Update loading text based on progress
+          if (prev < 20) {
+            setLoadingText('Initializing BaseHub...')
+          } else if (prev < 40) {
+            setLoadingText('Connecting to Base network...')
+          } else if (prev < 60) {
+            setLoadingText('Loading games...')
+          } else if (prev < 80) {
+            setLoadingText('Preparing NFT tools...')
+          } else if (prev < 95) {
+            setLoadingText('Almost ready...')
+          } else {
+            setLoadingText('Welcome to BaseHub!')
+          }
+          
+          return prev + Math.random() * 15 + 5 // Random increment between 5-20
+        })
+      }, 200)
+      
+      return () => clearInterval(progressInterval)
+    }
+  }, [isInitialized, isReady])
 
   // Show loading while initializing
   if (!isInitialized || !isReady) {
@@ -52,40 +87,98 @@ function FarcasterAppContent() {
         textAlign: 'center',
         padding: '20px'
       }}>
+        {/* Logo with animation */}
         <div style={{
-          width: '80px',
-          height: '80px',
-          background: 'rgba(255, 255, 255, 0.2)',
-          borderRadius: '50%',
+          width: '100px',
+          height: '100px',
+          background: 'rgba(255, 255, 255, 0.1)',
+          borderRadius: '20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          marginBottom: '20px',
+          marginBottom: '30px',
+          border: '2px solid rgba(255, 255, 255, 0.2)',
           animation: 'pulse 2s infinite'
         }}>
           <div style={{
-            width: '40px',
-            height: '40px',
-            border: '3px solid rgba(255, 255, 255, 0.3)',
-            borderTop: '3px solid white',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
+            fontSize: '32px',
+            fontWeight: 'bold',
+            color: 'white'
+          }}>
+            🎮
+          </div>
         </div>
-        <h2 style={{ margin: '0 0 10px 0', fontSize: '24px', fontWeight: 'bold' }}>
+
+        {/* App Title */}
+        <h1 style={{ 
+          fontSize: '28px', 
+          marginBottom: '10px', 
+          fontWeight: '700',
+          textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+        }}>
           BaseHub
-        </h2>
-        <p style={{ margin: '0', opacity: 0.8, fontSize: '16px' }}>
-          {!isInitialized ? 'Initializing Farcaster...' : 'Loading Mini App...'}
+        </h1>
+
+        {/* Loading Text */}
+        <p style={{ 
+          fontSize: '16px', 
+          opacity: 0.9, 
+          margin: '0 0 30px 0',
+          fontWeight: '500'
+        }}>
+          {loadingText}
+        </p>
+
+        {/* Progress Bar Container */}
+        <div style={{
+          width: '280px',
+          height: '8px',
+          background: 'rgba(255, 255, 255, 0.2)',
+          borderRadius: '10px',
+          overflow: 'hidden',
+          marginBottom: '15px',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}>
+          {/* Progress Bar Fill */}
+          <div style={{
+            width: `${loadingProgress}%`,
+            height: '100%',
+            background: 'linear-gradient(90deg, #ffffff 0%, #e0e7ff 100%)',
+            borderRadius: '10px',
+            transition: 'width 0.3s ease',
+            boxShadow: '0 0 10px rgba(255, 255, 255, 0.5)',
+            position: 'relative'
+          }}>
+            {/* Shimmer effect */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: '-100%',
+              width: '100%',
+              height: '100%',
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+              animation: 'shimmer 2s infinite'
+            }}></div>
+          </div>
+        </div>
+
+        {/* Progress Percentage */}
+        <p style={{ 
+          fontSize: '14px', 
+          opacity: 0.7, 
+          margin: 0,
+          fontWeight: '500'
+        }}>
+          {Math.round(loadingProgress)}%
         </p>
         <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
           @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+          }
+          @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
           }
         `}</style>
       </div>
