@@ -171,8 +171,9 @@ export function useAINFTMinting(quantity = 1) {
   /**
    * Upload image and metadata to IPFS using Pinata
    * @param {string} prompt - Original prompt
+   * @param {object} customMetadata - Custom metadata object (optional)
    */
-  const uploadToIPFS = async (prompt) => {
+  const uploadToIPFS = async (prompt, customMetadata = null) => {
     if (!generatedImage) {
       setError('No image to upload');
       return null;
@@ -185,26 +186,52 @@ export function useAINFTMinting(quantity = 1) {
       // Import new nftStorage utility (Pinata-based)
       const { uploadTokenMetadata } = await import('../utils/nftStorage');
       
-      // Prepare token info
-      const tokenInfo = {
-        name: prompt ? `${prompt.substring(0, 50)}` : 'Uploaded Image NFT',
-        description: prompt ? `AI-generated artwork: ${prompt}` : 'User uploaded image converted to NFT',
-        attributes: [
-          {
-            trait_type: 'Type',
-            value: prompt ? 'AI Generated' : 'User Uploaded'
-          },
-          {
-            trait_type: 'Network',
-            value: 'Base'
-          },
-          {
-            trait_type: prompt ? 'Prompt Length' : 'Upload Type',
-            value: prompt ? prompt.length.toString() : 'Direct Upload'
-          }
-        ],
-        external_url: 'https://basehub.xyz'
-      };
+      // Prepare token info - use custom metadata if provided
+      let tokenInfo;
+      
+      if (customMetadata && (customMetadata.name || customMetadata.description || customMetadata.attributes)) {
+        // Use custom metadata
+        tokenInfo = {
+          name: customMetadata.name || (prompt ? `${prompt.substring(0, 50)}` : 'Uploaded Image NFT'),
+          description: customMetadata.description || (prompt ? `AI-generated artwork: ${prompt}` : 'User uploaded image converted to NFT'),
+          attributes: customMetadata.attributes || [
+            {
+              trait_type: 'Type',
+              value: prompt ? 'AI Generated' : 'User Uploaded'
+            },
+            {
+              trait_type: 'Network',
+              value: 'Base'
+            },
+            {
+              trait_type: prompt ? 'Prompt Length' : 'Upload Type',
+              value: prompt ? prompt.length.toString() : 'Direct Upload'
+            }
+          ],
+          external_url: 'https://basehub.xyz'
+        };
+      } else {
+        // Use default metadata
+        tokenInfo = {
+          name: prompt ? `${prompt.substring(0, 50)}` : 'Uploaded Image NFT',
+          description: prompt ? `AI-generated artwork: ${prompt}` : 'User uploaded image converted to NFT',
+          attributes: [
+            {
+              trait_type: 'Type',
+              value: prompt ? 'AI Generated' : 'User Uploaded'
+            },
+            {
+              trait_type: 'Network',
+              value: 'Base'
+            },
+            {
+              trait_type: prompt ? 'Prompt Length' : 'Upload Type',
+              value: prompt ? prompt.length.toString() : 'Direct Upload'
+            }
+          ],
+          external_url: 'https://basehub.xyz'
+        };
+      }
       
       // Upload to Pinata and get metadata URI
       const metadataIPFSUrl = await uploadTokenMetadata(generatedImage, tokenInfo);

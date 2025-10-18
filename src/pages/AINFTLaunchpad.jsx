@@ -24,6 +24,12 @@ export default function AINFTLaunchpad() {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imageMode, setImageMode] = useState('prompt'); // 'prompt' or 'upload'
   
+  // Custom metadata fields
+  const [customName, setCustomName] = useState('');
+  const [customDescription, setCustomDescription] = useState('');
+  const [customAttributes, setCustomAttributes] = useState('');
+  const [useCustomMetadata, setUseCustomMetadata] = useState(false);
+  
   const {
     isGenerating,
     isUploading,
@@ -99,7 +105,22 @@ export default function AINFTLaunchpad() {
     if (generatedImage && (currentPrompt || imageMode === 'upload')) {
       let currentMetadataURI = metadataURI;
       if (!currentMetadataURI) {
-        currentMetadataURI = await uploadToIPFS(currentPrompt);
+        // Prepare custom metadata if user provided it
+        let customMetadata = null;
+        if (useCustomMetadata) {
+          try {
+            customMetadata = {
+              name: customName || undefined,
+              description: customDescription || undefined,
+              attributes: customAttributes ? JSON.parse(customAttributes) : undefined
+            };
+          } catch (error) {
+            alert('Invalid JSON format in custom attributes. Please check your input.');
+            return;
+          }
+        }
+        
+        currentMetadataURI = await uploadToIPFS(currentPrompt, customMetadata);
         if (!currentMetadataURI) return;
       }
       await mintNFT(quantity, currentMetadataURI);
@@ -152,6 +173,10 @@ export default function AINFTLaunchpad() {
                       setImageMode('prompt');
                       setUploadedImage(null);
                       setCurrentPrompt('');
+                      setCustomName('');
+                      setCustomDescription('');
+                      setCustomAttributes('');
+                      setUseCustomMetadata(false);
                     }}
                     style={{
                       flex: 1,
@@ -177,6 +202,10 @@ export default function AINFTLaunchpad() {
                     onClick={() => {
                       setImageMode('upload');
                       setCurrentPrompt('');
+                      setCustomName('');
+                      setCustomDescription('');
+                      setCustomAttributes('');
+                      setUseCustomMetadata(false);
                     }}
                     style={{
                       flex: 1,
@@ -364,6 +393,10 @@ export default function AINFTLaunchpad() {
                           setCurrentFee('0.001');
                           setUploadedImage(null);
                           setImageMode('prompt');
+                          setCustomName('');
+                          setCustomDescription('');
+                          setCustomAttributes('');
+                          setUseCustomMetadata(false);
                           reset();
                         }}
                         style={{
@@ -469,6 +502,131 @@ export default function AINFTLaunchpad() {
                         <small style={{ color: '#6b7280', fontSize: '12px' }}>
                           {getTierName()}: {currentFee} ETH per transaction
                         </small>
+                      </div>
+
+                      {/* Custom Metadata Section */}
+                      <div className="form-group">
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '8px',
+                          marginBottom: '12px'
+                        }}>
+                          <input
+                            type="checkbox"
+                            id="useCustomMetadata"
+                            checked={useCustomMetadata}
+                            onChange={(e) => setUseCustomMetadata(e.target.checked)}
+                            style={{ margin: 0 }}
+                          />
+                          <label htmlFor="useCustomMetadata" style={{ 
+                            margin: 0, 
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#374151'
+                          }}>
+                            Use Custom Metadata (Optional)
+                          </label>
+                        </div>
+                        
+                        {useCustomMetadata && (
+                          <div style={{
+                            background: '#f8fafc',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            padding: '16px',
+                            marginTop: '8px'
+                          }}>
+                            <div style={{ marginBottom: '12px' }}>
+                              <label htmlFor="customName" style={{ 
+                                display: 'block',
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                color: '#6b7280',
+                                marginBottom: '4px'
+                              }}>
+                                NFT Name
+                              </label>
+                              <input
+                                type="text"
+                                id="customName"
+                                value={customName}
+                                onChange={(e) => setCustomName(e.target.value)}
+                                placeholder={imageMode === 'prompt' ? 'AI Generated Art' : 'My Uploaded NFT'}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '6px',
+                                  fontSize: '14px'
+                                }}
+                              />
+                            </div>
+                            
+                            <div style={{ marginBottom: '12px' }}>
+                              <label htmlFor="customDescription" style={{ 
+                                display: 'block',
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                color: '#6b7280',
+                                marginBottom: '4px'
+                              }}>
+                                Description
+                              </label>
+                              <textarea
+                                id="customDescription"
+                                value={customDescription}
+                                onChange={(e) => setCustomDescription(e.target.value)}
+                                placeholder={imageMode === 'prompt' ? 'AI-generated artwork created with BaseHub' : 'User uploaded image converted to NFT'}
+                                rows={3}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '6px',
+                                  fontSize: '14px',
+                                  resize: 'vertical'
+                                }}
+                              />
+                            </div>
+                            
+                            <div>
+                              <label htmlFor="customAttributes" style={{ 
+                                display: 'block',
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                color: '#6b7280',
+                                marginBottom: '4px'
+                              }}>
+                                Custom Attributes (JSON format)
+                              </label>
+                              <textarea
+                                id="customAttributes"
+                                value={customAttributes}
+                                onChange={(e) => setCustomAttributes(e.target.value)}
+                                placeholder='[{"trait_type": "Rarity", "value": "Common"}, {"trait_type": "Color", "value": "Blue"}]'
+                                rows={4}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '6px',
+                                  fontSize: '12px',
+                                  fontFamily: 'monospace',
+                                  resize: 'vertical'
+                                }}
+                              />
+                              <small style={{ 
+                                color: '#6b7280', 
+                                fontSize: '11px',
+                                display: 'block',
+                                marginTop: '4px'
+                              }}>
+                                Leave empty to use default attributes
+                              </small>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div className="deploy-info">
