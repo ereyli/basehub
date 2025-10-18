@@ -64,9 +64,9 @@ function FarcasterAppContent() {
             setLoadingText('Welcome to BaseHub!')
           }
           
-          return prev + Math.random() * 15 + 5 // Random increment between 5-20
+          return prev + Math.random() * 20 + 10 // Random increment between 10-30
         })
-      }, 200)
+      }, 150)
       
       return () => clearInterval(progressInterval)
     }
