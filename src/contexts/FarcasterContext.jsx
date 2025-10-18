@@ -98,7 +98,7 @@ export const FarcasterProvider = ({ children }) => {
         }
 
         // Wait for React hydration and SDK to be ready
-        await new Promise(resolve => setTimeout(resolve, 100))
+        await new Promise(resolve => setTimeout(resolve, 2000))
         
         // Check if SDK is available before calling ready
         if (typeof sdk === 'undefined' || !sdk.actions) {
