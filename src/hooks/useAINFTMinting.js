@@ -189,12 +189,12 @@ export function useAINFTMinting(quantity = 1) {
       // Prepare token info - use custom metadata if provided
       let tokenInfo;
       
-      if (customMetadata && (customMetadata.name || customMetadata.description || customMetadata.attributes)) {
+      if (customMetadata && (customMetadata.name || customMetadata.description)) {
         // Use custom metadata
         tokenInfo = {
           name: customMetadata.name || (prompt ? `${prompt.substring(0, 50)}` : 'Uploaded Image NFT'),
           description: customMetadata.description || (prompt ? `AI-generated artwork: ${prompt}` : 'User uploaded image converted to NFT'),
-          attributes: customMetadata.attributes || [
+          attributes: [
             {
               trait_type: 'Type',
               value: prompt ? 'AI Generated' : 'User Uploaded'

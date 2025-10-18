@@ -27,7 +27,6 @@ export default function AINFTLaunchpad() {
   // Custom metadata fields
   const [customName, setCustomName] = useState('');
   const [customDescription, setCustomDescription] = useState('');
-  const [customAttributes, setCustomAttributes] = useState('');
   const [useCustomMetadata, setUseCustomMetadata] = useState(false);
   
   const {
@@ -108,16 +107,10 @@ export default function AINFTLaunchpad() {
         // Prepare custom metadata if user provided it
         let customMetadata = null;
         if (useCustomMetadata) {
-          try {
-            customMetadata = {
-              name: customName || undefined,
-              description: customDescription || undefined,
-              attributes: customAttributes ? JSON.parse(customAttributes) : undefined
-            };
-          } catch (error) {
-            alert('Invalid JSON format in custom attributes. Please check your input.');
-            return;
-          }
+          customMetadata = {
+            name: customName || undefined,
+            description: customDescription || undefined
+          };
         }
         
         currentMetadataURI = await uploadToIPFS(currentPrompt, customMetadata);
@@ -175,7 +168,6 @@ export default function AINFTLaunchpad() {
                       setCurrentPrompt('');
                       setCustomName('');
                       setCustomDescription('');
-                      setCustomAttributes('');
                       setUseCustomMetadata(false);
                     }}
                     style={{
@@ -204,7 +196,6 @@ export default function AINFTLaunchpad() {
                       setCurrentPrompt('');
                       setCustomName('');
                       setCustomDescription('');
-                      setCustomAttributes('');
                       setUseCustomMetadata(false);
                     }}
                     style={{
@@ -395,7 +386,6 @@ export default function AINFTLaunchpad() {
                           setImageMode('prompt');
                           setCustomName('');
                           setCustomDescription('');
-                          setCustomAttributes('');
                           setUseCustomMetadata(false);
                           reset();
                         }}
@@ -590,41 +580,6 @@ export default function AINFTLaunchpad() {
                               />
                             </div>
                             
-                            <div>
-                              <label htmlFor="customAttributes" style={{ 
-                                display: 'block',
-                                fontSize: '12px',
-                                fontWeight: '500',
-                                color: '#6b7280',
-                                marginBottom: '4px'
-                              }}>
-                                Custom Attributes (JSON format)
-                              </label>
-                              <textarea
-                                id="customAttributes"
-                                value={customAttributes}
-                                onChange={(e) => setCustomAttributes(e.target.value)}
-                                placeholder='[{"trait_type": "Rarity", "value": "Common"}, {"trait_type": "Color", "value": "Blue"}]'
-                                rows={4}
-                                style={{
-                                  width: '100%',
-                                  padding: '8px 12px',
-                                  border: '1px solid #d1d5db',
-                                  borderRadius: '6px',
-                                  fontSize: '12px',
-                                  fontFamily: 'monospace',
-                                  resize: 'vertical'
-                                }}
-                              />
-                              <small style={{ 
-                                color: '#6b7280', 
-                                fontSize: '11px',
-                                display: 'block',
-                                marginTop: '4px'
-                              }}>
-                                Leave empty to use default attributes
-                              </small>
-                            </div>
                           </div>
                         )}
                       </div>
