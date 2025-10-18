@@ -6,7 +6,6 @@ import { HelmetProvider } from 'react-helmet-async'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import '@rainbow-me/rainbowkit/styles.css'
 import { FarcasterProvider, useFarcaster } from './contexts/FarcasterContext'
-import { ready } from '@farcaster/miniapp-sdk'
 import { config } from './config/wagmi'
 import { rainbowkitConfig, shouldUseRainbowKit } from './config/rainbowkit'
 import FarcasterXPDisplay from './components/FarcasterXPDisplay'
@@ -47,8 +46,6 @@ function FarcasterAppContent() {
         setLoadingProgress(prev => {
           if (prev >= 100) {
             clearInterval(progressInterval)
-            // Call ready() when progress reaches 100%
-            ready()
             return 100
           }
           
@@ -72,9 +69,6 @@ function FarcasterAppContent() {
       }, 200)
       
       return () => clearInterval(progressInterval)
-    } else {
-      // If already initialized and ready, call ready() immediately
-      ready()
     }
   }, [isInitialized, isReady])
 
