@@ -28,6 +28,7 @@ export default function AINFTLaunchpad() {
   const [customName, setCustomName] = useState('');
   const [customDescription, setCustomDescription] = useState('');
   const [useCustomMetadata, setUseCustomMetadata] = useState(false);
+  const [detectedCategory, setDetectedCategory] = useState('');
   
   const {
     isGenerating,
@@ -70,6 +71,16 @@ export default function AINFTLaunchpad() {
       console.log('🖼️ Image length:', generatedImage.length);
     }
   }, [generatedImage]);
+
+  // Update category when prompt changes
+  useEffect(() => {
+    if (currentPrompt && imageMode === 'prompt') {
+      const category = determineCategory(currentPrompt);
+      setDetectedCategory(category);
+    } else {
+      setDetectedCategory('');
+    }
+  }, [currentPrompt, imageMode]);
 
   // Handle image upload
   const handleImageUpload = (event) => {
@@ -132,6 +143,84 @@ export default function AINFTLaunchpad() {
     if (quantity <= 4000) return 'Tier 3';
     if (quantity <= 8000) return 'Tier 4';
     return 'Tier 5';
+  };
+
+  // Determine category based on prompt content
+  const determineCategory = (prompt) => {
+    if (!prompt) return 'General';
+    
+    const lowerPrompt = prompt.toLowerCase();
+    
+    // Animals category
+    if (lowerPrompt.includes('dog') || lowerPrompt.includes('cat') || lowerPrompt.includes('animal') || 
+        lowerPrompt.includes('pet') || lowerPrompt.includes('bird') || lowerPrompt.includes('fish') ||
+        lowerPrompt.includes('horse') || lowerPrompt.includes('lion') || lowerPrompt.includes('tiger') ||
+        lowerPrompt.includes('bear') || lowerPrompt.includes('wolf') || lowerPrompt.includes('elephant')) {
+      return 'Animals';
+    }
+    
+    // Nature category
+    if (lowerPrompt.includes('winter') || lowerPrompt.includes('summer') || lowerPrompt.includes('spring') ||
+        lowerPrompt.includes('autumn') || lowerPrompt.includes('forest') || lowerPrompt.includes('mountain') ||
+        lowerPrompt.includes('ocean') || lowerPrompt.includes('river') || lowerPrompt.includes('lake') ||
+        lowerPrompt.includes('tree') || lowerPrompt.includes('flower') || lowerPrompt.includes('garden') ||
+        lowerPrompt.includes('landscape') || lowerPrompt.includes('sunset') || lowerPrompt.includes('sunrise')) {
+      return 'Nature';
+    }
+    
+    // Superheroes category
+    if (lowerPrompt.includes('superhero') || lowerPrompt.includes('captain') || lowerPrompt.includes('spider') ||
+        lowerPrompt.includes('batman') || lowerPrompt.includes('superman') || lowerPrompt.includes('iron man') ||
+        lowerPrompt.includes('thor') || lowerPrompt.includes('hulk') || lowerPrompt.includes('wonder woman') ||
+        lowerPrompt.includes('avengers') || lowerPrompt.includes('marvel') || lowerPrompt.includes('dc')) {
+      return 'Superheroes';
+    }
+    
+    // Vehicles category
+    if (lowerPrompt.includes('car') || lowerPrompt.includes('truck') || lowerPrompt.includes('motorcycle') ||
+        lowerPrompt.includes('bike') || lowerPrompt.includes('plane') || lowerPrompt.includes('boat') ||
+        lowerPrompt.includes('ship') || lowerPrompt.includes('train') || lowerPrompt.includes('bus') ||
+        lowerPrompt.includes('vehicle') || lowerPrompt.includes('automobile')) {
+      return 'Vehicles';
+    }
+    
+    // Technology category
+    if (lowerPrompt.includes('robot') || lowerPrompt.includes('ai') || lowerPrompt.includes('computer') ||
+        lowerPrompt.includes('tech') || lowerPrompt.includes('cyber') || lowerPrompt.includes('digital') ||
+        lowerPrompt.includes('space') || lowerPrompt.includes('futuristic') || lowerPrompt.includes('sci-fi')) {
+      return 'Technology';
+    }
+    
+    // Art category
+    if (lowerPrompt.includes('art') || lowerPrompt.includes('painting') || lowerPrompt.includes('drawing') ||
+        lowerPrompt.includes('sketch') || lowerPrompt.includes('portrait') || lowerPrompt.includes('abstract') ||
+        lowerPrompt.includes('modern') || lowerPrompt.includes('classic') || lowerPrompt.includes('vintage')) {
+      return 'Art';
+    }
+    
+    // Fantasy category
+    if (lowerPrompt.includes('fantasy') || lowerPrompt.includes('magic') || lowerPrompt.includes('dragon') ||
+        lowerPrompt.includes('wizard') || lowerPrompt.includes('fairy') || lowerPrompt.includes('castle') ||
+        lowerPrompt.includes('medieval') || lowerPrompt.includes('mythical') || lowerPrompt.includes('legend')) {
+      return 'Fantasy';
+    }
+    
+    // Food category
+    if (lowerPrompt.includes('food') || lowerPrompt.includes('pizza') || lowerPrompt.includes('burger') ||
+        lowerPrompt.includes('cake') || lowerPrompt.includes('fruit') || lowerPrompt.includes('vegetable') ||
+        lowerPrompt.includes('cooking') || lowerPrompt.includes('restaurant') || lowerPrompt.includes('meal')) {
+      return 'Food';
+    }
+    
+    // Sports category
+    if (lowerPrompt.includes('sport') || lowerPrompt.includes('football') || lowerPrompt.includes('basketball') ||
+        lowerPrompt.includes('soccer') || lowerPrompt.includes('tennis') || lowerPrompt.includes('golf') ||
+        lowerPrompt.includes('baseball') || lowerPrompt.includes('hockey') || lowerPrompt.includes('swimming')) {
+      return 'Sports';
+    }
+    
+    // Default category
+    return 'General';
   };
 
   const formatAddress = (address) => {
@@ -246,6 +335,34 @@ export default function AINFTLaunchpad() {
                   <small style={{ color: '#6b7280', fontSize: '12px' }}>
                     💡 Be specific and detailed (min 10 chars): include style, colors, mood, composition, lighting
                   </small>
+                  
+                  {/* Category Detection */}
+                  {detectedCategory && (
+                    <div style={{
+                      marginTop: '8px',
+                      padding: '8px 12px',
+                      background: '#f0f9ff',
+                      border: '1px solid #3b82f6',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <div style={{
+                        width: '8px',
+                        height: '8px',
+                        background: '#3b82f6',
+                        borderRadius: '50%'
+                      }} />
+                      <span style={{
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        color: '#1e40af'
+                      }}>
+                        Detected Category: <strong>{detectedCategory}</strong>
+                      </span>
+                    </div>
+                  )}
                 </div>
                 ) : (
                   <div className="form-group">

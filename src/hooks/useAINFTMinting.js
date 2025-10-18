@@ -169,6 +169,88 @@ export function useAINFTMinting(quantity = 1) {
   };
 
   /**
+   * Determine category based on prompt content
+   * @param {string} prompt - AI prompt text
+   * @returns {string} Category name
+   */
+  const determineCategory = (prompt) => {
+    if (!prompt) return 'General';
+    
+    const lowerPrompt = prompt.toLowerCase();
+    
+    // Animals category
+    if (lowerPrompt.includes('dog') || lowerPrompt.includes('cat') || lowerPrompt.includes('animal') || 
+        lowerPrompt.includes('pet') || lowerPrompt.includes('bird') || lowerPrompt.includes('fish') ||
+        lowerPrompt.includes('horse') || lowerPrompt.includes('lion') || lowerPrompt.includes('tiger') ||
+        lowerPrompt.includes('bear') || lowerPrompt.includes('wolf') || lowerPrompt.includes('elephant')) {
+      return 'Animals';
+    }
+    
+    // Nature category
+    if (lowerPrompt.includes('winter') || lowerPrompt.includes('summer') || lowerPrompt.includes('spring') ||
+        lowerPrompt.includes('autumn') || lowerPrompt.includes('forest') || lowerPrompt.includes('mountain') ||
+        lowerPrompt.includes('ocean') || lowerPrompt.includes('river') || lowerPrompt.includes('lake') ||
+        lowerPrompt.includes('tree') || lowerPrompt.includes('flower') || lowerPrompt.includes('garden') ||
+        lowerPrompt.includes('landscape') || lowerPrompt.includes('sunset') || lowerPrompt.includes('sunrise')) {
+      return 'Nature';
+    }
+    
+    // Superheroes category
+    if (lowerPrompt.includes('superhero') || lowerPrompt.includes('captain') || lowerPrompt.includes('spider') ||
+        lowerPrompt.includes('batman') || lowerPrompt.includes('superman') || lowerPrompt.includes('iron man') ||
+        lowerPrompt.includes('thor') || lowerPrompt.includes('hulk') || lowerPrompt.includes('wonder woman') ||
+        lowerPrompt.includes('avengers') || lowerPrompt.includes('marvel') || lowerPrompt.includes('dc')) {
+      return 'Superheroes';
+    }
+    
+    // Vehicles category
+    if (lowerPrompt.includes('car') || lowerPrompt.includes('truck') || lowerPrompt.includes('motorcycle') ||
+        lowerPrompt.includes('bike') || lowerPrompt.includes('plane') || lowerPrompt.includes('boat') ||
+        lowerPrompt.includes('ship') || lowerPrompt.includes('train') || lowerPrompt.includes('bus') ||
+        lowerPrompt.includes('vehicle') || lowerPrompt.includes('automobile')) {
+      return 'Vehicles';
+    }
+    
+    // Technology category
+    if (lowerPrompt.includes('robot') || lowerPrompt.includes('ai') || lowerPrompt.includes('computer') ||
+        lowerPrompt.includes('tech') || lowerPrompt.includes('cyber') || lowerPrompt.includes('digital') ||
+        lowerPrompt.includes('space') || lowerPrompt.includes('futuristic') || lowerPrompt.includes('sci-fi')) {
+      return 'Technology';
+    }
+    
+    // Art category
+    if (lowerPrompt.includes('art') || lowerPrompt.includes('painting') || lowerPrompt.includes('drawing') ||
+        lowerPrompt.includes('sketch') || lowerPrompt.includes('portrait') || lowerPrompt.includes('abstract') ||
+        lowerPrompt.includes('modern') || lowerPrompt.includes('classic') || lowerPrompt.includes('vintage')) {
+      return 'Art';
+    }
+    
+    // Fantasy category
+    if (lowerPrompt.includes('fantasy') || lowerPrompt.includes('magic') || lowerPrompt.includes('dragon') ||
+        lowerPrompt.includes('wizard') || lowerPrompt.includes('fairy') || lowerPrompt.includes('castle') ||
+        lowerPrompt.includes('medieval') || lowerPrompt.includes('mythical') || lowerPrompt.includes('legend')) {
+      return 'Fantasy';
+    }
+    
+    // Food category
+    if (lowerPrompt.includes('food') || lowerPrompt.includes('pizza') || lowerPrompt.includes('burger') ||
+        lowerPrompt.includes('cake') || lowerPrompt.includes('fruit') || lowerPrompt.includes('vegetable') ||
+        lowerPrompt.includes('cooking') || lowerPrompt.includes('restaurant') || lowerPrompt.includes('meal')) {
+      return 'Food';
+    }
+    
+    // Sports category
+    if (lowerPrompt.includes('sport') || lowerPrompt.includes('football') || lowerPrompt.includes('basketball') ||
+        lowerPrompt.includes('soccer') || lowerPrompt.includes('tennis') || lowerPrompt.includes('golf') ||
+        lowerPrompt.includes('baseball') || lowerPrompt.includes('hockey') || lowerPrompt.includes('swimming')) {
+      return 'Sports';
+    }
+    
+    // Default category
+    return 'General';
+  };
+
+  /**
    * Upload image and metadata to IPFS using Pinata
    * @param {string} prompt - Original prompt
    * @param {object} customMetadata - Custom metadata object (optional)
@@ -186,6 +268,9 @@ export function useAINFTMinting(quantity = 1) {
       // Import new nftStorage utility (Pinata-based)
       const { uploadTokenMetadata } = await import('../utils/nftStorage');
       
+      // Determine category based on prompt
+      const category = determineCategory(prompt);
+      
       // Prepare token info - use custom metadata if provided
       let tokenInfo;
       
@@ -195,6 +280,10 @@ export function useAINFTMinting(quantity = 1) {
           name: customMetadata.name || (prompt ? `${prompt.substring(0, 50)}` : 'Uploaded Image NFT'),
           description: customMetadata.description || (prompt ? `AI-generated artwork: ${prompt}` : 'User uploaded image converted to NFT'),
           attributes: [
+            {
+              trait_type: 'Category',
+              value: category
+            },
             {
               trait_type: 'Type',
               value: prompt ? 'AI Generated' : 'User Uploaded'
@@ -216,6 +305,10 @@ export function useAINFTMinting(quantity = 1) {
           name: prompt ? `${prompt.substring(0, 50)}` : 'Uploaded Image NFT',
           description: prompt ? `AI-generated artwork: ${prompt}` : 'User uploaded image converted to NFT',
           attributes: [
+            {
+              trait_type: 'Category',
+              value: category
+            },
             {
               trait_type: 'Type',
               value: prompt ? 'AI Generated' : 'User Uploaded'
