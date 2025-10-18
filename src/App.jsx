@@ -6,6 +6,7 @@ import { HelmetProvider } from 'react-helmet-async'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import '@rainbow-me/rainbowkit/styles.css'
 import { FarcasterProvider, useFarcaster } from './contexts/FarcasterContext'
+import { ready } from '@farcaster/frame-sdk'
 import { config } from './config/wagmi'
 import { rainbowkitConfig, shouldUseRainbowKit } from './config/rainbowkit'
 import FarcasterXPDisplay from './components/FarcasterXPDisplay'
@@ -39,13 +40,15 @@ function FarcasterAppContent() {
   // Network interceptor - checks network on every render
   useNetworkInterceptor()
 
-  // Progress bar animation
+  // Progress bar animation and ready() call
   useEffect(() => {
     if (!isInitialized || !isReady) {
       const progressInterval = setInterval(() => {
         setLoadingProgress(prev => {
           if (prev >= 100) {
             clearInterval(progressInterval)
+            // Call ready() when progress reaches 100%
+            ready()
             return 100
           }
           
@@ -69,6 +72,9 @@ function FarcasterAppContent() {
       }, 200)
       
       return () => clearInterval(progressInterval)
+    } else {
+      // If already initialized and ready, call ready() immediately
+      ready()
     }
   }, [isInitialized, isReady])
 
