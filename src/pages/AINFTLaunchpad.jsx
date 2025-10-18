@@ -539,6 +539,49 @@ export default function AINFTLaunchpad() {
                       onChange={handleImageUpload}
                       style={{ display: 'none' }}
                     />
+                    
+                    {/* Style Selection for Upload Mode */}
+                    <div style={{ marginTop: '16px' }}>
+                      <label style={{ 
+                        display: 'block',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        color: '#6b7280',
+                        marginBottom: '8px'
+                      }}>
+                        🎨 Art Style (for metadata)
+                      </label>
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                        gap: '8px'
+                      }}>
+                        {Object.entries(promptTemplates).map(([key, style]) => (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => setSelectedStyle(key)}
+                            style={{
+                              padding: '8px 12px',
+                              border: `2px solid ${selectedStyle === key ? '#3b82f6' : '#e5e7eb'}`,
+                              borderRadius: '8px',
+                              background: selectedStyle === key ? '#eff6ff' : '#ffffff',
+                              color: selectedStyle === key ? '#1d4ed8' : '#6b7280',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: '500',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <span>{style.icon}</span>
+                            {style.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
 
