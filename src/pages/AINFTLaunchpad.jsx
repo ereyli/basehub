@@ -30,9 +30,8 @@ export default function AINFTLaunchpad() {
   const [useCustomMetadata, setUseCustomMetadata] = useState(false);
   const [detectedCategory, setDetectedCategory] = useState('');
   
-  // Style and quality settings
+  // Style settings
   const [selectedStyle, setSelectedStyle] = useState('photorealistic');
-  const [qualityCheck, setQualityCheck] = useState(false); // Default to false to avoid issues
   
   const {
     isGenerating,
@@ -56,9 +55,9 @@ export default function AINFTLaunchpad() {
     if (imageMode === 'prompt' && !currentPrompt.trim()) return;
     if (imageMode === 'upload' && !uploadedImage) return;
     
-    // Validate prompt length for text mode
-    if (imageMode === 'prompt' && currentPrompt.trim().length < 10) {
-      alert('Please enter a more detailed prompt (at least 10 characters). Short prompts often produce poor results.');
+    // Basic validation - just check if prompt exists
+    if (imageMode === 'prompt' && !currentPrompt.trim()) {
+      alert('Please enter a prompt to generate an image.');
       return;
     }
     
@@ -72,33 +71,14 @@ export default function AINFTLaunchpad() {
     await generateImage(promptToUse, uploadedImage);
   };
 
-  // Debug: Log when image changes and perform quality check
+  // Debug: Log when image changes
   useEffect(() => {
     if (generatedImage) {
       console.log('🖼️ Generated image type:', typeof generatedImage);
       console.log('🖼️ Image starts with:', generatedImage.substring(0, 50));
       console.log('🖼️ Image length:', generatedImage.length);
-      
-      // Perform quality check if enabled
-      if (qualityCheck) {
-        const qualityResult = assessImageQuality(generatedImage);
-        console.log('🔍 Quality check result:', qualityResult);
-        
-        if (!qualityResult.isGood) {
-          console.log('❌ Poor quality detected:', qualityResult.reason);
-          console.log('🔄 Auto-regenerating with different settings...');
-          
-          // Only regenerate if image is extremely poor quality
-          // Add a small delay to prevent infinite loops
-          setTimeout(() => {
-            handleGenerateImage({ preventDefault: () => {} });
-          }, 3000);
-        } else {
-          console.log('✅ Image quality is acceptable');
-        }
-      }
     }
-  }, [generatedImage, qualityCheck]);
+  }, [generatedImage]);
 
   // Update category when prompt changes
   useEffect(() => {
@@ -173,36 +153,36 @@ export default function AINFTLaunchpad() {
     return 'Tier 5';
   };
 
-  // Prompt templates for different styles
+  // Enhanced prompt templates for better AI understanding
   const promptTemplates = {
     photorealistic: {
       name: 'Photorealistic',
-      template: 'photorealistic {prompt}, professional photography, high detail, 4K quality, sharp focus, realistic lighting',
+      template: 'professional photography of {prompt}, ultra high resolution, 8K quality, sharp focus, perfect lighting, detailed textures, realistic shadows, cinematic composition, award-winning photography',
       icon: '📸'
     },
     artistic: {
       name: 'Artistic',
-      template: 'artistic {prompt}, oil painting style, detailed brushstrokes, museum quality, classical art',
+      template: 'masterpiece artwork of {prompt}, oil painting style, detailed brushstrokes, museum quality, classical art, rich colors, artistic composition, professional artist work',
       icon: '🎨'
     },
     cartoon: {
       name: 'Cartoon',
-      template: 'cartoon {prompt}, Pixar style, vibrant colors, clean lines, 3D rendered',
+      template: 'high-quality cartoon of {prompt}, Pixar animation style, vibrant colors, clean lines, 3D rendered, professional animation, detailed character design',
       icon: '🎭'
     },
     anime: {
       name: 'Anime',
-      template: 'anime {prompt}, Studio Ghibli style, detailed illustration, vibrant colors, high quality',
+      template: 'anime artwork of {prompt}, Studio Ghibli style, detailed illustration, vibrant colors, high quality, professional anime art, beautiful composition',
       icon: '🌸'
     },
     cyberpunk: {
       name: 'Cyberpunk',
-      template: 'cyberpunk {prompt}, neon lights, futuristic, dark atmosphere, high tech, detailed',
+      template: 'cyberpunk artwork of {prompt}, neon lights, futuristic, dark atmosphere, high tech, detailed, professional concept art, sci-fi style',
       icon: '🤖'
     },
     fantasy: {
       name: 'Fantasy',
-      template: 'fantasy {prompt}, magical, mystical atmosphere, detailed fantasy art, epic style',
+      template: 'fantasy artwork of {prompt}, magical, mystical atmosphere, detailed fantasy art, epic style, professional fantasy illustration, rich details',
       icon: '🧙‍♂️'
     }
   };
@@ -215,32 +195,6 @@ export default function AINFTLaunchpad() {
     return template.replace('{prompt}', basePrompt);
   };
 
-  // Quality assessment function
-  const assessImageQuality = (imageData) => {
-    // Simple quality checks based on image characteristics
-    if (!imageData) return { isGood: false, reason: 'No image data' };
-    
-    // Check if image is too simple (low complexity)
-    // This is a basic heuristic - in production you'd use more sophisticated methods
-    const imageSize = imageData.length;
-    
-    // Very small images are likely low quality (lowered threshold)
-    if (imageSize < 50000) {
-      return { isGood: false, reason: 'Image too small/low resolution' };
-    }
-    
-    // Very large images might be corrupted
-    if (imageSize > 5000000) {
-      return { isGood: false, reason: 'Image too large/corrupted' };
-    }
-    
-    // Only reject extremely simple images (much higher threshold)
-    if (imageSize < 80000) {
-      return { isGood: false, reason: 'Image appears to be extremely simple' };
-    }
-    
-    return { isGood: true, reason: 'Quality check passed' };
-  };
 
   // Determine category based on prompt content
   const determineCategory = (prompt) => {
@@ -436,7 +390,7 @@ export default function AINFTLaunchpad() {
                     required
                   />
                   <small style={{ color: '#6b7280', fontSize: '12px' }}>
-                    💡 Be specific and detailed (min 10 chars): include style, colors, mood, composition, lighting
+                    💡 Enter your prompt - AI will enhance it automatically with professional quality terms
                   </small>
                   
                   {/* Category Detection */}
@@ -510,29 +464,6 @@ export default function AINFTLaunchpad() {
                     </div>
                   </div>
 
-                  {/* Quality Control */}
-                  <div style={{ 
-                    marginTop: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <input
-                      type="checkbox"
-                      id="qualityCheck"
-                      checked={qualityCheck}
-                      onChange={(e) => setQualityCheck(e.target.checked)}
-                      style={{ margin: 0 }}
-                    />
-                    <label htmlFor="qualityCheck" style={{ 
-                      margin: 0, 
-                      fontSize: '12px',
-                      fontWeight: '500',
-                      color: '#374151'
-                    }}>
-                      🔍 Auto Quality Check (automatically regenerate poor quality images)
-                    </label>
-                  </div>
                 </div>
                 ) : (
                   <div className="form-group">
@@ -675,7 +606,6 @@ export default function AINFTLaunchpad() {
                           setCustomDescription('');
                           setUseCustomMetadata(false);
                           setSelectedStyle('photorealistic');
-                          setQualityCheck(false);
                           setDetectedCategory('');
                           reset();
                         }}
