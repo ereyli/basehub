@@ -633,6 +633,44 @@ export default function AINFTLaunchpad() {
                           customUrl="https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub"
                         />
                       </div>
+
+                      {/* OpenSea Collection Link */}
+                      <div style={{ 
+                        marginTop: '20px',
+                        display: 'flex',
+                        justifyContent: 'center'
+                      }}>
+                        <a
+                          href="https://opensea.io/collection/ai-132443724"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '12px 20px',
+                            background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                            color: 'white',
+                            textDecoration: 'none',
+                            borderRadius: '12px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            transition: 'all 0.3s ease',
+                            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                          }}
+                          onMouseOver={(e) => {
+                            e.target.style.transform = 'translateY(-2px)';
+                            e.target.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.target.style.transform = 'translateY(0)';
+                            e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                          }}
+                        >
+                          <ExternalLink size={16} />
+                          View Collection on OpenSea
+                        </a>
+                      </div>
                     </div>
                   </div>
 
@@ -747,6 +785,38 @@ export default function AINFTLaunchpad() {
                 >
                   Create Another NFT
                 </button>
+                
+                <a
+                  href="https://opensea.io/collection/ai-132443724"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px 20px',
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    color: 'white',
+                    textDecoration: 'none',
+                    borderRadius: '12px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                    marginTop: '12px'
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                  }}
+                >
+                  <ExternalLink size={16} />
+                  View Your NFT on OpenSea
+                </a>
               </div>
             </div>
           )}
