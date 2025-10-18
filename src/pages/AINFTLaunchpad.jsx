@@ -30,6 +30,10 @@ export default function AINFTLaunchpad() {
   const [useCustomMetadata, setUseCustomMetadata] = useState(false);
   const [detectedCategory, setDetectedCategory] = useState('');
   
+  // Style and quality settings
+  const [selectedStyle, setSelectedStyle] = useState('photorealistic');
+  const [qualityCheck, setQualityCheck] = useState(true);
+  
   const {
     isGenerating,
     isUploading,
@@ -58,19 +62,40 @@ export default function AINFTLaunchpad() {
       return;
     }
     
-    // For upload mode, use empty prompt since we don't need description
-    const promptToUse = imageMode === 'upload' ? '' : currentPrompt;
+    // Generate enhanced prompt with selected style
+    let promptToUse = '';
+    if (imageMode === 'prompt') {
+      promptToUse = generateEnhancedPrompt(currentPrompt, selectedStyle);
+      console.log('🎨 Enhanced prompt:', promptToUse);
+    }
+    
     await generateImage(promptToUse, uploadedImage);
   };
 
-  // Debug: Log when image changes
+  // Debug: Log when image changes and perform quality check
   useEffect(() => {
     if (generatedImage) {
       console.log('🖼️ Generated image type:', typeof generatedImage);
       console.log('🖼️ Image starts with:', generatedImage.substring(0, 50));
       console.log('🖼️ Image length:', generatedImage.length);
+      
+      // Perform quality check if enabled
+      if (qualityCheck) {
+        const qualityResult = assessImageQuality(generatedImage);
+        console.log('🔍 Quality check result:', qualityResult);
+        
+        if (!qualityResult.isGood) {
+          console.log('❌ Poor quality detected:', qualityResult.reason);
+          // Auto-regenerate with different parameters
+          setTimeout(() => {
+            if (confirm(`Poor quality image detected: ${qualityResult.reason}\n\nWould you like to regenerate with different settings?`)) {
+              handleGenerateImage({ preventDefault: () => {} });
+            }
+          }, 1000);
+        }
+      }
     }
-  }, [generatedImage]);
+  }, [generatedImage, qualityCheck]);
 
   // Update category when prompt changes
   useEffect(() => {
@@ -143,6 +168,70 @@ export default function AINFTLaunchpad() {
     if (quantity <= 4000) return 'Tier 3';
     if (quantity <= 8000) return 'Tier 4';
     return 'Tier 5';
+  };
+
+  // Prompt templates for different styles
+  const promptTemplates = {
+    photorealistic: {
+      name: 'Photorealistic',
+      template: 'photorealistic {prompt}, professional photography, high detail, 4K quality, sharp focus, realistic lighting',
+      icon: '📸'
+    },
+    artistic: {
+      name: 'Artistic',
+      template: 'artistic {prompt}, oil painting style, detailed brushstrokes, museum quality, classical art',
+      icon: '🎨'
+    },
+    cartoon: {
+      name: 'Cartoon',
+      template: 'cartoon {prompt}, Pixar style, vibrant colors, clean lines, 3D rendered',
+      icon: '🎭'
+    },
+    anime: {
+      name: 'Anime',
+      template: 'anime {prompt}, Studio Ghibli style, detailed illustration, vibrant colors, high quality',
+      icon: '🌸'
+    },
+    cyberpunk: {
+      name: 'Cyberpunk',
+      template: 'cyberpunk {prompt}, neon lights, futuristic, dark atmosphere, high tech, detailed',
+      icon: '🤖'
+    },
+    fantasy: {
+      name: 'Fantasy',
+      template: 'fantasy {prompt}, magical, mystical atmosphere, detailed fantasy art, epic style',
+      icon: '🧙‍♂️'
+    }
+  };
+
+  // Enhanced prompt generation
+  const generateEnhancedPrompt = (basePrompt, style) => {
+    if (!basePrompt) return basePrompt;
+    
+    const template = promptTemplates[style]?.template || promptTemplates.photorealistic.template;
+    return template.replace('{prompt}', basePrompt);
+  };
+
+  // Quality assessment function
+  const assessImageQuality = (imageData) => {
+    // Simple quality checks based on image characteristics
+    if (!imageData) return { isGood: false, reason: 'No image data' };
+    
+    // Check if image is too simple (low complexity)
+    // This is a basic heuristic - in production you'd use more sophisticated methods
+    const imageSize = imageData.length;
+    
+    // Very small images are likely low quality
+    if (imageSize < 50000) {
+      return { isGood: false, reason: 'Image too small/low resolution' };
+    }
+    
+    // Very large images might be corrupted
+    if (imageSize > 2000000) {
+      return { isGood: false, reason: 'Image too large/corrupted' };
+    }
+    
+    return { isGood: true, reason: 'Quality check passed' };
   };
 
   // Determine category based on prompt content
@@ -258,6 +347,9 @@ export default function AINFTLaunchpad() {
                       setCustomName('');
                       setCustomDescription('');
                       setUseCustomMetadata(false);
+                      setSelectedStyle('photorealistic');
+                      setQualityCheck(true);
+                      setDetectedCategory('');
                     }}
                     style={{
                       flex: 1,
@@ -286,6 +378,9 @@ export default function AINFTLaunchpad() {
                       setCustomName('');
                       setCustomDescription('');
                       setUseCustomMetadata(false);
+                      setSelectedStyle('photorealistic');
+                      setQualityCheck(true);
+                      setDetectedCategory('');
                     }}
                     style={{
                       flex: 1,
@@ -363,6 +458,73 @@ export default function AINFTLaunchpad() {
                       </span>
                     </div>
                   )}
+
+                  {/* Style Selection */}
+                  <div style={{ marginTop: '16px' }}>
+                    <label style={{ 
+                      display: 'block',
+                      fontSize: '12px',
+                      fontWeight: '500',
+                      color: '#6b7280',
+                      marginBottom: '8px'
+                    }}>
+                      🎨 Art Style
+                    </label>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                      gap: '8px'
+                    }}>
+                      {Object.entries(promptTemplates).map(([key, style]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setSelectedStyle(key)}
+                          style={{
+                            padding: '8px 12px',
+                            border: `2px solid ${selectedStyle === key ? '#3b82f6' : '#e5e7eb'}`,
+                            borderRadius: '8px',
+                            background: selectedStyle === key ? '#eff6ff' : '#ffffff',
+                            color: selectedStyle === key ? '#1d4ed8' : '#6b7280',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <span>{style.icon}</span>
+                          {style.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Quality Control */}
+                  <div style={{ 
+                    marginTop: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <input
+                      type="checkbox"
+                      id="qualityCheck"
+                      checked={qualityCheck}
+                      onChange={(e) => setQualityCheck(e.target.checked)}
+                      style={{ margin: 0 }}
+                    />
+                    <label htmlFor="qualityCheck" style={{ 
+                      margin: 0, 
+                      fontSize: '12px',
+                      fontWeight: '500',
+                      color: '#374151'
+                    }}>
+                      🔍 Auto Quality Check (regenerate if poor quality detected)
+                    </label>
+                  </div>
                 </div>
                 ) : (
                   <div className="form-group">
@@ -504,6 +666,9 @@ export default function AINFTLaunchpad() {
                           setCustomName('');
                           setCustomDescription('');
                           setUseCustomMetadata(false);
+                          setSelectedStyle('photorealistic');
+                          setQualityCheck(true);
+                          setDetectedCategory('');
                           reset();
                         }}
                         style={{
