@@ -95,7 +95,7 @@ const SlothGame = () => {
             display: 'flex',
             justifyContent: 'center'
           }}>
-            <img src="/crypto-logos/basahub logo/CryptoSloth.png" alt="Sloth Game" style={{ width: '48px', height: '48px' }} />
+            <img src="/crypto-logos/basahub logo/CryptoSloth.png" alt="Sloth Game" style={{ width: '64px', height: '64px' }} />
           </div>
           <h1 style={{ 
             fontSize: '28px', 

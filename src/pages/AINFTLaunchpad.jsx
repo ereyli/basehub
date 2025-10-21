@@ -288,7 +288,7 @@ export default function AINFTLaunchpad() {
           {/* Header */}
           <div className="deploy-header">
             <div className="deploy-icon">
-              <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" style={{ width: '32px', height: '32px' }} />
+              <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" style={{ width: '48px', height: '48px' }} />
             </div>
             <h1>AI NFT Launchpad</h1>
             <p>Create unique AI artwork and mint as NFT on Base</p>
