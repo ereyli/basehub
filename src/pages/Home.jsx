@@ -240,8 +240,8 @@ const Home = () => {
         buttonText="Play BaseHub"
       />
       
-      {/* Farcaster Hamburger Menu */}
-      {isInFarcaster && (
+      {/* Hamburger Menu */}
+      {(
         <div style={{
           position: 'fixed',
           top: '12px',
@@ -270,8 +270,8 @@ const Home = () => {
         </div>
       )}
 
-      {/* Farcaster Side Menu */}
-      {isInFarcaster && isMenuOpen && (
+      {/* Side Menu */}
+      {isMenuOpen && (
         <div style={{
           position: 'fixed',
           top: '0',
@@ -344,7 +344,7 @@ const Home = () => {
       )}
 
       {/* Overlay for menu */}
-      {isInFarcaster && isMenuOpen && (
+      {isMenuOpen && (
         <div
           onClick={() => setIsMenuOpen(false)}
           style={{
