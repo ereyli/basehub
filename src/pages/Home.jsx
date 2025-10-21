@@ -12,7 +12,17 @@ import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, 
 const Home = () => {
   const { isConnected } = useAccount()
   const { sendGMTransaction, sendGNTransaction, isLoading: transactionLoading } = useTransactions()
-  const { isInFarcaster } = useFarcaster()
+  
+  // Safely get Farcaster context
+  let isInFarcaster = false
+  try {
+    const farcasterContext = useFarcaster()
+    isInFarcaster = farcasterContext?.isInFarcaster || false
+  } catch (error) {
+    // Not in Farcaster environment, continue normally
+    isInFarcaster = false
+  }
+  
   const [leaderboard, setLeaderboard] = useState([])
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [leaderboardLoading, setLeaderboardLoading] = useState(false)
