@@ -282,7 +282,7 @@ const SlotGame = () => {
           marginBottom: '8px',
           color: '#1f2937'
         }}>
-          Slot Machine
+          Crypto Slots
         </h1>
         <p style={{ 
           color: '#6b7280',

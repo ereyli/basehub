@@ -198,7 +198,7 @@ const Home = () => {
     },
     {
       id: 'slot',
-      title: 'Slot Machine',
+      title: 'Crypto Slots',
       description: 'Spin the reels and win XP',
       icon: <Coins size={20} />,
       path: '/slot',
