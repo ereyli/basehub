@@ -322,7 +322,7 @@ body {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .player-info {
@@ -349,12 +349,12 @@ body {
 .stat-mini {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   background: rgba(0, 0, 0, 0.05);
-  padding: 4px 8px;
-  border-radius: 8px;
+  padding: 3px 6px;
+  border-radius: 6px;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .stat-mini.xp {
@@ -379,11 +379,11 @@ body {
 .claim-button {
   background: #f59e0b;
   border: none;
-  border-radius: 8px;
-  padding: 6px 12px;
+  border-radius: 6px;
+  padding: 4px 8px;
   color: white;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
