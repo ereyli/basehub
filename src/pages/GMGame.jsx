@@ -106,7 +106,7 @@ const GMGame = () => {
             margin: '0 auto 16px'
           }}
         >
-          <Sun size={32} style={{ color: 'white' }} />
+          <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" style={{ width: '32px', height: '32px' }} />
         </div>
         <h1 style={{ 
           fontSize: '32px', 

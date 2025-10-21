@@ -106,7 +106,7 @@ const FlipGame = () => {
             margin: '0 auto 16px'
           }}
         >
-          <Coins size={32} style={{ color: 'white' }} />
+          <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip Game" style={{ width: '32px', height: '32px' }} />
         </div>
         <h1 style={{ 
           fontSize: '32px', 

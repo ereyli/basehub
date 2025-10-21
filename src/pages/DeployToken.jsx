@@ -71,7 +71,7 @@ const DeployToken = () => {
         <BackButton />
         <div className="deploy-header">
           <div className="deploy-icon">
-            <Coins size={32} />
+            <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" style={{ width: '32px', height: '32px' }} />
           </div>
           <h1>Deploy Your Token</h1>
           <p>Create your own ERC20 token on Base network</p>

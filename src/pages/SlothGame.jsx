@@ -91,14 +91,11 @@ const SlothGame = () => {
       <div className="card">
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{ 
-            fontSize: '48px', 
             marginBottom: '16px',
-            background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
+            display: 'flex',
+            justifyContent: 'center'
           }}>
-            🦥
+            <img src="/crypto-logos/basahub logo/CryptoSloth.png" alt="Sloth Game" style={{ width: '48px', height: '48px' }} />
           </div>
           <h1 style={{ 
             fontSize: '28px', 

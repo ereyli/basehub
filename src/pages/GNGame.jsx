@@ -106,7 +106,7 @@ const GNGame = () => {
             margin: '0 auto 16px'
           }}
         >
-          <Moon size={32} style={{ color: 'white' }} />
+          <img src="/crypto-logos/basahub logo/GN.png" alt="GN Game" style={{ width: '32px', height: '32px' }} />
         </div>
         <h1 style={{ 
           fontSize: '32px', 
