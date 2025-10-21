@@ -244,24 +244,26 @@ const Home = () => {
       {isInFarcaster && (
         <div style={{
           position: 'fixed',
-          top: '16px',
-          right: '16px',
-          zIndex: 1000
+          top: '20px',
+          right: '20px',
+          zIndex: 9999
         }}>
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             style={{
-              background: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(0, 0, 0, 0.1)',
+              background: 'rgba(255, 255, 255, 0.98)',
+              backdropFilter: 'blur(20px)',
+              border: '2px solid rgba(59, 130, 246, 0.3)',
               borderRadius: '12px',
               padding: '12px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-              transition: 'all 0.2s ease'
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
+              transition: 'all 0.2s ease',
+              minWidth: '48px',
+              minHeight: '48px'
             }}
           >
             {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -280,7 +282,7 @@ const Home = () => {
           background: 'rgba(255, 255, 255, 0.98)',
           backdropFilter: 'blur(20px)',
           borderLeft: '1px solid rgba(0, 0, 0, 0.1)',
-          zIndex: 999,
+          zIndex: 9998,
           padding: '80px 24px 24px',
           display: 'flex',
           flexDirection: 'column',
@@ -353,7 +355,7 @@ const Home = () => {
             width: '100vw',
             height: '100vh',
             background: 'rgba(0, 0, 0, 0.3)',
-            zIndex: 998
+            zIndex: 9997
           }}
         />
       )}
