@@ -244,29 +244,28 @@ const Home = () => {
       {isInFarcaster && (
         <div style={{
           position: 'fixed',
-          top: '20px',
-          right: '20px',
+          top: '12px',
+          right: '12px',
           zIndex: 9999
         }}>
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             style={{
-              background: 'rgba(255, 255, 255, 0.98)',
-              backdropFilter: 'blur(20px)',
-              border: '2px solid rgba(59, 130, 246, 0.3)',
-              borderRadius: '12px',
-              padding: '12px',
+              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '8px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
+              boxShadow: '0 4px 12px rgba(245, 158, 11, 0.4)',
               transition: 'all 0.2s ease',
-              minWidth: '48px',
-              minHeight: '48px'
+              minWidth: '36px',
+              minHeight: '36px'
             }}
           >
-            {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            {isMenuOpen ? <X size={20} style={{ color: 'white' }} /> : <Menu size={20} style={{ color: 'white' }} />}
           </button>
         </div>
       )}
