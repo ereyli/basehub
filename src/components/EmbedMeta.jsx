@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async'
 const EmbedMeta = ({ 
   title, 
   description, 
-  image = "/image.svg", 
+  image = "/icon.png", 
   url, 
   buttonText = "Play BaseHub",
   gameType = "game"
