@@ -26,6 +26,7 @@ export const CONTRACT_ADDRESSES = {
   FLIP_GAME: '0xc79F867244dceB1245869Cd1506f3118875B197c', // FlipGame unchanged (no cooldown)
   LUCKY_NUMBER: '0x93FEf7b044D3BE138404D48B5E09e156Ecb1974D',
   DICE_ROLL: '0x4E99ACaAAfa3fD8d996811d79ae4a960923e51e1',
+  SLOT_GAME: '0xbDAe561FCaD053902402F3D000cabc9806A6f3c1', // SlotGame deployed
   TOKEN_CONTRACT: '0xB2b2c587E51175a2aE4713d8Ea68A934a8527a4b', // Token contract unchanged
   
   // Testnet addresses removed - only mainnet supported

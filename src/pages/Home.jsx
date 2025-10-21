@@ -196,6 +196,16 @@ const Home = () => {
       xpReward: '10 XP',
       bonusXP: '+1500 XP (Win)'
     },
+    {
+      id: 'slot',
+      title: 'Slot Machine',
+      description: 'Spin the reels and win XP',
+      icon: <Coins size={20} />,
+      path: '/slot',
+      color: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+      xpReward: '10 XP',
+      bonusXP: '+2000 XP (Combo)'
+    },
   ]
 
   return (

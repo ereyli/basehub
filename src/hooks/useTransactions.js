@@ -483,6 +483,165 @@ export const useTransactions = () => {
     }
   }
 
+  const sendSlotTransaction = async (action, params = {}) => {
+    if (!address) {
+      throw new Error('Wallet not connected. Please connect your wallet first.')
+    }
+
+    // Validate and auto-switch network before proceeding
+    await validateAndSwitchNetwork()
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const contractAddress = getContractAddress('SLOT_GAME')
+      
+      console.log('📡 Sending Slot transaction to blockchain...')
+      
+      let txHash
+      let xpEarned = 10 // Base XP for slot
+      
+      if (action === 'purchaseCredits') {
+        // Purchase credits
+        const amount = params.amount || 10
+        const totalCost = amount * 0.00005 // 0.00005 ETH per credit
+        
+        txHash = await writeContractAsync({
+          address: contractAddress,
+          abi: [{
+            name: 'purchaseCredits',
+            type: 'function',
+            stateMutability: 'payable',
+            inputs: [{ name: 'amount', type: 'uint256' }]
+          }],
+          functionName: 'purchaseCredits',
+          args: [amount],
+          value: parseEther(totalCost.toString()),
+        })
+        
+        console.log('✅ Credits purchase transaction sent! Hash:', txHash)
+        
+      } else if (action === 'spinSlot') {
+        // Spin the slot
+        txHash = await writeContractAsync({
+          address: contractAddress,
+          abi: [{
+            name: 'spinSlot',
+            type: 'function',
+            stateMutability: 'nonpayable',
+            inputs: []
+          }],
+          functionName: 'spinSlot',
+          args: [],
+          value: 0 // No ETH needed for spin
+        })
+        
+        console.log('✅ Slot spin transaction sent! Hash:', txHash)
+      }
+      
+      // Wait for transaction confirmation
+      console.log('⏳ Waiting for transaction confirmation...')
+      try {
+        const receipt = await Promise.race([
+          waitForTransactionReceipt(config, {
+            hash: txHash,
+            confirmations: 1,
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 30000)
+          )
+        ])
+        
+        console.log('✅ Slot transaction confirmed!', receipt)
+        
+        // Generate slot result based on contract logic
+        if (action === 'spinSlot') {
+          // Generate symbols using same logic as contract (0-3 for 4 crypto symbols)
+          const symbols = [
+            Math.floor(Math.random() * 4),
+            Math.floor(Math.random() * 4),
+            Math.floor(Math.random() * 4),
+            Math.floor(Math.random() * 4)
+          ]
+          
+          // Count symbol occurrences (same as contract logic)
+          const symbolCounts = [0, 0, 0, 0] // 4 symbols
+          symbols.forEach(symbol => {
+            symbolCounts[symbol]++
+          })
+          
+          console.log('🎰 Slot symbols:', symbols)
+          console.log('🎰 Symbol counts:', symbolCounts)
+          
+          // Check for wins (same as contract logic)
+          let won = false
+          let bonusXp = 0
+          let maxCount = 0
+          
+          for (let i = 0; i < 4; i++) {
+            if (symbolCounts[i] >= 2) {
+              won = true
+              maxCount = Math.max(maxCount, symbolCounts[i])
+              if (symbolCounts[i] === 2) {
+                bonusXp = 100 // WIN_XP_2_MATCH
+              } else if (symbolCounts[i] === 3) {
+                bonusXp = 500 // WIN_XP_3_MATCH
+              } else if (symbolCounts[i] === 4) {
+                bonusXp = 2000 // WIN_XP_4_MATCH
+              }
+            }
+          }
+          
+          console.log('🎰 Max count:', maxCount, 'Bonus XP:', bonusXp)
+          
+          xpEarned = 10 + bonusXp // BASE_XP + bonus
+          
+          try {
+            await addXP(address, xpEarned)
+            await recordTransaction(address, 'SLOT_GAME', xpEarned, txHash)
+            await updateQuestProgress('slotUsed', 1)
+            await updateQuestProgress('transactions', 1)
+            console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${won ? 'WIN' : 'LOSS'})`)
+          } catch (xpError) {
+            console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
+          }
+          
+          return {
+            txHash,
+            symbols,
+            won,
+            xpEarned
+          }
+        } else {
+          // Credits purchase
+          try {
+            await addXP(address, 10) // XP for purchasing credits
+            await recordTransaction(address, 'SLOT_GAME', 10, txHash)
+            console.log('✅ XP added for credit purchase')
+          } catch (xpError) {
+            console.error('Error adding XP for credit purchase:', xpError)
+          }
+          
+          return {
+            txHash,
+            creditsPurchased: params.amount,
+            xpEarned: 10
+          }
+        }
+        
+      } catch (confirmError) {
+        console.warn('⚠️ Confirmation timeout:', confirmError.message)
+        throw new Error('Transaction confirmation failed - please try again')
+      }
+    } catch (err) {
+      setError(err.message)
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const sendCustomTransaction = async (contractAddress, functionData, value = '0') => {
     if (!address) {
       throw new Error('Wallet not connected')
@@ -527,6 +686,7 @@ export const useTransactions = () => {
     sendFlipTransaction,
     sendLuckyNumberTransaction,
     sendDiceRollTransaction,
+    sendSlotTransaction,
     sendCustomTransaction,
   }
 }

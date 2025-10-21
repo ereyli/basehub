@@ -19,6 +19,7 @@ import GNGame from './pages/GNGame'
 import FlipGame from './pages/FlipGame'
 import LuckyNumberGame from './pages/LuckyNumberGame'
 import DiceRollGame from './pages/DiceRollGame'
+import SlotGame from './pages/SlotGame'
 import Leaderboard from './pages/Leaderboard'
 import DeployToken from './pages/DeployToken'
 import DeployNFT from './pages/DeployNFT'
@@ -198,6 +199,7 @@ function FarcasterAppContent() {
             <Route path="/flip" element={<FlipGame />} />
             <Route path="/lucky" element={<LuckyNumberGame />} />
             <Route path="/dice" element={<DiceRollGame />} />
+            <Route path="/slot" element={<SlotGame />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/deploy" element={<DeployToken />} />
             <Route path="/deploy-nft" element={<DeployNFT />} />
@@ -230,6 +232,7 @@ function WebAppContent() {
             <Route path="/flip" element={<FlipGame />} />
             <Route path="/lucky" element={<LuckyNumberGame />} />
             <Route path="/dice" element={<DiceRollGame />} />
+            <Route path="/slot" element={<SlotGame />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/deploy" element={<DeployToken />} />
             <Route path="/deploy-nft" element={<DeployNFT />} />
