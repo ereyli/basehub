@@ -126,8 +126,10 @@ const FarcasterXPDisplay = () => {
             <Home size={16} />
           </button>
         )}
+        <button className="disconnect-button" onClick={handleDisconnect} title="Disconnect Wallet">
+          <LogOut size={16} />
+        </button>
         <div className="player-info">
-          <Trophy size={16} />
           <span className="wallet-address">{address.slice(0, 4)}..{address.slice(-2)}</span>
         </div>
       </div>
@@ -170,10 +172,6 @@ const FarcasterXPDisplay = () => {
         <button className="claim-button coming-soon" disabled title="Claim feature coming soon!">
           <Clock size={14} />
           <span>Claim</span>
-        </button>
-        
-        <button className="disconnect-button" onClick={handleDisconnect} title="Disconnect Wallet">
-          <LogOut size={14} />
         </button>
       </div>
     </div>
