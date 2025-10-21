@@ -6,12 +6,15 @@ import { useTransactions } from '../hooks/useTransactions'
 import EmbedMeta from '../components/EmbedMeta'
 import TwitterShareButton from '../components/TwitterShareButton'
 import DailyQuestSystem from '../components/DailyQuestSystem'
-import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory } from 'lucide-react'
+import { useFarcaster } from '../contexts/FarcasterContext'
+import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X } from 'lucide-react'
 
 const Home = () => {
   const { isConnected } = useAccount()
   const { sendGMTransaction, sendGNTransaction, isLoading: transactionLoading } = useTransactions()
+  const { isInFarcaster } = useFarcaster()
   const [leaderboard, setLeaderboard] = useState([])
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [leaderboardLoading, setLeaderboardLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [isLoadingGM, setIsLoadingGM] = useState(false)
@@ -103,6 +106,17 @@ const Home = () => {
       default:
         return <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#6b7280' }}>#{rank}</span>
     }
+  }
+
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId)
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      })
+    }
+    setIsMenuOpen(false)
   }
 
   const games = [
@@ -215,6 +229,125 @@ const Home = () => {
         description="Play games and earn XP on Base network through Farcaster. Join the leaderboard and compete with other players!"
         buttonText="Play BaseHub"
       />
+      
+      {/* Farcaster Hamburger Menu */}
+      {isInFarcaster && (
+        <div style={{
+          position: 'fixed',
+          top: '16px',
+          right: '16px',
+          zIndex: 1000
+        }}>
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            style={{
+              background: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(0, 0, 0, 0.1)',
+              borderRadius: '12px',
+              padding: '12px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+      )}
+
+      {/* Farcaster Side Menu */}
+      {isInFarcaster && isMenuOpen && (
+        <div style={{
+          position: 'fixed',
+          top: '0',
+          right: '0',
+          width: '280px',
+          height: '100vh',
+          background: 'rgba(255, 255, 255, 0.98)',
+          backdropFilter: 'blur(20px)',
+          borderLeft: '1px solid rgba(0, 0, 0, 0.1)',
+          zIndex: 999,
+          padding: '80px 24px 24px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px',
+          boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.1)'
+        }}>
+          <h3 style={{
+            fontSize: '18px',
+            fontWeight: 'bold',
+            color: '#1f2937',
+            marginBottom: '8px'
+          }}>
+            Quick Navigation
+          </h3>
+          
+          <button
+            onClick={() => scrollToSection('daily-quests')}
+            style={{
+              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '16px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              fontSize: '16px',
+              fontWeight: '600',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+            }}
+          >
+            <Trophy size={20} />
+            Daily Quests
+          </button>
+          
+          <button
+            onClick={() => scrollToSection('leaderboard')}
+            style={{
+              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '16px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              fontSize: '16px',
+              fontWeight: '600',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
+            }}
+          >
+            <Star size={20} />
+            Leaderboard
+          </button>
+        </div>
+      )}
+
+      {/* Overlay for menu */}
+      {isInFarcaster && isMenuOpen && (
+        <div
+          onClick={() => setIsMenuOpen(false)}
+          style={{
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0, 0, 0, 0.3)',
+            zIndex: 998
+          }}
+        />
+      )}
+
       <div className="welcome-section">
         <div className="card">
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
@@ -452,11 +585,13 @@ const Home = () => {
       </div>
 
       {/* Daily Quest System */}
-      <DailyQuestSystem />
+      <div id="daily-quests">
+        <DailyQuestSystem />
+      </div>
 
       {/* Leaderboard Section */}
       {true && (
-        <div style={{ marginTop: '32px' }}>
+        <div id="leaderboard" style={{ marginTop: '32px' }}>
           <div className="card">
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
               <div style={{ 
