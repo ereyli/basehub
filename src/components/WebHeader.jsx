@@ -123,7 +123,7 @@ const WebHeader = () => {
           background: 'rgba(255, 255, 255, 0.98)',
           backdropFilter: 'blur(20px)',
           borderLeft: '1px solid rgba(0, 0, 0, 0.1)',
-          zIndex: 9998,
+          zIndex: 10000,
           padding: '80px 24px 24px',
           display: 'flex',
           flexDirection: 'column',
@@ -207,7 +207,7 @@ const WebHeader = () => {
             width: '100vw',
             height: '100vh',
             background: 'rgba(0, 0, 0, 0.3)',
-            zIndex: 9997
+            zIndex: 9999
           }}
         />
       )}
