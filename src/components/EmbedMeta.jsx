@@ -23,7 +23,7 @@ const EmbedMeta = ({
         name: "BaseHub",
         url: fullUrl,
         splashImageUrl: image,
-        splashBackgroundColor: "#0052ff"
+        splashBackgroundColor: "#4A90E2"
       }
     }
   }
