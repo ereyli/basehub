@@ -157,7 +157,7 @@ const DailyQuestSystem = () => {
         title: "GM Game",
         description: "Use GM game 1 time",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { gmUsed: 1 }
       },
@@ -166,7 +166,7 @@ const DailyQuestSystem = () => {
         title: "GN Game",
         description: "Use GN game 1 time",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/GN.png" alt="GN Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/GN.png" alt="GN Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
         requirements: { gnUsed: 1 }
       },
@@ -175,7 +175,7 @@ const DailyQuestSystem = () => {
         title: "Coin Flip Game",
         description: "Play coin flip 1 time",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { coinFlipUsed: 1 }
       },
@@ -184,7 +184,7 @@ const DailyQuestSystem = () => {
         title: "Lucky Number Game",
         description: "Play lucky number 1 time",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
         requirements: { luckyNumberUsed: 1 }
       },
@@ -193,7 +193,7 @@ const DailyQuestSystem = () => {
         title: "Dice Roll Game",
         description: "Play dice roll 1 time",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
         requirements: { diceRollUsed: 1 }
       },
@@ -202,7 +202,7 @@ const DailyQuestSystem = () => {
         title: "Deploy Token",
         description: "Deploy ERC20 token 1 time",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { tokenDeployed: 1 }
       },
@@ -211,7 +211,7 @@ const DailyQuestSystem = () => {
         title: "AI NFT Launchpad",
         description: "Mint AI NFT 1 time",
         xpReward: 100,
-        icon: <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #ec4899 0%, #be185d 100%)",
         requirements: { nftMinted: 1 }
       },
@@ -220,7 +220,7 @@ const DailyQuestSystem = () => {
         title: "Deploy ERC721",
         description: "Deploy ERC721 NFT 1 time",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/ERC-721.png" alt="Deploy ERC721" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/ERC-721.png" alt="Deploy ERC721" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
         requirements: { erc721Deployed: 1 }
       },
@@ -229,7 +229,7 @@ const DailyQuestSystem = () => {
         title: "Deploy ERC1155",
         description: "Deploy ERC1155 contract 1 time",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { erc1155Deployed: 1 }
       },
@@ -240,7 +240,7 @@ const DailyQuestSystem = () => {
         title: "GM Game",
         description: "Use GM game 2 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { gmUsed: 2 }
       },
@@ -249,7 +249,7 @@ const DailyQuestSystem = () => {
         title: "GN Game",
         description: "Use GN game 2 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
         requirements: { gnUsed: 2 }
       },
@@ -258,7 +258,7 @@ const DailyQuestSystem = () => {
         title: "Coin Flip Game",
         description: "Play coin flip 2 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { coinFlipUsed: 2 }
       },
@@ -267,7 +267,7 @@ const DailyQuestSystem = () => {
         title: "Lucky Number Game",
         description: "Play lucky number 2 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
         requirements: { luckyNumberUsed: 2 }
       },
@@ -276,7 +276,7 @@ const DailyQuestSystem = () => {
         title: "Dice Roll Game",
         description: "Play dice roll 2 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
         requirements: { diceRollUsed: 2 }
       },
@@ -285,7 +285,7 @@ const DailyQuestSystem = () => {
         title: "Deploy Token",
         description: "Deploy ERC20 token 2 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { tokenDeployed: 2 }
       },
@@ -294,7 +294,7 @@ const DailyQuestSystem = () => {
         title: "Deploy ERC721",
         description: "Deploy ERC721 NFT 2 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
         requirements: { erc721Deployed: 2 }
       },
@@ -303,7 +303,7 @@ const DailyQuestSystem = () => {
         title: "Deploy ERC1155",
         description: "Deploy ERC1155 contract 2 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { erc1155Deployed: 2 }
       },
@@ -314,7 +314,7 @@ const DailyQuestSystem = () => {
         title: "GM Game",
         description: "Use GM game 3 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { gmUsed: 3 }
       },
@@ -323,7 +323,7 @@ const DailyQuestSystem = () => {
         title: "GN Game",
         description: "Use GN game 3 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
         requirements: { gnUsed: 3 }
       },
@@ -332,7 +332,7 @@ const DailyQuestSystem = () => {
         title: "Coin Flip Game",
         description: "Play coin flip 3 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { coinFlipUsed: 3 }
       },
@@ -341,7 +341,7 @@ const DailyQuestSystem = () => {
         title: "Lucky Number Game",
         description: "Play lucky number 3 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
         requirements: { luckyNumberUsed: 3 }
       },
@@ -350,7 +350,7 @@ const DailyQuestSystem = () => {
         title: "Dice Roll Game",
         description: "Play dice roll 3 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
         requirements: { diceRollUsed: 3 }
       },
@@ -359,7 +359,7 @@ const DailyQuestSystem = () => {
         title: "Deploy Token",
         description: "Deploy ERC20 token 3 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { tokenDeployed: 3 }
       },
@@ -368,7 +368,7 @@ const DailyQuestSystem = () => {
         title: "Deploy ERC721",
         description: "Deploy ERC721 NFT 3 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
         requirements: { erc721Deployed: 3 }
       },
@@ -377,7 +377,7 @@ const DailyQuestSystem = () => {
         title: "Deploy ERC1155",
         description: "Deploy ERC1155 contract 3 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { erc1155Deployed: 3 }
       },
@@ -388,7 +388,7 @@ const DailyQuestSystem = () => {
         title: "GM Game",
         description: "Use GM game 4 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { gmUsed: 4 }
       },
@@ -397,7 +397,7 @@ const DailyQuestSystem = () => {
         title: "GN Game",
         description: "Use GN game 4 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
         requirements: { gnUsed: 4 }
       },
@@ -406,7 +406,7 @@ const DailyQuestSystem = () => {
         title: "Coin Flip Game",
         description: "Play coin flip 4 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { coinFlipUsed: 4 }
       },
@@ -415,7 +415,7 @@ const DailyQuestSystem = () => {
         title: "Lucky Number Game",
         description: "Play lucky number 4 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
         requirements: { luckyNumberUsed: 4 }
       },
@@ -424,7 +424,7 @@ const DailyQuestSystem = () => {
         title: "Dice Roll Game",
         description: "Play dice roll 4 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
         requirements: { diceRollUsed: 4 }
       },
@@ -433,7 +433,7 @@ const DailyQuestSystem = () => {
         title: "Deploy Token",
         description: "Deploy ERC20 token 4 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { tokenDeployed: 4 }
       },
@@ -442,7 +442,7 @@ const DailyQuestSystem = () => {
         title: "Deploy ERC721",
         description: "Deploy ERC721 NFT 4 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
         requirements: { erc721Deployed: 4 }
       },
@@ -451,7 +451,7 @@ const DailyQuestSystem = () => {
         title: "Deploy ERC1155",
         description: "Deploy ERC1155 contract 4 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { erc1155Deployed: 4 }
       },
@@ -462,7 +462,7 @@ const DailyQuestSystem = () => {
         title: "GM Game",
         description: "Use GM game 5 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { gmUsed: 5 }
       },
@@ -471,7 +471,7 @@ const DailyQuestSystem = () => {
         title: "GN Game",
         description: "Use GN game 5 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
         requirements: { gnUsed: 5 }
       },
@@ -480,7 +480,7 @@ const DailyQuestSystem = () => {
         title: "Coin Flip Game",
         description: "Play coin flip 5 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { coinFlipUsed: 5 }
       },
@@ -489,7 +489,7 @@ const DailyQuestSystem = () => {
         title: "Lucky Number Game",
         description: "Play lucky number 5 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
         requirements: { luckyNumberUsed: 5 }
       },
@@ -498,7 +498,7 @@ const DailyQuestSystem = () => {
         title: "Dice Roll Game",
         description: "Play dice roll 5 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
         requirements: { diceRollUsed: 5 }
       },
@@ -507,7 +507,7 @@ const DailyQuestSystem = () => {
         title: "Deploy Token",
         description: "Deploy ERC20 token 5 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { tokenDeployed: 5 }
       },
@@ -516,7 +516,7 @@ const DailyQuestSystem = () => {
         title: "Deploy ERC721",
         description: "Deploy ERC721 NFT 5 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
         requirements: { erc721Deployed: 5 }
       },
@@ -525,7 +525,7 @@ const DailyQuestSystem = () => {
         title: "Deploy ERC1155",
         description: "Deploy ERC1155 contract 5 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { erc1155Deployed: 5 }
       },
@@ -536,7 +536,7 @@ const DailyQuestSystem = () => {
         title: "GM Game",
         description: "Use GM game 6 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { gmUsed: 6 }
       },
@@ -545,7 +545,7 @@ const DailyQuestSystem = () => {
         title: "GN Game",
         description: "Use GN game 6 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
         requirements: { gnUsed: 6 }
       },
@@ -554,7 +554,7 @@ const DailyQuestSystem = () => {
         title: "Coin Flip Game",
         description: "Play coin flip 6 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { coinFlipUsed: 6 }
       },
@@ -563,7 +563,7 @@ const DailyQuestSystem = () => {
         title: "Lucky Number Game",
         description: "Play lucky number 6 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
         requirements: { luckyNumberUsed: 6 }
       },
@@ -572,7 +572,7 @@ const DailyQuestSystem = () => {
         title: "Dice Roll Game",
         description: "Play dice roll 6 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
         requirements: { diceRollUsed: 6 }
       },
@@ -581,7 +581,7 @@ const DailyQuestSystem = () => {
         title: "Deploy Token",
         description: "Deploy ERC20 token 6 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { tokenDeployed: 6 }
       },
@@ -590,7 +590,7 @@ const DailyQuestSystem = () => {
         title: "Deploy ERC721",
         description: "Deploy ERC721 NFT 6 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
         requirements: { erc721Deployed: 6 }
       },
@@ -599,7 +599,7 @@ const DailyQuestSystem = () => {
         title: "Deploy ERC1155",
         description: "Deploy ERC1155 contract 6 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { erc1155Deployed: 6 }
       },
@@ -610,7 +610,7 @@ const DailyQuestSystem = () => {
         title: "GM Game",
         description: "Use GM game 7 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { gmUsed: 7 }
       },
@@ -619,7 +619,7 @@ const DailyQuestSystem = () => {
         title: "GN Game",
         description: "Use GN game 7 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
         requirements: { gnUsed: 7 }
       },
@@ -628,7 +628,7 @@ const DailyQuestSystem = () => {
         title: "Coin Flip Game",
         description: "Play coin flip 7 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { coinFlipUsed: 7 }
       },
@@ -637,7 +637,7 @@ const DailyQuestSystem = () => {
         title: "Lucky Number Game",
         description: "Play lucky number 7 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
         requirements: { luckyNumberUsed: 7 }
       },
@@ -646,7 +646,7 @@ const DailyQuestSystem = () => {
         title: "Dice Roll Game",
         description: "Play dice roll 7 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll Game" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll Game" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
         requirements: { diceRollUsed: 7 }
       },
@@ -655,7 +655,7 @@ const DailyQuestSystem = () => {
         title: "Deploy Token",
         description: "Deploy ERC20 token 7 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { tokenDeployed: 7 }
       },
@@ -664,7 +664,7 @@ const DailyQuestSystem = () => {
         title: "Deploy ERC721",
         description: "Deploy ERC721 NFT 7 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
         requirements: { erc721Deployed: 7 }
       },
@@ -673,7 +673,7 @@ const DailyQuestSystem = () => {
         title: "Deploy ERC1155",
         description: "Deploy ERC1155 contract 7 times",
         xpReward: 50,
-        icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
+        icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { erc1155Deployed: 7 }
       }

@@ -114,7 +114,7 @@ const DiceRollGame = () => {
             margin: '0 auto 16px'
           }}
         >
-          <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll Game" style={{ width: '60px', height: '60px', borderRadius: '16px' }} />
+          <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll Game" loading="lazy" style={{ width: '60px', height: '60px', borderRadius: '16px' }} />
         </div>
         <h1 style={{ 
           fontSize: '32px', 

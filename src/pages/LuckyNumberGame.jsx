@@ -119,7 +119,7 @@ const LuckyNumberGame = () => {
             margin: '0 auto 16px'
           }}
         >
-          <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number Game" style={{ width: '60px', height: '60px', borderRadius: '16px' }} />
+          <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number Game" loading="lazy" style={{ width: '60px', height: '60px', borderRadius: '16px' }} />
         </div>
         <h1 style={{ 
           fontSize: '32px', 
