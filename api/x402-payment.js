@@ -74,16 +74,18 @@ app.get('/test', (c) => {
 
 // Apply x402 payment middleware (following x402.md documentation exactly)
 // Middleware MUST be applied BEFORE route handlers
-// Following the exact pattern from x402.md Hono example
+// Following the exact pattern from x402.md Hono example (lines 204-218)
 // NOTE: Middleware performs settlement AFTER route handler returns
 // If settlement fails, middleware will override route handler's response with 402
+// Route configuration format: "METHOD /path" or "/path" (matches any method)
 app.use(
   paymentMiddleware(
     RECEIVING_ADDRESS, // your receiving wallet address
     {
       // Route configurations for protected endpoints
-      // Path matches the route handler path
-      '/': {
+      // Following x402.md Hono example format
+      // Use "POST /" to match POST requests to root path
+      'POST /': {
         price: PRICE, // '$0.10'
         network: NETWORK, // 'base' for mainnet
         config: {
@@ -104,17 +106,21 @@ app.use(
 // Route handler is called AFTER middleware verifies payment
 // Middleware performs settlement AFTER route handler returns
 // IMPORTANT: Route handler must return 200 status for middleware to complete settlement
-app.post('/', (c) => {
+// IMPORTANT: Following x402.md example - simple response, no extra complexity
+app.post('/', async (c) => {
   console.log('✅ POST / endpoint called - payment verified by middleware')
+  console.log('⏳ Route handler executing - middleware will perform settlement after this response')
   
-  // Log payment header details for debugging
+  // Log payment header details for debugging (first 100 chars only)
   const paymentHeader = c.req.header('X-PAYMENT')
   if (paymentHeader) {
-    console.log('📋 X-PAYMENT header present:', paymentHeader.substring(0, 100) + '...')
+    console.log('📋 X-PAYMENT header present (length):', paymentHeader.length)
+    console.log('📋 X-PAYMENT header preview:', paymentHeader.substring(0, 100) + '...')
   }
   
-  // Following x402.md example exactly - simple response with 200 status
-  // This ensures middleware will attempt settlement
+  // Following x402.md example exactly - simple response
+  // Return simple JSON response as shown in documentation
+  // Middleware will handle settlement after this response is sent
   return c.json({
     success: true,
     message: 'Payment verified successfully!',
@@ -125,10 +131,7 @@ app.post('/', (c) => {
       recipient: RECEIVING_ADDRESS,
     },
     timestamp: new Date().toISOString(),
-    data: {
-      paymentCompleted: true,
-    },
-  }, 200) // Explicitly set status 200
+  })
 })
 
 // Export for Vercel (serverless function)
