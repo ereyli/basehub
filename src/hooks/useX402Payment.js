@@ -134,7 +134,8 @@ export const useX402Payment = () => {
             // Only show errorText if it's not empty
             errorMessage = `Payment error: ${errorText}. Please check your wallet and try again.`
           } else {
-            errorMessage = 'Payment settlement failed. Please check your wallet balance and transaction status.'
+            // Settlement failed with empty error object - likely transaction not confirmed yet
+            errorMessage = 'Payment settlement failed. The transaction may still be processing. Please wait a moment and check your wallet. If the payment was successful, your funds have been sent.'
           }
         } else if (response.status === 404) {
           errorMessage = 'Payment endpoint not found (404). Please check server configuration.'
