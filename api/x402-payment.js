@@ -206,8 +206,21 @@ export default async function handler(req, res) {
         const bodyText = await clonedResponse.text()
         const bodyJson = JSON.parse(bodyText)
         console.log('💰 402 Payment Required response:', bodyJson)
+        
+        // Log detailed error information if error is an object
+        if (bodyJson.error && typeof bodyJson.error === 'object') {
+          console.error('❌ Settlement error (object):', {
+            errorType: bodyJson.error.constructor?.name || 'Unknown',
+            errorKeys: Object.keys(bodyJson.error),
+            errorStringified: JSON.stringify(bodyJson.error, null, 2),
+            errorMessage: bodyJson.error.message || bodyJson.error.error || 'No message property',
+            fullError: bodyJson.error,
+          })
+        } else if (bodyJson.error) {
+          console.error('❌ Settlement error:', bodyJson.error)
+        }
       } catch (e) {
-        console.log('⚠️  Could not parse 402 response body')
+        console.log('⚠️  Could not parse 402 response body:', e.message)
       }
     }
 
