@@ -103,14 +103,23 @@ export const useX402Payment = () => {
         
         // Handle 402 Payment Required with specific error types
         if (response.status === 402) {
-          if (errorData.error === 'insufficient_funds') {
+          // Check if error is an object (from settlement failure)
+          let errorText = errorData.error
+          if (errorText && typeof errorText === 'object') {
+            // If error is an object, try to extract message or stringify safely
+            errorText = errorText.message || errorText.error || errorText.toString() || 'Payment settlement failed'
+          } else if (!errorText) {
+            errorText = ''
+          }
+          
+          if (errorText === 'insufficient_funds') {
             errorMessage = 'Insufficient USDC balance. Please ensure you have at least 0.1 USDC in your wallet on Base network.'
-          } else if (errorData.error === 'X-PAYMENT header is required') {
+          } else if (errorText === 'X-PAYMENT header is required') {
             errorMessage = 'Payment required. Please complete the payment in your wallet.'
-          } else if (errorData.error) {
-            errorMessage = `Payment error: ${errorData.error}. Please check your wallet and try again.`
+          } else if (errorText) {
+            errorMessage = `Payment error: ${errorText}. Please check your wallet and try again.`
           } else {
-            errorMessage = 'Payment required. Please complete the payment in your wallet.'
+            errorMessage = 'Payment settlement failed. Please check your wallet balance and transaction status.'
           }
         } else if (response.status === 404) {
           errorMessage = 'Payment endpoint not found (404). Please check server configuration.'
