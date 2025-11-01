@@ -39,14 +39,23 @@ app.use('/*', cors({
 }))
 
 // Health check endpoint (before payment middleware)
+// Test endpoint to verify Hono is working
 app.get('/', (c) => {
+  console.log('✅ Health check endpoint called')
   return c.json({
     status: 'ok',
     network: NETWORK,
     price: PRICE,
     recipient: RECEIVING_ADDRESS,
     facilitator: process.env.CDP_API_KEY_ID ? 'CDP' : 'Testnet',
+    message: 'x402 payment endpoint is working',
   })
+})
+
+// Test endpoint without payment middleware
+app.get('/test', (c) => {
+  console.log('✅ Test endpoint called')
+  return c.json({ message: 'Test endpoint works', timestamp: new Date().toISOString() })
 })
 
 // Apply x402 payment middleware (following Coinbase documentation exactly)
