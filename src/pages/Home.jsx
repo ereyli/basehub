@@ -500,12 +500,12 @@ const Home = () => {
                       {game.icon}
                     </div>
                     
-                    {/* XP Reward Badge - 500 XP */}
+                    {/* XP Reward Badge - 500 XP (Top Right) */}
                     <div style={{
                       position: 'absolute',
                       top: '12px',
                       right: '12px',
-                      background: 'rgba(255, 255, 255, 0.95)',
+                      background: 'rgba(209, 250, 229, 0.95)',
                       backdropFilter: 'blur(10px)',
                       borderRadius: '20px',
                       padding: '4px 8px',
@@ -518,25 +518,43 @@ const Home = () => {
                       {game.xpReward}
                     </div>
 
-                    {/* Price Badge */}
+                    {/* Payment Amount Badge - 0.1 USDC (Top Left) */}
                     {game.bonusXP && (
                       <div style={{
                         position: 'absolute',
                         top: '12px',
                         left: '12px',
-                        background: 'rgba(245, 158, 11, 0.95)',
+                        background: 'rgba(255, 215, 0, 0.95)',
                         backdropFilter: 'blur(10px)',
                         borderRadius: '20px',
                         padding: '4px 8px',
                         fontSize: '11px',
                         fontWeight: 'bold',
-                        color: 'white',
-                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                        color: '#92400e',
+                        border: '1px solid rgba(146, 64, 14, 0.2)',
                         boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
                       }}>
                         {game.bonusXP}
                       </div>
                     )}
+                    
+                    {/* x402 Protocol Badge (Top Right, below XP badge) */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '40px',
+                      right: '12px',
+                      background: 'rgba(102, 126, 234, 0.95)',
+                      backdropFilter: 'blur(10px)',
+                      borderRadius: '20px',
+                      padding: '4px 8px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      color: 'white',
+                      border: '1px solid rgba(102, 126, 234, 0.3)',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                    }}>
+                      x402
+                    </div>
 
                     <h3 style={{ 
                       fontSize: '20px', 
