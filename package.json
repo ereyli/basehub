@@ -1,6 +1,7 @@
 {
   "name": "basehub-farcaster-app",
   "version": "1.0.0",
+  "type": "module",
   "description": "BaseHub - Play games and earn XP on Base network through Farcaster",
   "main": "index.html",
   "scripts": {
