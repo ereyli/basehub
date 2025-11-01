@@ -730,6 +730,15 @@ const DailyQuestSystem = () => {
         icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { erc1155Deployed: 7 }
+      },
+      {
+        day: 7,
+        title: "x402 Payment",
+        description: "Complete x402 payment 7 times",
+        xpReward: 500,
+        icon: <DollarSign size={20} style={{ color: '#10b981' }} />,
+        color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+        requirements: { x402Payment: 7 }
       }
     ]
 
