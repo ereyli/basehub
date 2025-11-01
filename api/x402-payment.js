@@ -111,6 +111,8 @@ app.post('/', async (c) => {
   
   // If we reach here, payment has been verified by middleware
   // Middleware will handle settlement after this handler returns
+  // Return success response - middleware will handle settlement after this
+  // If settlement fails, middleware will override this with 402
   return c.json({
     success: true,
     message: 'Payment verified successfully!',
@@ -125,18 +127,6 @@ app.post('/', async (c) => {
       paymentCompleted: true,
     },
   })
-  } catch (error) {
-    console.error('❌ Error in payment endpoint:', error)
-    console.error('Error stack:', error.stack)
-    console.error('Error name:', error.name)
-    console.error('Error message:', error.message)
-    
-    return c.json({
-      error: 'Internal Server Error',
-      message: error.message || 'Payment processing failed',
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-    }, 500)
-  }
 })
 
 // Export for Vercel (serverless function)
