@@ -41,7 +41,7 @@ app.use('/*', cors({
 // Health check endpoint (before payment middleware)
 // Test endpoint to verify Hono is working
 app.get('/', (c) => {
-  console.log('✅ Health check endpoint called')
+  console.log('✅ GET / health check endpoint called')
   return c.json({
     status: 'ok',
     network: NETWORK,
@@ -54,11 +54,40 @@ app.get('/', (c) => {
 
 // Test endpoint without payment middleware
 app.get('/test', (c) => {
-  console.log('✅ Test endpoint called')
+  console.log('✅ GET /test endpoint called')
   return c.json({ message: 'Test endpoint works', timestamp: new Date().toISOString() })
 })
 
-// Apply x402 payment middleware (following Coinbase documentation exactly)
+// x402 Payment endpoint - MUST be defined BEFORE middleware to be protected
+app.post('/', async (c) => {
+  console.log('✅ POST / endpoint called (payment verified)')
+  try {
+    // If we reach here, payment has been verified by middleware
+    return c.json({
+      success: true,
+      message: 'Payment verified successfully!',
+      payment: {
+        amount: PRICE,
+        currency: 'USDC',
+        network: NETWORK,
+        recipient: RECEIVING_ADDRESS,
+      },
+      timestamp: new Date().toISOString(),
+      data: {
+        paymentCompleted: true,
+      },
+    })
+  } catch (error) {
+    console.error('Error in payment endpoint:', error)
+    return c.json({
+      error: 'Internal Server Error',
+      message: error.message || 'Payment processing failed',
+    }, 500)
+  }
+})
+
+// Apply x402 payment middleware AFTER route handlers are defined
+// Following Coinbase documentation: middleware protects routes defined before it
 // Note: In Vercel, this file at /api/x402-payment.js automatically creates /api/x402-payment endpoint
 // The route path in middleware config should match the route handler path
 try {
@@ -98,35 +127,6 @@ try {
   })
   throw error
 }
-
-// x402 Payment endpoint
-// This will be protected by the payment middleware above
-app.post('/', async (c) => {
-  console.log('✅ POST / endpoint called (payment verified)')
-  try {
-    // If we reach here, payment has been verified by middleware
-    return c.json({
-      success: true,
-      message: 'Payment verified successfully!',
-      payment: {
-        amount: PRICE,
-        currency: 'USDC',
-        network: NETWORK,
-        recipient: RECEIVING_ADDRESS,
-      },
-      timestamp: new Date().toISOString(),
-      data: {
-        paymentCompleted: true,
-      },
-    })
-  } catch (error) {
-    console.error('Error in payment endpoint:', error)
-    return c.json({
-      error: 'Internal Server Error',
-      message: error.message || 'Payment processing failed',
-    }, 500)
-  }
-})
 
 // Export for Vercel (serverless function)
 // Vercel serverless function handler format
