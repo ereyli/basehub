@@ -15,7 +15,9 @@ const RECEIVING_ADDRESS = process.env.X402_RECEIVING_ADDRESS || '0x7d2Ceb7a0e0C3
 
 // Payment configuration
 const PRICE = '$0.10' // 0.1 USDC
-const NETWORK = process.env.X402_NETWORK || 'base' // 'base' for mainnet, 'base-sepolia' for testnet
+// Default to testnet since we're using testnet facilitator
+// Change to 'base' for mainnet when CDP keys are configured
+const NETWORK = process.env.X402_NETWORK || 'base-sepolia' // 'base' for mainnet, 'base-sepolia' for testnet
 
 // Configure facilitator
 // Following x402.md documentation exactly
