@@ -5,7 +5,8 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { paymentMiddleware } from 'x402-hono'
-import { facilitator } from '@coinbase/x402'
+// Facilitator import - conditional for mainnet
+// import { facilitator } from '@coinbase/x402' // Uncomment when using mainnet with CDP keys
 
 const app = new Hono()
 
@@ -17,26 +18,16 @@ const PRICE = '$0.10' // 0.1 USDC
 const NETWORK = process.env.X402_NETWORK || 'base' // 'base' for mainnet, 'base-sepolia' for testnet
 
 // Configure facilitator
+// Following x402.md documentation exactly
+// For testnet: { url: "https://x402.org/facilitator" }
+// For mainnet: use facilitator from @coinbase/x402 (requires CDP API keys)
 let facilitatorConfig
-try {
-  if (process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET) {
-    // Use CDP facilitator for mainnet
-    facilitatorConfig = facilitator({
-      apiKeyId: process.env.CDP_API_KEY_ID,
-      apiKeySecret: process.env.CDP_API_KEY_SECRET,
-    })
-    console.log('✅ Using CDP facilitator for mainnet')
-  } else {
-    // Use testnet facilitator
-    facilitatorConfig = { url: 'https://x402.org/facilitator' }
-    console.log('✅ Using testnet facilitator')
-  }
-} catch (error) {
-  console.error('❌ Error configuring facilitator:', error)
-  // Fallback to testnet facilitator
-  facilitatorConfig = { url: 'https://x402.org/facilitator' }
-  console.log('⚠️ Fallback to testnet facilitator')
-}
+
+// For now, use testnet facilitator
+// When ready for mainnet, uncomment the import above and use:
+// facilitatorConfig = facilitator
+facilitatorConfig = { url: 'https://x402.org/facilitator' }
+console.log('✅ Using testnet facilitator')
 
 // CORS middleware
 app.use('/*', cors({
