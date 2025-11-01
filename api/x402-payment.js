@@ -25,14 +25,17 @@ try {
       apiKeyId: process.env.CDP_API_KEY_ID,
       apiKeySecret: process.env.CDP_API_KEY_SECRET,
     })
+    console.log('✅ Using CDP facilitator for mainnet')
   } else {
     // Use testnet facilitator
     facilitatorConfig = { url: 'https://x402.org/facilitator' }
+    console.log('✅ Using testnet facilitator')
   }
 } catch (error) {
-  console.error('Error configuring facilitator:', error)
+  console.error('❌ Error configuring facilitator:', error)
   // Fallback to testnet facilitator
   facilitatorConfig = { url: 'https://x402.org/facilitator' }
+  console.log('⚠️ Fallback to testnet facilitator')
 }
 
 // CORS middleware
@@ -58,23 +61,30 @@ app.get('/', (c) => {
 // Apply x402 payment middleware (following Coinbase documentation exactly)
 // Note: In Vercel, this file at /api/x402-payment.js automatically creates /api/x402-payment endpoint
 // So the route path should be '/' relative to the file
-app.use(
-  paymentMiddleware(
-    RECEIVING_ADDRESS, // your receiving wallet address
-    {
-      // Route configurations for protected endpoints (path only, method specified in route handler)
-      '/': {
-        price: PRICE,
-        network: NETWORK, // 'base' for mainnet, 'base-sepolia' for testnet
-        config: {
-          description: 'BaseHub x402 Payment - Pay 0.1 USDC',
-          mimeType: 'application/json',
+try {
+  console.log('🔧 Applying x402 payment middleware...')
+  app.use(
+    paymentMiddleware(
+      RECEIVING_ADDRESS, // your receiving wallet address
+      {
+        // Route configurations for protected endpoints (path only, method specified in route handler)
+        '/': {
+          price: PRICE,
+          network: NETWORK, // 'base' for mainnet, 'base-sepolia' for testnet
+          config: {
+            description: 'BaseHub x402 Payment - Pay 0.1 USDC',
+            mimeType: 'application/json',
+          },
         },
       },
-    },
-    facilitatorConfig // facilitator configuration
+      facilitatorConfig // facilitator configuration
+    )
   )
-)
+  console.log('✅ x402 payment middleware applied successfully')
+} catch (error) {
+  console.error('❌ Error applying x402 middleware:', error)
+  throw error
+}
 
 // x402 Payment endpoint
 app.post('/', (c) => {
