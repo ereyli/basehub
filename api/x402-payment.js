@@ -95,24 +95,14 @@ app.use(
 )
 
 // x402 Payment endpoint - protected by middleware above
-// Following x402.md documentation: route handler after middleware
-// When payment is verified, middleware calls this handler
-// NOTE: x402-hono middleware will:
-// 1. Verify payment (return 402 if invalid)
-// 2. Call this route handler via next()
-// 3. Perform settlement after route handler completes
-// 4. Return route handler's response with X-PAYMENT-RESPONSE header
-app.post('/', async (c) => {
-  console.log('✅ POST / endpoint called - middleware verified payment')
+// Following x402.md documentation exactly (lines 195-229)
+// Route handler is called AFTER middleware verifies payment
+// Middleware performs settlement AFTER route handler returns
+// IMPORTANT: Route handler must return 200 status for middleware to complete settlement
+app.post('/', (c) => {
+  console.log('✅ POST / endpoint called - payment verified by middleware')
   
-  // Check if payment header is present (middleware should have verified it)
-  const paymentHeader = c.req.header('X-PAYMENT')
-  console.log('💰 Payment header present:', !!paymentHeader)
-  
-  // If we reach here, payment has been verified by middleware
-  // Middleware will handle settlement after this handler returns
-  // Return success response - middleware will handle settlement after this
-  // If settlement fails, middleware will override this with 402
+  // Following x402.md example exactly - simple response
   return c.json({
     success: true,
     message: 'Payment verified successfully!',
