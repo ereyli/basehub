@@ -58,36 +58,8 @@ app.get('/test', (c) => {
   return c.json({ message: 'Test endpoint works', timestamp: new Date().toISOString() })
 })
 
-// x402 Payment endpoint - MUST be defined BEFORE middleware to be protected
-app.post('/', async (c) => {
-  console.log('✅ POST / endpoint called (payment verified)')
-  try {
-    // If we reach here, payment has been verified by middleware
-    return c.json({
-      success: true,
-      message: 'Payment verified successfully!',
-      payment: {
-        amount: PRICE,
-        currency: 'USDC',
-        network: NETWORK,
-        recipient: RECEIVING_ADDRESS,
-      },
-      timestamp: new Date().toISOString(),
-      data: {
-        paymentCompleted: true,
-      },
-    })
-  } catch (error) {
-    console.error('Error in payment endpoint:', error)
-    return c.json({
-      error: 'Internal Server Error',
-      message: error.message || 'Payment processing failed',
-    }, 500)
-  }
-})
-
-// Apply x402 payment middleware AFTER route handlers are defined
-// Following Coinbase documentation: middleware protects routes defined before it
+// Apply x402 payment middleware FIRST (following Coinbase documentation exactly)
+// Middleware must be applied before route handlers to protect them
 // Note: In Vercel, this file at /api/x402-payment.js automatically creates /api/x402-payment endpoint
 // The route path in middleware config should match the route handler path
 try {
@@ -127,6 +99,35 @@ try {
   })
   throw error
 }
+
+// x402 Payment endpoint - protected by middleware above
+// Following Coinbase documentation: route handler after middleware
+app.post('/', async (c) => {
+  console.log('✅ POST / endpoint called (payment verified)')
+  try {
+    // If we reach here, payment has been verified by middleware
+    return c.json({
+      success: true,
+      message: 'Payment verified successfully!',
+      payment: {
+        amount: PRICE,
+        currency: 'USDC',
+        network: NETWORK,
+        recipient: RECEIVING_ADDRESS,
+      },
+      timestamp: new Date().toISOString(),
+      data: {
+        paymentCompleted: true,
+      },
+    })
+  } catch (error) {
+    console.error('Error in payment endpoint:', error)
+    return c.json({
+      error: 'Internal Server Error',
+      message: error.message || 'Payment processing failed',
+    }, 500)
+  }
+})
 
 // Export for Vercel (serverless function)
 // Vercel serverless function handler format
