@@ -75,6 +75,8 @@ app.get('/test', (c) => {
 // Apply x402 payment middleware (following x402.md documentation exactly)
 // Middleware MUST be applied BEFORE route handlers
 // Following the exact pattern from x402.md Hono example
+// NOTE: Middleware performs settlement AFTER route handler returns
+// If settlement fails, middleware will override route handler's response with 402
 app.use(
   paymentMiddleware(
     RECEIVING_ADDRESS, // your receiving wallet address
@@ -87,6 +89,9 @@ app.use(
         config: {
           description: 'BaseHub x402 Payment - Pay 0.1 USDC',
           mimeType: 'application/json',
+          // Increase timeout for settlement verification (default is 60 seconds)
+          // Settlement may take time to verify on-chain transaction
+          maxTimeoutSeconds: 300, // 5 minutes
         },
       },
     },
@@ -102,7 +107,14 @@ app.use(
 app.post('/', (c) => {
   console.log('✅ POST / endpoint called - payment verified by middleware')
   
-  // Following x402.md example exactly - simple response
+  // Log payment header details for debugging
+  const paymentHeader = c.req.header('X-PAYMENT')
+  if (paymentHeader) {
+    console.log('📋 X-PAYMENT header present:', paymentHeader.substring(0, 100) + '...')
+  }
+  
+  // Following x402.md example exactly - simple response with 200 status
+  // This ensures middleware will attempt settlement
   return c.json({
     success: true,
     message: 'Payment verified successfully!',
@@ -116,7 +128,7 @@ app.post('/', (c) => {
     data: {
       paymentCompleted: true,
     },
-  })
+  }, 200) // Explicitly set status 200
 })
 
 // Export for Vercel (serverless function)
