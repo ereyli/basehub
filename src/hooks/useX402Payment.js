@@ -31,17 +31,29 @@ export const useX402Payment = () => {
       // 4. Creates payment transaction
       // 5. Retries request with X-PAYMENT header
       
-      // x402-fetch can automatically detect amount from 402 response
-      // Amount parameter is optional - if not provided, it will be read from the 402 response
+      // x402-fetch configuration for Base mainnet
+      // Base mainnet USDC: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 (6 decimals)
+      // 0.1 USDC = 100000 base units
+      const USDC_CONTRACT_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' // Base mainnet USDC
+      const PAYMENT_AMOUNT = BigInt(100000) // 0.1 USDC
+      
+      console.log('💰 Payment config:', {
+        amount: PAYMENT_AMOUNT.toString(),
+        token: USDC_CONTRACT_ADDRESS,
+        network: 'base',
+      })
+      
+      // x402-fetch can automatically detect amount and token from 402 response
+      // But we can optionally provide them for explicit control
       const fetchWithPayment = wrapFetchWithPayment(
         fetch,
         walletClient,
-        // Amount parameter - x402-fetch will use this or read from 402 response
-        // 0.1 USDC = 100000 (6 decimals)
-        BigInt(100000),
+        PAYMENT_AMOUNT, // Amount in token's base units (100000 = 0.1 USDC)
+        {
+          tokenAddress: USDC_CONTRACT_ADDRESS, // Base mainnet USDC
+          network: 'base', // Base mainnet
+        }
       )
-      
-      console.log('💰 Payment amount: 0.1 USDC (100000 base units)')
 
       console.log('📡 Making payment request to /api/x402-payment...')
       
