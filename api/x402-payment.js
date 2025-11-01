@@ -107,10 +107,22 @@ app.post('/', (c) => {
 // Vercel handler format - convert Node.js req/res to Web Standard Request/Response for Hono
 export default async function handler(req, res) {
   try {
-    // Build full URL
+    // In Vercel, req.url is relative to the function endpoint
+    // For /api/x402-payment.js, req.url will be '/'
+    const path = req.url || '/'
+    
+    // Build full URL for Hono
     const protocol = req.headers['x-forwarded-proto'] || 'https'
     const host = req.headers.host || req.headers['x-forwarded-host'] || 'localhost'
-    const url = `${protocol}://${host}${req.url || '/'}`
+    const url = `${protocol}://${host}${path}`
+
+    console.log('🔍 Vercel handler:', {
+      method: req.method,
+      url: req.url,
+      path: path,
+      fullUrl: url,
+      headers: Object.keys(req.headers || {}),
+    })
 
     // Get request body
     let body = undefined
@@ -129,8 +141,19 @@ export default async function handler(req, res) {
       body: body,
     })
 
+    console.log('📤 Calling Hono app with request:', {
+      method: request.method,
+      url: request.url,
+    })
+
     // Call Hono app
     const response = await app.fetch(request)
+
+    console.log('📥 Hono response:', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+    })
 
     // Copy response headers
     response.headers.forEach((value, key) => {
@@ -148,7 +171,8 @@ export default async function handler(req, res) {
       res.end()
     }
   } catch (error) {
-    console.error('Vercel handler error:', error)
+    console.error('❌ Vercel handler error:', error)
+    console.error('Error stack:', error.stack)
     if (!res.headersSent) {
       res.status(500).json({
         error: 'Internal Server Error',
