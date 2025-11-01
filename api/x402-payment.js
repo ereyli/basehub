@@ -23,11 +23,24 @@ const NETWORK = process.env.X402_NETWORK || 'base' // 'base' for mainnet, 'base-
 // For mainnet: use facilitator from @coinbase/x402 (requires CDP API keys)
 let facilitatorConfig
 
-// For now, use testnet facilitator
-// When ready for mainnet, uncomment the import above and use:
-// facilitatorConfig = facilitator
-facilitatorConfig = { url: 'https://x402.org/facilitator' }
-console.log('✅ Using testnet facilitator')
+// Facilitator configuration
+// For mainnet with CDP keys: use facilitator from @coinbase/x402
+// For testnet: use { url: "https://x402.org/facilitator" }
+if (process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET) {
+  // Import facilitator when CDP keys are available
+  // facilitatorConfig = facilitator
+  console.log('✅ CDP API keys found, but facilitator import commented out')
+  console.log('⚠️  Using testnet facilitator - uncomment facilitator import for mainnet')
+  facilitatorConfig = { url: 'https://x402.org/facilitator' }
+} else {
+  // Use testnet facilitator when no CDP keys
+  facilitatorConfig = { url: 'https://x402.org/facilitator' }
+  console.log('✅ Using testnet facilitator (no CDP keys found)')
+  console.log('⚠️  NOTE: NETWORK is set to "base" (mainnet) but facilitator is testnet!')
+  console.log('⚠️  This may cause payment failures. Either:')
+  console.log('    1. Set NETWORK to "base-sepolia" for testnet, OR')
+  console.log('    2. Add CDP_API_KEY_ID and CDP_API_KEY_SECRET for mainnet facilitator')
+}
 
 // CORS middleware
 app.use('/*', cors({

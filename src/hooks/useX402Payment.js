@@ -31,28 +31,25 @@ export const useX402Payment = () => {
       // 4. Creates payment transaction
       // 5. Retries request with X-PAYMENT header
       
-      // x402-fetch configuration for Base mainnet
-      // Base mainnet USDC: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 (6 decimals)
-      // 0.1 USDC = 100000 base units
-      const USDC_CONTRACT_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' // Base mainnet USDC
-      const PAYMENT_AMOUNT = BigInt(100000) // 0.1 USDC
+      // x402-fetch automatically reads payment requirements from 402 response
+      // We only need to specify maxValue (optional, defaults to 0.1 USDC)
+      // 0.1 USDC = 100000 base units (6 decimals)
+      const MAX_PAYMENT_AMOUNT = BigInt(100000) // 0.1 USDC max
       
       console.log('💰 Payment config:', {
-        amount: PAYMENT_AMOUNT.toString(),
-        token: USDC_CONTRACT_ADDRESS,
-        network: 'base',
+        maxAmount: MAX_PAYMENT_AMOUNT.toString(),
+        note: 'Token address and network are read from 402 response',
       })
       
-      // x402-fetch can automatically detect amount and token from 402 response
-      // But we can optionally provide them for explicit control
+      // wrapFetchWithPayment signature: (fetch, walletClient, maxValue?)
+      // x402-fetch will automatically:
+      // 1. Read payment requirements from 402 response
+      // 2. Extract token address and network from response
+      // 3. Create payment transaction using wallet client
       const fetchWithPayment = wrapFetchWithPayment(
         fetch,
         walletClient,
-        PAYMENT_AMOUNT, // Amount in token's base units (100000 = 0.1 USDC)
-        {
-          tokenAddress: USDC_CONTRACT_ADDRESS, // Base mainnet USDC
-          network: 'base', // Base mainnet
-        }
+        MAX_PAYMENT_AMOUNT // Max allowed payment amount (safety check)
       )
 
       console.log('📡 Making payment request to /api/x402-payment...')
