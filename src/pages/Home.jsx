@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useAccount, useWalletClient } from 'wagmi'
-import { wrapFetchWithPayment } from 'x402-fetch'
+import { useAccount } from 'wagmi'
 import { getLeaderboard } from '../utils/xpUtils'
 import { useTransactions } from '../hooks/useTransactions'
+import { useX402Payment } from '../hooks/useX402Payment'
 import EmbedMeta from '../components/EmbedMeta'
 import TwitterShareButton from '../components/TwitterShareButton'
 import DailyQuestSystem from '../components/DailyQuestSystem'
@@ -12,9 +12,16 @@ import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, 
 
 const Home = () => {
   const { isConnected } = useAccount()
-  const { address } = useAccount()
-  const { data: walletClient } = useWalletClient()
   const { sendGMTransaction, sendGNTransaction, isLoading: transactionLoading } = useTransactions()
+  
+  // x402 Payment hook - uses Coinbase Wallet SDK exclusively
+  const { 
+    makePayment: makeX402Payment, 
+    connectCoinbaseWallet,
+    isLoading: isLoadingX402,
+    error: x402Error,
+    isConnected: isCoinbaseConnected 
+  } = useX402Payment()
   
   // Safely get Farcaster context
   let isInFarcaster = false
@@ -32,8 +39,6 @@ const Home = () => {
   const [successMessage, setSuccessMessage] = useState('')
   const [isLoadingGM, setIsLoadingGM] = useState(false)
   const [isLoadingGN, setIsLoadingGN] = useState(false)
-  const [isLoadingX402, setIsLoadingX402] = useState(false)
-  const [x402Error, setX402Error] = useState(null)
 
   // Load leaderboard
   useEffect(() => {
@@ -112,54 +117,17 @@ const Home = () => {
 
   const handleX402Payment = async (e) => {
     e.preventDefault()
-    if (!isConnected || !address) {
-      setX402Error('Please connect your wallet first')
-      return
-    }
-
-    if (!walletClient) {
-      setX402Error('Wallet not available. Please unlock your wallet.')
-      return
-    }
-
-    setIsLoadingX402(true)
-    setX402Error(null)
     setSuccessMessage('')
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 100))
-      
-      // Use relative path to avoid CORS issues
-      const apiUrl = '/api/x402-payment'
-      
-      const fetchWithPayment = wrapFetchWithPayment(
-        fetch,
-        walletClient,
-        BigInt(100000), // 0.1 USDC in base units (6 decimals: 0.1 * 10^6)
-      )
-
-      const response = await fetchWithPayment(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || errorData.error || 'Payment failed')
-      }
-
-      const result = await response.json()
+      // Use Coinbase Wallet SDK for x402 payment
+      const result = await makeX402Payment()
       setSuccessMessage('✅ Payment successful! Thank you.')
       setTimeout(() => setSuccessMessage(''), 5000)
       console.log('x402 Payment successful:', result)
-
     } catch (err) {
+      // Error is already set in hook
       console.error('x402 Payment error:', err)
-      setX402Error(err.message || 'Payment failed. Please try again.')
-    } finally {
-      setIsLoadingX402(false)
     }
   }
 
@@ -516,13 +484,13 @@ const Home = () => {
                   <button
                     key={game.id}
                     onClick={handleX402Payment}
-                    disabled={!isConnected || !walletClient || isLoadingX402}
+                    disabled={isLoadingX402}
                     className="game-card"
                     style={{ 
                       textDecoration: 'none',
                       border: 'none',
-                      cursor: isConnected && walletClient && !isLoadingX402 ? 'pointer' : 'not-allowed',
-                      opacity: isConnected && walletClient && !isLoadingX402 ? 1 : 0.6,
+                      cursor: !isLoadingX402 ? 'pointer' : 'not-allowed',
+                      opacity: !isLoadingX402 ? 1 : 0.6,
                       position: 'relative'
                     }}
                   >
@@ -588,7 +556,7 @@ const Home = () => {
                     </p>
                     
                     {/* Error message */}
-                    {x402Error && game.id === 'x402-premium' && (
+                    {x402Error && (
                       <div style={{
                         marginTop: '8px',
                         padding: '8px',
@@ -601,6 +569,19 @@ const Home = () => {
                       }}>
                         {x402Error}
                       </div>
+                    )}
+                    
+                    {/* Coinbase Wallet connection status */}
+                    {!isCoinbaseConnected && !isLoadingX402 && (
+                      <p style={{
+                        marginTop: '8px',
+                        fontSize: '11px',
+                        color: '#6b7280',
+                        textAlign: 'center',
+                        fontStyle: 'italic'
+                      }}>
+                        Will connect to Coinbase Wallet
+                      </p>
                     )}
                   </button>
                 )
