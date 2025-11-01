@@ -72,50 +72,31 @@ app.get('/test', (c) => {
   return c.json({ message: 'Test endpoint works', timestamp: new Date().toISOString() })
 })
 
-// Apply x402 payment middleware FIRST (following Coinbase documentation exactly)
-// Middleware intercepts requests and handles payment verification
-// Note: In Vercel, this file at /api/x402-payment.js automatically creates /api/x402-payment endpoint
-// The route path in middleware config should match the route handler path
-try {
-  console.log('🔧 Applying x402 payment middleware...')
-  console.log('Middleware config:', {
-    receivingAddress: RECEIVING_ADDRESS,
-    price: PRICE,
-    network: NETWORK,
-    facilitator: facilitatorConfig,
-  })
-  
-  app.use(
-    paymentMiddleware(
-      RECEIVING_ADDRESS, // your receiving wallet address
-      {
-        // Route configurations for protected endpoints
-        // Path must match the route handler path exactly
-        '/': {
-          price: PRICE,
-          network: NETWORK, // 'base' for mainnet, 'base-sepolia' for testnet
-          config: {
-            description: 'BaseHub x402 Payment - Pay 0.1 USDC',
-            mimeType: 'application/json',
-          },
+// Apply x402 payment middleware (following x402.md documentation exactly)
+// Middleware MUST be applied BEFORE route handlers
+// Following the exact pattern from x402.md Hono example
+app.use(
+  paymentMiddleware(
+    RECEIVING_ADDRESS, // your receiving wallet address
+    {
+      // Route configurations for protected endpoints
+      // Path matches the route handler path
+      '/': {
+        price: PRICE, // '$0.10'
+        network: NETWORK, // 'base' for mainnet
+        config: {
+          description: 'BaseHub x402 Payment - Pay 0.1 USDC',
+          mimeType: 'application/json',
         },
       },
-      facilitatorConfig // facilitator configuration
-    )
+    },
+    facilitatorConfig // facilitator configuration (CDP facilitator for mainnet)
   )
-  console.log('✅ x402 payment middleware applied successfully')
-} catch (error) {
-  console.error('❌ Error applying x402 middleware:', error)
-  console.error('Error details:', {
-    message: error.message,
-    stack: error.stack,
-    name: error.name,
-  })
-  throw error
-}
+)
 
 // x402 Payment endpoint - protected by middleware above
-// Middleware will verify payment, then call this handler if payment is valid
+// Following x402.md documentation: route handler after middleware
+// When payment is verified, middleware calls this handler
 app.post('/', async (c) => {
   console.log('✅ POST / endpoint called (payment verified)')
   
