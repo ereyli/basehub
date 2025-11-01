@@ -6,8 +6,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { paymentMiddleware } from 'x402-hono'
 // Facilitator import for mainnet
-// Uncomment when CDP API keys are set in environment variables
-// import { facilitator } from '@coinbase/x402'
+import { facilitator } from '@coinbase/x402'
 
 const app = new Hono()
 
@@ -28,12 +27,13 @@ let facilitatorConfig
 // For mainnet: requires CDP API keys and facilitator from @coinbase/x402
 // For testnet: use { url: "https://x402.org/facilitator" }
 if (process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET) {
-  // Use CDP facilitator for mainnet (requires uncommenting import above)
-  // TODO: Uncomment the facilitator import at the top of this file
-  // facilitatorConfig = facilitator
-  console.log('⚠️  CDP API keys found, but facilitator import is commented out')
-  console.log('⚠️  Using testnet facilitator as fallback - UNCOMMENT facilitator import for mainnet!')
-  facilitatorConfig = { url: 'https://x402.org/facilitator' }
+  // Use CDP facilitator for mainnet
+  facilitatorConfig = facilitator
+  console.log('✅ Using CDP facilitator for Base mainnet')
+  console.log('✅ CDP API keys found:', {
+    keyId: process.env.CDP_API_KEY_ID ? 'Set' : 'Missing',
+    keySecret: process.env.CDP_API_KEY_SECRET ? 'Set' : 'Missing',
+  })
 } else {
   // Use testnet facilitator when no CDP keys (will cause errors on mainnet)
   facilitatorConfig = { url: 'https://x402.org/facilitator' }
@@ -41,7 +41,6 @@ if (process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET) {
   console.log('⚠️  NETWORK is "base" (mainnet) but using testnet facilitator')
   console.log('⚠️  Payments will FAIL on mainnet!')
   console.log('⚠️  To fix: Add CDP_API_KEY_ID and CDP_API_KEY_SECRET to Vercel environment variables')
-  console.log('⚠️  Then uncomment: import { facilitator } from "@coinbase/x402"')
 }
 
 // CORS middleware
@@ -119,9 +118,24 @@ try {
 // Following Coinbase documentation: route handler after middleware
 app.post('/', async (c) => {
   console.log('✅ POST / endpoint called (payment verified)')
+  console.log('📋 Request details:', {
+    method: c.req.method,
+    url: c.req.url,
+    headers: Object.fromEntries(c.req.headers.entries()),
+  })
+  
   try {
+    // Check if payment header is present (middleware should have verified it)
+    const paymentHeader = c.req.header('X-PAYMENT')
+    console.log('💰 Payment header present:', !!paymentHeader)
+    
+    if (!paymentHeader) {
+      console.warn('⚠️  No X-PAYMENT header found - middleware may not have verified payment')
+      // Don't reject, middleware should have handled this
+    }
+    
     // If we reach here, payment has been verified by middleware
-    return c.json({
+    const response = {
       success: true,
       message: 'Payment verified successfully!',
       payment: {
@@ -134,12 +148,20 @@ app.post('/', async (c) => {
       data: {
         paymentCompleted: true,
       },
-    })
+    }
+    
+    console.log('✅ Payment verified, returning success response:', response)
+    return c.json(response)
   } catch (error) {
-    console.error('Error in payment endpoint:', error)
+    console.error('❌ Error in payment endpoint:', error)
+    console.error('Error stack:', error.stack)
+    console.error('Error name:', error.name)
+    console.error('Error message:', error.message)
+    
     return c.json({
       error: 'Internal Server Error',
       message: error.message || 'Payment processing failed',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     }, 500)
   }
 })
@@ -217,13 +239,28 @@ export default async function handler(req, res) {
 
     // Get body and send
     const responseBody = await response.text()
+    
+    console.log('📤 Sending response to client:', {
+      status: response.status,
+      statusText: response.statusText,
+      bodyLength: responseBody.length,
+      contentType: response.headers.get('content-type'),
+    })
+    
     res.status(response.status)
     
     if (responseBody) {
       // Check if it's JSON
       const contentType = response.headers.get('content-type') || ''
       if (contentType.includes('application/json')) {
-        res.json(JSON.parse(responseBody))
+        try {
+          const jsonData = JSON.parse(responseBody)
+          console.log('📦 JSON response body:', jsonData)
+          res.json(jsonData)
+        } catch (parseError) {
+          console.error('❌ Error parsing JSON response:', parseError)
+          res.send(responseBody)
+        }
       } else {
         res.send(responseBody)
       }
@@ -232,10 +269,15 @@ export default async function handler(req, res) {
     }
   } catch (error) {
     console.error('❌ Vercel handler error:', error)
+    console.error('Error stack:', error.stack)
+    console.error('Error name:', error.name)
+    console.error('Error message:', error.message)
+    
     if (!res.headersSent) {
       res.status(500).json({
         error: 'Internal Server Error',
         message: error.message || 'Server error',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
       })
     }
   }
