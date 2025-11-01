@@ -108,8 +108,28 @@ app.post('/', (c) => {
 // Vercel serverless function handler format
 export default async function handler(req, res) {
   try {
-    // Vercel's req object needs to be converted to Web Standard Request
-    const url = new URL(req.url || '/', `https://${req.headers.host || 'localhost'}`)
+    console.log('🔍 Vercel handler called:', {
+      method: req.method,
+      url: req.url,
+      path: req.url,
+      query: req.query,
+    })
+
+    // In Vercel, req.url is the path relative to the function endpoint
+    // For /api/x402-payment.js, req.url will be '/' or the query path
+    // Hono app expects paths relative to root, so we use '/' for all requests
+    const honoPath = '/'
+    
+    // Build full URL for Hono Request
+    const protocol = req.headers['x-forwarded-proto'] || 'https'
+    const host = req.headers.host || req.headers['x-forwarded-host'] || 'localhost'
+    const fullUrl = `${protocol}://${host}${honoPath}${req.url?.includes('?') ? req.url.split('?')[1] : ''}`
+    
+    console.log('📤 Creating Hono Request:', {
+      honoPath,
+      fullUrl,
+      method: req.method,
+    })
     
     // Get body if available
     let body = undefined
@@ -118,14 +138,21 @@ export default async function handler(req, res) {
     }
 
     // Create Web Standard Request for Hono
-    const request = new Request(url.toString(), {
+    // Use '/' as path since Hono routes are defined relative to function endpoint
+    const request = new Request(fullUrl, {
       method: req.method || 'GET',
       headers: new Headers(req.headers || {}),
       body: body,
     })
 
+    console.log('📞 Calling Hono app.fetch...')
     // Call Hono app
     const response = await app.fetch(request)
+    
+    console.log('📥 Hono app response:', {
+      status: response.status,
+      statusText: response.statusText,
+    })
 
     // Convert Hono Response to Vercel response
     // Copy headers
