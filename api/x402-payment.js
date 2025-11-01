@@ -49,15 +49,15 @@ app.get('/', (c) => {
   })
 })
 
-// Apply x402 payment middleware (following Coinbase documentation example)
+// Apply x402 payment middleware (following Coinbase documentation exactly)
 // Note: In Vercel, this file at /api/x402-payment.js automatically creates /api/x402-payment endpoint
 // So the route path should be '/' relative to the file
 app.use(
   paymentMiddleware(
     RECEIVING_ADDRESS, // your receiving wallet address
     {
-      // Route configurations for protected endpoints
-      'POST /': {
+      // Route configurations for protected endpoints (path only, method specified in route handler)
+      '/': {
         price: PRICE,
         network: NETWORK, // 'base' for mainnet, 'base-sepolia' for testnet
         config: {
