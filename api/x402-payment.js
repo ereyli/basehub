@@ -13,8 +13,8 @@ const app = new Hono()
 const RECEIVING_ADDRESS = process.env.X402_RECEIVING_ADDRESS || '0x0000000000000000000000000000000000000000'
 
 // Payment configuration
-const PRICE = '$0.1' // 0.1 USDC
-const NETWORK = process.env.X402_NETWORK || 'base' // 'base' for mainnet, 'base-sepolia' for testnet
+const PRICE = '$0.10' // 0.1 USDC
+const NETWORK = process.env.X402_NETWORK || 'base-sepolia' // 'base' for mainnet, 'base-sepolia' for testnet
 
 // Configure facilitator
 let facilitatorConfig
@@ -38,7 +38,7 @@ app.use('/*', cors({
   maxAge: 86400,
 }))
 
-// Health check endpoint
+// Health check endpoint (before payment middleware)
 app.get('/', (c) => {
   return c.json({
     status: 'ok',
@@ -49,21 +49,24 @@ app.get('/', (c) => {
   })
 })
 
-// Apply x402 payment middleware
+// Apply x402 payment middleware (following Coinbase documentation example)
+// Note: In Vercel, this file at /api/x402-payment.js automatically creates /api/x402-payment endpoint
+// So the route path should be '/' relative to the file
 app.use(
   paymentMiddleware(
-    RECEIVING_ADDRESS,
+    RECEIVING_ADDRESS, // your receiving wallet address
     {
+      // Route configurations for protected endpoints
       'POST /': {
         price: PRICE,
-        network: NETWORK,
+        network: NETWORK, // 'base' for mainnet, 'base-sepolia' for testnet
         config: {
           description: 'BaseHub x402 Payment - Pay 0.1 USDC',
           mimeType: 'application/json',
         },
       },
     },
-    facilitatorConfig
+    facilitatorConfig // facilitator configuration
   )
 )
 
@@ -86,5 +89,5 @@ app.post('/', (c) => {
   })
 })
 
-// Export for Vercel
+// Export for Vercel (serverless function)
 export default app
