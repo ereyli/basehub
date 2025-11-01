@@ -246,6 +246,18 @@ export default async function handler(req, res) {
       statusText: response.statusText,
       headers: Object.fromEntries(response.headers.entries()),
     })
+    
+    // Log response body for 402 responses (payment required)
+    if (response.status === 402) {
+      const clonedResponse = response.clone()
+      try {
+        const bodyText = await clonedResponse.text()
+        const bodyJson = JSON.parse(bodyText)
+        console.log('💰 402 Payment Required response:', bodyJson)
+      } catch (e) {
+        console.log('⚠️  Could not parse 402 response body')
+      }
+    }
 
     // Convert Hono Response to Vercel response
     // Copy headers
