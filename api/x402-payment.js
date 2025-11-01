@@ -135,25 +135,36 @@ export default async function handler(req, res) {
     console.log('🔍 Vercel handler called:', {
       method: req.method,
       url: req.url,
-      path: req.url,
+      originalUrl: req.url,
       query: req.query,
+      headers: {
+        host: req.headers.host,
+        'x-forwarded-host': req.headers['x-forwarded-host'],
+      },
     })
 
-    // In Vercel, req.url is the path relative to the function endpoint
-    // For /api/x402-payment.js, req.url will be '/' for root requests
-    // Hono routes are defined with '/' so we need to match that
+    // In Vercel, /api/x402-payment.js creates /api/x402-payment endpoint
+    // req.url will be '/' for requests to the function root
+    // We need to normalize the path to '/' for Hono routes
+    
+    // Parse query string if present
+    const urlParts = (req.url || '/').split('?')
+    const path = urlParts[0] || '/'
+    const queryString = urlParts[1] || ''
+    
+    // Normalize path: For Vercel API routes, always use '/' as the base path
+    // because Hono routes are defined relative to the function endpoint
+    const normalizedPath = '/' // Always use root for this function
     
     // Build full URL for Hono Request
-    // Use the original request URL to preserve path
     const protocol = req.headers['x-forwarded-proto'] || 'https'
     const host = req.headers.host || req.headers['x-forwarded-host'] || 'localhost'
-    
-    // Get the path from req.url (will be '/' for root, or path with query)
-    const path = req.url || '/'
-    const fullUrl = new URL(path, `${protocol}://${host}`).toString()
+    const fullUrl = `${protocol}://${host}${normalizedPath}${queryString ? `?${queryString}` : ''}`
     
     console.log('📤 Creating Hono Request:', {
-      path: path,
+      originalPath: path,
+      normalizedPath,
+      queryString,
       fullUrl,
       method: req.method,
     })
@@ -165,20 +176,21 @@ export default async function handler(req, res) {
     }
 
     // Create Web Standard Request for Hono
-    // Use '/' as path since Hono routes are defined relative to function endpoint
+    // IMPORTANT: Path is normalized to '/' because Hono routes are defined at root
     const request = new Request(fullUrl, {
       method: req.method || 'GET',
       headers: new Headers(req.headers || {}),
       body: body,
     })
 
-    console.log('📞 Calling Hono app.fetch...')
+    console.log('📞 Calling Hono app.fetch with normalized path...')
     // Call Hono app
     const response = await app.fetch(request)
     
     console.log('📥 Hono app response:', {
       status: response.status,
       statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
     })
 
     // Convert Hono Response to Vercel response
