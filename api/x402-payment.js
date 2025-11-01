@@ -14,7 +14,7 @@ const RECEIVING_ADDRESS = process.env.X402_RECEIVING_ADDRESS || '0x0000000000000
 
 // Payment configuration
 const PRICE = '$0.10' // 0.1 USDC
-const NETWORK = process.env.X402_NETWORK || 'base-sepolia' // 'base' for mainnet, 'base-sepolia' for testnet
+const NETWORK = process.env.X402_NETWORK || 'base' // 'base' for mainnet, 'base-sepolia' for testnet
 
 // Configure facilitator
 let facilitatorConfig
