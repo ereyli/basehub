@@ -118,16 +118,32 @@ try {
 // Following Coinbase documentation: route handler after middleware
 app.post('/', async (c) => {
   console.log('✅ POST / endpoint called (payment verified)')
+  
+  // Safely get headers
+  const headersObj = {}
+  if (c.req.headers && typeof c.req.headers.entries === 'function') {
+    try {
+      headersObj = Object.fromEntries(c.req.headers.entries())
+    } catch (e) {
+      console.warn('⚠️  Could not parse headers:', e)
+    }
+  }
+  
   console.log('📋 Request details:', {
     method: c.req.method,
     url: c.req.url,
-    headers: Object.fromEntries(c.req.headers.entries()),
+    headers: headersObj,
   })
   
   try {
-    // Check if payment header is present (middleware should have verified it)
-    const paymentHeader = c.req.header('X-PAYMENT')
-    console.log('💰 Payment header present:', !!paymentHeader)
+  // Check if payment header is present (middleware should have verified it)
+  let paymentHeader = null
+  try {
+    paymentHeader = c.req.header('X-PAYMENT')
+  } catch (e) {
+    console.warn('⚠️  Could not read X-PAYMENT header:', e)
+  }
+  console.log('💰 Payment header present:', !!paymentHeader)
     
     if (!paymentHeader) {
       console.warn('⚠️  No X-PAYMENT header found - middleware may not have verified payment')
