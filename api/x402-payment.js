@@ -18,14 +18,20 @@ const NETWORK = process.env.X402_NETWORK || 'base' // 'base' for mainnet, 'base-
 
 // Configure facilitator
 let facilitatorConfig
-if (process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET) {
-  // Use CDP facilitator for mainnet
-  facilitatorConfig = facilitator({
-    apiKeyId: process.env.CDP_API_KEY_ID,
-    apiKeySecret: process.env.CDP_API_KEY_SECRET,
-  })
-} else {
-  // Use testnet facilitator
+try {
+  if (process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET) {
+    // Use CDP facilitator for mainnet
+    facilitatorConfig = facilitator({
+      apiKeyId: process.env.CDP_API_KEY_ID,
+      apiKeySecret: process.env.CDP_API_KEY_SECRET,
+    })
+  } else {
+    // Use testnet facilitator
+    facilitatorConfig = { url: 'https://x402.org/facilitator' }
+  }
+} catch (error) {
+  console.error('Error configuring facilitator:', error)
+  // Fallback to testnet facilitator
   facilitatorConfig = { url: 'https://x402.org/facilitator' }
 }
 
@@ -72,22 +78,33 @@ app.use(
 
 // x402 Payment endpoint
 app.post('/', (c) => {
-  // If we reach here, payment has been verified by middleware
-  return c.json({
-    success: true,
-    message: 'Payment verified successfully!',
-    payment: {
-      amount: PRICE,
-      currency: 'USDC',
-      network: NETWORK,
-      recipient: RECEIVING_ADDRESS,
-    },
-    timestamp: new Date().toISOString(),
-    data: {
-      paymentCompleted: true,
-    },
-  })
+  try {
+    // If we reach here, payment has been verified by middleware
+    return c.json({
+      success: true,
+      message: 'Payment verified successfully!',
+      payment: {
+        amount: PRICE,
+        currency: 'USDC',
+        network: NETWORK,
+        recipient: RECEIVING_ADDRESS,
+      },
+      timestamp: new Date().toISOString(),
+      data: {
+        paymentCompleted: true,
+      },
+    })
+  } catch (error) {
+    console.error('Error in payment endpoint:', error)
+    return c.json({
+      error: 'Internal Server Error',
+      message: error.message || 'Payment processing failed',
+    }, 500)
+  }
 })
 
 // Export for Vercel (serverless function)
-export default app
+// Vercel expects the fetch handler from Hono app
+export default {
+  fetch: app.fetch,
+}
