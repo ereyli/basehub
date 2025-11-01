@@ -104,7 +104,57 @@ app.post('/', (c) => {
 })
 
 // Export for Vercel (serverless function)
-// Vercel expects the fetch handler from Hono app
-export default {
-  fetch: app.fetch,
+// Vercel handler format - convert Node.js req/res to Web Standard Request/Response for Hono
+export default async function handler(req, res) {
+  try {
+    // Build full URL
+    const protocol = req.headers['x-forwarded-proto'] || 'https'
+    const host = req.headers.host || req.headers['x-forwarded-host'] || 'localhost'
+    const path = req.url || '/'
+    const url = `${protocol}://${host}${path}${req.url?.includes('?') ? '' : (req.url?.split('?')[1] ? '?' + req.url.split('?')[1] : '')}`
+
+    // Get request body
+    let body = undefined
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      if (typeof req.body === 'string') {
+        body = req.body
+      } else if (req.body) {
+        body = JSON.stringify(req.body)
+      }
+    }
+
+    // Create Web Standard Request
+    const request = new Request(url, {
+      method: req.method || 'GET',
+      headers: new Headers(req.headers || {}),
+      body: body,
+    })
+
+    // Call Hono app
+    const response = await app.fetch(request)
+
+    // Copy response headers
+    response.headers.forEach((value, key) => {
+      res.setHeader(key, value)
+    })
+
+    // Get response body
+    const responseBody = await response.text()
+
+    // Send response
+    res.status(response.status)
+    if (responseBody) {
+      res.send(responseBody)
+    } else {
+      res.end()
+    }
+  } catch (error) {
+    console.error('Vercel handler error:', error)
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: error.message || 'Server error',
+      })
+    }
+  }
 }
