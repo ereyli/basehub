@@ -97,60 +97,34 @@ app.use(
 // x402 Payment endpoint - protected by middleware above
 // Following x402.md documentation: route handler after middleware
 // When payment is verified, middleware calls this handler
+// NOTE: x402-hono middleware will:
+// 1. Verify payment (return 402 if invalid)
+// 2. Call this route handler via next()
+// 3. Perform settlement after route handler completes
+// 4. Return route handler's response with X-PAYMENT-RESPONSE header
 app.post('/', async (c) => {
-  console.log('✅ POST / endpoint called (payment verified)')
+  console.log('✅ POST / endpoint called - middleware verified payment')
   
-  // Safely get headers
-  const headersObj = {}
-  if (c.req.headers && typeof c.req.headers.entries === 'function') {
-    try {
-      headersObj = Object.fromEntries(c.req.headers.entries())
-    } catch (e) {
-      console.warn('⚠️  Could not parse headers:', e)
-    }
-  }
-  
-  console.log('📋 Request details:', {
-    method: c.req.method,
-    url: c.req.url,
-    headers: headersObj,
-  })
-  
-  try {
   // Check if payment header is present (middleware should have verified it)
-  let paymentHeader = null
-  try {
-    paymentHeader = c.req.header('X-PAYMENT')
-  } catch (e) {
-    console.warn('⚠️  Could not read X-PAYMENT header:', e)
-  }
+  const paymentHeader = c.req.header('X-PAYMENT')
   console.log('💰 Payment header present:', !!paymentHeader)
-    
-    if (!paymentHeader) {
-      console.warn('⚠️  No X-PAYMENT header found - middleware may not have verified payment')
-      // Don't reject, middleware should have handled this
-    }
-    
-    // If we reach here, payment has been verified by middleware
-    const response = {
-      success: true,
-      message: 'Payment verified successfully!',
-      payment: {
-        amount: PRICE,
-        currency: 'USDC',
-        network: NETWORK,
-        recipient: RECEIVING_ADDRESS,
-      },
-      timestamp: new Date().toISOString(),
-      data: {
-        paymentCompleted: true,
-      },
-    }
-    
-    console.log('✅ Payment verified, returning success response:', response)
-    
-    // Set explicit status 200 to ensure middleware doesn't override
-    return c.json(response, 200)
+  
+  // If we reach here, payment has been verified by middleware
+  // Middleware will handle settlement after this handler returns
+  return c.json({
+    success: true,
+    message: 'Payment verified successfully!',
+    payment: {
+      amount: PRICE,
+      currency: 'USDC',
+      network: NETWORK,
+      recipient: RECEIVING_ADDRESS,
+    },
+    timestamp: new Date().toISOString(),
+    data: {
+      paymentCompleted: true,
+    },
+  })
   } catch (error) {
     console.error('❌ Error in payment endpoint:', error)
     console.error('Error stack:', error.stack)
