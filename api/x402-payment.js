@@ -167,7 +167,9 @@ app.post('/', async (c) => {
     }
     
     console.log('✅ Payment verified, returning success response:', response)
-    return c.json(response)
+    
+    // Set explicit status 200 to ensure middleware doesn't override
+    return c.json(response, 200)
   } catch (error) {
     console.error('❌ Error in payment endpoint:', error)
     console.error('Error stack:', error.stack)
