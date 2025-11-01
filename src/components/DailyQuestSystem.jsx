@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Calendar, CheckCircle, Star, Trophy, Zap, Target, Gift, MessageSquare, Coins, Dice1, Dice6, Image, Layers } from 'lucide-react'
+import { Calendar, CheckCircle, Star, Trophy, Zap, Target, Gift, MessageSquare, Coins, Dice1, Dice6, Image, Layers, DollarSign } from 'lucide-react'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { useQuestSystem } from '../hooks/useQuestSystem'
@@ -233,6 +233,15 @@ const DailyQuestSystem = () => {
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { erc1155Deployed: 1 }
       },
+      {
+        day: 1,
+        title: "x402 Payment",
+        description: "Complete x402 payment 1 time",
+        xpReward: 500,
+        icon: <DollarSign size={20} style={{ color: '#10b981' }} />,
+        color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+        requirements: { x402Payment: 1 }
+      },
 
       // Day 2 - Use all features 2 times
       {
@@ -306,6 +315,15 @@ const DailyQuestSystem = () => {
         icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { erc1155Deployed: 2 }
+      },
+      {
+        day: 2,
+        title: "x402 Payment",
+        description: "Complete x402 payment 2 times",
+        xpReward: 500,
+        icon: <DollarSign size={20} style={{ color: '#10b981' }} />,
+        color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+        requirements: { x402Payment: 2 }
       },
 
       // Day 3 - Use all features 3 times
@@ -381,6 +399,15 @@ const DailyQuestSystem = () => {
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { erc1155Deployed: 3 }
       },
+      {
+        day: 3,
+        title: "x402 Payment",
+        description: "Complete x402 payment 3 times",
+        xpReward: 500,
+        icon: <DollarSign size={20} style={{ color: '#10b981' }} />,
+        color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+        requirements: { x402Payment: 3 }
+      },
 
       // Day 4 - Use all features 4 times
       {
@@ -454,6 +481,15 @@ const DailyQuestSystem = () => {
         icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { erc1155Deployed: 4 }
+      },
+      {
+        day: 4,
+        title: "x402 Payment",
+        description: "Complete x402 payment 4 times",
+        xpReward: 500,
+        icon: <DollarSign size={20} style={{ color: '#10b981' }} />,
+        color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+        requirements: { x402Payment: 4 }
       },
 
       // Day 5 - Use all features 5 times
@@ -529,6 +565,15 @@ const DailyQuestSystem = () => {
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { erc1155Deployed: 5 }
       },
+      {
+        day: 5,
+        title: "x402 Payment",
+        description: "Complete x402 payment 5 times",
+        xpReward: 500,
+        icon: <DollarSign size={20} style={{ color: '#10b981' }} />,
+        color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+        requirements: { x402Payment: 5 }
+      },
 
       // Day 6 - Use all features 6 times
       {
@@ -602,6 +647,15 @@ const DailyQuestSystem = () => {
         icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" loading="lazy" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />,
         color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         requirements: { erc1155Deployed: 6 }
+      },
+      {
+        day: 6,
+        title: "x402 Payment",
+        description: "Complete x402 payment 6 times",
+        xpReward: 500,
+        icon: <DollarSign size={20} style={{ color: '#10b981' }} />,
+        color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+        requirements: { x402Payment: 6 }
       },
 
       // Day 7 - Use all features 7 times

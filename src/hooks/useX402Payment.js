@@ -6,6 +6,8 @@ import { wrapFetchWithPayment } from 'x402-fetch'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { config } from '../config/wagmi'
 import { isInFarcaster } from '../config/wagmi'
+import { addXP, recordTransaction } from '../utils/xpUtils'
+import { useQuestSystem } from './useQuestSystem'
 
 export const useX402Payment = () => {
   const { data: walletClient } = useWalletClient() // Get wallet client from wagmi
@@ -13,6 +15,7 @@ export const useX402Payment = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [isFarcaster, setIsFarcaster] = useState(false)
+  const { updateQuestProgress } = useQuestSystem()
 
   // Check if we're in Farcaster environment
   useEffect(() => {
@@ -210,6 +213,31 @@ export const useX402Payment = () => {
       // If in Farcaster and we have a transaction hash, log it for user reference
       if (isFarcaster && transactionHash) {
         console.log('📋 Farcaster payment transaction:', transactionHash)
+      }
+      
+      // Award 500 XP for successful x402 payment
+      if (address) {
+        try {
+          console.log('🎁 Awarding 500 XP for successful x402 payment...')
+          
+          // Add XP (500 XP for x402 payment)
+          await addXP(address, 500, 'X402_PAYMENT')
+          console.log('✅ 500 XP added successfully')
+          
+          // Record transaction
+          await recordTransaction(address, 'X402_PAYMENT', 500, transactionHash || 'x402-payment')
+          console.log('✅ Transaction recorded successfully')
+          
+          // Update quest progress
+          await updateQuestProgress('x402Payment', 1)
+          console.log('✅ Quest progress updated: x402Payment +1')
+          
+        } catch (xpError) {
+          console.error('⚠️ Error awarding XP or updating quest progress:', xpError)
+          // Don't throw error - XP is not critical for payment flow
+        }
+      } else {
+        console.warn('⚠️ No wallet address available, skipping XP reward')
       }
       
       return result

@@ -121,7 +121,7 @@ const Home = () => {
     try {
       // Use Coinbase Wallet SDK for x402 payment
       const result = await makeX402Payment()
-      setSuccessMessage('✅ Payment successful! Thank you.')
+      setSuccessMessage('✅ Payment successful! +500 XP earned!')
       setTimeout(() => setSuccessMessage(''), 5000)
       console.log('x402 Payment successful:', result)
     } catch (err) {
