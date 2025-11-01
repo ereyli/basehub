@@ -93,7 +93,8 @@ app.use(
           mimeType: 'application/json',
           // Increase timeout for settlement verification (default is 60 seconds)
           // Settlement may take time to verify on-chain transaction
-          maxTimeoutSeconds: 300, // 5 minutes
+          // Farcaster transactions may take longer, so we set a higher timeout
+          maxTimeoutSeconds: 600, // 10 minutes (increased for Farcaster compatibility)
         },
       },
     },
