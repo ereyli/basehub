@@ -129,7 +129,8 @@ const Home = () => {
     try {
       await new Promise(resolve => setTimeout(resolve, 100))
       
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://basehub-alpha.vercel.app'
+      // Use relative path to avoid CORS issues
+      const apiUrl = '/api/x402-payment'
       
       const fetchWithPayment = wrapFetchWithPayment(
         fetch,
@@ -137,7 +138,7 @@ const Home = () => {
         BigInt(100000), // 0.1 USDC in base units (6 decimals: 0.1 * 10^6)
       )
 
-      const response = await fetchWithPayment(`${apiUrl}/api/x402-payment`, {
+      const response = await fetchWithPayment(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
