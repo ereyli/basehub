@@ -192,7 +192,7 @@ const Home = () => {
       icon: <Star size={50} style={{ color: 'white' }} />,
       path: null, // Special handler
       color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      xpReward: 'x402',
+      xpReward: '500 XP',
       bonusXP: '0.1 USDC',
       isPayment: true // Mark as payment button
     },
@@ -500,7 +500,7 @@ const Home = () => {
                       {game.icon}
                     </div>
                     
-                    {/* x402 Badge */}
+                    {/* XP Reward Badge - 500 XP */}
                     <div style={{
                       position: 'absolute',
                       top: '12px',
@@ -511,8 +511,8 @@ const Home = () => {
                       padding: '4px 8px',
                       fontSize: '11px',
                       fontWeight: 'bold',
-                      color: '#667eea',
-                      border: '1px solid rgba(102, 126, 234, 0.2)',
+                      color: '#059669',
+                      border: '1px solid rgba(5, 150, 105, 0.2)',
                       boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
                     }}>
                       {game.xpReward}
