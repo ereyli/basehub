@@ -44,29 +44,67 @@ export const useX402Payment = () => {
       console.log('💰 Payment amount: 0.1 USDC (100000 base units)')
 
       console.log('📡 Making payment request to /api/x402-payment...')
-      const response = await fetchWithPayment('/api/x402-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      
+      let response
+      try {
+        response = await fetchWithPayment('/api/x402-payment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+      } catch (fetchError) {
+        console.error('❌ Fetch error:', fetchError)
+        throw new Error(`Network error: ${fetchError.message || 'Failed to reach server'}`)
+      }
+
+      console.log('📥 Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries()),
       })
 
-      console.log('📥 Response received:', response.status, response.statusText)
-
       if (!response.ok) {
-        const errorData = await response.json().catch(() => {
-          // Try to get text if JSON fails
-          return response.text().then(text => ({ message: text })).catch(() => ({}))
+        // Try to get error details
+        let errorData = {}
+        let errorText = ''
+        
+        try {
+          const contentType = response.headers.get('content-type') || ''
+          if (contentType.includes('application/json')) {
+            errorData = await response.json()
+          } else {
+            errorText = await response.text()
+            errorData = { message: errorText }
+          }
+        } catch (parseError) {
+          console.error('❌ Error parsing response:', parseError)
+          errorText = `Status ${response.status}: ${response.statusText}`
+        }
+        
+        console.error('❌ Payment failed - Full details:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData,
+          errorText,
         })
-        console.error('❌ Payment failed:', response.status, errorData)
         
         let errorMessage = 'Payment failed'
         if (response.status === 402) {
           errorMessage = 'Payment required. Please complete the payment in your wallet.'
+        } else if (response.status === 404) {
+          errorMessage = 'Payment endpoint not found (404). Please check server configuration.'
+        } else if (response.status === 500) {
+          errorMessage = 'Server error. Please try again later.'
         } else if (errorData.message) {
           errorMessage = errorData.message
         } else if (errorData.error) {
           errorMessage = errorData.error
+        } else if (errorText) {
+          errorMessage = errorText
+        } else {
+          errorMessage = `Payment failed with status ${response.status}`
         }
         
         throw new Error(errorMessage)
