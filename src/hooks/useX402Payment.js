@@ -31,11 +31,17 @@ export const useX402Payment = () => {
       // 4. Creates payment transaction
       // 5. Retries request with X-PAYMENT header
       
+      // x402-fetch can automatically detect amount from 402 response
+      // Amount parameter is optional - if not provided, it will be read from the 402 response
       const fetchWithPayment = wrapFetchWithPayment(
         fetch,
         walletClient,
-        BigInt(100000), // 0.1 USDC in base units (6 decimals: 0.1 * 10^6)
+        // Amount parameter - x402-fetch will use this or read from 402 response
+        // 0.1 USDC = 100000 (6 decimals)
+        BigInt(100000),
       )
+      
+      console.log('💰 Payment amount: 0.1 USDC (100000 base units)')
 
       console.log('📡 Making payment request to /api/x402-payment...')
       const response = await fetchWithPayment('/api/x402-payment', {
