@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useAccount } from 'wagmi'
+import { useAccount, useWalletClient } from 'wagmi'
+import { wrapFetchWithPayment } from 'x402-fetch'
 import { getLeaderboard } from '../utils/xpUtils'
 import { useTransactions } from '../hooks/useTransactions'
 import EmbedMeta from '../components/EmbedMeta'
@@ -11,6 +12,8 @@ import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, 
 
 const Home = () => {
   const { isConnected } = useAccount()
+  const { address } = useAccount()
+  const { data: walletClient } = useWalletClient()
   const { sendGMTransaction, sendGNTransaction, isLoading: transactionLoading } = useTransactions()
   
   // Safely get Farcaster context
@@ -29,6 +32,8 @@ const Home = () => {
   const [successMessage, setSuccessMessage] = useState('')
   const [isLoadingGM, setIsLoadingGM] = useState(false)
   const [isLoadingGN, setIsLoadingGN] = useState(false)
+  const [isLoadingX402, setIsLoadingX402] = useState(false)
+  const [x402Error, setX402Error] = useState(null)
 
   // Load leaderboard
   useEffect(() => {
@@ -105,6 +110,58 @@ const Home = () => {
     }
   }
 
+  const handleX402Payment = async (e) => {
+    e.preventDefault()
+    if (!isConnected || !address) {
+      setX402Error('Please connect your wallet first')
+      return
+    }
+
+    if (!walletClient) {
+      setX402Error('Wallet not available. Please unlock your wallet.')
+      return
+    }
+
+    setIsLoadingX402(true)
+    setX402Error(null)
+    setSuccessMessage('')
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://basehub-alpha.vercel.app'
+      
+      const fetchWithPayment = wrapFetchWithPayment(
+        fetch,
+        walletClient,
+        BigInt(100000), // 0.1 USDC in base units (6 decimals: 0.1 * 10^6)
+      )
+
+      const response = await fetchWithPayment(`${apiUrl}/api/x402-payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || errorData.error || 'Payment failed')
+      }
+
+      const result = await response.json()
+      setSuccessMessage('✅ Payment successful! Thank you.')
+      setTimeout(() => setSuccessMessage(''), 5000)
+      console.log('x402 Payment successful:', result)
+
+    } catch (err) {
+      console.error('x402 Payment error:', err)
+      setX402Error(err.message || 'Payment failed. Please try again.')
+    } finally {
+      setIsLoadingX402(false)
+    }
+  }
+
   const getRankIcon = (rank) => {
     switch (rank) {
       case 1:
@@ -159,6 +216,17 @@ const Home = () => {
       color: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
       xpReward: '500 XP',
       bonusXP: null
+    },
+    {
+      id: 'x402-premium',
+      title: 'BaseHub x402 Payment',
+      description: 'Pay 0.1 USDC via x402',
+      icon: <Star size={50} style={{ color: 'white' }} />,
+      path: null, // Special handler
+      color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      xpReward: 'x402',
+      bonusXP: '0.1 USDC',
+      isPayment: true // Mark as payment button
     },
     {
       id: 'deploy-erc721',
@@ -436,10 +504,107 @@ const Home = () => {
                 {successMessage}
               </div>
             )}
+            
           </div>
 
           <div className="games-grid">
             {games.map((game) => {
+              // For x402 premium payment, use special payment button
+              if (game.id === 'x402-premium') {
+                return (
+                  <button
+                    key={game.id}
+                    onClick={handleX402Payment}
+                    disabled={!isConnected || !walletClient || isLoadingX402}
+                    className="game-card"
+                    style={{ 
+                      textDecoration: 'none',
+                      border: 'none',
+                      cursor: isConnected && walletClient && !isLoadingX402 ? 'pointer' : 'not-allowed',
+                      opacity: isConnected && walletClient && !isLoadingX402 ? 1 : 0.6,
+                      position: 'relative'
+                    }}
+                  >
+                    <div 
+                      className="game-icon"
+                      style={{ background: game.color }}
+                    >
+                      {game.icon}
+                    </div>
+                    
+                    {/* x402 Badge */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      background: 'rgba(255, 255, 255, 0.95)',
+                      backdropFilter: 'blur(10px)',
+                      borderRadius: '20px',
+                      padding: '4px 8px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      color: '#667eea',
+                      border: '1px solid rgba(102, 126, 234, 0.2)',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                    }}>
+                      {game.xpReward}
+                    </div>
+
+                    {/* Price Badge */}
+                    {game.bonusXP && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '12px',
+                        left: '12px',
+                        background: 'rgba(245, 158, 11, 0.95)',
+                        backdropFilter: 'blur(10px)',
+                        borderRadius: '20px',
+                        padding: '4px 8px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        color: 'white',
+                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                      }}>
+                        {game.bonusXP}
+                      </div>
+                    )}
+
+                    <h3 style={{ 
+                      fontSize: '20px', 
+                      fontWeight: 'bold', 
+                      marginBottom: '8px',
+                      color: '#1f2937'
+                    }}>
+                      {game.title}
+                    </h3>
+                    <p style={{ 
+                      color: '#6b7280',
+                      fontSize: '14px',
+                      lineHeight: '1.5'
+                    }}>
+                      {isLoadingX402 ? 'Processing payment...' : game.description}
+                    </p>
+                    
+                    {/* Error message */}
+                    {x402Error && game.id === 'x402-premium' && (
+                      <div style={{
+                        marginTop: '8px',
+                        padding: '8px',
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        color: '#dc2626',
+                        textAlign: 'center'
+                      }}>
+                        {x402Error}
+                      </div>
+                    )}
+                  </button>
+                )
+              }
+              
               // For GM and GN, use direct transaction buttons
               if (game.id === 'gm' || game.id === 'gn') {
                 return (
