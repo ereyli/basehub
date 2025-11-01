@@ -138,7 +138,7 @@ export default async function handler(req, res) {
     const fullUrl = new URL(path, `${protocol}://${host}`).toString()
     
     console.log('📤 Creating Hono Request:', {
-      honoPath,
+      path: path,
       fullUrl,
       method: req.method,
     })
