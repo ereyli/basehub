@@ -14,13 +14,12 @@ const Home = () => {
   const { isConnected } = useAccount()
   const { sendGMTransaction, sendGNTransaction, isLoading: transactionLoading } = useTransactions()
   
-  // x402 Payment hook - uses Coinbase Wallet SDK exclusively
+  // x402 Payment hook - uses x402-fetch (handles wallet UI automatically)
   const { 
     makePayment: makeX402Payment, 
-    connectCoinbaseWallet,
     isLoading: isLoadingX402,
     error: x402Error,
-    isConnected: isCoinbaseConnected 
+    isConnected: isX402Connected 
   } = useX402Payment()
   
   // Safely get Farcaster context
@@ -571,8 +570,8 @@ const Home = () => {
                       </div>
                     )}
                     
-                    {/* Coinbase Wallet connection status */}
-                    {!isCoinbaseConnected && !isLoadingX402 && (
+                    {/* Wallet connection status */}
+                    {!isX402Connected && !isLoadingX402 && (
                       <p style={{
                         marginTop: '8px',
                         fontSize: '11px',
@@ -580,7 +579,7 @@ const Home = () => {
                         textAlign: 'center',
                         fontStyle: 'italic'
                       }}>
-                        Will connect to Coinbase Wallet
+                        Connect wallet to pay
                       </p>
                     )}
                   </button>

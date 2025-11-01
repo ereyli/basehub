@@ -4,7 +4,7 @@
 
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { paymentMiddleware } from 'x402-express'
+import { paymentMiddleware } from 'x402-hono'
 import { facilitator } from '@coinbase/x402'
 
 const app = new Hono()
@@ -38,72 +38,8 @@ app.use('/*', cors({
   maxAge: 86400,
 }))
 
-// Create Express-like request/response wrappers for x402 middleware
-const createExpressAdapter = async (c) => {
-  // Get request body if available
-  let body = {}
-  try {
-    if (c.req.method === 'POST') {
-      body = await c.req.json().catch(() => {})
-    }
-  } catch (e) {
-    // Body parsing failed, use empty object
-  }
-
-  // Collect headers from raw request
-  const headers = {}
-  if (c.req.raw && c.req.raw.headers) {
-    const reqHeaders = c.req.raw.headers
-    if (reqHeaders instanceof Headers) {
-      for (const [key, value] of reqHeaders.entries()) {
-        headers[key] = value
-      }
-    } else if (typeof reqHeaders === 'object') {
-      // Node.js IncomingHttpHeaders
-      Object.assign(headers, reqHeaders)
-    }
-  }
-
-  const expressReq = {
-    method: c.req.method,
-    url: c.req.url,
-    path: new URL(c.req.url).pathname,
-    headers: headers,
-    body: body,
-    query: Object.fromEntries(new URL(c.req.url).searchParams),
-  }
-
-  let responseSent = false
-  let responseStatus = 200
-  let responseBody = null
-  const responseHeaders = {}
-
-  const expressRes = {
-    status: (code) => {
-      responseStatus = code
-      return expressRes
-    },
-    json: (data) => {
-      responseBody = data
-      responseSent = true
-      return expressRes
-    },
-    setHeader: (key, value) => {
-      responseHeaders[key] = value
-      return expressRes
-    },
-    getHeader: (key) => expressReq.headers[key.toLowerCase()],
-    end: () => {
-      responseSent = true
-      return expressRes
-    },
-  }
-
-  return { expressReq, expressRes, getResponse: () => ({ responseSent, responseStatus, responseBody, responseHeaders }) }
-}
-
 // Health check endpoint
-app.get('/', async (c) => {
+app.get('/', (c) => {
   return c.json({
     status: 'ok',
     network: NETWORK,
@@ -113,83 +49,41 @@ app.get('/', async (c) => {
   })
 })
 
-// x402 Payment endpoint with middleware
-app.post('/', async (c) => {
-  try {
-    // Create Express adapter
-    const { expressReq, expressRes, getResponse } = await createExpressAdapter(c)
-
-    // Apply x402 payment middleware
-    await new Promise((resolve, reject) => {
-      const middleware = paymentMiddleware(
-        RECEIVING_ADDRESS,
-        {
-          'POST /': {
-            price: PRICE,
-            network: NETWORK,
-            config: {
-              description: 'BaseHub x402 Payment - Pay 0.1 USDC',
-              mimeType: 'application/json',
-            },
-          },
-        },
-        facilitatorConfig
-      )
-
-      middleware(expressReq, expressRes, (err) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve()
-        }
-      })
-    })
-
-    // Get middleware response
-    const { responseSent, responseStatus, responseBody, responseHeaders } = getResponse()
-
-    // Set headers
-    Object.entries(responseHeaders).forEach(([key, value]) => {
-      c.header(key, value)
-    })
-
-    // If middleware sent 402 or handled response, return it
-    if (responseSent) {
-      return c.json(responseBody, responseStatus)
-    }
-
-    // If we reach here, payment was verified - return success
-    return c.json({
-      success: true,
-      message: 'Payment verified successfully!',
-      payment: {
-        amount: PRICE,
-        currency: 'USDC',
+// Apply x402 payment middleware
+app.use(
+  paymentMiddleware(
+    RECEIVING_ADDRESS,
+    {
+      'POST /': {
+        price: PRICE,
         network: NETWORK,
-        recipient: RECEIVING_ADDRESS,
+        config: {
+          description: 'BaseHub x402 Payment - Pay 0.1 USDC',
+          mimeType: 'application/json',
+        },
       },
-      timestamp: new Date().toISOString(),
-      data: {
-        paymentCompleted: true,
-      },
-    })
+    },
+    facilitatorConfig
+  )
+)
 
-  } catch (error) {
-    console.error('x402 Payment error:', error)
-    
-    // Check if it's a 402 Payment Required error
-    if (error.status === 402 || error.statusCode === 402) {
-      return c.json({
-        error: 'Payment Required',
-        message: error.message || 'Payment required to access this endpoint',
-      }, 402)
-    }
-
-    return c.json({
-      error: 'Internal Server Error',
-      message: error.message || 'Payment processing failed',
-    }, 500)
-  }
+// x402 Payment endpoint
+app.post('/', (c) => {
+  // If we reach here, payment has been verified by middleware
+  return c.json({
+    success: true,
+    message: 'Payment verified successfully!',
+    payment: {
+      amount: PRICE,
+      currency: 'USDC',
+      network: NETWORK,
+      recipient: RECEIVING_ADDRESS,
+    },
+    timestamp: new Date().toISOString(),
+    data: {
+      paymentCompleted: true,
+    },
+  })
 })
 
 // Export for Vercel
