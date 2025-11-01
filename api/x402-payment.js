@@ -60,14 +60,22 @@ app.get('/test', (c) => {
 
 // Apply x402 payment middleware (following Coinbase documentation exactly)
 // Note: In Vercel, this file at /api/x402-payment.js automatically creates /api/x402-payment endpoint
-// So the route path should be '/' relative to the file
+// The route path in middleware config should match the route handler path
 try {
   console.log('🔧 Applying x402 payment middleware...')
+  console.log('Middleware config:', {
+    receivingAddress: RECEIVING_ADDRESS,
+    price: PRICE,
+    network: NETWORK,
+    facilitator: facilitatorConfig,
+  })
+  
   app.use(
     paymentMiddleware(
       RECEIVING_ADDRESS, // your receiving wallet address
       {
-        // Route configurations for protected endpoints (path only, method specified in route handler)
+        // Route configurations for protected endpoints
+        // Path must match the route handler path exactly
         '/': {
           price: PRICE,
           network: NETWORK, // 'base' for mainnet, 'base-sepolia' for testnet
@@ -83,11 +91,18 @@ try {
   console.log('✅ x402 payment middleware applied successfully')
 } catch (error) {
   console.error('❌ Error applying x402 middleware:', error)
+  console.error('Error details:', {
+    message: error.message,
+    stack: error.stack,
+    name: error.name,
+  })
   throw error
 }
 
 // x402 Payment endpoint
-app.post('/', (c) => {
+// This will be protected by the payment middleware above
+app.post('/', async (c) => {
+  console.log('✅ POST / endpoint called (payment verified)')
   try {
     // If we reach here, payment has been verified by middleware
     return c.json({
