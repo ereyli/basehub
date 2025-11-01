@@ -110,8 +110,7 @@ export default async function handler(req, res) {
     // Build full URL
     const protocol = req.headers['x-forwarded-proto'] || 'https'
     const host = req.headers.host || req.headers['x-forwarded-host'] || 'localhost'
-    const path = req.url || '/'
-    const url = `${protocol}://${host}${path}${req.url?.includes('?') ? '' : (req.url?.split('?')[1] ? '?' + req.url.split('?')[1] : '')}`
+    const url = `${protocol}://${host}${req.url || '/'}`
 
     // Get request body
     let body = undefined
