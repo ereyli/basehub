@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useWalletClient, useAccount } from 'wagmi'
 import { wrapFetchWithPayment } from 'x402-fetch'
+import { waitForTransactionReceipt } from 'wagmi/actions'
+import { config } from '../config/wagmi'
 import { isInFarcaster } from '../config/wagmi'
 
 export const useX402Payment = () => {
@@ -82,13 +84,26 @@ export const useX402Payment = () => {
       console.log('📡 Making payment request to /api/x402-payment...')
       
       let response
+      let transactionHash = null
+      
       try {
+        // x402-fetch sends the transaction and retries the request
+        // If it's in Farcaster, we may need to wait longer for transaction confirmation
         response = await fetchWithPayment('/api/x402-payment', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
         })
+        
+        // Try to extract transaction hash from response headers (if available)
+        // x402-fetch may include transaction info in headers
+        const txHashHeader = response.headers.get('X-TRANSACTION-HASH') || 
+                            response.headers.get('x-transaction-hash')
+        if (txHashHeader) {
+          transactionHash = txHashHeader
+          console.log('📋 Transaction hash from response:', transactionHash)
+        }
       } catch (fetchError) {
         console.error('❌ Fetch error:', fetchError)
         throw new Error(`Network error: ${fetchError.message || 'Failed to reach server'}`)
@@ -124,6 +139,8 @@ export const useX402Payment = () => {
           statusText: response.statusText,
           errorData,
           errorText,
+          isFarcaster,
+          transactionHash,
         })
         
         let errorMessage = 'Payment failed'
@@ -162,7 +179,12 @@ export const useX402Payment = () => {
             errorMessage = `Payment error: ${errorText}. Please check your wallet and try again.`
           } else {
             // Settlement failed with empty error object - likely transaction not confirmed yet
-            errorMessage = 'Payment settlement failed. The transaction may still be processing. Please wait a moment and check your wallet. If the payment was successful, your funds have been sent.'
+            // In Farcaster, transactions may take longer to confirm
+            if (isFarcaster) {
+              errorMessage = 'Payment transaction is being processed. In Farcaster, transactions may take a bit longer to confirm. Please wait a moment and check your wallet. Your payment will be processed once the transaction is confirmed on-chain.'
+            } else {
+              errorMessage = 'Payment settlement failed. The transaction may still be processing. Please wait a moment and check your wallet. If the payment was successful, your funds have been sent.'
+            }
           }
         } else if (response.status === 404) {
           errorMessage = 'Payment endpoint not found (404). Please check server configuration.'
@@ -183,6 +205,13 @@ export const useX402Payment = () => {
 
       const result = await response.json()
       console.log('✅ Payment successful:', result)
+      console.log('✅ Transaction hash (if available):', transactionHash)
+      
+      // If in Farcaster and we have a transaction hash, log it for user reference
+      if (isFarcaster && transactionHash) {
+        console.log('📋 Farcaster payment transaction:', transactionHash)
+      }
+      
       return result
 
     } catch (err) {
