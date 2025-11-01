@@ -1,20 +1,43 @@
 // Hook for x402 payment using x402-fetch
 // x402-fetch automatically handles wallet UI and payment flow
-import { useState } from 'react'
-import { useWalletClient } from 'wagmi'
+import { useState, useEffect } from 'react'
+import { useWalletClient, useAccount } from 'wagmi'
 import { wrapFetchWithPayment } from 'x402-fetch'
+import { isInFarcaster } from '../config/wagmi'
 
 export const useX402Payment = () => {
   const { data: walletClient } = useWalletClient() // Get wallet client from wagmi
+  const { isConnected, address } = useAccount()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [isFarcaster, setIsFarcaster] = useState(false)
+
+  // Check if we're in Farcaster environment
+  useEffect(() => {
+    setIsFarcaster(isInFarcaster())
+  }, [])
 
   // Make x402 payment - x402-fetch handles wallet UI automatically
   const makePayment = async () => {
-    if (!walletClient) {
-      const err = new Error('Wallet not connected. Please connect your wallet first.')
-      setError(err.message)
-      throw err
+    // In Farcaster, check if wallet is connected via wagmi
+    if (isFarcaster) {
+      if (!isConnected || !address) {
+        const err = new Error('Please connect your wallet in Farcaster first.')
+        setError(err.message)
+        throw err
+      }
+      if (!walletClient) {
+        const err = new Error('Wallet client not available. Please ensure your wallet is properly connected in Farcaster.')
+        setError(err.message)
+        throw err
+      }
+    } else {
+      // Web environment
+      if (!walletClient) {
+        const err = new Error('Wallet not connected. Please connect your wallet first.')
+        setError(err.message)
+        throw err
+      }
     }
 
     setIsLoading(true)
@@ -22,7 +45,11 @@ export const useX402Payment = () => {
 
     try {
       console.log('🚀 Starting x402 payment flow...')
-      console.log('Wallet client:', walletClient ? 'Connected' : 'Not connected')
+      console.log('Environment:', isFarcaster ? 'Farcaster' : 'Web')
+      console.log('Wallet connected:', isConnected)
+      console.log('Wallet address:', address)
+      console.log('Wallet client available:', !!walletClient)
+      console.log('Wallet client type:', walletClient?.constructor?.name || 'Unknown')
       
       // x402-fetch automatically:
       // 1. Makes initial request
@@ -178,6 +205,6 @@ export const useX402Payment = () => {
     makePayment,
     isLoading,
     error,
-    isConnected: !!walletClient,
+    isConnected: isConnected && !!walletClient,
   }
 }
