@@ -83,8 +83,8 @@ app.use(
     RECEIVING_ADDRESS, // your receiving wallet address
     {
       // Route configurations for protected endpoints
-      // Following x402.md Hono example format
-      // Use "POST /" to match POST requests to root path
+      // Following working example format: "METHOD /path"
+      // Match POST requests to root path
       'POST /': {
         price: PRICE, // '$0.10'
         network: NETWORK, // 'base' for mainnet
@@ -102,25 +102,15 @@ app.use(
 )
 
 // x402 Payment endpoint - protected by middleware above
-// Following x402.md documentation exactly (lines 195-229)
+// Following working example pattern exactly
 // Route handler is called AFTER middleware verifies payment
 // Middleware performs settlement AFTER route handler returns
-// IMPORTANT: Route handler must return 200 status for middleware to complete settlement
-// IMPORTANT: Following x402.md example - simple response, no extra complexity
-app.post('/', async (c) => {
+// IMPORTANT: Keep route handler simple, just like working example
+app.post('/', (c) => {
   console.log('✅ POST / endpoint called - payment verified by middleware')
-  console.log('⏳ Route handler executing - middleware will perform settlement after this response')
   
-  // Log payment header details for debugging (first 100 chars only)
-  const paymentHeader = c.req.header('X-PAYMENT')
-  if (paymentHeader) {
-    console.log('📋 X-PAYMENT header present (length):', paymentHeader.length)
-    console.log('📋 X-PAYMENT header preview:', paymentHeader.substring(0, 100) + '...')
-  }
-  
-  // Following x402.md example exactly - simple response
-  // Return simple JSON response as shown in documentation
-  // Middleware will handle settlement after this response is sent
+  // Return simple JSON response matching working example pattern
+  // Minimal response - middleware handles settlement after this
   return c.json({
     success: true,
     message: 'Payment verified successfully!',
@@ -130,7 +120,6 @@ app.post('/', async (c) => {
       network: NETWORK,
       recipient: RECEIVING_ADDRESS,
     },
-    timestamp: new Date().toISOString(),
   })
 })
 
@@ -182,11 +171,20 @@ export default async function handler(req, res) {
     }
 
     // Create Web Standard Request for Hono
-    // IMPORTANT: Path is normalized to '/' because Hono routes are defined at root
+    // IMPORTANT: Path must be exactly '/' for middleware route matching
+    // Middleware uses findMatchingRoute which checks c.req.path
     const request = new Request(fullUrl, {
       method: req.method || 'GET',
       headers: new Headers(req.headers || {}),
       body: body,
+    })
+    
+    // Log request details for debugging route matching
+    console.log('🔍 Request details for middleware:', {
+      url: fullUrl,
+      path: normalizedPath,
+      method: req.method,
+      hasXPayment: !!req.headers['x-payment'],
     })
 
     console.log('📞 Calling Hono app.fetch with normalized path...')
