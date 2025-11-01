@@ -125,14 +125,17 @@ export default async function handler(req, res) {
     })
 
     // In Vercel, req.url is the path relative to the function endpoint
-    // For /api/x402-payment.js, req.url will be '/' or the query path
-    // Hono app expects paths relative to root, so we use '/' for all requests
-    const honoPath = '/'
+    // For /api/x402-payment.js, req.url will be '/' for root requests
+    // Hono routes are defined with '/' so we need to match that
     
     // Build full URL for Hono Request
+    // Use the original request URL to preserve path
     const protocol = req.headers['x-forwarded-proto'] || 'https'
     const host = req.headers.host || req.headers['x-forwarded-host'] || 'localhost'
-    const fullUrl = `${protocol}://${host}${honoPath}${req.url?.includes('?') ? req.url.split('?')[1] : ''}`
+    
+    // Get the path from req.url (will be '/' for root, or path with query)
+    const path = req.url || '/'
+    const fullUrl = new URL(path, `${protocol}://${host}`).toString()
     
     console.log('📤 Creating Hono Request:', {
       honoPath,
