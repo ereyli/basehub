@@ -10,7 +10,7 @@ import { facilitator } from '@coinbase/x402'
 const app = new Hono()
 
 // Your receiving wallet address
-const RECEIVING_ADDRESS = process.env.X402_RECEIVING_ADDRESS || '0x0000000000000000000000000000000000000000'
+const RECEIVING_ADDRESS = process.env.X402_RECEIVING_ADDRESS || '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
 
 // Payment configuration
 const PRICE = '$0.10' // 0.1 USDC
