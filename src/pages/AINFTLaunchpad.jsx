@@ -12,6 +12,7 @@ import {
   X
 } from 'lucide-react';
 import { useAINFTMinting } from '../hooks/useAINFTMinting';
+import { useX402Payment } from '../hooks/useX402Payment';
 import BackButton from '../components/BackButton';
 import ShareButton from '../components/ShareButton';
 import NetworkGuard from '../components/NetworkGuard';
@@ -32,6 +33,14 @@ export default function AINFTLaunchpad() {
   
   // Style settings
   const [selectedStyle, setSelectedStyle] = useState('photorealistic');
+  
+  // x402 Payment hook for AI image generation
+  const { 
+    makePayment: makeX402Payment, 
+    isLoading: isLoadingX402,
+    error: x402Error,
+    isConnected: isX402Connected 
+  } = useX402Payment();
   
   const {
     isGenerating,
@@ -61,14 +70,32 @@ export default function AINFTLaunchpad() {
       return;
     }
     
-    // Generate enhanced prompt with selected style
-    let promptToUse = '';
-    if (imageMode === 'prompt') {
-      promptToUse = generateEnhancedPrompt(currentPrompt, selectedStyle);
-      console.log('🎨 Enhanced prompt:', promptToUse);
+    // Check wallet connection
+    if (!isConnected) {
+      alert('Please connect your wallet first.');
+      return;
     }
     
-    await generateImage(promptToUse, uploadedImage);
+    try {
+      // Step 1: Require x402 payment before generating image (0.1 USDC)
+      console.log('💳 Requesting x402 payment for AI image generation...');
+      await makeX402Payment();
+      console.log('✅ Payment successful! Proceeding with image generation...');
+      
+      // Step 2: Generate enhanced prompt with selected style
+      let promptToUse = '';
+      if (imageMode === 'prompt') {
+        promptToUse = generateEnhancedPrompt(currentPrompt, selectedStyle);
+        console.log('🎨 Enhanced prompt:', promptToUse);
+      }
+      
+      // Step 3: Generate image after payment is confirmed
+      await generateImage(promptToUse, uploadedImage);
+    } catch (paymentError) {
+      console.error('❌ Payment failed:', paymentError);
+      // Error is already set in the hook, user will see it in UI
+      return;
+    }
   };
 
   // Debug: Log when image changes
@@ -310,7 +337,6 @@ export default function AINFTLaunchpad() {
                       setCustomDescription('');
                       setUseCustomMetadata(false);
                       setSelectedStyle('photorealistic');
-                      setQualityCheck(false);
                       setDetectedCategory('');
                     }}
                     style={{
@@ -341,7 +367,6 @@ export default function AINFTLaunchpad() {
                       setCustomDescription('');
                       setUseCustomMetadata(false);
                       setSelectedStyle('photorealistic');
-                      setQualityCheck(false);
                       setDetectedCategory('');
                     }}
                     style={{
@@ -585,6 +610,41 @@ export default function AINFTLaunchpad() {
                   </div>
                 )}
 
+                        {/* Payment Info Banner */}
+                        <div style={{
+                          marginBottom: '16px',
+                          padding: '12px 16px',
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          borderRadius: '12px',
+                          color: 'white',
+                          fontSize: '14px',
+                          textAlign: 'center',
+                          boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
+                        }}>
+                          <Coins size={16} style={{ display: 'inline-block', marginRight: '8px', verticalAlign: 'middle' }} />
+                          <strong>AI Image Generation Fee: 0.1 USDC</strong>
+                          <p style={{ margin: '4px 0 0 0', fontSize: '12px', opacity: 0.9 }}>
+                            Payment required before generating AI artwork
+                          </p>
+                        </div>
+                        
+                        {/* x402 Payment Error Display */}
+                        {x402Error && (
+                          <div style={{
+                            marginBottom: '16px',
+                            padding: '12px 16px',
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            borderRadius: '12px',
+                            fontSize: '14px',
+                            color: '#dc2626',
+                            textAlign: 'center'
+                          }}>
+                            <AlertCircle size={16} style={{ display: 'inline-block', marginRight: '8px', verticalAlign: 'middle' }} />
+                            {x402Error}
+                          </div>
+                        )}
+                        
                         <button 
                           type="submit" 
                           className="deploy-button"
@@ -592,10 +652,17 @@ export default function AINFTLaunchpad() {
                             (imageMode === 'prompt' && !currentPrompt.trim()) ||
                             (imageMode === 'upload' && !uploadedImage) ||
                             isGenerating || 
-                            !isConnected
+                            isLoadingX402 ||
+                            !isConnected ||
+                            !isX402Connected
                           }
                         >
-                  {isGenerating ? (
+                  {isLoadingX402 ? (
+                    <>
+                      <Coins size={20} className="animate-spin" />
+                      Processing Payment...
+                    </>
+                  ) : isGenerating ? (
                     <>
                       <Wand2 size={20} className="animate-spin" />
                       {imageMode === 'upload' ? 'Preparing...' : 'Generating...'}
@@ -603,7 +670,7 @@ export default function AINFTLaunchpad() {
                   ) : (
                     <>
                       <Wand2 size={20} />
-                      {imageMode === 'upload' ? 'Create NFT' : 'Generate Artwork'}
+                      {imageMode === 'upload' ? 'Create NFT (Pay 0.1 USDC)' : 'Generate Artwork (Pay 0.1 USDC)'}
                     </>
                   )}
                 </button>
