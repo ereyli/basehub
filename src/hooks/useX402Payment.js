@@ -156,26 +156,19 @@ export const useX402Payment = () => {
           
           // Convert error to string if it's an object
           if (errorText && typeof errorText === 'object') {
-            // Check if object is empty
-            const errorKeys = Object.keys(errorText)
-            if (errorKeys.length === 0) {
-              // Empty object {} - settlement likely failed but transaction may still be processing
-              errorText = ''
-            } else {
-              // Try multiple ways to extract a meaningful message
-              errorText = errorText.message || 
-                         errorText.error || 
-                         errorText.reason ||
-                         errorText.code ||
-                         'Payment settlement failed'
-            }
+            // Try multiple ways to extract a meaningful message
+            errorText = errorText.message || 
+                       errorText.error || 
+                       errorText.reason ||
+                       JSON.stringify(errorText, null, 2) ||
+                       'Payment settlement failed'
           } else if (typeof errorText !== 'string') {
             // If errorText is not a string and not an object, convert it
             errorText = String(errorText || '')
           }
           
-          // Normalize to empty string if falsy or just "{}"
-          if (!errorText || errorText.trim() === '' || errorText.trim() === '{}') {
+          // Normalize to empty string if falsy
+          if (!errorText) {
             errorText = ''
           }
           
@@ -184,8 +177,8 @@ export const useX402Payment = () => {
             errorMessage = 'Insufficient USDC balance. Please ensure you have at least 0.1 USDC in your wallet on Base network.'
           } else if (errorText === 'X-PAYMENT header is required' || errorText.includes('X-PAYMENT')) {
             errorMessage = 'Payment required. Please complete the payment in your wallet.'
-          } else if (errorText.trim() && errorText.trim() !== '{}') {
-            // Only show errorText if it's not empty and not just "{}"
+          } else if (errorText.trim()) {
+            // Only show errorText if it's not empty
             errorMessage = `Payment error: ${errorText}. Please check your wallet and try again.`
           } else {
             // Settlement failed with empty error object - likely transaction not confirmed yet
