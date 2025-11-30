@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
-import { Star, Coins, Zap, Trophy, Clock, RefreshCw } from 'lucide-react'
-import { getXP, calculateTokens } from '../utils/xpUtils'
+import { Zap, RefreshCw } from 'lucide-react'
+import { getXP } from '../utils/xpUtils'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 
 const WebXPDisplay = () => {
@@ -43,8 +43,6 @@ const WebXPDisplay = () => {
     const interval = setInterval(loadXP, 3000) // Refresh every 3 seconds
     return () => clearInterval(interval)
   }, [isConnected, address])
-
-  const tokenBalance = calculateTokens(totalXP)
 
   const handleSwitchNetwork = async () => {
     setIsSwitching(true)
@@ -95,23 +93,6 @@ const WebXPDisplay = () => {
             <div className="stat-label">XP</div>
           </div>
         </div>
-        
-        {/* Token Display */}
-        <div className="token-stat">
-          <div className="stat-icon">
-            <Coins size={16} />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{tokenBalance}</div>
-            <div className="stat-label">BHUP</div>
-          </div>
-        </div>
-        
-        {/* Claim Button */}
-        <button className="claim-button coming-soon" disabled title="Claim feature coming soon!">
-          <Clock size={14} />
-          <span>Claim</span>
-        </button>
       </div>
     </div>
   )

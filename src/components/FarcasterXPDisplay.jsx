@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
-import { Star, Coins, Zap, Trophy, Wallet, Clock, Home, LogOut, Wifi, RefreshCw, Menu, X } from 'lucide-react'
+import { Zap, Wallet, Home, LogOut, Wifi, RefreshCw, Menu, X } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { getXP, calculateTokens } from '../utils/xpUtils'
+import { getXP } from '../utils/xpUtils'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 
@@ -54,8 +54,6 @@ const FarcasterXPDisplay = () => {
     const interval = setInterval(loadXP, 3000) // Refresh every 3 seconds
     return () => clearInterval(interval)
   }, [isConnected, address])
-
-  const tokenBalance = calculateTokens(totalXP)
 
   const handleConnect = (connector) => {
     connect({ connector })
@@ -292,19 +290,6 @@ const FarcasterXPDisplay = () => {
           <Zap size={14} />
           <span>{totalXP}</span>
         </div>
-        
-        <div className="stat-mini token exciting">
-          <Coins size={14} />
-          <div className="token-info">
-            <span className="token-name">BHUP</span>
-            <span className="token-balance">{tokenBalance}</span>
-          </div>
-        </div>
-        
-        <button className="claim-button coming-soon" disabled title="Claim feature coming soon!">
-          <Clock size={14} />
-          <span>Claim</span>
-        </button>
         
         {/* Hamburger Menu Button */}
         <button

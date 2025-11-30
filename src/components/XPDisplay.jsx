@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
-import { Star, Coins, Gift, Zap, Trophy } from 'lucide-react'
-import { getXP, calculateTokens } from '../utils/xpUtils'
+import { Star, Zap } from 'lucide-react'
+import { getXP } from '../utils/xpUtils'
 import { useFarcaster } from '../contexts/FarcasterContext'
 
 const XPDisplay = () => {
@@ -76,24 +76,6 @@ const XPDisplay = () => {
             <span className="xp-label">XP</span>
           </div>
         </div>
-
-        {/* BHUP Section */}
-        <div className="token-badge">
-          <div className="token-icon">
-            <Coins size={18} />
-          </div>
-          <div className="token-content">
-            <span className="token-value">{calculateTokens(totalXP).toLocaleString()}</span>
-            <span className="token-label">BHUP</span>
-          </div>
-        </div>
-
-        {/* Claim Button */}
-        <button className="claim-button" disabled={true}>
-          <Gift size={16} />
-          <span>Claim BHUP</span>
-          <span className="coming-soon">Coming Soon</span>
-        </button>
       </div>
     </div>
   )
