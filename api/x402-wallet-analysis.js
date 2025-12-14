@@ -131,12 +131,18 @@ async function performWalletAnalysis(walletAddress) {
     analysis.nativeBalance = parseFloat(formatEther(balance)).toFixed(4)
 
     // 2. Get transactions from BaseScan
+    console.log('🔍 Fetching transactions from BaseScan...')
     const txResponse = await fetch(
       `https://api.basescan.org/api?module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
     )
     const txData = await txResponse.json()
+    console.log('📊 Transaction data response:', {
+      status: txData.status,
+      message: txData.message,
+      resultCount: txData.result ? txData.result.length : 0,
+    })
 
-    if (txData.status === '1' && txData.result) {
+    if (txData.status === '1' && txData.result && Array.isArray(txData.result)) {
       const transactions = txData.result
       analysis.totalTransactions = transactions.length
 
@@ -155,7 +161,7 @@ async function performWalletAnalysis(walletAddress) {
         
         const firstDate = new Date(parseInt(firstTx.timeStamp) * 1000)
         const lastDate = new Date(parseInt(lastTx.timeStamp) * 1000)
-        analysis.daysActive = Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24))
+        analysis.daysActive = Math.max(1, Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24)))
       }
 
       // Most active day
@@ -171,12 +177,18 @@ async function performWalletAnalysis(walletAddress) {
     }
 
     // 3. Get token transfers
+    console.log('🔍 Fetching token transfers from BaseScan...')
     const tokenTxResponse = await fetch(
       `https://api.basescan.org/api?module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
     )
     const tokenTxData = await tokenTxResponse.json()
+    console.log('📊 Token transfer data response:', {
+      status: tokenTxData.status,
+      message: tokenTxData.message,
+      resultCount: tokenTxData.result ? tokenTxData.result.length : 0,
+    })
 
-    if (tokenTxData.status === '1' && tokenTxData.result) {
+    if (tokenTxData.status === '1' && tokenTxData.result && Array.isArray(tokenTxData.result)) {
       const tokenTransfers = tokenTxData.result
       
       // Get unique tokens
@@ -230,12 +242,18 @@ async function performWalletAnalysis(walletAddress) {
     }
 
     // 4. Get NFT transfers
+    console.log('🔍 Fetching NFT transfers from BaseScan...')
     const nftTxResponse = await fetch(
       `https://api.basescan.org/api?module=account&action=tokennfttx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
     )
     const nftTxData = await nftTxResponse.json()
+    console.log('📊 NFT transfer data response:', {
+      status: nftTxData.status,
+      message: nftTxData.message,
+      resultCount: nftTxData.result ? nftTxData.result.length : 0,
+    })
 
-    if (nftTxData.status === '1' && nftTxData.result) {
+    if (nftTxData.status === '1' && nftTxData.result && Array.isArray(nftTxData.result)) {
       const uniqueNFTs = new Set()
       nftTxData.result.forEach(tx => {
         uniqueNFTs.add(`${tx.contractAddress}-${tx.tokenID}`)

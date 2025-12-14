@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useWalletAnalysis } from '../hooks/useWalletAnalysis'
-import { Search, Wallet, Coins, Image, Activity, TrendingUp, Award, Sparkles, AlertCircle, Loader2 } from 'lucide-react'
+import { Search, Wallet, Coins, Image, Activity, TrendingUp, Award, Sparkles, AlertCircle, Loader2, Calendar, BarChart3, Zap } from 'lucide-react'
 import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
 
@@ -28,7 +28,6 @@ export default function WalletAnalysis() {
       await analyzeWallet(addr)
       setHasAnalyzed(true)
     } catch (err) {
-      // Error is handled by the hook
       console.error('Analysis failed:', err)
     }
   }
@@ -50,7 +49,7 @@ export default function WalletAnalysis() {
   return (
     <NetworkGuard>
       <div style={{
-        maxWidth: '1200px',
+        maxWidth: '1400px',
         margin: '0 auto',
         padding: '20px',
         minHeight: '100vh',
@@ -82,7 +81,7 @@ export default function WalletAnalysis() {
             color: '#6b7280',
             marginBottom: '8px',
           }}>
-            Get fun insights about any wallet on Base
+            Get comprehensive insights about any wallet on Base
           </p>
           <div style={{
             display: 'inline-flex',
@@ -210,218 +209,317 @@ export default function WalletAnalysis() {
           <div style={{
             animation: 'fadeIn 0.5s ease-in',
           }}>
-            {/* Wallet Score Card */}
+            {/* Wallet Score Card - Large and Prominent */}
             <div style={{
               background: `linear-gradient(135deg, ${getScoreColor(analysis.walletScore)} 0%, ${getScoreColor(analysis.walletScore)}dd 100%)`,
-              borderRadius: '20px',
-              padding: '32px',
+              borderRadius: '24px',
+              padding: '48px 32px',
               color: 'white',
-              marginBottom: '24px',
+              marginBottom: '32px',
               textAlign: 'center',
-              boxShadow: `0 8px 24px ${getScoreColor(analysis.walletScore)}40`,
+              boxShadow: `0 12px 32px ${getScoreColor(analysis.walletScore)}40`,
+              position: 'relative',
+              overflow: 'hidden',
             }}>
               <div style={{
-                fontSize: '64px',
-                marginBottom: '16px',
+                position: 'absolute',
+                top: '-50%',
+                right: '-50%',
+                width: '200%',
+                height: '200%',
+                background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+                pointerEvents: 'none',
+              }} />
+              <div style={{
+                fontSize: '80px',
+                marginBottom: '20px',
+                position: 'relative',
+                zIndex: 1,
               }}>
                 {getScoreEmoji(analysis.walletScore)}
               </div>
               <div style={{
-                fontSize: '48px',
+                fontSize: '72px',
                 fontWeight: 'bold',
-                marginBottom: '8px',
+                marginBottom: '12px',
+                position: 'relative',
+                zIndex: 1,
               }}>
                 {analysis.walletScore}/100
               </div>
               <div style={{
-                fontSize: '20px',
-                opacity: 0.9,
-                marginBottom: '16px',
+                fontSize: '24px',
+                opacity: 0.95,
+                marginBottom: '20px',
+                position: 'relative',
+                zIndex: 1,
               }}>
                 Wallet Score
               </div>
               <div style={{
-                fontSize: '18px',
-                opacity: 0.8,
+                fontSize: '22px',
+                opacity: 0.9,
+                position: 'relative',
+                zIndex: 1,
               }}>
                 {analysis.activityLevel}
               </div>
             </div>
 
-            {/* Stats Grid */}
+            {/* Main Stats Grid - 4 columns */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '16px',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+              gap: '20px',
               marginBottom: '24px',
             }}>
-              <StatCard
-                icon={<Wallet size={24} />}
+              <LargeStatCard
+                icon={<Wallet size={32} />}
                 label="Native Balance"
-                value={`${analysis.nativeBalance} ETH`}
+                value={`${parseFloat(analysis.nativeBalance || 0).toFixed(6)} ETH`}
                 color="#3b82f6"
+                bgGradient="linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)"
               />
-              <StatCard
-                icon={<Activity size={24} />}
-                label="Transactions"
-                value={analysis.totalTransactions.toLocaleString()}
+              <LargeStatCard
+                icon={<Activity size={32} />}
+                label="Total Transactions"
+                value={analysis.totalTransactions?.toLocaleString() || '0'}
                 color="#10b981"
+                bgGradient="linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)"
               />
-              <StatCard
-                icon={<Coins size={24} />}
+              <LargeStatCard
+                icon={<Coins size={32} />}
                 label="Token Diversity"
-                value={analysis.tokenDiversity}
+                value={analysis.tokenDiversity || 0}
                 color="#f59e0b"
+                bgGradient="linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)"
               />
-              <StatCard
-                icon={<Image size={24} />}
-                label="NFTs"
-                value={analysis.nftCount}
+              <LargeStatCard
+                icon={<Image size={32} />}
+                label="NFTs Owned"
+                value={analysis.nftCount || 0}
                 color="#8b5cf6"
+                bgGradient="linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)"
               />
             </div>
 
-            {/* Additional Stats */}
+            {/* Secondary Stats Grid */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-              gap: '16px',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: '20px',
               marginBottom: '24px',
             }}>
-              <InfoCard
+              <DetailCard
                 title="Total Value Moved"
-                value={`${parseFloat(analysis.totalValueMoved).toFixed(4)} ETH`}
-                icon={<TrendingUp size={20} />}
+                value={`${parseFloat(analysis.totalValueMoved || 0).toFixed(6)} ETH`}
+                icon={<TrendingUp size={24} />}
+                color="#3b82f6"
               />
-              <InfoCard
+              <DetailCard
                 title="Days Active"
-                value={analysis.daysActive}
-                icon={<Activity size={20} />}
+                value={analysis.daysActive || 0}
+                subtitle={analysis.daysActive > 0 ? 'days' : 'No activity yet'}
+                icon={<Calendar size={24} />}
+                color="#10b981"
               />
               {analysis.firstTransactionDate && (
-                <InfoCard
+                <DetailCard
                   title="First Transaction"
                   value={analysis.firstTransactionDate}
-                  icon={<Award size={20} />}
+                  icon={<Award size={24} />}
+                  color="#f59e0b"
                 />
               )}
               {analysis.mostActiveDay && (
-                <InfoCard
+                <DetailCard
                   title="Most Active Day"
                   value={analysis.mostActiveDay.split(' (')[0]}
                   subtitle={analysis.mostActiveDay.split('(')[1]?.replace(')', '')}
-                  icon={<Sparkles size={20} />}
+                  icon={<BarChart3 size={24} />}
+                  color="#8b5cf6"
+                />
+              )}
+              {analysis.favoriteToken && (
+                <DetailCard
+                  title="Favorite Token"
+                  value={analysis.favoriteToken}
+                  subtitle="Most traded token"
+                  icon={<Zap size={24} />}
+                  color="#ec4899"
                 />
               )}
             </div>
 
-            {/* Top Tokens */}
-            {analysis.topTokens && analysis.topTokens.length > 0 && (
-              <div style={{
-                background: 'white',
-                borderRadius: '16px',
-                padding: '24px',
-                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            {/* Top Tokens Section */}
+            <div style={{
+              background: 'white',
+              borderRadius: '20px',
+              padding: '32px',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              marginBottom: '24px',
+            }}>
+              <h3 style={{
+                fontSize: '24px',
+                fontWeight: 'bold',
                 marginBottom: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                color: '#1f2937',
               }}>
-                <h3 style={{
-                  fontSize: '20px',
-                  fontWeight: 'bold',
-                  marginBottom: '16px',
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
+                  justifyContent: 'center',
+                  color: 'white',
                 }}>
                   <Coins size={20} />
-                  Top Token Holdings
-                </h3>
+                </div>
+                Token Holdings
+              </h3>
+              {analysis.topTokens && analysis.topTokens.length > 0 ? (
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-                  gap: '12px',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                  gap: '16px',
                 }}>
-                  {analysis.topTokens.slice(0, 10).map((token, index) => (
+                  {analysis.topTokens.map((token, index) => (
                     <div
                       key={index}
                       style={{
-                        padding: '12px',
-                        background: '#f9fafb',
-                        borderRadius: '8px',
-                        border: '1px solid #e5e7eb',
+                        padding: '20px',
+                        background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)',
+                        borderRadius: '12px',
+                        border: '2px solid #e5e7eb',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-4px)'
+                        e.currentTarget.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.1)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)'
+                        e.currentTarget.style.boxShadow = 'none'
                       }}
                     >
                       <div style={{
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        marginBottom: '4px',
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        marginBottom: '8px',
+                        color: '#1f2937',
                       }}>
                         {token.symbol}
                       </div>
                       <div style={{
-                        fontSize: '12px',
+                        fontSize: '16px',
                         color: '#6b7280',
+                        fontFamily: 'monospace',
                       }}>
-                        {token.balance}
+                        {parseFloat(token.balance).toLocaleString()}
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div style={{
+                  padding: '40px',
+                  textAlign: 'center',
+                  color: '#9ca3af',
+                  fontSize: '16px',
+                }}>
+                  No token holdings found
+                </div>
+              )}
+            </div>
 
-            {/* Fun Facts */}
+            {/* Fun Facts Section */}
             {analysis.funFacts && analysis.funFacts.length > 0 && (
               <div style={{
                 background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                borderRadius: '16px',
-                padding: '24px',
+                borderRadius: '20px',
+                padding: '32px',
                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                marginBottom: '24px',
               }}>
                 <h3 style={{
-                  fontSize: '20px',
+                  fontSize: '24px',
                   fontWeight: 'bold',
-                  marginBottom: '16px',
+                  marginBottom: '24px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
+                  gap: '12px',
+                  color: '#1f2937',
                 }}>
-                  <Sparkles size={20} />
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                  }}>
+                    <Sparkles size={20} />
+                  </div>
                   Fun Facts
                 </h3>
                 <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                  gap: '16px',
                 }}>
                   {analysis.funFacts.map((fact, index) => (
                     <div
                       key={index}
                       style={{
-                        padding: '12px',
+                        padding: '20px',
                         background: 'white',
-                        borderRadius: '8px',
-                        fontSize: '14px',
+                        borderRadius: '12px',
+                        fontSize: '16px',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '8px',
+                        gap: '12px',
+                        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
                       }}
                     >
-                      <span>✨</span>
-                      <span>{fact}</span>
+                      <span style={{ fontSize: '24px' }}>✨</span>
+                      <span style={{ color: '#1f2937', fontWeight: '500' }}>{fact}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Wallet Address */}
+            {/* Wallet Address Footer */}
             <div style={{
-              marginTop: '24px',
+              marginTop: '32px',
+              padding: '20px',
+              background: '#f9fafb',
+              borderRadius: '16px',
               textAlign: 'center',
-              color: '#6b7280',
-              fontSize: '14px',
             }}>
-              Analyzed: <span style={{ fontFamily: 'monospace' }}>{analysis.walletAddress}</span>
+              <div style={{
+                color: '#6b7280',
+                fontSize: '14px',
+                marginBottom: '8px',
+              }}>
+                Analyzed Wallet Address
+              </div>
+              <div style={{
+                fontFamily: 'monospace',
+                fontSize: '16px',
+                fontWeight: '600',
+                color: '#1f2937',
+                wordBreak: 'break-all',
+              }}>
+                {analysis.walletAddress}
+              </div>
             </div>
           </div>
         )}
@@ -443,33 +541,55 @@ export default function WalletAnalysis() {
   )
 }
 
-function StatCard({ icon, label, value, color }) {
+function LargeStatCard({ icon, label, value, color, bgGradient }) {
   return (
     <div style={{
-      background: 'white',
-      borderRadius: '12px',
-      padding: '20px',
+      background: bgGradient || 'white',
+      borderRadius: '20px',
+      padding: '32px 24px',
       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      gap: '12px',
-    }}>
+      gap: '16px',
+      border: `2px solid ${color}20`,
+      transition: 'all 0.3s',
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.transform = 'translateY(-8px)'
+      e.currentTarget.style.boxShadow = '0 12px 24px rgba(0, 0, 0, 0.15)'
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.transform = 'translateY(0)'
+      e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)'
+    }}
+    >
       <div style={{
         color: color,
+        background: 'white',
+        width: '64px',
+        height: '64px',
+        borderRadius: '16px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
       }}>
         {icon}
       </div>
       <div style={{
-        fontSize: '24px',
+        fontSize: '32px',
         fontWeight: 'bold',
         color: '#1f2937',
+        textAlign: 'center',
       }}>
         {value}
       </div>
       <div style={{
-        fontSize: '14px',
+        fontSize: '16px',
         color: '#6b7280',
+        fontWeight: '600',
+        textAlign: 'center',
       }}>
         {label}
       </div>
@@ -477,36 +597,63 @@ function StatCard({ icon, label, value, color }) {
   )
 }
 
-function InfoCard({ title, value, subtitle, icon }) {
+function DetailCard({ title, value, subtitle, icon, color }) {
   return (
     <div style={{
       background: 'white',
-      borderRadius: '12px',
-      padding: '20px',
+      borderRadius: '16px',
+      padding: '24px',
       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    }}>
+      border: `2px solid ${color}20`,
+      transition: 'all 0.2s',
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.borderColor = `${color}60`
+      e.currentTarget.style.transform = 'translateY(-4px)'
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.borderColor = `${color}20`
+      e.currentTarget.style.transform = 'translateY(0)'
+    }}
+    >
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
-        marginBottom: '8px',
-        color: '#6b7280',
+        gap: '12px',
+        marginBottom: '16px',
       }}>
-        {icon}
-        <span style={{ fontSize: '14px', fontWeight: '600' }}>{title}</span>
+        <div style={{
+          width: '40px',
+          height: '40px',
+          borderRadius: '10px',
+          background: `${color}15`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: color,
+        }}>
+          {icon}
+        </div>
+        <span style={{
+          fontSize: '16px',
+          fontWeight: '600',
+          color: '#6b7280',
+        }}>
+          {title}
+        </span>
       </div>
       <div style={{
-        fontSize: '20px',
+        fontSize: '28px',
         fontWeight: 'bold',
         color: '#1f2937',
+        marginBottom: subtitle ? '4px' : '0',
       }}>
         {value}
       </div>
       {subtitle && (
         <div style={{
-          fontSize: '12px',
+          fontSize: '14px',
           color: '#9ca3af',
-          marginTop: '4px',
         }}>
           {subtitle}
         </div>
@@ -514,4 +661,3 @@ function InfoCard({ title, value, subtitle, icon }) {
     </div>
   )
 }
-
