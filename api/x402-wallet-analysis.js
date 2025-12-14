@@ -160,10 +160,11 @@ async function performWalletAnalysis(walletAddress) {
     console.log('🔍 Fetching native balance from BaseScan...')
     console.log('🔑 API Key check:', BASESCAN_API_KEY ? `Set (${BASESCAN_API_KEY.substring(0, 10)}...)` : 'NOT SET')
     try {
-      // BaseScan API V2 format (per Etherscan MCP docs)
-      // Format: /v2/api?chainid=8453&module=account&action=balance&address=...&tag=latest&apikey=...
+      // Etherscan API V2 format (works for all chains including Base)
+      // Base path: https://api.etherscan.io/v2/api
       // Base mainnet chainid: 8453
-      const balanceUrl = `https://api.basescan.org/v2/api?chainid=8453&module=account&action=balance&address=${walletAddress}&tag=latest&apikey=${BASESCAN_API_KEY}`
+      // Format: /v2/api?chainid=8453&module=account&action=balance&address=...&tag=latest&apikey=...
+      const balanceUrl = `https://api.etherscan.io/v2/api?chainid=8453&module=account&action=balance&address=${walletAddress}&tag=latest&apikey=${BASESCAN_API_KEY}`
       console.log('🌐 Balance API V2 URL:', balanceUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
       
       const balanceResponse = await fetch(balanceUrl, {
@@ -217,10 +218,10 @@ async function performWalletAnalysis(walletAddress) {
     }
 
     // 2. Get transactions from BaseScan API V2
-    // BaseScan API V2 format: /v2/api?chainid=8453&module=account&action=txlist&address=...
-    console.log('🔍 Fetching transactions from BaseScan API V2...')
+    // Etherscan API V2 format: /v2/api?chainid=8453&module=account&action=txlist&address=...
+    console.log('🔍 Fetching transactions from Etherscan API V2...')
     try {
-      const txUrl = `https://api.basescan.org/v2/api?chainid=8453&module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
+      const txUrl = `https://api.etherscan.io/v2/api?chainid=8453&module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
       console.log('🌐 Transaction API V2 URL:', txUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
       
       const txResponse = await fetch(txUrl, {
@@ -303,10 +304,10 @@ async function performWalletAnalysis(walletAddress) {
     }
 
     // 3. Get token transfers from BaseScan API V2
-    // BaseScan API V2 format: /v2/api?chainid=8453&module=account&action=tokentx&address=...
-    console.log('🔍 Fetching token transfers from BaseScan API V2...')
+    // Etherscan API V2 format: /v2/api?chainid=8453&module=account&action=tokentx&address=...
+    console.log('🔍 Fetching token transfers from Etherscan API V2...')
     try {
-      const tokenTxUrl = `https://api.basescan.org/v2/api?chainid=8453&module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
+      const tokenTxUrl = `https://api.etherscan.io/v2/api?chainid=8453&module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
       console.log('🌐 Token transfer API V2 URL:', tokenTxUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
       
       const tokenTxResponse = await fetch(tokenTxUrl, {
@@ -371,9 +372,9 @@ async function performWalletAnalysis(walletAddress) {
         
         for (const token of tokensToCheck) {
           try {
-            // Get token balance from BaseScan API V2
-            // BaseScan API V2 format: /v2/api?chainid=8453&module=account&action=tokenbalance&contractaddress=...&address=...
-            const tokenBalanceUrl = `https://api.basescan.org/v2/api?chainid=8453&module=account&action=tokenbalance&contractaddress=${token.address}&address=${walletAddress}&tag=latest&apikey=${BASESCAN_API_KEY}`
+            // Get token balance from Etherscan API V2
+            // Etherscan API V2 format: /v2/api?chainid=8453&module=account&action=tokenbalance&contractaddress=...&address=...
+            const tokenBalanceUrl = `https://api.etherscan.io/v2/api?chainid=8453&module=account&action=tokenbalance&contractaddress=${token.address}&address=${walletAddress}&tag=latest&apikey=${BASESCAN_API_KEY}`
             const tokenBalanceResponse = await fetch(tokenBalanceUrl, {
               headers: { 
                 'Accept': 'application/json',
