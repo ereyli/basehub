@@ -163,7 +163,10 @@ async function performWalletAnalysis(walletAddress) {
       const balanceUrl = `https://api.basescan.org/api?module=account&action=balance&address=${walletAddress}&tag=latest&apikey=${BASESCAN_API_KEY}`
       
       const balanceResponse = await fetch(balanceUrl, {
-        headers: { 'Accept': 'application/json' },
+        headers: { 
+          'Accept': 'application/json',
+          'X-API-Key': BASESCAN_API_KEY,
+        },
       })
       
       console.log('📡 Balance API HTTP status:', balanceResponse.status, balanceResponse.statusText)
@@ -209,17 +212,17 @@ async function performWalletAnalysis(walletAddress) {
       analysis.nativeBalance = '0.0000'
     }
 
-    // 2. Get transactions from BaseScan
-    // BaseScan API format: https://api.basescan.org/api?module=account&action=txlist&address=...&startblock=0&endblock=99999999&sort=desc&apikey=...
-    // According to Etherscan docs: sort can be 'asc' or 'desc', startblock/endblock are required
-    console.log('🔍 Fetching transactions from BaseScan...')
+    // 2. Get transactions from BaseScan API V2
+    // API V2 format: https://api.basescan.org/api/v2/accounts/{address}/transactions?chainid=8453&limit=100
+    console.log('🔍 Fetching transactions from BaseScan API V2...')
     try {
-      const txUrl = `https://api.basescan.org/api?module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
-      console.log('🌐 Transaction API URL:', txUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
+      const txUrl = `https://api.basescan.org/api/v2/accounts/${walletAddress}/transactions?chainid=8453&limit=1000`
+      console.log('🌐 Transaction API V2 URL:', txUrl)
       
       const txResponse = await fetch(txUrl, {
         headers: {
           'Accept': 'application/json',
+          'X-API-Key': BASESCAN_API_KEY,
         },
       })
       
@@ -231,28 +234,18 @@ async function performWalletAnalysis(walletAddress) {
       }
       
       const txData = await txResponse.json()
-      console.log('📊 Transaction data response:', {
-        status: txData.status,
-        message: txData.message,
-        result: txData.result ? (Array.isArray(txData.result) ? txData.result.length : typeof txData.result) : 'no result',
-        fullResult: typeof txData.result === 'string' ? txData.result.substring(0, 200) : txData.result,
+      console.log('📊 Transaction API V2 response:', {
+        hasItems: !!txData.items,
+        itemsCount: txData.items ? txData.items.length : 0,
+        pagination: txData.pagination,
       })
 
-      // BaseScan API returns status '1' for success, '0' for error
-      // If status is '0', check the message
-      if (txData.status === '0') {
-        console.error('❌ BaseScan API error:', txData.message, txData.result)
-        // If it's just "No transactions found", that's okay
-        if (txData.message && txData.message.toLowerCase().includes('no transactions')) {
-          console.log('ℹ️ No transactions found for this wallet (this is normal for new wallets)')
-        } else {
-          console.error('❌ BaseScan API returned error:', txData.message || txData.result)
-        }
-      } else if (txData.status === '1' && txData.result) {
-        // Handle both array and object responses
-        const transactions = Array.isArray(txData.result) ? txData.result : []
+      // API V2 returns { items: [...], pagination: {...} }
+      let transactions = []
+      if (txData.items && Array.isArray(txData.items)) {
+        transactions = txData.items
         
-        if (transactions.length === 0 && txData.message === 'No transactions found') {
+        if (transactions.length === 0) {
           console.log('ℹ️ No transactions found for this wallet')
         } else {
           analysis.totalTransactions = transactions.length
@@ -260,26 +253,37 @@ async function performWalletAnalysis(walletAddress) {
           // Calculate total value moved
           let totalValue = BigInt(0)
           transactions.forEach(tx => {
-            totalValue += BigInt(tx.value || '0')
+            // API V2 format: value is in wei as string or number
+            const value = tx.value || tx.amount || '0'
+            totalValue += BigInt(value)
           })
           analysis.totalValueMoved = formatEtherValue(totalValue.toString())
 
-      // First and last transaction dates
-      if (transactions.length > 0) {
-        const firstTx = transactions[transactions.length - 1]
-        const lastTx = transactions[0]
-        analysis.firstTransactionDate = new Date(parseInt(firstTx.timeStamp) * 1000).toLocaleDateString()
-        
-        const firstDate = new Date(parseInt(firstTx.timeStamp) * 1000)
-        const lastDate = new Date(parseInt(lastTx.timeStamp) * 1000)
-        analysis.daysActive = Math.max(1, Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24)))
-      }
+          // First and last transaction dates
+          if (transactions.length > 0) {
+            // API V2: timestamp might be in different format (ISO string or unix timestamp)
+            const firstTx = transactions[transactions.length - 1]
+            const lastTx = transactions[0]
+            
+            const firstTimestamp = firstTx.timestamp || firstTx.blockTimestamp || firstTx.timeStamp
+            const lastTimestamp = lastTx.timestamp || lastTx.blockTimestamp || lastTx.timeStamp
+            
+            const firstDate = firstTimestamp ? (typeof firstTimestamp === 'string' ? new Date(firstTimestamp) : new Date(parseInt(firstTimestamp) * 1000)) : new Date()
+            const lastDate = lastTimestamp ? (typeof lastTimestamp === 'string' ? new Date(lastTimestamp) : new Date(parseInt(lastTimestamp) * 1000)) : new Date()
+            
+            analysis.firstTransactionDate = firstDate.toLocaleDateString()
+            analysis.daysActive = Math.max(1, Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24)))
+          }
 
           // Most active day
           const dayCounts = {}
           transactions.forEach(tx => {
-            const date = new Date(parseInt(tx.timeStamp) * 1000).toLocaleDateString()
-            dayCounts[date] = (dayCounts[date] || 0) + 1
+            const timestamp = tx.timestamp || tx.blockTimestamp || tx.timeStamp
+            if (timestamp) {
+              const date = typeof timestamp === 'string' ? new Date(timestamp) : new Date(parseInt(timestamp) * 1000)
+              const dateStr = date.toLocaleDateString()
+              dayCounts[dateStr] = (dayCounts[dateStr] || 0) + 1
+            }
           })
           const mostActiveDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]
           if (mostActiveDay) {
@@ -292,17 +296,21 @@ async function performWalletAnalysis(walletAddress) {
       // Continue with other data even if transactions fail
     }
 
-    // 3. Get token transfers
-    console.log('🔍 Fetching token transfers from BaseScan...')
+    // 3. Get token transfers from BaseScan API V2
+    // API V2 format: https://api.basescan.org/api/v2/accounts/{address}/token-transfers?chainid=8453&limit=1000
+    console.log('🔍 Fetching token transfers from BaseScan API V2...')
     try {
-      const tokenTxResponse = await fetch(
-        `https://api.basescan.org/api?module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`,
-        {
-          headers: {
-            'Accept': 'application/json',
-          },
-        }
-      )
+      const tokenTxUrl = `https://api.basescan.org/api/v2/accounts/${walletAddress}/token-transfers?chainid=8453&limit=1000`
+      console.log('🌐 Token transfer API V2 URL:', tokenTxUrl)
+      
+      const tokenTxResponse = await fetch(tokenTxUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'X-API-Key': BASESCAN_API_KEY,
+        },
+      })
+      
+      console.log('📡 Token transfer API HTTP status:', tokenTxResponse.status, tokenTxResponse.statusText)
       
       if (!tokenTxResponse.ok) {
         console.error('❌ Token transfer API error:', tokenTxResponse.status)
@@ -310,23 +318,15 @@ async function performWalletAnalysis(walletAddress) {
       }
       
       const tokenTxData = await tokenTxResponse.json()
-      console.log('📊 Token transfer data response:', {
-        status: tokenTxData.status,
-        message: tokenTxData.message,
-        result: tokenTxData.result ? (Array.isArray(tokenTxData.result) ? tokenTxData.result.length : typeof tokenTxData.result) : 'no result',
-        fullResult: typeof tokenTxData.result === 'string' ? tokenTxData.result.substring(0, 200) : tokenTxData.result,
+      console.log('📊 Token transfer API V2 response:', {
+        hasItems: !!tokenTxData.items,
+        itemsCount: tokenTxData.items ? tokenTxData.items.length : 0,
       })
 
-      // BaseScan API returns status '1' for success, '0' for error
-      if (tokenTxData.status === '0') {
-        console.error('❌ BaseScan API error:', tokenTxData.message, tokenTxData.result)
-        if (tokenTxData.message && tokenTxData.message.toLowerCase().includes('no token')) {
-          console.log('ℹ️ No token transfers found for this wallet (this is normal)')
-        } else {
-          console.error('❌ BaseScan API returned error:', tokenTxData.message || tokenTxData.result)
-        }
-      } else if (tokenTxData.status === '1' && tokenTxData.result) {
-        const tokenTransfers = Array.isArray(tokenTxData.result) ? tokenTxData.result : []
+      // API V2 returns { items: [...], pagination: {...} }
+      let tokenTransfers = []
+      if (tokenTxData.items && Array.isArray(tokenTxData.items)) {
+        tokenTransfers = tokenTxData.items
         
         if (tokenTransfers.length === 0 && tokenTxData.message === 'No token transfers found') {
           console.log('ℹ️ No token transfers found for this wallet')
@@ -368,8 +368,16 @@ async function performWalletAnalysis(walletAddress) {
           
           if (tokenBalanceResponse.ok) {
             const tokenBalanceData = await tokenBalanceResponse.json()
-            if (tokenBalanceData.status === '1' && tokenBalanceData.result) {
-              const formattedBalance = formatTokenValue(tokenBalanceData.result, token.decimals)
+            // API V2 format: { balance: "..." } or { items: [{ balance: "..." }] }
+            let balance = null
+            if (tokenBalanceData.balance) {
+              balance = tokenBalanceData.balance
+            } else if (tokenBalanceData.items && tokenBalanceData.items.length > 0) {
+              balance = tokenBalanceData.items[0].balance || tokenBalanceData.items[0].value
+            }
+            
+            if (balance) {
+              const formattedBalance = formatTokenValue(balance, token.decimals)
               if (parseFloat(formattedBalance) > 0) {
                 analysis.topTokens.push({
                   symbol: token.symbol,
@@ -396,16 +404,17 @@ async function performWalletAnalysis(walletAddress) {
       // Continue with other data even if token transfers fail
     }
 
-    // 4. Get NFT transfers
-    // BaseScan API format: https://api.basescan.org/api?module=account&action=tokennfttx&address=...&startblock=0&endblock=99999999&sort=desc&apikey=...
-    console.log('🔍 Fetching NFT transfers from BaseScan...')
+    // 4. Get NFT transfers from BaseScan API V2
+    // API V2 format: https://api.basescan.org/api/v2/accounts/{address}/nft-transfers?chainid=8453&limit=1000
+    console.log('🔍 Fetching NFT transfers from BaseScan API V2...')
     try {
-      const nftTxUrl = `https://api.basescan.org/api?module=account&action=tokennfttx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
-      console.log('🌐 NFT transfer API URL:', nftTxUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
+      const nftTxUrl = `https://api.basescan.org/api/v2/accounts/${walletAddress}/nft-transfers?chainid=8453&limit=1000`
+      console.log('🌐 NFT transfer API V2 URL:', nftTxUrl)
       
       const nftTxResponse = await fetch(nftTxUrl, {
         headers: {
           'Accept': 'application/json',
+          'X-API-Key': BASESCAN_API_KEY,
         },
       })
       
@@ -417,33 +426,31 @@ async function performWalletAnalysis(walletAddress) {
       }
       
       const nftTxData = await nftTxResponse.json()
-      console.log('📊 NFT transfer data response:', {
-        status: nftTxData.status,
-        message: nftTxData.message,
-        result: nftTxData.result ? (Array.isArray(nftTxData.result) ? nftTxData.result.length : typeof nftTxData.result) : 'no result',
-        fullResult: typeof nftTxData.result === 'string' ? nftTxData.result.substring(0, 200) : nftTxData.result,
+      console.log('📊 NFT transfer API V2 response:', {
+        hasItems: !!nftTxData.items,
+        itemsCount: nftTxData.items ? nftTxData.items.length : 0,
       })
 
-      // BaseScan API returns status '1' for success, '0' for error
-      if (nftTxData.status === '0') {
-        console.error('❌ BaseScan API error:', nftTxData.message, nftTxData.result)
-        if (nftTxData.message && nftTxData.message.toLowerCase().includes('no nft')) {
-          console.log('ℹ️ No NFT transfers found for this wallet (this is normal)')
-        } else {
-          console.error('❌ BaseScan API returned error:', nftTxData.message || nftTxData.result)
-        }
-      } else if (nftTxData.status === '1' && nftTxData.result) {
-        const nftTransfers = Array.isArray(nftTxData.result) ? nftTxData.result : []
-        
-        if (nftTransfers.length === 0 && nftTxData.message === 'No NFT transfers found') {
-          console.log('ℹ️ No NFT transfers found for this wallet')
-        } else {
-          const uniqueNFTs = new Set()
-          nftTransfers.forEach(tx => {
-            uniqueNFTs.add(`${tx.contractAddress}-${tx.tokenID}`)
-          })
-          analysis.nftCount = uniqueNFTs.size
-        }
+      // API V2 returns { items: [...], pagination: {...} }
+      let nftTransfers = []
+      if (nftTxData.items && Array.isArray(nftTxData.items)) {
+        nftTransfers = nftTxData.items
+      }
+      
+      if (nftTransfers.length === 0) {
+        console.log('ℹ️ No NFT transfers found for this wallet')
+      } else {
+        const uniqueNFTs = new Set()
+        nftTransfers.forEach(tx => {
+          // API V2 format: contractAddress or tokenAddress, tokenID or tokenId
+          const contractAddress = tx.contractAddress || tx.tokenAddress || tx.token?.address || ''
+          const tokenID = tx.tokenID || tx.tokenId || tx.token?.id || ''
+          if (contractAddress && tokenID) {
+            uniqueNFTs.add(`${contractAddress}-${tokenID}`)
+          }
+        })
+        analysis.nftCount = uniqueNFTs.size
+        console.log('✅ Found', analysis.nftCount, 'unique NFTs')
       }
     } catch (nftError) {
       console.error('❌ Error fetching NFT transfers:', nftError)
