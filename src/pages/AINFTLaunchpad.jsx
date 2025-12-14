@@ -83,14 +83,14 @@ export default function AINFTLaunchpad() {
       console.log('✅ Payment successful! Proceeding with image generation...');
       
       // Step 2: Generate enhanced prompt with selected style
-      let promptToUse = '';
-      if (imageMode === 'prompt') {
-        promptToUse = generateEnhancedPrompt(currentPrompt, selectedStyle);
-        console.log('🎨 Enhanced prompt:', promptToUse);
-      }
-      
+    let promptToUse = '';
+    if (imageMode === 'prompt') {
+      promptToUse = generateEnhancedPrompt(currentPrompt, selectedStyle);
+      console.log('🎨 Enhanced prompt:', promptToUse);
+    }
+    
       // Step 3: Generate image after payment is confirmed
-      await generateImage(promptToUse, uploadedImage);
+    await generateImage(promptToUse, uploadedImage);
     } catch (paymentError) {
       console.error('❌ Payment failed:', paymentError);
       // Error is already set in the hook, user will see it in UI
@@ -642,9 +642,9 @@ export default function AINFTLaunchpad() {
                           }}>
                             <AlertCircle size={16} style={{ display: 'inline-block', marginRight: '8px', verticalAlign: 'middle' }} />
                             {x402Error}
-                          </div>
-                        )}
-                        
+                  </div>
+                )}
+
                         <button 
                           type="submit" 
                           className="deploy-button"
