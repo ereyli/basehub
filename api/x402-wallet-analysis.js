@@ -6,19 +6,6 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { paymentMiddleware } from 'x402-hono'
 import { facilitator } from '@coinbase/x402'
-// Lazy import viem to avoid Vercel serverless function initialization errors
-let viemModule = null
-async function getViem() {
-  if (!viemModule) {
-    try {
-      viemModule = await import('viem')
-    } catch (error) {
-      console.error('❌ Failed to import viem:', error)
-      return null
-    }
-  }
-  return viemModule
-}
 
 const app = new Hono()
 
@@ -105,38 +92,36 @@ const ERC20_ABI = [
   },
 ]
 
-// Fun wallet analysis function
-async function performWalletAnalysis(walletAddress) {
-  // Lazy load viem to avoid Vercel initialization errors
-  const viem = await getViem()
-  if (!viem) {
-    console.error('❌ Viem module not available')
-    throw new Error('Blockchain client not available')
-  }
-
-  const { createPublicClient, http, formatEther, formatUnits } = viem
-  const { base } = await import('viem/chains')
-
-  let publicClient
+// Helper function to format ETH values
+function formatEtherValue(value) {
+  if (!value || value === '0') return '0.0000'
   try {
-    publicClient = createPublicClient({
-      chain: base,
-      transport: http('https://mainnet.base.org', {
-        timeout: 10000, // 10 second timeout
-        retryCount: 2,
-        retryDelay: 1000,
-      }),
-    })
-  } catch (clientError) {
-    console.error('❌ Error creating public client:', clientError)
-    console.error('Client error details:', {
-      message: clientError.message,
-      stack: clientError.stack,
-      name: clientError.name,
-    })
-    // Don't throw - continue with API-only analysis
-    publicClient = null
+    // Convert from wei to ETH (18 decimals)
+    const wei = BigInt(value)
+    const eth = Number(wei) / 1e18
+    return eth.toFixed(6)
+  } catch (error) {
+    return '0.0000'
   }
+}
+
+// Helper function to format token values
+function formatTokenValue(value, decimals = 18) {
+  if (!value || value === '0') return '0.0000'
+  try {
+    const amount = BigInt(value)
+    const divisor = BigInt(10 ** decimals)
+    const result = Number(amount) / Number(divisor)
+    return result.toFixed(4)
+  } catch (error) {
+    return '0.0000'
+  }
+}
+
+// Fun wallet analysis function - using BaseScan API only (no viem to avoid Vercel issues)
+async function performWalletAnalysis(walletAddress) {
+  // Note: We're using BaseScan API only to avoid viem/Vercel compatibility issues
+  // Native balance will be fetched from BaseScan API instead of RPC
 
   const analysis = {
     walletAddress,
@@ -161,24 +146,29 @@ async function performWalletAnalysis(walletAddress) {
   }
 
   try {
-    // 1. Native ETH Balance - only if publicClient is available
-    if (publicClient) {
-      try {
-        const balance = await Promise.race([
-          publicClient.getBalance({
-            address: walletAddress,
-          }),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Balance fetch timeout')), 10000)
-          )
-        ])
-        analysis.nativeBalance = parseFloat(formatEther(balance)).toFixed(4)
-      } catch (balanceError) {
-        console.error('❌ Error fetching balance:', balanceError)
+    // 1. Get native ETH balance from BaseScan API
+    console.log('🔍 Fetching native balance from BaseScan...')
+    try {
+      const balanceResponse = await fetch(
+        `https://api.basescan.org/api?module=account&action=balance&address=${walletAddress}&tag=latest&apikey=${BASESCAN_API_KEY}`,
+        {
+          headers: { 'Accept': 'application/json' },
+        }
+      )
+      
+      if (balanceResponse.ok) {
+        const balanceData = await balanceResponse.json()
+        if (balanceData.status === '1' && balanceData.result) {
+          analysis.nativeBalance = formatEtherValue(balanceData.result)
+        } else {
+          analysis.nativeBalance = '0.0000'
+        }
+      } else {
+        console.error('❌ Balance API error:', balanceResponse.status)
         analysis.nativeBalance = '0.0000'
       }
-    } else {
-      console.log('⚠️ Public client not available, skipping balance fetch')
+    } catch (balanceError) {
+      console.error('❌ Error fetching balance:', balanceError)
       analysis.nativeBalance = '0.0000'
     }
 
@@ -305,39 +295,36 @@ async function performWalletAnalysis(walletAddress) {
         .sort((a, b) => b.transfers - a.transfers)
         .slice(0, 10)
 
-      // Limit token balance checks to avoid timeout - only if publicClient is available
-      if (publicClient) {
-        const tokensToCheck = tokenArray.slice(0, 5) // Only check top 5 tokens
-        
-        for (const token of tokensToCheck) {
-          try {
-            const balance = await Promise.race([
-              publicClient.readContract({
-                address: token.address,
-                abi: ERC20_ABI,
-                functionName: 'balanceOf',
-                args: [walletAddress],
-              }),
-              new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Token balance fetch timeout')), 5000)
-              )
-            ])
-            
-            const formattedBalance = formatUnits(balance, token.decimals)
-            if (parseFloat(formattedBalance) > 0) {
-              analysis.topTokens.push({
-                symbol: token.symbol,
-                balance: parseFloat(formattedBalance).toFixed(4),
-                address: token.address,
-              })
+      // Get token balances from BaseScan API (more reliable than RPC in Vercel)
+      const tokensToCheck = tokenArray.slice(0, 10) // Check top 10 tokens
+      
+      for (const token of tokensToCheck) {
+        try {
+          // Get token balance from BaseScan API
+          const tokenBalanceResponse = await fetch(
+            `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${token.address}&address=${walletAddress}&tag=latest&apikey=${BASESCAN_API_KEY}`,
+            {
+              headers: { 'Accept': 'application/json' },
             }
-          } catch (err) {
-            // Token might not support balanceOf or timeout, skip it
-            console.log(`⚠️ Skipping token ${token.symbol}:`, err.message)
+          )
+          
+          if (tokenBalanceResponse.ok) {
+            const tokenBalanceData = await tokenBalanceResponse.json()
+            if (tokenBalanceData.status === '1' && tokenBalanceData.result) {
+              const formattedBalance = formatTokenValue(tokenBalanceData.result, token.decimals)
+              if (parseFloat(formattedBalance) > 0) {
+                analysis.topTokens.push({
+                  symbol: token.symbol,
+                  balance: formattedBalance,
+                  address: token.address,
+                })
+              }
+            }
           }
+        } catch (err) {
+          // Token balance fetch failed, skip it
+          console.log(`⚠️ Skipping token ${token.symbol}:`, err.message)
         }
-      } else {
-        console.log('⚠️ Public client not available, skipping token balance checks')
       }
 
       // Favorite token (most transfers)
