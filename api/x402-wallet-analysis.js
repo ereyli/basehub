@@ -1,0 +1,434 @@
+// x402 Wallet Analysis Endpoint for BaseHub using Hono
+// Accepts 0.3 USDC payments using Coinbase x402
+// Provides fun and useful wallet analysis
+
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import { paymentMiddleware } from 'x402-hono'
+import { facilitator } from '@coinbase/x402'
+import { createPublicClient, http, formatEther, formatUnits } from 'viem'
+import { base } from 'viem/chains'
+
+const app = new Hono()
+
+// Your receiving wallet address
+const RECEIVING_ADDRESS = process.env.X402_RECEIVING_ADDRESS || '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
+
+// Payment configuration
+const PRICE = '$0.30' // 0.3 USDC
+const NETWORK = process.env.X402_NETWORK || 'base'
+
+// BaseScan API Key
+const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || 'SI8ECAC19FPN92K9MCNQENMGY6Z6MRM14Q'
+
+// Configure facilitator
+let facilitatorConfig
+if (process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET) {
+  facilitatorConfig = facilitator
+  console.log('✅ Using CDP facilitator for Base mainnet')
+} else {
+  facilitatorConfig = { url: 'https://x402.org/facilitator' }
+  console.log('⚠️  WARNING: No CDP API keys found!')
+}
+
+// CORS middleware
+app.use('/*', cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization', 'X-PAYMENT'],
+  exposeHeaders: ['X-PAYMENT-RESPONSE'],
+  maxAge: 86400,
+}))
+
+// Health check endpoint
+app.get('/', (c) => {
+  return c.json({
+    status: 'ok',
+    service: 'Wallet Analysis',
+    price: PRICE,
+    network: NETWORK,
+  })
+})
+
+// Apply x402 payment middleware
+app.use(
+  paymentMiddleware(
+    RECEIVING_ADDRESS,
+    {
+      'POST /': {
+        price: PRICE,
+        network: NETWORK,
+        config: {
+          description: 'BaseHub Wallet Analysis - Pay 0.3 USDC',
+          mimeType: 'application/json',
+          maxTimeoutSeconds: 600,
+        },
+      },
+    },
+    facilitatorConfig
+  )
+)
+
+// ERC20 ABI for token balance
+const ERC20_ABI = [
+  {
+    constant: true,
+    inputs: [{ name: '_owner', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ name: 'balance', type: 'uint256' }],
+    type: 'function',
+  },
+  {
+    constant: true,
+    inputs: [],
+    name: 'decimals',
+    outputs: [{ name: '', type: 'uint8' }],
+    type: 'function',
+  },
+  {
+    constant: true,
+    inputs: [],
+    name: 'symbol',
+    outputs: [{ name: '', type: 'string' }],
+    type: 'function',
+  },
+]
+
+// Fun wallet analysis function
+async function performWalletAnalysis(walletAddress) {
+  const publicClient = createPublicClient({
+    chain: base,
+    transport: http('https://mainnet.base.org'),
+  })
+
+  const analysis = {
+    walletAddress,
+    // Basic Info
+    nativeBalance: '0',
+    // Fun Metrics
+    walletScore: 0,
+    activityLevel: 'Unknown',
+    tokenDiversity: 0,
+    nftCount: 0,
+    // Stats
+    totalTransactions: 0,
+    totalValueMoved: '0',
+    firstTransactionDate: null,
+    daysActive: 0,
+    favoriteToken: null,
+    mostActiveDay: null,
+    // Holdings
+    topTokens: [],
+    // Fun Facts
+    funFacts: [],
+  }
+
+  try {
+    // 1. Native ETH Balance
+    const balance = await publicClient.getBalance({
+      address: walletAddress,
+    })
+    analysis.nativeBalance = parseFloat(formatEther(balance)).toFixed(4)
+
+    // 2. Get transactions from BaseScan
+    const txResponse = await fetch(
+      `https://api.basescan.org/api?module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
+    )
+    const txData = await txResponse.json()
+
+    if (txData.status === '1' && txData.result) {
+      const transactions = txData.result
+      analysis.totalTransactions = transactions.length
+
+      // Calculate total value moved
+      let totalValue = BigInt(0)
+      transactions.forEach(tx => {
+        totalValue += BigInt(tx.value || '0')
+      })
+      analysis.totalValueMoved = parseFloat(formatEther(totalValue)).toFixed(4)
+
+      // First and last transaction dates
+      if (transactions.length > 0) {
+        const firstTx = transactions[transactions.length - 1]
+        const lastTx = transactions[0]
+        analysis.firstTransactionDate = new Date(parseInt(firstTx.timeStamp) * 1000).toLocaleDateString()
+        
+        const firstDate = new Date(parseInt(firstTx.timeStamp) * 1000)
+        const lastDate = new Date(parseInt(lastTx.timeStamp) * 1000)
+        analysis.daysActive = Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24))
+      }
+
+      // Most active day
+      const dayCounts = {}
+      transactions.forEach(tx => {
+        const date = new Date(parseInt(tx.timeStamp) * 1000).toLocaleDateString()
+        dayCounts[date] = (dayCounts[date] || 0) + 1
+      })
+      const mostActiveDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]
+      if (mostActiveDay) {
+        analysis.mostActiveDay = `${mostActiveDay[0]} (${mostActiveDay[1]} transactions)`
+      }
+    }
+
+    // 3. Get token transfers
+    const tokenTxResponse = await fetch(
+      `https://api.basescan.org/api?module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
+    )
+    const tokenTxData = await tokenTxResponse.json()
+
+    if (tokenTxData.status === '1' && tokenTxData.result) {
+      const tokenTransfers = tokenTxData.result
+      
+      // Get unique tokens
+      const tokenMap = new Map()
+      tokenTransfers.forEach(tx => {
+        const tokenAddress = tx.contractAddress.toLowerCase()
+        if (!tokenMap.has(tokenAddress)) {
+          tokenMap.set(tokenAddress, {
+            address: tokenAddress,
+            symbol: tx.tokenSymbol || 'UNKNOWN',
+            decimals: parseInt(tx.tokenDecimals || '18'),
+            transfers: 0,
+          })
+        }
+        tokenMap.get(tokenAddress).transfers++
+      })
+
+      analysis.tokenDiversity = tokenMap.size
+
+      // Get balances for top tokens (limit to 10)
+      const tokenArray = Array.from(tokenMap.values())
+        .sort((a, b) => b.transfers - a.transfers)
+        .slice(0, 10)
+
+      for (const token of tokenArray) {
+        try {
+          const balance = await publicClient.readContract({
+            address: token.address,
+            abi: ERC20_ABI,
+            functionName: 'balanceOf',
+            args: [walletAddress],
+          })
+          
+          const formattedBalance = formatUnits(balance, token.decimals)
+          if (parseFloat(formattedBalance) > 0) {
+            analysis.topTokens.push({
+              symbol: token.symbol,
+              balance: parseFloat(formattedBalance).toFixed(4),
+              address: token.address,
+            })
+          }
+        } catch (err) {
+          // Token might not support balanceOf, skip it
+        }
+      }
+
+      // Favorite token (most transfers)
+      if (tokenArray.length > 0) {
+        analysis.favoriteToken = tokenArray[0].symbol
+      }
+    }
+
+    // 4. Get NFT transfers
+    const nftTxResponse = await fetch(
+      `https://api.basescan.org/api?module=account&action=tokennfttx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
+    )
+    const nftTxData = await nftTxResponse.json()
+
+    if (nftTxData.status === '1' && nftTxData.result) {
+      const uniqueNFTs = new Set()
+      nftTxData.result.forEach(tx => {
+        uniqueNFTs.add(`${tx.contractAddress}-${tx.tokenID}`)
+      })
+      analysis.nftCount = uniqueNFTs.size
+    }
+
+    // 5. Calculate Wallet Score (0-100)
+    let score = 0
+    
+    // Activity score (0-30 points)
+    if (analysis.totalTransactions > 100) score += 30
+    else if (analysis.totalTransactions > 50) score += 20
+    else if (analysis.totalTransactions > 10) score += 10
+    else if (analysis.totalTransactions > 0) score += 5
+
+    // Diversity score (0-25 points)
+    if (analysis.tokenDiversity > 10) score += 25
+    else if (analysis.tokenDiversity > 5) score += 15
+    else if (analysis.tokenDiversity > 2) score += 10
+    else if (analysis.tokenDiversity > 0) score += 5
+
+    // NFT collector score (0-20 points)
+    if (analysis.nftCount > 20) score += 20
+    else if (analysis.nftCount > 10) score += 15
+    else if (analysis.nftCount > 5) score += 10
+    else if (analysis.nftCount > 0) score += 5
+
+    // Value score (0-15 points)
+    const valueMoved = parseFloat(analysis.totalValueMoved)
+    if (valueMoved > 10) score += 15
+    else if (valueMoved > 1) score += 10
+    else if (valueMoved > 0.1) score += 5
+
+    // Longevity score (0-10 points)
+    if (analysis.daysActive > 365) score += 10
+    else if (analysis.daysActive > 180) score += 7
+    else if (analysis.daysActive > 90) score += 5
+    else if (analysis.daysActive > 30) score += 3
+
+    analysis.walletScore = Math.min(100, score)
+
+    // 6. Activity Level
+    if (analysis.totalTransactions === 0) {
+      analysis.activityLevel = 'Dormant 💤'
+    } else if (analysis.totalTransactions < 5) {
+      analysis.activityLevel = 'Newbie 🌱'
+    } else if (analysis.totalTransactions < 20) {
+      analysis.activityLevel = 'Active 🚀'
+    } else if (analysis.totalTransactions < 100) {
+      analysis.activityLevel = 'Super Active ⚡'
+    } else {
+      analysis.activityLevel = 'Whale 🐋'
+    }
+
+    // 7. Fun Facts
+    analysis.funFacts = []
+    
+    if (analysis.totalTransactions === 0) {
+      analysis.funFacts.push('This wallet is brand new! 🎉')
+    } else {
+      analysis.funFacts.push(`Made ${analysis.totalTransactions} transactions on Base`)
+    }
+
+    if (analysis.daysActive > 0) {
+      analysis.funFacts.push(`Active for ${analysis.daysActive} days`)
+    }
+
+    if (analysis.tokenDiversity > 0) {
+      analysis.funFacts.push(`Holds ${analysis.tokenDiversity} different tokens`)
+    }
+
+    if (analysis.nftCount > 0) {
+      analysis.funFacts.push(`Collects ${analysis.nftCount} NFTs`)
+    }
+
+    if (analysis.favoriteToken) {
+      analysis.funFacts.push(`Favorite token: ${analysis.favoriteToken}`)
+    }
+
+    if (parseFloat(analysis.nativeBalance) > 0.1) {
+      analysis.funFacts.push(`Has ${analysis.nativeBalance} ETH`)
+    }
+
+  } catch (error) {
+    console.error('Wallet analysis error:', error)
+    throw error
+  }
+
+  return analysis
+}
+
+// Wallet Analysis endpoint - protected by middleware
+app.post('/', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { walletAddress } = body
+
+    if (!walletAddress) {
+      return c.json({ error: 'Wallet address required' }, 400)
+    }
+
+    // Validate address format
+    if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+      return c.json({ error: 'Invalid wallet address format' }, 400)
+    }
+
+    console.log('🔍 Starting wallet analysis for:', walletAddress)
+
+    // Perform analysis
+    const analysis = await performWalletAnalysis(walletAddress)
+
+    console.log('✅ Wallet analysis completed:', {
+      walletAddress,
+      score: analysis.walletScore,
+      transactions: analysis.totalTransactions,
+    })
+
+    return c.json({
+      success: true,
+      walletAddress,
+      analysis,
+      timestamp: new Date().toISOString(),
+    })
+  } catch (error) {
+    console.error('❌ Wallet analysis error:', error)
+    return c.json({
+      error: 'Analysis failed',
+      message: error.message,
+    }, 500)
+  }
+})
+
+// Export for Vercel (serverless function)
+export default async function handler(req, res) {
+  try {
+    console.log('🔍 Wallet Analysis handler called:', {
+      method: req.method,
+      url: req.url,
+    })
+
+    const urlParts = (req.url || '/').split('?')
+    const path = urlParts[0] || '/'
+    const queryString = urlParts[1] || ''
+    const normalizedPath = '/'
+
+    const protocol = req.headers['x-forwarded-proto'] || 'https'
+    const host = req.headers.host || req.headers['x-forwarded-host'] || 'localhost'
+    const fullUrl = `${protocol}://${host}${normalizedPath}${queryString ? `?${queryString}` : ''}`
+
+    let body = undefined
+    if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
+      body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body)
+    }
+
+    const request = new Request(fullUrl, {
+      method: req.method || 'GET',
+      headers: new Headers(req.headers || {}),
+      body: body,
+    })
+
+    const response = await app.fetch(request)
+
+    response.headers.forEach((value, key) => {
+      res.setHeader(key, value)
+    })
+
+    const responseBody = await response.text()
+    res.status(response.status)
+
+    if (responseBody) {
+      const contentType = response.headers.get('content-type') || ''
+      if (contentType.includes('application/json')) {
+        try {
+          const jsonData = JSON.parse(responseBody)
+          res.json(jsonData)
+        } catch (parseError) {
+          res.send(responseBody)
+        }
+      } else {
+        res.send(responseBody)
+      }
+    } else {
+      res.end()
+    }
+  } catch (error) {
+    console.error('❌ Handler error:', error)
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: error.message,
+      })
+    }
+  }
+}
+

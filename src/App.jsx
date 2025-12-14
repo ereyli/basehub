@@ -27,6 +27,7 @@ import DeployERC721 from './pages/DeployERC721'
 import DeployERC1155 from './pages/DeployERC1155'
 import AINFTLaunchpad from './pages/AINFTLaunchpad'
 import SharePage from './pages/SharePage'
+import WalletAnalysis from './pages/WalletAnalysis'
 import './styles/index.css'
 
 const queryClient = new QueryClient()
@@ -207,6 +208,7 @@ function FarcasterAppContent() {
             <Route path="/deploy-erc1155" element={<DeployERC1155 />} />
             <Route path="/ai-nft" element={<AINFTLaunchpad />} />
             <Route path="/share" element={<SharePage />} />
+            <Route path="/wallet-analysis" element={<WalletAnalysis />} />
           </Routes>
         </main>
       </div>
@@ -240,6 +242,7 @@ function WebAppContent() {
             <Route path="/deploy-erc1155" element={<DeployERC1155 />} />
             <Route path="/ai-nft" element={<AINFTLaunchpad />} />
             <Route path="/share" element={<SharePage />} />
+            <Route path="/wallet-analysis" element={<WalletAnalysis />} />
           </Routes>
         </main>
       </div>

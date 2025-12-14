@@ -8,7 +8,7 @@ import EmbedMeta from '../components/EmbedMeta'
 import TwitterShareButton from '../components/TwitterShareButton'
 import DailyQuestSystem from '../components/DailyQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'
-import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X } from 'lucide-react'
+import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search } from 'lucide-react'
 
 const Home = () => {
   const { isConnected } = useAccount()
@@ -195,6 +195,16 @@ const Home = () => {
       xpReward: '500 XP',
       bonusXP: '0.1 USDC',
       isPayment: true // Mark as payment button
+    },
+    {
+      id: 'wallet-analysis',
+      title: 'Wallet Analysis',
+      description: 'Get fun insights about any wallet',
+      icon: <Search size={50} style={{ color: 'white' }} />,
+      path: '/wallet-analysis',
+      color: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
+      xpReward: null,
+      bonusXP: '0.3 USDC'
     },
     {
       id: 'deploy-erc721',
