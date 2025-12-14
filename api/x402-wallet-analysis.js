@@ -476,10 +476,30 @@ async function performWalletAnalysis(walletAddress) {
 // Wallet Analysis endpoint - protected by middleware
 app.post('/', async (c) => {
   console.log('✅ POST / endpoint called - payment verified by middleware')
+  
+  // Safely get headers
+  const headers = {}
+  if (c.req.headers) {
+    try {
+      if (typeof c.req.headers.entries === 'function') {
+        headers = Object.fromEntries(c.req.headers.entries())
+      } else if (typeof c.req.headers.forEach === 'function') {
+        c.req.headers.forEach((value, key) => {
+          headers[key] = value
+        })
+      } else {
+        // Fallback: try to access as object
+        headers = c.req.headers
+      }
+    } catch (e) {
+      console.error('⚠️ Error reading headers:', e)
+    }
+  }
+  
   console.log('📋 Request details:', {
     method: c.req.method,
     url: c.req.url,
-    headers: Object.fromEntries(c.req.headers.entries()),
+    headers: headers,
   })
   
   try {
