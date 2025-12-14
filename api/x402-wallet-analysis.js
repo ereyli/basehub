@@ -253,8 +253,8 @@ async function performWalletAnalysis(walletAddress) {
       }
       
       if (transactions.length === 0) {
-          console.log('ℹ️ No transactions found for this wallet')
-        } else {
+        console.log('ℹ️ No transactions found for this wallet')
+      } else {
           analysis.totalTransactions = transactions.length
 
           // Calculate total value moved
