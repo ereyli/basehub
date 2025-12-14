@@ -215,12 +215,11 @@ async function performWalletAnalysis(walletAddress) {
       analysis.nativeBalance = '0.0000'
     }
 
-    // 2. Get transactions from BaseScan API
-    // BaseScan API: Use V1 format with chainid parameter
-    // Format: /api?module=account&action=txlist&address=...&chainid=8453
-    console.log('🔍 Fetching transactions from BaseScan API...')
+    // 2. Get transactions from BaseScan API V2
+    // BaseScan API V2 format: /v2/api?chainid=8453&module=account&action=txlist&address=...
+    console.log('🔍 Fetching transactions from BaseScan API V2...')
     try {
-      const txUrl = `https://api.basescan.org/api?module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&chainid=8453&apikey=${BASESCAN_API_KEY}`
+      const txUrl = `https://api.basescan.org/v2/api?chainid=8453&module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
       console.log('🌐 Transaction API V2 URL:', txUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
       
       const txResponse = await fetch(txUrl, {
@@ -302,12 +301,11 @@ async function performWalletAnalysis(walletAddress) {
       // Continue with other data even if transactions fail
     }
 
-    // 3. Get token transfers from BaseScan API
-    // BaseScan API: Use V1 format with chainid parameter
-    // Format: /api?module=account&action=tokentx&address=...&chainid=8453
-    console.log('🔍 Fetching token transfers from BaseScan API...')
+    // 3. Get token transfers from BaseScan API V2
+    // BaseScan API V2 format: /v2/api?chainid=8453&module=account&action=tokentx&address=...
+    console.log('🔍 Fetching token transfers from BaseScan API V2...')
     try {
-      const tokenTxUrl = `https://api.basescan.org/api?module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&chainid=8453&apikey=${BASESCAN_API_KEY}`
+      const tokenTxUrl = `https://api.basescan.org/v2/api?chainid=8453&module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
       console.log('🌐 Token transfer API V2 URL:', tokenTxUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
       
       const tokenTxResponse = await fetch(tokenTxUrl, {
@@ -372,10 +370,9 @@ async function performWalletAnalysis(walletAddress) {
         
         for (const token of tokensToCheck) {
           try {
-            // Get token balance from BaseScan API
-            // BaseScan API: Use V1 format with chainid parameter
-            // Format: /api?module=account&action=tokenbalance&contractaddress=...&address=...&chainid=8453
-            const tokenBalanceUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${token.address}&address=${walletAddress}&tag=latest&chainid=8453&apikey=${BASESCAN_API_KEY}`
+            // Get token balance from BaseScan API V2
+            // BaseScan API V2 format: /v2/api?chainid=8453&module=account&action=tokenbalance&contractaddress=...&address=...
+            const tokenBalanceUrl = `https://api.basescan.org/v2/api?chainid=8453&module=account&action=tokenbalance&contractaddress=${token.address}&address=${walletAddress}&tag=latest&apikey=${BASESCAN_API_KEY}`
             const tokenBalanceResponse = await fetch(tokenBalanceUrl, {
               headers: { 
                 'Accept': 'application/json',
