@@ -194,10 +194,21 @@ async function performWalletAnalysis(walletAddress) {
       console.log('📊 Transaction data response:', {
         status: txData.status,
         message: txData.message,
-        result: txData.result ? (Array.isArray(txData.result) ? txData.result.length : 'not array') : 'no result',
+        result: txData.result ? (Array.isArray(txData.result) ? txData.result.length : typeof txData.result) : 'no result',
+        fullResult: typeof txData.result === 'string' ? txData.result.substring(0, 200) : txData.result,
       })
 
-      if (txData.status === '1' && txData.result) {
+      // BaseScan API returns status '1' for success, '0' for error
+      // If status is '0', check the message
+      if (txData.status === '0') {
+        console.error('❌ BaseScan API error:', txData.message, txData.result)
+        // If it's just "No transactions found", that's okay
+        if (txData.message && txData.message.toLowerCase().includes('no transactions')) {
+          console.log('ℹ️ No transactions found for this wallet (this is normal for new wallets)')
+        } else {
+          console.error('❌ BaseScan API returned error:', txData.message || txData.result)
+        }
+      } else if (txData.status === '1' && txData.result) {
         // Handle both array and object responses
         const transactions = Array.isArray(txData.result) ? txData.result : []
         
@@ -262,10 +273,19 @@ async function performWalletAnalysis(walletAddress) {
       console.log('📊 Token transfer data response:', {
         status: tokenTxData.status,
         message: tokenTxData.message,
-        result: tokenTxData.result ? (Array.isArray(tokenTxData.result) ? tokenTxData.result.length : 'not array') : 'no result',
+        result: tokenTxData.result ? (Array.isArray(tokenTxData.result) ? tokenTxData.result.length : typeof tokenTxData.result) : 'no result',
+        fullResult: typeof tokenTxData.result === 'string' ? tokenTxData.result.substring(0, 200) : tokenTxData.result,
       })
 
-      if (tokenTxData.status === '1' && tokenTxData.result) {
+      // BaseScan API returns status '1' for success, '0' for error
+      if (tokenTxData.status === '0') {
+        console.error('❌ BaseScan API error:', tokenTxData.message, tokenTxData.result)
+        if (tokenTxData.message && tokenTxData.message.toLowerCase().includes('no token')) {
+          console.log('ℹ️ No token transfers found for this wallet (this is normal)')
+        } else {
+          console.error('❌ BaseScan API returned error:', tokenTxData.message || tokenTxData.result)
+        }
+      } else if (tokenTxData.status === '1' && tokenTxData.result) {
         const tokenTransfers = Array.isArray(tokenTxData.result) ? tokenTxData.result : []
         
         if (tokenTransfers.length === 0 && tokenTxData.message === 'No token transfers found') {
@@ -357,10 +377,19 @@ async function performWalletAnalysis(walletAddress) {
       console.log('📊 NFT transfer data response:', {
         status: nftTxData.status,
         message: nftTxData.message,
-        result: nftTxData.result ? (Array.isArray(nftTxData.result) ? nftTxData.result.length : 'not array') : 'no result',
+        result: nftTxData.result ? (Array.isArray(nftTxData.result) ? nftTxData.result.length : typeof nftTxData.result) : 'no result',
+        fullResult: typeof nftTxData.result === 'string' ? nftTxData.result.substring(0, 200) : nftTxData.result,
       })
 
-      if (nftTxData.status === '1' && nftTxData.result) {
+      // BaseScan API returns status '1' for success, '0' for error
+      if (nftTxData.status === '0') {
+        console.error('❌ BaseScan API error:', nftTxData.message, nftTxData.result)
+        if (nftTxData.message && nftTxData.message.toLowerCase().includes('no nft')) {
+          console.log('ℹ️ No NFT transfers found for this wallet (this is normal)')
+        } else {
+          console.error('❌ BaseScan API returned error:', nftTxData.message || nftTxData.result)
+        }
+      } else if (nftTxData.status === '1' && nftTxData.result) {
         const nftTransfers = Array.isArray(nftTxData.result) ? nftTxData.result : []
         
         if (nftTransfers.length === 0 && nftTxData.message === 'No NFT transfers found') {
