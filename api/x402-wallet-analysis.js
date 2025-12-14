@@ -238,18 +238,21 @@ async function performWalletAnalysis(walletAddress) {
       }
       
       const txData = await txResponse.json()
-      console.log('📊 Transaction API V2 response:', {
-        hasItems: !!txData.items,
-        itemsCount: txData.items ? txData.items.length : 0,
-        pagination: txData.pagination,
+      console.log('📊 Transaction API response:', {
+        status: txData.status,
+        message: txData.message,
+        hasResult: !!txData.result,
+        resultType: txData.result ? (Array.isArray(txData.result) ? 'array' : typeof txData.result) : 'none',
+        resultLength: txData.result && Array.isArray(txData.result) ? txData.result.length : 0,
       })
 
-      // API V2 returns { items: [...], pagination: {...} }
+      // BaseScan API V1 returns { status: '1', result: [...] } format
       let transactions = []
-      if (txData.items && Array.isArray(txData.items)) {
-        transactions = txData.items
-        
-        if (transactions.length === 0) {
+      if (txData.status === '1' && txData.result && Array.isArray(txData.result)) {
+        transactions = txData.result
+      }
+      
+      if (transactions.length === 0) {
           console.log('ℹ️ No transactions found for this wallet')
         } else {
           analysis.totalTransactions = transactions.length
