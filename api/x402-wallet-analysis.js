@@ -361,55 +361,57 @@ async function performWalletAnalysis(walletAddress) {
           }
         })
 
-      analysis.tokenDiversity = tokenMap.size
+        analysis.tokenDiversity = tokenMap.size
 
-      // Get balances for top tokens (limit to 10)
-      const tokenArray = Array.from(tokenMap.values())
-        .sort((a, b) => b.transfers - a.transfers)
-        .slice(0, 10)
+        // Get balances for top tokens (limit to 10)
+        const tokenArray = Array.from(tokenMap.values())
+          .sort((a, b) => b.transfers - a.transfers)
+          .slice(0, 10)
 
-      // Get token balances from BaseScan API (more reliable than RPC in Vercel)
-      const tokensToCheck = tokenArray.slice(0, 10) // Check top 10 tokens
-      
-      for (const token of tokensToCheck) {
-        try {
-          // Get token balance from BaseScan API
-          // BaseScan API: Use V1 format with chainid parameter
-          // Format: /api?module=account&action=tokenbalance&contractaddress=...&address=...&chainid=8453
-          const tokenBalanceUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${token.address}&address=${walletAddress}&tag=latest&chainid=8453&apikey=${BASESCAN_API_KEY}`
-          const tokenBalanceResponse = await fetch(tokenBalanceUrl, {
-            headers: { 
-              'Accept': 'application/json',
-              'User-Agent': 'BaseHub-WalletAnalysis/1.0',
-            },
-          })
-          
-          if (tokenBalanceResponse.ok) {
-            const tokenBalanceData = await tokenBalanceResponse.json()
-            // API V2 format: { balance: "..." } or { items: [{ balance: "..." }] }
-            let balance = null
-            if (tokenBalanceData.balance) {
-              balance = tokenBalanceData.balance
-            } else if (tokenBalanceData.items && tokenBalanceData.items.length > 0) {
-              balance = tokenBalanceData.items[0].balance || tokenBalanceData.items[0].value
-            }
+        // Get token balances from BaseScan API (more reliable than RPC in Vercel)
+        const tokensToCheck = tokenArray.slice(0, 10) // Check top 10 tokens
+        
+        for (const token of tokensToCheck) {
+          try {
+            // Get token balance from BaseScan API
+            // BaseScan API: Use V1 format with chainid parameter
+            // Format: /api?module=account&action=tokenbalance&contractaddress=...&address=...&chainid=8453
+            const tokenBalanceUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${token.address}&address=${walletAddress}&tag=latest&chainid=8453&apikey=${BASESCAN_API_KEY}`
+            const tokenBalanceResponse = await fetch(tokenBalanceUrl, {
+              headers: { 
+                'Accept': 'application/json',
+                'User-Agent': 'BaseHub-WalletAnalysis/1.0',
+              },
+            })
             
-            if (balance) {
-              const formattedBalance = formatTokenValue(balance, token.decimals)
-              if (parseFloat(formattedBalance) > 0) {
-                analysis.topTokens.push({
-                  symbol: token.symbol,
-                  balance: formattedBalance,
-                  address: token.address,
-                })
+            if (tokenBalanceResponse.ok) {
+              const tokenBalanceData = await tokenBalanceResponse.json()
+              // BaseScan API V1 returns { status: '1', result: '...' } format
+              let balance = null
+              if (tokenBalanceData.status === '1' && tokenBalanceData.result) {
+                balance = tokenBalanceData.result
+              } else if (tokenBalanceData.balance) {
+                balance = tokenBalanceData.balance
+              } else if (tokenBalanceData.items && tokenBalanceData.items.length > 0) {
+                balance = tokenBalanceData.items[0].balance || tokenBalanceData.items[0].value
+              }
+              
+              if (balance) {
+                const formattedBalance = formatTokenValue(balance, token.decimals)
+                if (parseFloat(formattedBalance) > 0) {
+                  analysis.topTokens.push({
+                    symbol: token.symbol,
+                    balance: formattedBalance,
+                    address: token.address,
+                  })
+                }
               }
             }
+          } catch (err) {
+            // Token balance fetch failed, skip it
+            console.log(`⚠️ Skipping token ${token.symbol}:`, err.message)
           }
-        } catch (err) {
-          // Token balance fetch failed, skip it
-          console.log(`⚠️ Skipping token ${token.symbol}:`, err.message)
         }
-      }
 
         // Favorite token (most transfers)
         if (tokenArray.length > 0) {
