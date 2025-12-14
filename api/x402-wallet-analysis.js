@@ -573,14 +573,26 @@ export default async function handler(req, res) {
     const fullUrl = `${protocol}://${host}${normalizedPath}${queryString ? `?${queryString}` : ''}`
 
     let body = undefined
-    if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
-      body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body)
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      if (req.body) {
+        body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body)
+        console.log('📦 Request body prepared:', body.substring(0, 200))
+      } else {
+        console.log('⚠️ No request body found')
+      }
     }
 
     const request = new Request(fullUrl, {
       method: req.method || 'GET',
       headers: new Headers(req.headers || {}),
       body: body,
+    })
+    
+    console.log('📤 Created Request object:', {
+      method: request.method,
+      url: request.url,
+      hasBody: !!body,
+      bodyLength: body ? body.length : 0,
     })
 
     console.log('📞 Calling Hono app.fetch with request:', {
