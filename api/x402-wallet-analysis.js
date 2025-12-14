@@ -160,7 +160,8 @@ async function performWalletAnalysis(walletAddress) {
     console.log('🔍 Fetching native balance from BaseScan...')
     console.log('🔑 API Key check:', BASESCAN_API_KEY ? `Set (${BASESCAN_API_KEY.substring(0, 10)}...)` : 'NOT SET')
     try {
-      const balanceUrl = `https://api.basescan.org/api?module=account&action=balance&address=${walletAddress}&tag=latest&apikey=${BASESCAN_API_KEY}`
+      // API V2 format: /api/v2/accounts/{address}/balance?chainid=8453
+      const balanceUrl = `https://api.basescan.org/api/v2/accounts/${walletAddress}/balance?chainid=8453`
       
       const balanceResponse = await fetch(balanceUrl, {
         headers: { 
@@ -358,13 +359,15 @@ async function performWalletAnalysis(walletAddress) {
       
       for (const token of tokensToCheck) {
         try {
-          // Get token balance from BaseScan API
-          const tokenBalanceResponse = await fetch(
-            `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${token.address}&address=${walletAddress}&tag=latest&apikey=${BASESCAN_API_KEY}`,
-            {
-              headers: { 'Accept': 'application/json' },
-            }
-          )
+          // Get token balance from BaseScan API V2
+          // API V2 format: /api/v2/accounts/{address}/tokens/{tokenAddress}/balance?chainid=8453
+          const tokenBalanceUrl = `https://api.basescan.org/api/v2/accounts/${walletAddress}/tokens/${token.address}/balance?chainid=8453`
+          const tokenBalanceResponse = await fetch(tokenBalanceUrl, {
+            headers: { 
+              'Accept': 'application/json',
+              'X-API-Key': BASESCAN_API_KEY,
+            },
+          })
           
           if (tokenBalanceResponse.ok) {
             const tokenBalanceData = await tokenBalanceResponse.json()
