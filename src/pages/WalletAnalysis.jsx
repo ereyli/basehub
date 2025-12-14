@@ -95,7 +95,7 @@ export default function WalletAnalysis() {
             fontWeight: '600',
           }}>
             <Coins size={16} />
-            <span>0.3 USDC per analysis</span>
+            <span>0.01 USDC per analysis</span>
           </div>
         </div>
 

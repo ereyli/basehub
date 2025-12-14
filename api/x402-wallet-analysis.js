@@ -15,7 +15,7 @@ const app = new Hono()
 const RECEIVING_ADDRESS = process.env.X402_RECEIVING_ADDRESS || '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
 
 // Payment configuration
-const PRICE = '$0.30' // 0.3 USDC
+const PRICE = '$0.01' // 0.01 USDC
 const NETWORK = process.env.X402_NETWORK || 'base'
 
 // BaseScan API Key
@@ -59,7 +59,7 @@ app.use(
         price: PRICE,
         network: NETWORK,
         config: {
-          description: 'BaseHub Wallet Analysis - Pay 0.3 USDC',
+          description: 'BaseHub Wallet Analysis - Pay 0.01 USDC',
           mimeType: 'application/json',
           maxTimeoutSeconds: 600,
         },
@@ -132,17 +132,36 @@ async function performWalletAnalysis(walletAddress) {
 
     // 2. Get transactions from BaseScan
     console.log('🔍 Fetching transactions from BaseScan...')
-    const txResponse = await fetch(
-      `https://api.basescan.org/api?module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
-    )
-    const txData = await txResponse.json()
-    console.log('📊 Transaction data response:', {
-      status: txData.status,
-      message: txData.message,
-      resultCount: txData.result ? txData.result.length : 0,
-    })
+    try {
+      const txResponse = await fetch(
+        `https://api.basescan.org/api?module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`,
+        {
+          headers: {
+            'Accept': 'application/json',
+          },
+          timeout: 30000,
+        }
+      )
+      
+      if (!txResponse.ok) {
+        console.error('❌ Transaction API error:', txResponse.status, txResponse.statusText)
+        throw new Error(`BaseScan API error: ${txResponse.status}`)
+      }
+      
+      const txData = await txResponse.json()
+      console.log('📊 Transaction data response:', {
+        status: txData.status,
+        message: txData.message,
+        result: txData.result ? (Array.isArray(txData.result) ? txData.result.length : 'not array') : 'no result',
+      })
 
-    if (txData.status === '1' && txData.result && Array.isArray(txData.result)) {
+      if (txData.status === '1' && txData.result) {
+        // Handle both array and object responses
+        const transactions = Array.isArray(txData.result) ? txData.result : []
+        
+        if (transactions.length === 0 && txData.message === 'No transactions found') {
+          console.log('ℹ️ No transactions found for this wallet')
+        } else {
       const transactions = txData.result
       analysis.totalTransactions = transactions.length
 
@@ -173,22 +192,43 @@ async function performWalletAnalysis(walletAddress) {
       const mostActiveDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]
       if (mostActiveDay) {
         analysis.mostActiveDay = `${mostActiveDay[0]} (${mostActiveDay[1]} transactions)`
+        }
       }
+    } catch (txError) {
+      console.error('❌ Error fetching transactions:', txError)
+      // Continue with other data even if transactions fail
     }
 
     // 3. Get token transfers
     console.log('🔍 Fetching token transfers from BaseScan...')
-    const tokenTxResponse = await fetch(
-      `https://api.basescan.org/api?module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
-    )
-    const tokenTxData = await tokenTxResponse.json()
-    console.log('📊 Token transfer data response:', {
-      status: tokenTxData.status,
-      message: tokenTxData.message,
-      resultCount: tokenTxData.result ? tokenTxData.result.length : 0,
-    })
+    try {
+      const tokenTxResponse = await fetch(
+        `https://api.basescan.org/api?module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`,
+        {
+          headers: {
+            'Accept': 'application/json',
+          },
+        }
+      )
+      
+      if (!tokenTxResponse.ok) {
+        console.error('❌ Token transfer API error:', tokenTxResponse.status)
+        throw new Error(`BaseScan API error: ${tokenTxResponse.status}`)
+      }
+      
+      const tokenTxData = await tokenTxResponse.json()
+      console.log('📊 Token transfer data response:', {
+        status: tokenTxData.status,
+        message: tokenTxData.message,
+        result: tokenTxData.result ? (Array.isArray(tokenTxData.result) ? tokenTxData.result.length : 'not array') : 'no result',
+      })
 
-    if (tokenTxData.status === '1' && tokenTxData.result && Array.isArray(tokenTxData.result)) {
+      if (tokenTxData.status === '1' && tokenTxData.result) {
+        const tokenTransfers = Array.isArray(tokenTxData.result) ? tokenTxData.result : []
+        
+        if (tokenTransfers.length === 0 && tokenTxData.message === 'No token transfers found') {
+          console.log('ℹ️ No token transfers found for this wallet')
+        } else {
       const tokenTransfers = tokenTxData.result
       
       // Get unique tokens
@@ -239,26 +279,53 @@ async function performWalletAnalysis(walletAddress) {
       if (tokenArray.length > 0) {
         analysis.favoriteToken = tokenArray[0].symbol
       }
+        }
+      }
+    } catch (tokenError) {
+      console.error('❌ Error fetching token transfers:', tokenError)
+      // Continue with other data even if token transfers fail
     }
 
     // 4. Get NFT transfers
     console.log('🔍 Fetching NFT transfers from BaseScan...')
-    const nftTxResponse = await fetch(
-      `https://api.basescan.org/api?module=account&action=tokennfttx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
-    )
-    const nftTxData = await nftTxResponse.json()
-    console.log('📊 NFT transfer data response:', {
-      status: nftTxData.status,
-      message: nftTxData.message,
-      resultCount: nftTxData.result ? nftTxData.result.length : 0,
-    })
+    try {
+      const nftTxResponse = await fetch(
+        `https://api.basescan.org/api?module=account&action=tokennfttx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`,
+        {
+          headers: {
+            'Accept': 'application/json',
+          },
+        }
+      )
+      
+      if (!nftTxResponse.ok) {
+        console.error('❌ NFT transfer API error:', nftTxResponse.status)
+        throw new Error(`BaseScan API error: ${nftTxResponse.status}`)
+      }
+      
+      const nftTxData = await nftTxResponse.json()
+      console.log('📊 NFT transfer data response:', {
+        status: nftTxData.status,
+        message: nftTxData.message,
+        result: nftTxData.result ? (Array.isArray(nftTxData.result) ? nftTxData.result.length : 'not array') : 'no result',
+      })
 
-    if (nftTxData.status === '1' && nftTxData.result && Array.isArray(nftTxData.result)) {
+      if (nftTxData.status === '1' && nftTxData.result) {
+        const nftTransfers = Array.isArray(nftTxData.result) ? nftTxData.result : []
+        
+        if (nftTransfers.length === 0 && nftTxData.message === 'No NFT transfers found') {
+          console.log('ℹ️ No NFT transfers found for this wallet')
+        } else {
       const uniqueNFTs = new Set()
-      nftTxData.result.forEach(tx => {
+      nftTransfers.forEach(tx => {
         uniqueNFTs.add(`${tx.contractAddress}-${tx.tokenID}`)
       })
       analysis.nftCount = uniqueNFTs.size
+        }
+      }
+    } catch (nftError) {
+      console.error('❌ Error fetching NFT transfers:', nftError)
+      // Continue with other data even if NFT transfers fail
     }
 
     // 5. Calculate Wallet Score (0-100)

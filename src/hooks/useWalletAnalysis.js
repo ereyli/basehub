@@ -2,10 +2,13 @@
 import { useState } from 'react'
 import { useWalletClient, useAccount } from 'wagmi'
 import { wrapFetchWithPayment } from 'x402-fetch'
+import { addXP, recordTransaction } from '../utils/xpUtils'
+import { useQuestSystem } from './useQuestSystem'
 
 export const useWalletAnalysis = () => {
   const { data: walletClient } = useWalletClient()
   const { address } = useAccount()
+  const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [analysis, setAnalysis] = useState(null)
@@ -31,8 +34,8 @@ export const useWalletAnalysis = () => {
       console.log('🚀 Starting wallet analysis payment flow...')
       console.log('Target wallet:', targetAddress)
 
-      // x402 payment: 0.3 USDC = 300000 base units (6 decimals)
-      const MAX_PAYMENT_AMOUNT = BigInt(300000) // 0.3 USDC max
+      // x402 payment: 0.01 USDC = 10000 base units (6 decimals)
+      const MAX_PAYMENT_AMOUNT = BigInt(10000) // 0.01 USDC max
 
       const fetchWithPayment = wrapFetchWithPayment(
         fetch,
@@ -83,7 +86,7 @@ export const useWalletAnalysis = () => {
           }
 
           if (errorText === 'insufficient_funds' || errorText.includes('insufficient_funds')) {
-            errorMessage = 'Insufficient USDC balance. Please ensure you have at least 0.3 USDC in your wallet on Base network.'
+            errorMessage = 'Insufficient USDC balance. Please ensure you have at least 0.01 USDC in your wallet on Base network.'
           } else if (errorText === 'X-PAYMENT header is required' || errorText.includes('X-PAYMENT')) {
             errorMessage = 'Payment required. Please complete the payment in your wallet.'
           } else if (errorText.trim()) {
@@ -109,6 +112,38 @@ export const useWalletAnalysis = () => {
 
       if (result.success && result.analysis) {
         setAnalysis(result.analysis)
+        
+        // Award 400 XP for successful wallet analysis
+        if (address) {
+          try {
+            console.log('🎁 Awarding 400 XP for successful wallet analysis...')
+            
+            // Add XP (400 XP for wallet analysis)
+            await addXP(address, 400, 'WALLET_ANALYSIS')
+            console.log('✅ 400 XP added successfully')
+            
+            // Record transaction
+            const transactionHash = result.transactionHash || 'wallet-analysis'
+            await recordTransaction(address, 'WALLET_ANALYSIS', 400, transactionHash)
+            console.log('✅ Transaction recorded successfully')
+            
+            // Update quest progress (if there's a wallet analysis quest)
+            try {
+              await updateQuestProgress('walletAnalysis', 1)
+              console.log('✅ Quest progress updated: walletAnalysis +1')
+            } catch (questError) {
+              // Quest might not exist, that's okay
+              console.log('ℹ️ Quest progress update skipped (quest may not exist)')
+            }
+            
+          } catch (xpError) {
+            console.error('⚠️ Error awarding XP or updating quest progress:', xpError)
+            // Don't throw error - XP is not critical for analysis flow
+          }
+        } else {
+          console.warn('⚠️ No wallet address available, skipping XP reward')
+        }
+        
         return result.analysis
       } else {
         throw new Error('Invalid response from server')

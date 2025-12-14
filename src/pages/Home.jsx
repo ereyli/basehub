@@ -203,8 +203,9 @@ const Home = () => {
       icon: <Search size={50} style={{ color: 'white' }} />,
       path: '/wallet-analysis',
       color: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
-      xpReward: null,
-      bonusXP: '0.3 USDC'
+      xpReward: '400 XP',
+      bonusXP: '0.01 USDC',
+      isX402: true // Mark as x402 payment
     },
     {
       id: 'deploy-erc721',
@@ -716,7 +717,7 @@ const Home = () => {
                   key={game.id} 
                   to={game.path} 
                   className="game-card"
-                  style={{ textDecoration: 'none' }}
+                  style={{ textDecoration: 'none', position: 'relative' }}
                 >
                   <div 
                     className="game-icon"
@@ -726,24 +727,26 @@ const Home = () => {
                   </div>
                   
                   {/* XP Reward Badge */}
-                  <div style={{
-                    position: 'absolute',
-                    top: '12px',
-                    right: '12px',
-                    background: 'rgba(255, 255, 255, 0.95)',
-                    backdropFilter: 'blur(10px)',
-                    borderRadius: '20px',
-                    padding: '4px 8px',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    color: '#059669',
-                    border: '1px solid rgba(5, 150, 105, 0.2)',
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                  }}>
-                    {game.xpReward}
-                  </div>
+                  {game.xpReward && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      background: 'rgba(209, 250, 229, 0.95)',
+                      backdropFilter: 'blur(10px)',
+                      borderRadius: '20px',
+                      padding: '4px 8px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      color: '#059669',
+                      border: '1px solid rgba(5, 150, 105, 0.2)',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                    }}>
+                      {game.xpReward}
+                    </div>
+                  )}
 
-                  {/* Bonus XP Badge */}
+                  {/* Payment Amount Badge */}
                   {game.bonusXP && (
                     <div style={{
                       position: 'absolute',
@@ -760,6 +763,26 @@ const Home = () => {
                       boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
                     }}>
                       {game.bonusXP}
+                    </div>
+                  )}
+
+                  {/* x402 Protocol Badge (for x402 payments) */}
+                  {game.isX402 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: game.xpReward ? '40px' : '12px',
+                      right: '12px',
+                      background: 'rgba(102, 126, 234, 0.95)',
+                      backdropFilter: 'blur(10px)',
+                      borderRadius: '20px',
+                      padding: '4px 8px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      color: 'white',
+                      border: '1px solid rgba(102, 126, 234, 0.3)',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                    }}>
+                      x402
                     </div>
                   )}
 
