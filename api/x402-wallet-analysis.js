@@ -328,24 +328,28 @@ async function performWalletAnalysis(walletAddress) {
       let tokenTransfers = []
       if (tokenTxData.items && Array.isArray(tokenTxData.items)) {
         tokenTransfers = tokenTxData.items
-        
-        if (tokenTransfers.length === 0 && tokenTxData.message === 'No token transfers found') {
-          console.log('ℹ️ No token transfers found for this wallet')
-        } else {
-          // Get unique tokens
-          const tokenMap = new Map()
-      tokenTransfers.forEach(tx => {
-        const tokenAddress = tx.contractAddress.toLowerCase()
-        if (!tokenMap.has(tokenAddress)) {
-          tokenMap.set(tokenAddress, {
-            address: tokenAddress,
-            symbol: tx.tokenSymbol || 'UNKNOWN',
-            decimals: parseInt(tx.tokenDecimals || '18'),
-            transfers: 0,
-          })
-        }
-        tokenMap.get(tokenAddress).transfers++
-      })
+      }
+      
+      if (tokenTransfers.length === 0) {
+        console.log('ℹ️ No token transfers found for this wallet')
+      } else {
+        // Get unique tokens
+        const tokenMap = new Map()
+        tokenTransfers.forEach(tx => {
+          // API V2 format: contractAddress or tokenAddress
+          const tokenAddress = (tx.contractAddress || tx.tokenAddress || tx.token?.address || '').toLowerCase()
+          if (tokenAddress) {
+            if (!tokenMap.has(tokenAddress)) {
+              tokenMap.set(tokenAddress, {
+                address: tokenAddress,
+                symbol: tx.tokenSymbol || tx.token?.symbol || tx.symbol || 'UNKNOWN',
+                decimals: parseInt(tx.tokenDecimals || tx.token?.decimals || tx.decimals || '18'),
+                transfers: 0,
+              })
+            }
+            tokenMap.get(tokenAddress).transfers++
+          }
+        })
 
       analysis.tokenDiversity = tokenMap.size
 
