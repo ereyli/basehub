@@ -475,23 +475,34 @@ async function performWalletAnalysis(walletAddress) {
 
 // Wallet Analysis endpoint - protected by middleware
 app.post('/', async (c) => {
+  console.log('✅ POST / endpoint called - payment verified by middleware')
+  console.log('📋 Request details:', {
+    method: c.req.method,
+    url: c.req.url,
+    headers: Object.fromEntries(c.req.headers.entries()),
+  })
+  
   try {
     let body
     try {
       body = await c.req.json()
+      console.log('📦 Request body received:', body)
     } catch (parseError) {
       console.error('❌ Error parsing request body:', parseError)
       return c.json({ error: 'Invalid request body' }, 400)
     }
 
     const { walletAddress } = body || {}
+    console.log('🔍 Extracted walletAddress:', walletAddress)
 
     if (!walletAddress) {
+      console.error('❌ No wallet address provided')
       return c.json({ error: 'Wallet address required' }, 400)
     }
 
     // Validate address format
     if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+      console.error('❌ Invalid wallet address format:', walletAddress)
       return c.json({ error: 'Invalid wallet address format' }, 400)
     }
 
@@ -572,13 +583,28 @@ export default async function handler(req, res) {
       body: body,
     })
 
+    console.log('📞 Calling Hono app.fetch with request:', {
+      method: request.method,
+      url: request.url,
+      headers: Object.fromEntries(request.headers.entries()),
+    })
+
     const response = await app.fetch(request)
+
+    console.log('📥 Hono app response:', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+    })
 
     response.headers.forEach((value, key) => {
       res.setHeader(key, value)
     })
 
     const responseBody = await response.text()
+    console.log('📦 Response body length:', responseBody.length)
+    console.log('📦 Response body preview:', responseBody.substring(0, 200))
+    
     res.status(response.status)
 
     if (responseBody) {
