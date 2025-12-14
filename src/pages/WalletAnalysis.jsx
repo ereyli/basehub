@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useWalletAnalysis } from '../hooks/useWalletAnalysis'
-import { Search, Wallet, Coins, Image, Activity, TrendingUp, Award, Sparkles, AlertCircle, Loader2, Calendar, BarChart3, Zap, Eye } from 'lucide-react'
+import { Search, Wallet, Coins, Activity, TrendingUp, Award, Sparkles, AlertCircle, Loader2, Calendar, BarChart3, Zap, Eye, Shield } from 'lucide-react'
 import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
 
@@ -376,117 +376,113 @@ export default function WalletAnalysis() {
             <div style={{
               animation: 'fadeInUp 0.6s ease-out',
             }}>
-              {/* Wallet Score Card - Enhanced */}
+              {/* Wallet Score Card - Compact with Progress Bar */}
               <div style={{
-                background: `linear-gradient(135deg, ${getScoreColor(analysis.walletScore)} 0%, ${getScoreColor(analysis.walletScore)}dd 100%)`,
-                borderRadius: '32px',
-                padding: '56px 40px',
-                color: 'white',
-                marginBottom: '40px',
-                textAlign: 'center',
-                boxShadow: `0 20px 60px ${getScoreColor(analysis.walletScore)}50`,
-                position: 'relative',
-                overflow: 'hidden',
-                border: '3px solid rgba(255, 255, 255, 0.3)',
+                background: 'white',
+                borderRadius: '20px',
+                padding: '28px',
+                marginBottom: '24px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+                border: '2px solid rgba(102, 126, 234, 0.1)',
               }}>
-                {/* Animated Background Pattern */}
                 <div style={{
-                  position: 'absolute',
-                  top: '-50%',
-                  right: '-50%',
-                  width: '200%',
-                  height: '200%',
-                  background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)',
-                  pointerEvents: 'none',
-                  animation: 'rotate 20s linear infinite',
-                }} />
-                <div style={{
-                  position: 'absolute',
-                  bottom: '-30%',
-                  left: '-30%',
-                  width: '150%',
-                  height: '150%',
-                  background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
-                  pointerEvents: 'none',
-                  animation: 'rotate 15s linear infinite reverse',
-                }} />
-                
-                <div style={{
-                  fontSize: '100px',
-                  marginBottom: '24px',
-                  position: 'relative',
-                  zIndex: 1,
-                  filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2))',
-                  animation: 'bounce 2s ease-in-out infinite',
-                }}>
-                  {getScoreEmoji(analysis.walletScore)}
-                </div>
-                <div style={{
-                  fontSize: '96px',
-                  fontWeight: '900',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '20px',
                   marginBottom: '16px',
-                  position: 'relative',
-                  zIndex: 1,
-                  textShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-                  letterSpacing: '-2px',
                 }}>
-                  {analysis.walletScore}/100
-                </div>
-                <div style={{
-                  fontSize: '28px',
-                  opacity: 0.95,
-                  marginBottom: '24px',
-                  position: 'relative',
-                  zIndex: 1,
-                  fontWeight: '600',
-                }}>
-                  Wallet Score
-                </div>
-                <div style={{
-                  fontSize: '24px',
-                  opacity: 0.9,
-                  position: 'relative',
-                  zIndex: 1,
-                  fontWeight: '500',
-                }}>
-                  {analysis.activityLevel}
+                  <div style={{
+                    fontSize: '56px',
+                    filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))',
+                  }}>
+                    {getScoreEmoji(analysis.walletScore)}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '10px',
+                    }}>
+                      <h3 style={{
+                        fontSize: '20px',
+                        fontWeight: 'bold',
+                        color: '#1f2937',
+                        margin: 0,
+                      }}>
+                        Wallet Score
+                      </h3>
+                      <div style={{
+                        fontSize: '28px',
+                        fontWeight: '900',
+                        color: getScoreColor(analysis.walletScore),
+                      }}>
+                        {analysis.walletScore}/100
+                      </div>
+                    </div>
+                    
+                    {/* Progress Bar */}
+                    <div style={{
+                      width: '100%',
+                      height: '12px',
+                      background: '#e5e7eb',
+                      borderRadius: '6px',
+                      overflow: 'hidden',
+                      position: 'relative',
+                    }}>
+                      <div style={{
+                        width: `${analysis.walletScore}%`,
+                        height: '100%',
+                        background: `linear-gradient(90deg, ${getScoreColor(analysis.walletScore)} 0%, ${getScoreColor(analysis.walletScore)}dd 100%)`,
+                        borderRadius: '6px',
+                        transition: 'width 1s ease-out',
+                        boxShadow: `0 2px 8px ${getScoreColor(analysis.walletScore)}44`,
+                      }} />
+                    </div>
+                    
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      marginTop: '10px',
+                    }}>
+                      <Shield size={18} style={{ color: getScoreColor(analysis.walletScore) }} />
+                      <span style={{
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        color: getScoreColor(analysis.walletScore),
+                      }}>
+                        {analysis.activityLevel}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Main Stats Grid - Enhanced */}
+              {/* Main Stats Grid - Compact */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-                gap: '24px',
-                marginBottom: '32px',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '16px',
+                marginBottom: '24px',
               }}>
-                <LargeStatCard
-                  icon={<Wallet size={36} />}
+                <StatCard
+                  icon={<Wallet size={24} />}
                   label="Native Balance"
-                  value={`${parseFloat(analysis.nativeBalance || 0).toFixed(6)} ETH`}
+                  value={`${parseFloat(analysis.nativeBalance || 0).toFixed(4)} ${analysis.currency || 'ETH'}`}
                   color="#3b82f6"
-                  bgGradient="linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)"
                 />
-                <LargeStatCard
-                  icon={<Activity size={36} />}
-                  label="Total Transactions"
+                <StatCard
+                  icon={<Activity size={24} />}
+                  label="Transactions"
                   value={analysis.totalTransactions?.toLocaleString() || '0'}
                   color="#10b981"
-                  bgGradient="linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)"
                 />
-                <LargeStatCard
-                  icon={<Coins size={36} />}
+                <StatCard
+                  icon={<Coins size={24} />}
                   label="Token Diversity"
                   value={analysis.tokenDiversity || 0}
                   color="#f59e0b"
-                  bgGradient="linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)"
-                />
-                <LargeStatCard
-                  icon={<Image size={36} />}
-                  label="NFTs Owned"
-                  value={analysis.nftCount || 0}
-                  color="#8b5cf6"
-                  bgGradient="linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)"
                 />
               </div>
 
