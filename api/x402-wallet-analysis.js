@@ -255,47 +255,46 @@ async function performWalletAnalysis(walletAddress) {
       if (transactions.length === 0) {
         console.log('ℹ️ No transactions found for this wallet')
       } else {
-          analysis.totalTransactions = transactions.length
+        analysis.totalTransactions = transactions.length
 
-          // Calculate total value moved
-          let totalValue = BigInt(0)
-          transactions.forEach(tx => {
-            // API V2 format: value is in wei as string or number
-            const value = tx.value || tx.amount || '0'
-            totalValue += BigInt(value)
-          })
-          analysis.totalValueMoved = formatEtherValue(totalValue.toString())
+        // Calculate total value moved
+        let totalValue = BigInt(0)
+        transactions.forEach(tx => {
+          // BaseScan API V1 format: value is in wei as string
+          const value = tx.value || '0'
+          totalValue += BigInt(value)
+        })
+        analysis.totalValueMoved = formatEtherValue(totalValue.toString())
 
-          // First and last transaction dates
-          if (transactions.length > 0) {
-            // API V2: timestamp might be in different format (ISO string or unix timestamp)
-            const firstTx = transactions[transactions.length - 1]
-            const lastTx = transactions[0]
-            
-            const firstTimestamp = firstTx.timestamp || firstTx.blockTimestamp || firstTx.timeStamp
-            const lastTimestamp = lastTx.timestamp || lastTx.blockTimestamp || lastTx.timeStamp
-            
-            const firstDate = firstTimestamp ? (typeof firstTimestamp === 'string' ? new Date(firstTimestamp) : new Date(parseInt(firstTimestamp) * 1000)) : new Date()
-            const lastDate = lastTimestamp ? (typeof lastTimestamp === 'string' ? new Date(lastTimestamp) : new Date(parseInt(lastTimestamp) * 1000)) : new Date()
-            
-            analysis.firstTransactionDate = firstDate.toLocaleDateString()
-            analysis.daysActive = Math.max(1, Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24)))
+        // First and last transaction dates
+        if (transactions.length > 0) {
+          // BaseScan API V1: timeStamp is unix timestamp in seconds
+          const firstTx = transactions[transactions.length - 1]
+          const lastTx = transactions[0]
+          
+          const firstTimestamp = firstTx.timeStamp || firstTx.timestamp || firstTx.blockTimestamp
+          const lastTimestamp = lastTx.timeStamp || lastTx.timestamp || lastTx.blockTimestamp
+          
+          const firstDate = firstTimestamp ? new Date(parseInt(firstTimestamp) * 1000) : new Date()
+          const lastDate = lastTimestamp ? new Date(parseInt(lastTimestamp) * 1000) : new Date()
+          
+          analysis.firstTransactionDate = firstDate.toLocaleDateString()
+          analysis.daysActive = Math.max(1, Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24)))
+        }
+
+        // Most active day
+        const dayCounts = {}
+        transactions.forEach(tx => {
+          const timestamp = tx.timeStamp || tx.timestamp || tx.blockTimestamp
+          if (timestamp) {
+            const date = new Date(parseInt(timestamp) * 1000)
+            const dateStr = date.toLocaleDateString()
+            dayCounts[dateStr] = (dayCounts[dateStr] || 0) + 1
           }
-
-          // Most active day
-          const dayCounts = {}
-          transactions.forEach(tx => {
-            const timestamp = tx.timestamp || tx.blockTimestamp || tx.timeStamp
-            if (timestamp) {
-              const date = typeof timestamp === 'string' ? new Date(timestamp) : new Date(parseInt(timestamp) * 1000)
-              const dateStr = date.toLocaleDateString()
-              dayCounts[dateStr] = (dayCounts[dateStr] || 0) + 1
-            }
-          })
-          const mostActiveDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]
-          if (mostActiveDay) {
-            analysis.mostActiveDay = `${mostActiveDay[0]} (${mostActiveDay[1]} transactions)`
-          }
+        })
+        const mostActiveDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]
+        if (mostActiveDay) {
+          analysis.mostActiveDay = `${mostActiveDay[0]} (${mostActiveDay[1]} transactions)`
         }
       }
     } catch (txError) {
