@@ -400,10 +400,9 @@ async function performWalletAnalysis(walletAddress) {
         }
       }
 
-      // Favorite token (most transfers)
-      if (tokenArray.length > 0) {
-        analysis.favoriteToken = tokenArray[0].symbol
-      }
+        // Favorite token (most transfers)
+        if (tokenArray.length > 0) {
+          analysis.favoriteToken = tokenArray[0].symbol
         }
       }
     } catch (tokenError) {
