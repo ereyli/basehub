@@ -35,8 +35,8 @@ export const useWalletAnalysis = () => {
       console.log('Target wallet:', targetAddress)
       console.log('Selected network:', selectedNetwork)
 
-      // x402 payment: 0.01 USDC = 10000 base units (6 decimals)
-      const MAX_PAYMENT_AMOUNT = BigInt(10000) // 0.01 USDC max
+      // x402 payment: 0.40 USDC = 400000 base units (6 decimals)
+      const MAX_PAYMENT_AMOUNT = BigInt(400000) // 0.40 USDC max
 
       const fetchWithPayment = wrapFetchWithPayment(
         fetch,
@@ -90,7 +90,7 @@ export const useWalletAnalysis = () => {
           }
 
           if (errorText === 'insufficient_funds' || errorText.includes('insufficient_funds')) {
-            errorMessage = 'Insufficient USDC balance. Please ensure you have at least 0.01 USDC in your wallet on Base network.'
+            errorMessage = 'Insufficient USDC balance. Please ensure you have at least 0.40 USDC in your wallet on Base network.'
           } else if (errorText === 'X-PAYMENT header is required' || errorText.includes('X-PAYMENT')) {
             errorMessage = 'Payment required. Please complete the payment in your wallet.'
           } else if (errorText.trim()) {

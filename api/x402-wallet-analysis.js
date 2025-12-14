@@ -15,7 +15,7 @@ const app = new Hono()
 
 const NETWORK = 'base' // Payment network (Base mainnet)
 const RECEIVING_ADDRESS = '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
-const PRICE = '$0.01' // 0.01 USDC
+const PRICE = '$0.40' // 0.40 USDC
 const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' // Base USDC
 const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || 'SI8ECAC19FPN92K9MCNQENMGY6Z6MRM14Q'
 
@@ -84,7 +84,7 @@ app.use(
         price: PRICE,
         network: NETWORK,
         config: {
-          description: 'BaseHub Wallet Analysis - Pay 0.01 USDC on Base',
+          description: 'BaseHub Wallet Analysis - Pay 0.40 USDC on Base',
           mimeType: 'application/json',
           maxTimeoutSeconds: 600,
         },

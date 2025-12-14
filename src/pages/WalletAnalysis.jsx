@@ -233,7 +233,7 @@ export default function WalletAnalysis() {
               border: '2px solid rgba(255, 255, 255, 0.3)',
             }}>
               <Eye size={18} />
-              <span>0.01 USDC per analysis (Paid on Base)</span>
+              <span>0.40 USDC per analysis (Paid on Base)</span>
             </div>
           </div>
 
