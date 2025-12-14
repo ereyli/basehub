@@ -204,7 +204,7 @@ const Home = () => {
       path: '/wallet-analysis',
       color: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
       xpReward: '400 XP',
-      bonusXP: '0.01 USDC',
+      bonusXP: '0.40 USDC',
       isX402: true // Mark as x402 payment
     },
     {
