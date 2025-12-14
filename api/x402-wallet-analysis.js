@@ -17,7 +17,17 @@ const PRICE = '$0.01' // 0.01 USDC
 const NETWORK = process.env.X402_NETWORK || 'base'
 
 // BaseScan API Key
-const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || 'SI8ECAC19FPN92K9MCNQENMGY6Z6MRM14Q'
+// Vercel environment variables are automatically available via process.env
+const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || process.env.VITE_BASESCAN_API_KEY || 'SI8ECAC19FPN92K9MCNQENMGY6Z6MRM14Q'
+
+// Log API key status (first 10 chars only for security)
+if (BASESCAN_API_KEY && BASESCAN_API_KEY !== 'SI8ECAC19FPN92K9MCNQENMGY6Z6MRM14Q') {
+  console.log('✅ BaseScan API Key loaded from environment:', `${BASESCAN_API_KEY.substring(0, 10)}...`)
+} else if (BASESCAN_API_KEY === 'SI8ECAC19FPN92K9MCNQENMGY6Z6MRM14Q') {
+  console.log('⚠️ Using hardcoded API key (fallback)')
+} else {
+  console.error('❌ BaseScan API Key NOT FOUND! Please set BASESCAN_API_KEY in Vercel environment variables')
+}
 
 // Configure facilitator
 let facilitatorConfig
