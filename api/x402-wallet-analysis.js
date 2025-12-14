@@ -148,27 +148,54 @@ async function performWalletAnalysis(walletAddress) {
   try {
     // 1. Get native ETH balance from BaseScan API
     console.log('🔍 Fetching native balance from BaseScan...')
+    console.log('🔑 API Key check:', BASESCAN_API_KEY ? `Set (${BASESCAN_API_KEY.substring(0, 10)}...)` : 'NOT SET')
     try {
-      const balanceResponse = await fetch(
-        `https://api.basescan.org/api?module=account&action=balance&address=${walletAddress}&tag=latest&apikey=${BASESCAN_API_KEY}`,
-        {
-          headers: { 'Accept': 'application/json' },
-        }
-      )
+      const balanceUrl = `https://api.basescan.org/api?module=account&action=balance&address=${walletAddress}&tag=latest&apikey=${BASESCAN_API_KEY}`
+      
+      const balanceResponse = await fetch(balanceUrl, {
+        headers: { 'Accept': 'application/json' },
+      })
+      
+      console.log('📡 Balance API HTTP status:', balanceResponse.status, balanceResponse.statusText)
       
       if (balanceResponse.ok) {
         const balanceData = await balanceResponse.json()
+        console.log('📊 Balance API response:', {
+          status: balanceData.status,
+          message: balanceData.message,
+          result: balanceData.result,
+        })
+        
         if (balanceData.status === '1' && balanceData.result) {
           analysis.nativeBalance = formatEtherValue(balanceData.result)
+          console.log('✅ Balance fetched successfully:', analysis.nativeBalance, 'ETH')
+        } else if (balanceData.status === '0') {
+          console.error('❌ BaseScan API error for balance:', balanceData.message, balanceData.result)
+          // Check for common API errors
+          if (balanceData.result && typeof balanceData.result === 'string') {
+            if (balanceData.result.includes('Invalid API Key') || balanceData.result.includes('invalid api key')) {
+              console.error('❌ INVALID API KEY! Please check BASESCAN_API_KEY in Vercel environment variables')
+            } else if (balanceData.result.includes('rate limit') || balanceData.result.includes('Rate limit')) {
+              console.error('❌ RATE LIMIT EXCEEDED! Please wait before making more requests')
+            }
+          }
+          analysis.nativeBalance = '0.0000'
         } else {
+          console.warn('⚠️ Unexpected balance API response format')
           analysis.nativeBalance = '0.0000'
         }
       } else {
-        console.error('❌ Balance API error:', balanceResponse.status)
+        console.error('❌ Balance API HTTP error:', balanceResponse.status, balanceResponse.statusText)
+        const errorText = await balanceResponse.text().catch(() => 'Could not read error body')
+        console.error('❌ Balance API error body:', errorText.substring(0, 300))
         analysis.nativeBalance = '0.0000'
       }
     } catch (balanceError) {
-      console.error('❌ Error fetching balance:', balanceError)
+      console.error('❌ Exception fetching balance:', balanceError)
+      console.error('❌ Balance error details:', {
+        message: balanceError.message,
+        stack: balanceError.stack,
+      })
       analysis.nativeBalance = '0.0000'
     }
 
