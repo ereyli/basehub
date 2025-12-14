@@ -204,15 +204,14 @@ async function performWalletAnalysis(walletAddress) {
         if (transactions.length === 0 && txData.message === 'No transactions found') {
           console.log('ℹ️ No transactions found for this wallet')
         } else {
-      const transactions = txData.result
-      analysis.totalTransactions = transactions.length
+          analysis.totalTransactions = transactions.length
 
-      // Calculate total value moved
-      let totalValue = BigInt(0)
-      transactions.forEach(tx => {
-        totalValue += BigInt(tx.value || '0')
-      })
-      analysis.totalValueMoved = parseFloat(formatEther(totalValue)).toFixed(4)
+          // Calculate total value moved
+          let totalValue = BigInt(0)
+          transactions.forEach(tx => {
+            totalValue += BigInt(tx.value || '0')
+          })
+          analysis.totalValueMoved = formatEtherValue(totalValue.toString())
 
       // First and last transaction dates
       if (transactions.length > 0) {
@@ -271,10 +270,8 @@ async function performWalletAnalysis(walletAddress) {
         if (tokenTransfers.length === 0 && tokenTxData.message === 'No token transfers found') {
           console.log('ℹ️ No token transfers found for this wallet')
         } else {
-      const tokenTransfers = tokenTxData.result
-      
-      // Get unique tokens
-      const tokenMap = new Map()
+          // Get unique tokens
+          const tokenMap = new Map()
       tokenTransfers.forEach(tx => {
         const tokenAddress = tx.contractAddress.toLowerCase()
         if (!tokenMap.has(tokenAddress)) {
@@ -368,11 +365,11 @@ async function performWalletAnalysis(walletAddress) {
         if (nftTransfers.length === 0 && nftTxData.message === 'No NFT transfers found') {
           console.log('ℹ️ No NFT transfers found for this wallet')
         } else {
-      const uniqueNFTs = new Set()
-      nftTransfers.forEach(tx => {
-        uniqueNFTs.add(`${tx.contractAddress}-${tx.tokenID}`)
-      })
-      analysis.nftCount = uniqueNFTs.size
+          const uniqueNFTs = new Set()
+          nftTransfers.forEach(tx => {
+            uniqueNFTs.add(`${tx.contractAddress}-${tx.tokenID}`)
+          })
+          analysis.nftCount = uniqueNFTs.size
         }
       }
     } catch (nftError) {
