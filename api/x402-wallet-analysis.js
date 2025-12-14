@@ -160,13 +160,14 @@ async function performWalletAnalysis(walletAddress) {
     console.log('🔍 Fetching native balance from BaseScan...')
     console.log('🔑 API Key check:', BASESCAN_API_KEY ? `Set (${BASESCAN_API_KEY.substring(0, 10)}...)` : 'NOT SET')
     try {
-      // API V2 format: /api/v2/accounts/{address}/balance?chainid=8453
-      const balanceUrl = `https://api.basescan.org/api/v2/accounts/${walletAddress}/balance?chainid=8453`
+      // BaseScan API V2 format: /api/v2?module=account&action=balance&address=...&chainid=8453
+      const balanceUrl = `https://api.basescan.org/api/v2?module=account&action=balance&address=${walletAddress}&chainid=8453&apikey=${BASESCAN_API_KEY}`
+      console.log('🌐 Balance API V2 URL:', balanceUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
       
       const balanceResponse = await fetch(balanceUrl, {
         headers: { 
           'Accept': 'application/json',
-          'X-API-Key': BASESCAN_API_KEY,
+          'User-Agent': 'BaseHub-WalletAnalysis/1.0',
         },
       })
       
@@ -214,16 +215,15 @@ async function performWalletAnalysis(walletAddress) {
     }
 
     // 2. Get transactions from BaseScan API V2
-    // API V2 format: https://api.basescan.org/api/v2/accounts/{address}/transactions?chainid=8453&limit=100
+    // BaseScan API V2 format: /api/v2?module=account&action=txlist&address=...&chainid=8453
     console.log('🔍 Fetching transactions from BaseScan API V2...')
     try {
-      const txUrl = `https://api.basescan.org/api/v2/accounts/${walletAddress}/transactions?chainid=8453&limit=1000`
-      console.log('🌐 Transaction API V2 URL:', txUrl)
+      const txUrl = `https://api.basescan.org/api/v2?module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&chainid=8453&apikey=${BASESCAN_API_KEY}`
+      console.log('🌐 Transaction API V2 URL:', txUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
       
       const txResponse = await fetch(txUrl, {
         headers: {
           'Accept': 'application/json',
-          'X-API-Key': BASESCAN_API_KEY,
           'User-Agent': 'BaseHub-WalletAnalysis/1.0',
         },
       })
