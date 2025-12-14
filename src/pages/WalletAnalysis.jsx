@@ -50,13 +50,15 @@ export default function WalletAnalysis() {
     <NetworkGuard>
       <div style={{
         minHeight: '100vh',
-        height: '100%',
+        height: 'auto',
         background: 'linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fce7f3 100%)',
         padding: '20px',
-        paddingBottom: '40px',
+        paddingBottom: '60px',
         position: 'relative',
         overflow: 'hidden',
         margin: 0,
+        width: '100%',
+        boxSizing: 'border-box',
       }}>
         {/* Animated Background Elements */}
         <div style={{
