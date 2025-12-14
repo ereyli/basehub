@@ -224,6 +224,7 @@ async function performWalletAnalysis(walletAddress) {
         headers: {
           'Accept': 'application/json',
           'X-API-Key': BASESCAN_API_KEY,
+          'User-Agent': 'BaseHub-WalletAnalysis/1.0',
         },
       })
       
@@ -308,6 +309,7 @@ async function performWalletAnalysis(walletAddress) {
         headers: {
           'Accept': 'application/json',
           'X-API-Key': BASESCAN_API_KEY,
+          'User-Agent': 'BaseHub-WalletAnalysis/1.0',
         },
       })
       
@@ -410,58 +412,8 @@ async function performWalletAnalysis(walletAddress) {
       // Continue with other data even if token transfers fail
     }
 
-    // 4. Get NFT transfers from BaseScan API V2
-    // API V2 format: https://api.basescan.org/api/v2/accounts/{address}/nft-transfers?chainid=8453&limit=1000
-    console.log('🔍 Fetching NFT transfers from BaseScan API V2...')
-    try {
-      const nftTxUrl = `https://api.basescan.org/api/v2/accounts/${walletAddress}/nft-transfers?chainid=8453&limit=1000`
-      console.log('🌐 NFT transfer API V2 URL:', nftTxUrl)
-      
-      const nftTxResponse = await fetch(nftTxUrl, {
-        headers: {
-          'Accept': 'application/json',
-          'X-API-Key': BASESCAN_API_KEY,
-        },
-      })
-      
-      console.log('📡 NFT transfer API HTTP status:', nftTxResponse.status, nftTxResponse.statusText)
-      
-      if (!nftTxResponse.ok) {
-        console.error('❌ NFT transfer API error:', nftTxResponse.status)
-        throw new Error(`BaseScan API error: ${nftTxResponse.status}`)
-      }
-      
-      const nftTxData = await nftTxResponse.json()
-      console.log('📊 NFT transfer API V2 response:', {
-        hasItems: !!nftTxData.items,
-        itemsCount: nftTxData.items ? nftTxData.items.length : 0,
-      })
-
-      // API V2 returns { items: [...], pagination: {...} }
-      let nftTransfers = []
-      if (nftTxData.items && Array.isArray(nftTxData.items)) {
-        nftTransfers = nftTxData.items
-      }
-      
-      if (nftTransfers.length === 0) {
-        console.log('ℹ️ No NFT transfers found for this wallet')
-      } else {
-        const uniqueNFTs = new Set()
-        nftTransfers.forEach(tx => {
-          // API V2 format: contractAddress or tokenAddress, tokenID or tokenId
-          const contractAddress = tx.contractAddress || tx.tokenAddress || tx.token?.address || ''
-          const tokenID = tx.tokenID || tx.tokenId || tx.token?.id || ''
-          if (contractAddress && tokenID) {
-            uniqueNFTs.add(`${contractAddress}-${tokenID}`)
-          }
-        })
-        analysis.nftCount = uniqueNFTs.size
-        console.log('✅ Found', analysis.nftCount, 'unique NFTs')
-      }
-    } catch (nftError) {
-      console.error('❌ Error fetching NFT transfers:', nftError)
-      // Continue with other data even if NFT transfers fail
-    }
+    // NFT transfers removed as per user request
+    analysis.nftCount = 0
 
     // 5. Calculate Wallet Score (0-100)
     let score = 0
@@ -528,9 +480,7 @@ async function performWalletAnalysis(walletAddress) {
       analysis.funFacts.push(`Holds ${analysis.tokenDiversity} different tokens`)
     }
 
-    if (analysis.nftCount > 0) {
-      analysis.funFacts.push(`Collects ${analysis.nftCount} NFTs`)
-    }
+    // NFT fun fact removed (NFT data no longer fetched)
 
     if (analysis.favoriteToken) {
       analysis.funFacts.push(`Favorite token: ${analysis.favoriteToken}`)
