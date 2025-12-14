@@ -321,13 +321,18 @@ async function performWalletAnalysis(walletAddress) {
       
       const tokenTxData = await tokenTxResponse.json()
       console.log('📊 Token transfer API V2 response:', {
+        status: tokenTxData.status,
+        message: tokenTxData.message,
         hasItems: !!tokenTxData.items,
-        itemsCount: tokenTxData.items ? tokenTxData.items.length : 0,
+        hasResult: !!tokenTxData.result,
+        itemsCount: tokenTxData.items ? tokenTxData.items.length : (tokenTxData.result && Array.isArray(tokenTxData.result) ? tokenTxData.result.length : 0),
       })
 
-      // API V2 returns { items: [...], pagination: {...} }
+      // API V2 can return { status: '1', result: [...] } or { items: [...], pagination: {...} }
       let tokenTransfers = []
-      if (tokenTxData.items && Array.isArray(tokenTxData.items)) {
+      if (tokenTxData.status === '1' && tokenTxData.result && Array.isArray(tokenTxData.result)) {
+        tokenTransfers = tokenTxData.result
+      } else if (tokenTxData.items && Array.isArray(tokenTxData.items)) {
         tokenTransfers = tokenTxData.items
       }
       
