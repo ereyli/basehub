@@ -60,6 +60,87 @@ export default function WalletAnalysis() {
     return '🌱'
   }
 
+  // Compact StatCard Component
+  const StatCard = ({ icon, label, value, color }) => (
+    <div style={{
+      background: 'white',
+      borderRadius: '16px',
+      padding: '20px',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
+      border: '2px solid #f3f4f6',
+      transition: 'all 0.2s',
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        marginBottom: '12px',
+      }}>
+        <div style={{ color, display: 'flex' }}>
+          {icon}
+        </div>
+        <div style={{
+          fontSize: '13px',
+          color: '#6b7280',
+          fontWeight: '600',
+        }}>
+          {label}
+        </div>
+      </div>
+      <div style={{
+        fontSize: '22px',
+        fontWeight: '800',
+        color: '#1f2937',
+      }}>
+        {value}
+      </div>
+    </div>
+  )
+
+  // Compact InfoCard Component
+  const InfoCard = ({ title, value, subtitle, icon }) => (
+    <div style={{
+      background: 'white',
+      borderRadius: '12px',
+      padding: '16px',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+      border: '1px solid #f3f4f6',
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        marginBottom: '8px',
+        color: '#667eea',
+      }}>
+        {icon}
+        <div style={{
+          fontSize: '12px',
+          color: '#6b7280',
+          fontWeight: '600',
+        }}>
+          {title}
+        </div>
+      </div>
+      <div style={{
+        fontSize: '16px',
+        fontWeight: '700',
+        color: '#1f2937',
+      }}>
+        {value}
+      </div>
+      {subtitle && (
+        <div style={{
+          fontSize: '11px',
+          color: '#9ca3af',
+          marginTop: '4px',
+        }}>
+          {subtitle}
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <NetworkGuard>
       <div style={{
