@@ -162,10 +162,10 @@ async function performWalletAnalysis(walletAddress) {
     try {
       // Etherscan API V2 format (works for all chains including Base)
       // Base path: https://api.etherscan.io/v2/api
-      // TEST: Using Ethereum mainnet chainid: 1 (instead of Base 8453) to test if Base network is the issue
-      // Format: /v2/api?chainid=1&module=account&action=balance&address=...&tag=latest&apikey=...
-      const balanceUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=balance&address=${walletAddress}&tag=latest&apikey=${BASESCAN_API_KEY}`
-      console.log('🌐 Balance API V2 URL (Ethereum mainnet):', balanceUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
+      // Base mainnet chainid: 8453
+      // Format: /v2/api?chainid=8453&module=account&action=balance&address=...&tag=latest&apikey=...
+      const balanceUrl = `https://api.etherscan.io/v2/api?chainid=8453&module=account&action=balance&address=${walletAddress}&tag=latest&apikey=${BASESCAN_API_KEY}`
+      console.log('🌐 Balance API V2 URL (Base mainnet):', balanceUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
       
       const balanceResponse = await fetch(balanceUrl, {
         headers: { 
@@ -218,12 +218,12 @@ async function performWalletAnalysis(walletAddress) {
     }
 
     // 2. Get transactions from BaseScan API V2
-    // Etherscan API V2 format: /v2/api?chainid=1&module=account&action=txlist&address=...
-    // TEST: Using Ethereum mainnet (chainid=1) instead of Base (8453)
-    console.log('🔍 Fetching transactions from Etherscan API V2 (Ethereum mainnet)...')
+    // Etherscan API V2 format: /v2/api?chainid=8453&module=account&action=txlist&address=...
+    // Base mainnet chainid: 8453
+    console.log('🔍 Fetching transactions from Etherscan API V2 (Base mainnet)...')
     try {
-      const txUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
-      console.log('🌐 Transaction API V2 URL (Ethereum mainnet):', txUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
+      const txUrl = `https://api.etherscan.io/v2/api?chainid=8453&module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
+      console.log('🌐 Transaction API V2 URL (Base mainnet):', txUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
       
       const txResponse = await fetch(txUrl, {
         headers: {
@@ -305,12 +305,12 @@ async function performWalletAnalysis(walletAddress) {
     }
 
     // 3. Get token transfers from BaseScan API V2
-    // Etherscan API V2 format: /v2/api?chainid=1&module=account&action=tokentx&address=...
-    // TEST: Using Ethereum mainnet (chainid=1) instead of Base (8453)
-    console.log('🔍 Fetching token transfers from Etherscan API V2 (Ethereum mainnet)...')
+    // Etherscan API V2 format: /v2/api?chainid=8453&module=account&action=tokentx&address=...
+    // Base mainnet chainid: 8453
+    console.log('🔍 Fetching token transfers from Etherscan API V2 (Base mainnet)...')
     try {
-      const tokenTxUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
-      console.log('🌐 Token transfer API V2 URL (Ethereum mainnet):', tokenTxUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
+      const tokenTxUrl = `https://api.etherscan.io/v2/api?chainid=8453&module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
+      console.log('🌐 Token transfer API V2 URL (Base mainnet):', tokenTxUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
       
       const tokenTxResponse = await fetch(tokenTxUrl, {
         headers: {
@@ -375,9 +375,9 @@ async function performWalletAnalysis(walletAddress) {
         for (const token of tokensToCheck) {
           try {
             // Get token balance from Etherscan API V2
-            // Etherscan API V2 format: /v2/api?chainid=1&module=account&action=tokenbalance&contractaddress=...&address=...
-            // TEST: Using Ethereum mainnet (chainid=1) instead of Base (8453)
-            const tokenBalanceUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=tokenbalance&contractaddress=${token.address}&address=${walletAddress}&tag=latest&apikey=${BASESCAN_API_KEY}`
+            // Etherscan API V2 format: /v2/api?chainid=8453&module=account&action=tokenbalance&contractaddress=...&address=...
+            // Base mainnet chainid: 8453
+            const tokenBalanceUrl = `https://api.etherscan.io/v2/api?chainid=8453&module=account&action=tokenbalance&contractaddress=${token.address}&address=${walletAddress}&tag=latest&apikey=${BASESCAN_API_KEY}`
             const tokenBalanceResponse = await fetch(tokenBalanceUrl, {
               headers: { 
                 'Accept': 'application/json',
