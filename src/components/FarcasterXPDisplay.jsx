@@ -21,9 +21,14 @@ const FarcasterXPDisplay = () => {
   // Auto-switch to Base network when wallet connects
   useEffect(() => {
     if (isConnected && !isCorrectNetwork) {
-      console.log('🔄 Wallet connected but not on Base network, switching...')
+      console.log('🔄 Wallet connected but not on Base network, attempting switch...')
       switchToBaseNetwork().catch(error => {
-        console.error('Failed to auto-switch to Base:', error)
+        // Don't log errors for user-rejected requests (normal in Farcaster)
+        if (error.message?.includes('not been authorized') || error.code === 4001) {
+          console.log('ℹ️ Network switch request was rejected (this is normal in Farcaster)')
+        } else {
+          console.error('Failed to auto-switch to Base:', error)
+        }
       })
     }
   }, [isConnected, isCorrectNetwork, switchToBaseNetwork])

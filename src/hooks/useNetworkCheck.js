@@ -77,9 +77,17 @@ export const useNetworkCheck = () => {
           console.error('❌ Failed to add Base network:', addError)
           throw new Error('Failed to add Base network to your wallet. Please add it manually.')
         }
+      } else if (switchError.code === 4001 || switchError.message?.includes('not been authorized')) {
+        // User rejected the request - this is normal in Farcaster
+        console.log('ℹ️ User rejected network switch request (this is normal in Farcaster)')
+        // Don't throw error, just log it
+        return
       } else {
         console.error('❌ Failed to switch to Base network:', switchError)
-        throw new Error('Failed to switch to Base network. Please switch manually.')
+        // In Farcaster, network switching might not be supported
+        // Don't throw error, just log it
+        console.log('ℹ️ Network switch not available (may be in Farcaster environment)')
+        return
       }
     }
   }

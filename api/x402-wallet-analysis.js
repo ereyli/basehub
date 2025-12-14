@@ -96,10 +96,18 @@ const ERC20_ABI = [
 
 // Fun wallet analysis function
 async function performWalletAnalysis(walletAddress) {
-  const publicClient = createPublicClient({
-    chain: base,
-    transport: http('https://mainnet.base.org'),
-  })
+  let publicClient
+  try {
+    publicClient = createPublicClient({
+      chain: base,
+      transport: http('https://mainnet.base.org', {
+        timeout: 10000, // 10 second timeout
+      }),
+    })
+  } catch (clientError) {
+    console.error('❌ Error creating public client:', clientError)
+    throw new Error('Failed to initialize blockchain client')
+  }
 
   const analysis = {
     walletAddress,
@@ -125,10 +133,20 @@ async function performWalletAnalysis(walletAddress) {
 
   try {
     // 1. Native ETH Balance
-    const balance = await publicClient.getBalance({
-      address: walletAddress,
-    })
-    analysis.nativeBalance = parseFloat(formatEther(balance)).toFixed(4)
+    try {
+      const balance = await Promise.race([
+        publicClient.getBalance({
+          address: walletAddress,
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Balance fetch timeout')), 10000)
+        )
+      ])
+      analysis.nativeBalance = parseFloat(formatEther(balance)).toFixed(4)
+    } catch (balanceError) {
+      console.error('❌ Error fetching balance:', balanceError)
+      analysis.nativeBalance = '0.0000'
+    }
 
     // 2. Get transactions from BaseScan
     console.log('🔍 Fetching transactions from BaseScan...')
@@ -253,14 +271,22 @@ async function performWalletAnalysis(walletAddress) {
         .sort((a, b) => b.transfers - a.transfers)
         .slice(0, 10)
 
-      for (const token of tokenArray) {
+      // Limit token balance checks to avoid timeout
+      const tokensToCheck = tokenArray.slice(0, 5) // Only check top 5 tokens
+      
+      for (const token of tokensToCheck) {
         try {
-          const balance = await publicClient.readContract({
-            address: token.address,
-            abi: ERC20_ABI,
-            functionName: 'balanceOf',
-            args: [walletAddress],
-          })
+          const balance = await Promise.race([
+            publicClient.readContract({
+              address: token.address,
+              abi: ERC20_ABI,
+              functionName: 'balanceOf',
+              args: [walletAddress],
+            }),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Token balance fetch timeout')), 5000)
+            )
+          ])
           
           const formattedBalance = formatUnits(balance, token.decimals)
           if (parseFloat(formattedBalance) > 0) {
@@ -271,7 +297,8 @@ async function performWalletAnalysis(walletAddress) {
             })
           }
         } catch (err) {
-          // Token might not support balanceOf, skip it
+          // Token might not support balanceOf or timeout, skip it
+          console.log(`⚠️ Skipping token ${token.symbol}:`, err.message)
         }
       }
 
@@ -406,8 +433,18 @@ async function performWalletAnalysis(walletAddress) {
     }
 
   } catch (error) {
-    console.error('Wallet analysis error:', error)
-    throw error
+    console.error('❌ Wallet analysis error:', error)
+    console.error('Error stack:', error.stack)
+    console.error('Error message:', error.message)
+    
+    // Return partial analysis if possible
+    if (analysis.nativeBalance !== '0' || analysis.totalTransactions > 0) {
+      console.log('⚠️ Returning partial analysis due to error')
+      return analysis
+    }
+    
+    // If we have no data at all, throw the error
+    throw new Error(`Analysis failed: ${error.message || 'Unknown error'}`)
   }
 
   return analysis
@@ -416,8 +453,15 @@ async function performWalletAnalysis(walletAddress) {
 // Wallet Analysis endpoint - protected by middleware
 app.post('/', async (c) => {
   try {
-    const body = await c.req.json()
-    const { walletAddress } = body
+    let body
+    try {
+      body = await c.req.json()
+    } catch (parseError) {
+      console.error('❌ Error parsing request body:', parseError)
+      return c.json({ error: 'Invalid request body' }, 400)
+    }
+
+    const { walletAddress } = body || {}
 
     if (!walletAddress) {
       return c.json({ error: 'Wallet address required' }, 400)
@@ -430,8 +474,26 @@ app.post('/', async (c) => {
 
     console.log('🔍 Starting wallet analysis for:', walletAddress)
 
-    // Perform analysis
-    const analysis = await performWalletAnalysis(walletAddress)
+    // Perform analysis with timeout
+    const analysisPromise = performWalletAnalysis(walletAddress)
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Analysis timeout after 30 seconds')), 30000)
+    )
+
+    let analysis
+    try {
+      analysis = await Promise.race([analysisPromise, timeoutPromise])
+    } catch (analysisError) {
+      console.error('❌ Analysis error:', analysisError)
+      console.error('Error stack:', analysisError.stack)
+      
+      // Return error with more details
+      return c.json({
+        error: 'Analysis failed',
+        message: analysisError.message || 'Unknown error occurred',
+        details: process.env.NODE_ENV === 'development' ? analysisError.stack : undefined,
+      }, 500)
+    }
 
     console.log('✅ Wallet analysis completed:', {
       walletAddress,
@@ -446,10 +508,15 @@ app.post('/', async (c) => {
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
-    console.error('❌ Wallet analysis error:', error)
+    console.error('❌ Wallet analysis endpoint error:', error)
+    console.error('Error stack:', error.stack)
+    console.error('Error name:', error.name)
+    console.error('Error message:', error.message)
+    
     return c.json({
-      error: 'Analysis failed',
-      message: error.message,
+      error: 'Internal server error',
+      message: error.message || 'An unexpected error occurred',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     }, 500)
   }
 })
