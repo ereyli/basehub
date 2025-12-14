@@ -200,17 +200,20 @@ async function performWalletAnalysis(walletAddress) {
     }
 
     // 2. Get transactions from BaseScan
+    // BaseScan API format: https://api.basescan.org/api?module=account&action=txlist&address=...&startblock=0&endblock=99999999&sort=desc&apikey=...
+    // According to Etherscan docs: sort can be 'asc' or 'desc', startblock/endblock are required
     console.log('🔍 Fetching transactions from BaseScan...')
     try {
-      const txResponse = await fetch(
-        `https://api.basescan.org/api?module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`,
-        {
-          headers: {
-            'Accept': 'application/json',
-          },
-          timeout: 30000,
-        }
-      )
+      const txUrl = `https://api.basescan.org/api?module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
+      console.log('🌐 Transaction API URL:', txUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
+      
+      const txResponse = await fetch(txUrl, {
+        headers: {
+          'Accept': 'application/json',
+        },
+      })
+      
+      console.log('📡 Transaction API HTTP status:', txResponse.status, txResponse.statusText)
       
       if (!txResponse.ok) {
         console.error('❌ Transaction API error:', txResponse.status, txResponse.statusText)
@@ -384,16 +387,19 @@ async function performWalletAnalysis(walletAddress) {
     }
 
     // 4. Get NFT transfers
+    // BaseScan API format: https://api.basescan.org/api?module=account&action=tokennfttx&address=...&startblock=0&endblock=99999999&sort=desc&apikey=...
     console.log('🔍 Fetching NFT transfers from BaseScan...')
     try {
-      const nftTxResponse = await fetch(
-        `https://api.basescan.org/api?module=account&action=tokennfttx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`,
-        {
-          headers: {
-            'Accept': 'application/json',
-          },
-        }
-      )
+      const nftTxUrl = `https://api.basescan.org/api?module=account&action=tokennfttx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${BASESCAN_API_KEY}`
+      console.log('🌐 NFT transfer API URL:', nftTxUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
+      
+      const nftTxResponse = await fetch(nftTxUrl, {
+        headers: {
+          'Accept': 'application/json',
+        },
+      })
+      
+      console.log('📡 NFT transfer API HTTP status:', nftTxResponse.status, nftTxResponse.statusText)
       
       if (!nftTxResponse.ok) {
         console.error('❌ NFT transfer API error:', nftTxResponse.status)
