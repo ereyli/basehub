@@ -5,10 +5,24 @@ import { Search, Wallet, Coins, Image, Activity, TrendingUp, Award, Sparkles, Al
 import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
 
+// Supported networks - must match backend configuration
+const SUPPORTED_NETWORKS = {
+  'ethereum': { name: 'Ethereum', color: '#627eea' },
+  'arbitrum': { name: 'Arbitrum', color: '#28a0f0' },
+  'abstract': { name: 'Abstract', color: '#9945ff' },
+  'celo': { name: 'Celo', color: '#35d07f' },
+  'hyperevm': { name: 'HyperEVM', color: '#ff6b35' },
+  'linea': { name: 'Linea', color: '#121212' },
+  'monad': { name: 'Monad', color: '#8b5cf6' },
+  'sonic': { name: 'Sonic', color: '#3b82f6' },
+  'zksync': { name: 'zkSync', color: '#8c8dfc' },
+}
+
 export default function WalletAnalysis() {
   const { address, isConnected } = useAccount()
   const { analyzeWallet, isLoading, error, analysis } = useWalletAnalysis()
   const [targetAddress, setTargetAddress] = useState('')
+  const [selectedNetwork, setSelectedNetwork] = useState('ethereum')
   const [hasAnalyzed, setHasAnalyzed] = useState(false)
 
   const handleAnalyze = async () => {
@@ -25,7 +39,7 @@ export default function WalletAnalysis() {
 
     try {
       setHasAnalyzed(false)
-      await analyzeWallet(addr)
+      await analyzeWallet(addr, selectedNetwork)
       setHasAnalyzed(true)
     } catch (err) {
       console.error('Analysis failed:', err)
@@ -122,7 +136,7 @@ export default function WalletAnalysis() {
               marginBottom: '16px',
               fontWeight: '500',
             }}>
-              Discover fun insights about any wallet on Base
+              Discover fun insights about any wallet
             </p>
             <div style={{
               display: 'inline-flex',
@@ -138,7 +152,91 @@ export default function WalletAnalysis() {
               border: '2px solid rgba(255, 255, 255, 0.3)',
             }}>
               <Eye size={18} />
-              <span>0.01 USDC per analysis</span>
+              <span>0.01 USDC per analysis (Paid on Base)</span>
+            </div>
+          </div>
+
+          {/* Network Selection */}
+          <div style={{
+            marginBottom: '32px',
+            padding: '28px',
+            background: 'white',
+            borderRadius: '24px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+            border: '2px solid rgba(102, 126, 234, 0.1)',
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '20px',
+            }}>
+              <BarChart3 size={24} style={{ color: '#667eea' }} />
+              <h3 style={{
+                fontSize: '20px',
+                fontWeight: 'bold',
+                color: '#1f2937',
+                margin: 0,
+              }}>
+                Select Network to Analyze
+              </h3>
+            </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+              gap: '12px',
+            }}>
+              {Object.entries(SUPPORTED_NETWORKS).map(([key, network]) => (
+                <button
+                  key={key}
+                  onClick={() => setSelectedNetwork(key)}
+                  style={{
+                    padding: '16px',
+                    background: selectedNetwork === key 
+                      ? `linear-gradient(135deg, ${network.color}22 0%, ${network.color}44 100%)`
+                      : 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)',
+                    border: selectedNetwork === key 
+                      ? `2px solid ${network.color}`
+                      : '2px solid transparent',
+                    borderRadius: '16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontSize: '14px',
+                    fontWeight: selectedNetwork === key ? '700' : '600',
+                    color: selectedNetwork === key ? network.color : '#4b5563',
+                    textAlign: 'center',
+                    boxShadow: selectedNetwork === key 
+                      ? `0 4px 12px ${network.color}33`
+                      : '0 2px 8px rgba(0, 0, 0, 0.04)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-2px)'
+                    e.target.style.boxShadow = `0 6px 16px ${network.color}44`
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(0)'
+                    e.target.style.boxShadow = selectedNetwork === key 
+                      ? `0 4px 12px ${network.color}33`
+                      : '0 2px 8px rgba(0, 0, 0, 0.04)'
+                  }}
+                >
+                  {network.name}
+                </button>
+              ))}
+            </div>
+            <div style={{
+              marginTop: '16px',
+              padding: '12px 16px',
+              background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+              borderRadius: '12px',
+              fontSize: '13px',
+              color: '#1e40af',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}>
+              <Eye size={16} />
+              <span>Free API access on all networks • Payment is always on Base mainnet</span>
             </div>
           </div>
 

@@ -13,7 +13,7 @@ export const useWalletAnalysis = () => {
   const [error, setError] = useState(null)
   const [analysis, setAnalysis] = useState(null)
 
-  const analyzeWallet = async (targetAddress) => {
+  const analyzeWallet = async (targetAddress, selectedNetwork = 'ethereum') => {
     if (!targetAddress) {
       throw new Error('Wallet address is required')
     }
@@ -33,6 +33,7 @@ export const useWalletAnalysis = () => {
     try {
       console.log('🚀 Starting wallet analysis payment flow...')
       console.log('Target wallet:', targetAddress)
+      console.log('Selected network:', selectedNetwork)
 
       // x402 payment: 0.01 USDC = 10000 base units (6 decimals)
       const MAX_PAYMENT_AMOUNT = BigInt(10000) // 0.01 USDC max
@@ -50,7 +51,10 @@ export const useWalletAnalysis = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ walletAddress: targetAddress }),
+        body: JSON.stringify({ 
+          walletAddress: targetAddress,
+          network: selectedNetwork,
+        }),
       })
 
       console.log('📥 Response received:', {
