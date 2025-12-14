@@ -224,15 +224,16 @@ async function performWalletAnalysis(walletAddress) {
         analysis.daysActive = Math.max(1, Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24)))
       }
 
-      // Most active day
-      const dayCounts = {}
-      transactions.forEach(tx => {
-        const date = new Date(parseInt(tx.timeStamp) * 1000).toLocaleDateString()
-        dayCounts[date] = (dayCounts[date] || 0) + 1
-      })
-      const mostActiveDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]
-      if (mostActiveDay) {
-        analysis.mostActiveDay = `${mostActiveDay[0]} (${mostActiveDay[1]} transactions)`
+          // Most active day
+          const dayCounts = {}
+          transactions.forEach(tx => {
+            const date = new Date(parseInt(tx.timeStamp) * 1000).toLocaleDateString()
+            dayCounts[date] = (dayCounts[date] || 0) + 1
+          })
+          const mostActiveDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]
+          if (mostActiveDay) {
+            analysis.mostActiveDay = `${mostActiveDay[0]} (${mostActiveDay[1]} transactions)`
+          }
         }
       }
     } catch (txError) {
