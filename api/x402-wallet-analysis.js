@@ -160,9 +160,10 @@ async function performWalletAnalysis(walletAddress) {
     console.log('🔍 Fetching native balance from BaseScan...')
     console.log('🔑 API Key check:', BASESCAN_API_KEY ? `Set (${BASESCAN_API_KEY.substring(0, 10)}...)` : 'NOT SET')
     try {
-      // BaseScan API: Use V1 format with chainid parameter (V2 may not be fully available yet)
-      // Format: /api?module=account&action=balance&address=...&chainid=8453
-      const balanceUrl = `https://api.basescan.org/api?module=account&action=balance&address=${walletAddress}&tag=latest&chainid=8453&apikey=${BASESCAN_API_KEY}`
+      // BaseScan API V2 format (per Etherscan MCP docs)
+      // Format: /v2/api?chainid=8453&module=account&action=balance&address=...&tag=latest&apikey=...
+      // Base mainnet chainid: 8453
+      const balanceUrl = `https://api.basescan.org/v2/api?chainid=8453&module=account&action=balance&address=${walletAddress}&tag=latest&apikey=${BASESCAN_API_KEY}`
       console.log('🌐 Balance API V2 URL:', balanceUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
       
       const balanceResponse = await fetch(balanceUrl, {
