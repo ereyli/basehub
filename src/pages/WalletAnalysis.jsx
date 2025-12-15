@@ -31,6 +31,19 @@ export default function WalletAnalysis() {
   const [selectedNetwork, setSelectedNetwork] = useState('ethereum')
   const [hasAnalyzed, setHasAnalyzed] = useState(false)
 
+  const buildCastText = () => {
+    if (!analysis) return ''
+    const parts = []
+    parts.push(`🔍 Wallet Analysis on ${analysis.network || selectedNetwork}`)
+    parts.push(`Score: ${analysis.walletScore}/100 (${analysis.activityLevel || 'n/a'})`)
+    parts.push(`Balance: ${parseFloat(analysis.nativeBalance || 0).toFixed(4)} ${analysis.currency || 'ETH'}`)
+    parts.push(`Tx: ${analysis.totalTransactions || 0}, Tokens: ${analysis.tokenDiversity || 0}`)
+    if (analysis.favoriteToken) parts.push(`Fav token: ${analysis.favoriteToken}`)
+    if (analysis.mostActiveDay) parts.push(`Most active: ${analysis.mostActiveDay}`)
+    parts.push('Powered by BaseHub x402 🔗 https://www.basehub.fun/wallet-analysis')
+    return parts.join(' • ')
+  }
+
   const handleAnalyze = async () => {
     const addr = targetAddress.trim() || address
     if (!addr) {
@@ -463,6 +476,35 @@ export default function WalletAnalysis() {
             <div style={{
               animation: 'fadeInUp 0.6s ease-out',
             }}>
+              {/* Farcaster share */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                marginBottom: '12px',
+              }}>
+                <a
+                  href={`https://warpcast.com/~/compose?text=${encodeURIComponent(buildCastText())}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 14px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #805ad5 0%, #6366f1 100%)',
+                    color: 'white',
+                    fontWeight: '700',
+                    fontSize: '14px',
+                    textDecoration: 'none',
+                    boxShadow: '0 6px 18px rgba(99, 102, 241, 0.35)',
+                  }}
+                >
+                  <Sparkles size={16} />
+                  Share on Farcaster
+                </a>
+              </div>
+
               {/* Wallet Score Card - Compact with Progress Bar */}
               <div style={{
                 background: 'white',
