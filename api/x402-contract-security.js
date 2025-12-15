@@ -540,9 +540,11 @@ function analyzeSourceCode(analysis, sourceCode) {
 function calculateSecurityScore(analysis) {
   let score = 100
   
-  // Deduct points for risks
+  // Deduct points for risks (more severe = more points deducted)
   analysis.risks.forEach(risk => {
-    if (risk.severity === 'High') {
+    if (risk.severity === 'Critical') {
+      score -= 30 // Critical risks are very dangerous
+    } else if (risk.severity === 'High') {
       score -= 20
     } else if (risk.severity === 'Medium') {
       score -= 10
