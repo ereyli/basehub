@@ -8,6 +8,11 @@ import NetworkGuard from '../components/NetworkGuard'
 // Supported networks - must match backend configuration
 const SUPPORTED_NETWORKS = {
   'base': { name: 'Base', color: '#4a90e2' },
+  'katana': { name: 'Katana', color: '#ff7f50' },
+  'opbnb': { name: 'opBNB', color: '#f0b90b' },
+  'polygon': { name: 'Polygon', color: '#8247e5' },
+  'sei': { name: 'Sei', color: '#ff3b30' },
+  'stable': { name: 'Stable', color: '#2dd4bf' },
   'ethereum': { name: 'Ethereum', color: '#627eea' },
   'arbitrum': { name: 'Arbitrum', color: '#28a0f0' },
   'abstract': { name: 'Abstract', color: '#9945ff' },

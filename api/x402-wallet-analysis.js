@@ -22,6 +22,11 @@ const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || 'SI8ECAC19FPN92K9MCNQEN
 // Supported networks for wallet analysis (all have free API access)
 const SUPPORTED_NETWORKS = {
   'base': { chainId: 8453, name: 'Base Mainnet', currency: 'ETH' },
+  'katana': { chainId: 747474, name: 'Katana Mainnet', currency: 'KATANA' },
+  'opbnb': { chainId: 204, name: 'opBNB Mainnet', currency: 'BNB' },
+  'polygon': { chainId: 137, name: 'Polygon Mainnet', currency: 'MATIC' },
+  'sei': { chainId: 1329, name: 'Sei Mainnet', currency: 'SEI' },
+  'stable': { chainId: 988, name: 'Stable Mainnet', currency: 'STABLE' },
   'ethereum': { chainId: 1, name: 'Ethereum Mainnet', currency: 'ETH' },
   'arbitrum': { chainId: 42161, name: 'Arbitrum One', currency: 'ETH' },
   'abstract': { chainId: 2741, name: 'Abstract Mainnet', currency: 'ETH' },
