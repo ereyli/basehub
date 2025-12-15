@@ -8,7 +8,7 @@ import EmbedMeta from '../components/EmbedMeta'
 import TwitterShareButton from '../components/TwitterShareButton'
 import DailyQuestSystem from '../components/DailyQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'
-import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search } from 'lucide-react'
+import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield } from 'lucide-react'
 
 const Home = () => {
   const { isConnected } = useAccount()
@@ -205,6 +205,17 @@ const Home = () => {
       color: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
       xpReward: '400 XP',
       bonusXP: '0.40 USDC',
+      isX402: true // Mark as x402 payment
+    },
+    {
+      id: 'contract-security',
+      title: 'Contract Security',
+      description: 'Analyze smart contract security risks',
+      icon: <Shield size={50} style={{ color: 'white' }} />,
+      path: '/contract-security',
+      color: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+      xpReward: '500 XP',
+      bonusXP: '0.50 USDC',
       isX402: true // Mark as x402 payment
     },
     {

@@ -28,6 +28,7 @@ import DeployERC1155 from './pages/DeployERC1155'
 import AINFTLaunchpad from './pages/AINFTLaunchpad'
 import SharePage from './pages/SharePage'
 import WalletAnalysis from './pages/WalletAnalysis'
+import ContractSecurity from './pages/ContractSecurity'
 import './styles/index.css'
 
 const queryClient = new QueryClient()
