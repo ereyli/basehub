@@ -527,6 +527,91 @@ export default function ContractSecurity() {
                 </div>
               </div>
 
+              {/* Security Checks - All Checks with Pass/Fail */}
+              {analysis.securityChecks && analysis.securityChecks.length > 0 && (
+                <div style={{
+                  background: 'white',
+                  borderRadius: '20px',
+                  padding: '24px',
+                  marginBottom: '24px',
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
+                }}>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: 'bold',
+                    marginBottom: '20px',
+                    color: '#1f2937',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                  }}>
+                    <Shield size={20} style={{ color: '#667eea' }} />
+                    Security Checks ({analysis.securityChecks.length})
+                  </h3>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                    gap: '12px',
+                  }}>
+                    {analysis.securityChecks.map((check, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          padding: '16px',
+                          background: check.passed
+                            ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)'
+                            : check.status.includes('⚠️')
+                              ? 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)'
+                              : 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
+                          border: `2px solid ${check.passed ? '#10b981' : check.status.includes('⚠️') ? '#f59e0b' : '#ef4444'}`,
+                          borderRadius: '12px',
+                        }}
+                      >
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          marginBottom: '8px',
+                        }}>
+                          {check.passed ? (
+                            <CheckCircle size={20} style={{ color: '#10b981' }} />
+                          ) : (
+                            <XCircle size={20} style={{ 
+                              color: check.status.includes('⚠️') ? '#f59e0b' : '#ef4444' 
+                            }} />
+                          )}
+                          <div style={{
+                            fontSize: '15px',
+                            fontWeight: '700',
+                            color: '#1f2937',
+                            flex: 1,
+                          }}>
+                            {check.check}
+                          </div>
+                        </div>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          color: check.passed ? '#065f46' : check.status.includes('⚠️') ? '#92400e' : '#991b1b',
+                          marginBottom: '6px',
+                        }}>
+                          {check.status}
+                        </div>
+                        {check.details && (
+                          <div style={{
+                            fontSize: '13px',
+                            color: check.passed ? '#047857' : check.status.includes('⚠️') ? '#78350f' : '#7f1d1d',
+                            lineHeight: '1.5',
+                          }}>
+                            {check.details}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Contract Info */}
               <div style={{
                 background: 'white',

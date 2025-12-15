@@ -126,6 +126,7 @@ async function analyzeContractSecurity(contractAddress, selectedNetwork = 'ether
     risks: [],
     warnings: [],
     safeFeatures: [],
+    securityChecks: [], // Detailed checks with pass/fail status
     contractName: null,
     compilerVersion: null,
     optimizationEnabled: false,
@@ -285,10 +286,22 @@ function analyzeSourceCode(analysis, sourceCode) {
       details: `This contract may prevent users from selling tokens. Indicators: ${honeypotIndicators.join(', ')}. Users may be able to buy but not sell tokens.`,
       indicators: honeypotIndicators,
     })
+    analysis.securityChecks.push({
+      check: 'Honeypot Detection',
+      passed: false,
+      status: '❌ Honeypot detected',
+      details: `Transfer restrictions found: ${honeypotIndicators.join(', ')}`,
+    })
   } else {
     analysis.safeFeatures.push({
       type: 'No Honeypot',
       description: '✅ No honeypot indicators found - standard transfer function',
+    })
+    analysis.securityChecks.push({
+      check: 'Honeypot Detection',
+      passed: true,
+      status: '✅ No honeypot detected',
+      details: 'Standard transfer function - users can buy and sell tokens freely',
     })
   }
   
@@ -296,7 +309,9 @@ function analyzeSourceCode(analysis, sourceCode) {
   // 2. MINT FUNCTION ANALYSIS - Detailed
   // ==========================================
   const mintPattern = /function\s+mint/i
-  if (mintPattern.test(sourceCode)) {
+  const hasMintFunction = mintPattern.test(sourceCode)
+  
+  if (hasMintFunction) {
     // Check if mint has max supply limit
     const maxSupplyPattern = /maxsupply|maximumsupply|totalsupply.*<=|supply.*limit/i
     const hasMaxSupply = maxSupplyPattern.test(sourceCode)
@@ -338,31 +353,96 @@ function analyzeSourceCode(analysis, sourceCode) {
         type: 'Mint Function Unclear',
         description: 'Mint function exists but access control and supply limits are unclear',
       })
+      analysis.securityChecks.push({
+        check: 'Mint Function Control',
+        passed: false,
+        status: '⚠️ Mint function unclear',
+        details: 'Mint function exists but access control and supply limits are unclear',
+      })
     }
   } else {
     analysis.safeFeatures.push({
       type: 'No Mint Function',
       description: '✅ No mint function - fixed supply token (safe)',
     })
+    analysis.securityChecks.push({
+      check: 'Mint Function',
+      passed: true,
+      status: '✅ No mint function',
+      details: 'Fixed supply token - no new tokens can be created',
+    })
+  }
+  
+  // Add mint risk checks
+  if (hasMintFunction) {
+    const maxSupplyPattern = /maxsupply|maximumsupply|totalsupply.*<=|supply.*limit/i
+    const hasMaxSupply = maxSupplyPattern.test(sourceCode)
+    const onlyOwnerPattern = /function\s+mint[^{]*onlyowner|modifier\s+onlyowner[^}]*function\s+mint/i
+    const publicMintPattern = /function\s+mint[^{]*public[^{]*\{/i
+    const hasOwnerControl = onlyOwnerPattern.test(sourceCode)
+    const isPublic = publicMintPattern.test(sourceCode)
+    
+    if (isPublic && !hasMaxSupply) {
+      analysis.securityChecks.push({
+        check: 'Unlimited Public Mint',
+        passed: false,
+        status: '❌ Public unlimited mint',
+        details: 'Anyone can mint unlimited tokens - high inflation risk',
+      })
+    } else if (hasOwnerControl && !hasMaxSupply) {
+      analysis.securityChecks.push({
+        check: 'Owner Unlimited Mint',
+        passed: false,
+        status: '❌ Owner can mint unlimited',
+        details: 'Owner can create unlimited tokens - supply can be inflated',
+      })
+    } else if (hasOwnerControl && hasMaxSupply) {
+      analysis.securityChecks.push({
+        check: 'Controlled Mint',
+        passed: true,
+        status: '✅ Owner-only mint with supply limit',
+        details: 'Mint is controlled and has maximum supply limit',
+      })
+    }
   }
   
   // ==========================================
   // 3. BURN FUNCTION ANALYSIS
   // ==========================================
   const burnPattern = /function\s+burn/i
-  if (burnPattern.test(sourceCode)) {
+  const hasBurnFunction = burnPattern.test(sourceCode)
+  if (hasBurnFunction) {
     const burnOwnerOnly = /function\s+burn[^{]*onlyowner/i
     if (burnOwnerOnly.test(sourceCode)) {
       analysis.warnings.push({
         type: 'Owner-Only Burn',
         description: 'Burn function is owner-only - users cannot burn their own tokens',
       })
+      analysis.securityChecks.push({
+        check: 'Burn Function',
+        passed: false,
+        status: '⚠️ Owner-only burn',
+        details: 'Only owner can burn tokens - users cannot burn their own tokens',
+      })
     } else {
       analysis.safeFeatures.push({
         type: 'Burn Function',
         description: '✅ Burn function available - users can permanently remove tokens',
       })
+      analysis.securityChecks.push({
+        check: 'Burn Function',
+        passed: true,
+        status: '✅ Burn function available',
+        details: 'Users can permanently remove tokens from supply',
+      })
     }
+  } else {
+    analysis.securityChecks.push({
+      check: 'Burn Function',
+      passed: true,
+      status: '✅ No burn function',
+      details: 'No burn function - standard ERC20 behavior',
+    })
   }
   
   // ==========================================
@@ -402,6 +482,12 @@ function analyzeSourceCode(analysis, sourceCode) {
       functionCount: ownerFunctions.length,
       dangerousFunctions: dangerousFunctions,
     })
+    analysis.securityChecks.push({
+      check: 'Owner Privileges',
+      passed: false,
+      status: `❌ ${ownerFunctions.length} owner functions`,
+      details: `Excessive owner control: ${ownerFunctions.slice(0, 5).join(', ')}${ownerFunctions.length > 5 ? '...' : ''}. Dangerous: ${dangerousFunctions.join(', ') || 'None'}`,
+    })
   } else if (ownerFunctions.length > 5) {
     analysis.risks.push({
       type: 'Moderate Owner Powers',
@@ -411,11 +497,30 @@ function analyzeSourceCode(analysis, sourceCode) {
       functionCount: ownerFunctions.length,
       dangerousFunctions: dangerousFunctions,
     })
+    analysis.securityChecks.push({
+      check: 'Owner Privileges',
+      passed: false,
+      status: `⚠️ ${ownerFunctions.length} owner functions`,
+      details: `Moderate owner control: ${ownerFunctions.join(', ')}`,
+    })
   } else if (ownerFunctions.length > 0) {
     analysis.warnings.push({
       type: 'Owner Functions',
       description: `Contract has ${ownerFunctions.length} owner-only function(s): ${ownerFunctions.join(', ')}`,
       functionCount: ownerFunctions.length,
+    })
+    analysis.securityChecks.push({
+      check: 'Owner Privileges',
+      passed: false,
+      status: `⚠️ ${ownerFunctions.length} owner function(s)`,
+      details: `Owner functions: ${ownerFunctions.join(', ')}`,
+    })
+  } else {
+    analysis.securityChecks.push({
+      check: 'Owner Privileges',
+      passed: true,
+      status: '✅ No owner-only functions',
+      details: 'No centralized owner control detected - more decentralized',
     })
   }
   
@@ -423,7 +528,8 @@ function analyzeSourceCode(analysis, sourceCode) {
   // 5. PAUSE MECHANISM
   // ==========================================
   const pausePattern = /function\s+pause|paused\s*=\s*true|_paused/i
-  if (pausePattern.test(sourceCode)) {
+  const hasPauseFunction = pausePattern.test(sourceCode)
+  if (hasPauseFunction) {
     const pauseOwnerOnly = /function\s+pause[^{]*onlyowner/i
     if (pauseOwnerOnly.test(sourceCode)) {
       analysis.risks.push({
@@ -432,6 +538,12 @@ function analyzeSourceCode(analysis, sourceCode) {
         description: '⚠️ Owner can pause all transfers',
         details: 'Owner has the ability to pause all token transfers, effectively locking all user funds in the contract. This is a centralization risk.',
       })
+      analysis.securityChecks.push({
+        check: 'Pause Mechanism',
+        passed: false,
+        status: '❌ Owner can pause',
+        details: 'Owner can pause all transfers - funds can be locked',
+      })
     } else {
       analysis.risks.push({
         type: 'Pause Mechanism',
@@ -439,14 +551,28 @@ function analyzeSourceCode(analysis, sourceCode) {
         description: '🚨 CRITICAL: Pause function may be publicly accessible',
         details: 'Pause mechanism detected but access control is unclear. This could allow anyone to pause the contract.',
       })
+      analysis.securityChecks.push({
+        check: 'Pause Mechanism',
+        passed: false,
+        status: '❌ Pause may be public',
+        details: 'Pause function exists but access control unclear',
+      })
     }
+  } else {
+    analysis.securityChecks.push({
+      check: 'Pause Mechanism',
+      passed: true,
+      status: '✅ No pause function',
+      details: 'No pause mechanism - transfers cannot be stopped',
+    })
   }
   
   // ==========================================
   // 6. BLACKLIST MECHANISM
   // ==========================================
   const blacklistPattern = /blacklist|isblacklisted|_blacklist/i
-  if (blacklistPattern.test(sourceCode)) {
+  const hasBlacklistFunction = blacklistPattern.test(sourceCode)
+  if (hasBlacklistFunction) {
     const blacklistOwnerOnly = /function\s+(addblacklist|removeblacklist|setblacklist)[^{]*onlyowner/i
     if (blacklistOwnerOnly.test(sourceCode)) {
       analysis.risks.push({
@@ -455,6 +581,12 @@ function analyzeSourceCode(analysis, sourceCode) {
         description: '⚠️ Owner can blacklist addresses',
         details: 'Owner can add addresses to a blacklist, preventing them from buying or selling tokens. This is a centralization risk and can be used to censor users.',
       })
+      analysis.securityChecks.push({
+        check: 'Blacklist Function',
+        passed: false,
+        status: '❌ Owner can blacklist',
+        details: 'Owner can blacklist addresses - users can be censored',
+      })
     } else {
       analysis.risks.push({
         type: 'Blacklist Function',
@@ -462,14 +594,28 @@ function analyzeSourceCode(analysis, sourceCode) {
         description: '🚨 CRITICAL: Blacklist function may be publicly accessible',
         details: 'Blacklist mechanism detected but access control is unclear.',
       })
+      analysis.securityChecks.push({
+        check: 'Blacklist Function',
+        passed: false,
+        status: '❌ Blacklist may be public',
+        details: 'Blacklist function exists but access control unclear',
+      })
     }
+  } else {
+    analysis.securityChecks.push({
+      check: 'Blacklist Function',
+      passed: true,
+      status: '✅ No blacklist function',
+      details: 'No blacklist mechanism - addresses cannot be censored',
+    })
   }
   
   // ==========================================
   // 7. TAX/FEE MECHANISM
   // ==========================================
   const taxPattern = /tax|fee|_tax|_fee|transfertax|buytax|selltax/i
-  if (taxPattern.test(sourceCode)) {
+  const hasTaxFunction = taxPattern.test(sourceCode)
+  if (hasTaxFunction) {
     const taxOwnerOnly = /function\s+(settax|setfee|changetax|changefee)[^{]*onlyowner/i
     if (taxOwnerOnly.test(sourceCode)) {
       analysis.risks.push({
@@ -478,14 +624,35 @@ function analyzeSourceCode(analysis, sourceCode) {
         description: 'Owner can change tax/fee rates',
         details: 'Owner can modify transaction taxes or fees at any time. This can make trading unprofitable or change token economics.',
       })
+      analysis.securityChecks.push({
+        check: 'Dynamic Tax/Fee',
+        passed: false,
+        status: '❌ Owner can change tax/fee',
+        details: 'Owner can modify transaction taxes/fees at any time',
+      })
+    } else {
+      analysis.securityChecks.push({
+        check: 'Tax/Fee Control',
+        passed: true,
+        status: '✅ Fixed tax/fee',
+        details: 'Tax/fee rates are fixed - owner cannot change them',
+      })
     }
+  } else {
+    analysis.securityChecks.push({
+      check: 'Tax/Fee Mechanism',
+      passed: true,
+      status: '✅ No tax/fee',
+      details: 'No transaction taxes or fees',
+    })
   }
   
   // ==========================================
   // 8. MAX WALLET/HOLD LIMITS
   // ==========================================
   const maxWalletPattern = /maxwallet|maxhold|maximumhold|_maxwallet/i
-  if (maxWalletPattern.test(sourceCode)) {
+  const hasMaxWalletFunction = maxWalletPattern.test(sourceCode)
+  if (hasMaxWalletFunction) {
     const maxWalletOwnerOnly = /function\s+(setmaxwallet|setmaxhold)[^{]*onlyowner/i
     if (maxWalletOwnerOnly.test(sourceCode)) {
       analysis.risks.push({
@@ -494,7 +661,20 @@ function analyzeSourceCode(analysis, sourceCode) {
         description: 'Owner can set maximum wallet/hold limits',
         details: 'Owner can limit how many tokens a single wallet can hold. This can prevent large purchases or force token distribution.',
       })
+      analysis.securityChecks.push({
+        check: 'Max Wallet Limit',
+        passed: false,
+        status: '❌ Owner can set max wallet',
+        details: 'Owner can limit token holdings per wallet',
+      })
     }
+  } else {
+    analysis.securityChecks.push({
+      check: 'Max Wallet Limit',
+      passed: true,
+      status: '✅ No max wallet limit',
+      details: 'No maximum wallet/hold restrictions',
+    })
   }
   
   // ==========================================
@@ -512,15 +692,28 @@ function analyzeSourceCode(analysis, sourceCode) {
   // 10. REENTRANCY PROTECTION
   // ==========================================
   const reentrancyPattern = /reentrancyguard|nonreentrant|reentrancy/i
-  if (reentrancyPattern.test(sourceCode)) {
+  const hasReentrancyProtection = reentrancyPattern.test(sourceCode)
+  if (hasReentrancyProtection) {
     analysis.safeFeatures.push({
       type: 'Reentrancy Protection',
       description: '✅ Reentrancy guard implemented (safe)',
+    })
+    analysis.securityChecks.push({
+      check: 'Reentrancy Protection',
+      passed: true,
+      status: '✅ Reentrancy guard implemented',
+      details: 'Contract is protected against reentrancy attacks',
     })
   } else {
     analysis.warnings.push({
       type: 'Reentrancy Risk',
       description: 'No reentrancy protection detected - contract may be vulnerable to reentrancy attacks',
+    })
+    analysis.securityChecks.push({
+      check: 'Reentrancy Protection',
+      passed: false,
+      status: '❌ No reentrancy protection',
+      details: 'Contract may be vulnerable to reentrancy attacks',
     })
   }
   
@@ -528,12 +721,38 @@ function analyzeSourceCode(analysis, sourceCode) {
   // 11. MULTI-SIG CHECK
   // ==========================================
   const multisigPattern = /multisig|gnosis|safe|require.*approval/i
-  if (multisigPattern.test(sourceCode)) {
+  const hasMultisig = multisigPattern.test(sourceCode)
+  if (hasMultisig) {
     analysis.safeFeatures.push({
       type: 'Multi-Sig Support',
       description: '✅ Multi-signature wallet support detected (more secure)',
     })
+    analysis.securityChecks.push({
+      check: 'Multi-Sig Support',
+      passed: true,
+      status: '✅ Multi-sig support',
+      details: 'Multi-signature wallet support detected - more secure',
+    })
+  } else {
+    analysis.securityChecks.push({
+      check: 'Multi-Sig Support',
+      passed: false,
+      status: '⚠️ No multi-sig detected',
+      details: 'No multi-signature wallet support detected',
+    })
   }
+  
+  // ==========================================
+  // 12. CONTRACT VERIFICATION CHECK
+  // ==========================================
+  analysis.securityChecks.push({
+    check: 'Contract Verification',
+    passed: analysis.isVerified,
+    status: analysis.isVerified ? '✅ Verified' : '❌ Not verified',
+    details: analysis.isVerified 
+      ? 'Contract source code is verified on blockchain explorer'
+      : 'Contract source code is not verified - cannot perform full security analysis',
+  })
 }
 
 // Calculate security score (0-100)
