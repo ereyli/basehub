@@ -606,44 +606,124 @@ export default function ContractSecurity() {
                       <div
                         key={index}
                         style={{
-                          padding: '16px',
-                          background: risk.severity === 'High' 
+                          padding: '20px',
+                          background: risk.severity === 'Critical' || risk.severity === 'High'
                             ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)'
                             : 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                          border: `2px solid ${risk.severity === 'High' ? '#ef4444' : '#f59e0b'}`,
+                          border: `2px solid ${risk.severity === 'Critical' ? '#dc2626' : risk.severity === 'High' ? '#ef4444' : '#f59e0b'}`,
                           borderRadius: '12px',
+                          marginBottom: '12px',
                         }}
                       >
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: '10px',
-                          marginBottom: '8px',
+                          marginBottom: '12px',
                         }}>
-                          <AlertTriangle size={20} style={{ color: risk.severity === 'High' ? '#ef4444' : '#f59e0b' }} />
+                          <AlertTriangle size={22} style={{ 
+                            color: risk.severity === 'Critical' ? '#dc2626' : risk.severity === 'High' ? '#ef4444' : '#f59e0b' 
+                          }} />
                           <div style={{
-                            fontSize: '16px',
-                            fontWeight: '700',
+                            fontSize: '18px',
+                            fontWeight: '800',
                             color: '#1f2937',
                           }}>
-                            {risk.type} ({risk.severity} Risk)
+                            {risk.type}
+                          </div>
+                          <div style={{
+                            fontSize: '12px',
+                            fontWeight: '700',
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            background: risk.severity === 'Critical' ? '#dc2626' : risk.severity === 'High' ? '#ef4444' : '#f59e0b',
+                            color: 'white',
+                            textTransform: 'uppercase',
+                          }}>
+                            {risk.severity} Risk
                           </div>
                         </div>
                         <div style={{
-                          fontSize: '14px',
+                          fontSize: '15px',
                           color: '#4b5563',
-                          marginBottom: '4px',
+                          marginBottom: '8px',
+                          fontWeight: '600',
                         }}>
                           {risk.description}
                         </div>
                         {risk.details && (
                           <div style={{
-                            fontSize: '13px',
+                            fontSize: '14px',
                             color: '#6b7280',
                             marginTop: '8px',
-                            fontStyle: 'italic',
+                            lineHeight: '1.6',
+                            padding: '12px',
+                            background: 'rgba(0, 0, 0, 0.03)',
+                            borderRadius: '8px',
                           }}>
                             {risk.details}
+                          </div>
+                        )}
+                        {risk.indicators && risk.indicators.length > 0 && (
+                          <div style={{
+                            marginTop: '12px',
+                            padding: '12px',
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            borderRadius: '8px',
+                          }}>
+                            <div style={{
+                              fontSize: '13px',
+                              fontWeight: '700',
+                              color: '#991b1b',
+                              marginBottom: '6px',
+                            }}>
+                              Honeypot Indicators:
+                            </div>
+                            <ul style={{
+                              margin: 0,
+                              paddingLeft: '20px',
+                              fontSize: '13px',
+                              color: '#7f1d1d',
+                            }}>
+                              {risk.indicators.map((indicator, idx) => (
+                                <li key={idx} style={{ marginBottom: '4px' }}>
+                                  {indicator}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {risk.dangerousFunctions && risk.dangerousFunctions.length > 0 && (
+                          <div style={{
+                            marginTop: '12px',
+                            padding: '12px',
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            borderRadius: '8px',
+                          }}>
+                            <div style={{
+                              fontSize: '13px',
+                              fontWeight: '700',
+                              color: '#991b1b',
+                              marginBottom: '6px',
+                            }}>
+                              Dangerous Owner Functions:
+                            </div>
+                            <div style={{
+                              fontSize: '13px',
+                              color: '#7f1d1d',
+                            }}>
+                              {risk.dangerousFunctions.join(', ')}
+                            </div>
+                          </div>
+                        )}
+                        {risk.functionCount && (
+                          <div style={{
+                            marginTop: '8px',
+                            fontSize: '12px',
+                            color: '#6b7280',
+                            fontStyle: 'italic',
+                          }}>
+                            Total owner functions: {risk.functionCount}
                           </div>
                         )}
                       </div>
