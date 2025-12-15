@@ -73,7 +73,7 @@ export default function ContractSecurity() {
     if (score >= 80) return '#10b981' // green
     if (score >= 60) return '#3b82f6' // blue
     if (score >= 40) return '#f59e0b' // yellow
-    return '#ef4444' // red
+    return '#dc2626' // dark red for critical
   }
 
   const getScoreEmoji = (score) => {
@@ -81,6 +81,13 @@ export default function ContractSecurity() {
     if (score >= 60) return '⚠️'
     if (score >= 40) return '🔴'
     return '🚨'
+  }
+
+  const getSeverityColor = (severity) => {
+    if (severity === 'Critical') return '#dc2626'
+    if (severity === 'High') return '#ef4444'
+    if (severity === 'Medium') return '#f59e0b'
+    return '#6b7280'
   }
 
   return (
@@ -608,9 +615,11 @@ export default function ContractSecurity() {
                         style={{
                           padding: '20px',
                           background: risk.severity === 'Critical' || risk.severity === 'High'
-                            ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)'
+                            ? risk.severity === 'Critical'
+                              ? 'linear-gradient(135deg, #fecaca 0%, #fee2e2 100%)'
+                              : 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)'
                             : 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                          border: `2px solid ${risk.severity === 'Critical' ? '#dc2626' : risk.severity === 'High' ? '#ef4444' : '#f59e0b'}`,
+                          border: `2px solid ${getSeverityColor(risk.severity)}`,
                           borderRadius: '12px',
                           marginBottom: '12px',
                         }}
@@ -622,7 +631,7 @@ export default function ContractSecurity() {
                           marginBottom: '12px',
                         }}>
                           <AlertTriangle size={22} style={{ 
-                            color: risk.severity === 'Critical' ? '#dc2626' : risk.severity === 'High' ? '#ef4444' : '#f59e0b' 
+                            color: getSeverityColor(risk.severity)
                           }} />
                           <div style={{
                             fontSize: '18px',
@@ -636,7 +645,7 @@ export default function ContractSecurity() {
                             fontWeight: '700',
                             padding: '4px 10px',
                             borderRadius: '6px',
-                            background: risk.severity === 'Critical' ? '#dc2626' : risk.severity === 'High' ? '#ef4444' : '#f59e0b',
+                            background: getSeverityColor(risk.severity),
                             color: 'white',
                             textTransform: 'uppercase',
                           }}>
