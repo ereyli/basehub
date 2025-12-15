@@ -210,6 +210,7 @@ function FarcasterAppContent() {
             <Route path="/ai-nft" element={<AINFTLaunchpad />} />
             <Route path="/share" element={<SharePage />} />
             <Route path="/wallet-analysis" element={<WalletAnalysis />} />
+            <Route path="/contract-security" element={<ContractSecurity />} />
           </Routes>
         </main>
       </div>
@@ -244,6 +245,7 @@ function WebAppContent() {
             <Route path="/ai-nft" element={<AINFTLaunchpad />} />
             <Route path="/share" element={<SharePage />} />
             <Route path="/wallet-analysis" element={<WalletAnalysis />} />
+            <Route path="/contract-security" element={<ContractSecurity />} />
           </Routes>
         </main>
       </div>
