@@ -233,126 +233,305 @@ async function analyzeContractSecurity(contractAddress, selectedNetwork = 'ether
 function analyzeSourceCode(analysis, sourceCode) {
   const code = sourceCode.toLowerCase()
   
-  // Honeypot detection patterns
-  const honeypotPatterns = [
-    /require\s*\(\s*whitelist\s*\[/i,
-    /require\s*\(\s*!isblacklisted\s*\[/i,
-    /require\s*\(\s*balanceof\s*\[from\]\s*>=\s*amount/i,
-    /require\s*\(\s*allowed\s*\[from\]\s*\[msg\.sender\]\s*>=\s*amount/i,
-    /transfer\s*\(\s*from\s*,\s*to\s*,\s*amount\s*\)\s*\{[^}]*require\s*\(/i,
-  ]
+  // ==========================================
+  // 1. HONEYPOT DETECTION - Detailed Analysis
+  // ==========================================
+  let honeypotRisk = false
+  const honeypotIndicators = []
   
-  honeypotPatterns.forEach((pattern, index) => {
-    if (pattern.test(sourceCode)) {
-      analysis.risks.push({
-        type: 'Honeypot',
-        severity: 'High',
-        description: 'Potential honeypot detected: Transfer restrictions found in contract code',
-        details: 'This contract may prevent users from selling tokens after purchase.',
-      })
-    }
-  })
-  
-  // Mint function analysis
-  const mintPattern = /function\s+mint/i
-  if (mintPattern.test(sourceCode)) {
-    const onlyOwnerPattern = /function\s+mint[^{]*onlyowner/i
-    const publicMintPattern = /function\s+mint[^{]*public/i
-    
-    if (onlyOwnerPattern.test(sourceCode)) {
-      analysis.safeFeatures.push({
-        type: 'Mint Control',
-        description: 'Mint function is owner-only (safe)',
-      })
-    } else if (publicMintPattern.test(sourceCode)) {
-      analysis.risks.push({
-        type: 'Unlimited Mint',
-        severity: 'High',
-        description: 'Public mint function detected - unlimited token supply possible',
-        details: 'Anyone can mint new tokens, which can devalue existing holdings.',
-      })
-    } else {
-      analysis.warnings.push({
-        type: 'Mint Function',
-        description: 'Mint function exists but access control unclear',
-      })
-    }
+  // Check for whitelist restrictions in transfer
+  if (/whitelist\s*\[.*from.*\]|whitelist\s*\[.*msg\.sender.*\]/i.test(sourceCode)) {
+    honeypotRisk = true
+    honeypotIndicators.push('Whitelist check in transfer function')
   }
   
-  // Burn function detection
-  const burnPattern = /function\s+burn/i
-  if (burnPattern.test(sourceCode)) {
+  // Check for blacklist restrictions
+  if (/isblacklisted\s*\[.*from.*\]|blacklist\s*\[.*from.*\]|!isblacklisted/i.test(sourceCode)) {
+    honeypotRisk = true
+    honeypotIndicators.push('Blacklist check in transfer function')
+  }
+  
+  // Check for balance restrictions (can't sell if balance too low)
+  if (/require\s*\(\s*balanceof\s*\[.*from.*\]\s*>=\s*amount|balanceof\s*\[.*from.*\]\s*<\s*amount/i.test(sourceCode)) {
+    honeypotRisk = true
+    honeypotIndicators.push('Balance restriction in transfer')
+  }
+  
+  // Check for approval restrictions
+  if (/require\s*\(\s*allowed\s*\[.*from.*\]\s*\[.*msg\.sender.*\]\s*>=\s*amount/i.test(sourceCode)) {
+    honeypotRisk = true
+    honeypotIndicators.push('Approval restriction in transferFrom')
+  }
+  
+  // Check for custom transfer restrictions
+  if (/transfer\s*\([^)]*\)\s*\{[^}]*require\s*\([^}]*from[^}]*\)/i.test(sourceCode) && 
+      !/standard\s*erc20|erc20\s*standard/i.test(sourceCode)) {
+    honeypotRisk = true
+    honeypotIndicators.push('Custom transfer restrictions detected')
+  }
+  
+  // Check for sell restrictions (can't transfer to DEX/router)
+  if (/uniswap|pancakeswap|router|dex/i.test(sourceCode) && 
+      /require\s*\(\s*to\s*!=\s*.*router|require\s*\(\s*to\s*!=\s*.*dex/i.test(sourceCode)) {
+    honeypotRisk = true
+    honeypotIndicators.push('DEX/router transfer restrictions')
+  }
+  
+  if (honeypotRisk) {
+    analysis.risks.push({
+      type: 'Honeypot Detected',
+      severity: 'High',
+      description: '⚠️ POTENTIAL HONEYPOT: Transfer restrictions found',
+      details: `This contract may prevent users from selling tokens. Indicators: ${honeypotIndicators.join(', ')}. Users may be able to buy but not sell tokens.`,
+      indicators: honeypotIndicators,
+    })
+  } else {
     analysis.safeFeatures.push({
-      type: 'Burn Function',
-      description: 'Burn function available - tokens can be permanently removed',
+      type: 'No Honeypot',
+      description: '✅ No honeypot indicators found - standard transfer function',
     })
   }
   
-  // Owner privileges analysis
-  const ownerPattern = /onlyowner|only\s+owner/i
+  // ==========================================
+  // 2. MINT FUNCTION ANALYSIS - Detailed
+  // ==========================================
+  const mintPattern = /function\s+mint/i
+  if (mintPattern.test(sourceCode)) {
+    // Check if mint has max supply limit
+    const maxSupplyPattern = /maxsupply|maximumsupply|totalsupply.*<=|supply.*limit/i
+    const hasMaxSupply = maxSupplyPattern.test(sourceCode)
+    
+    // Check access control
+    const onlyOwnerPattern = /function\s+mint[^{]*onlyowner|modifier\s+onlyowner[^}]*function\s+mint/i
+    const publicMintPattern = /function\s+mint[^{]*public[^{]*\{/i
+    const hasOwnerControl = onlyOwnerPattern.test(sourceCode)
+    const isPublic = publicMintPattern.test(sourceCode)
+    
+    if (isPublic && !hasMaxSupply) {
+      analysis.risks.push({
+        type: 'Unlimited Public Mint',
+        severity: 'Critical',
+        description: '🚨 CRITICAL: Public mint function with NO supply limit',
+        details: 'Anyone can mint unlimited tokens at any time. This will devalue existing tokens and can lead to infinite inflation.',
+      })
+    } else if (isPublic && hasMaxSupply) {
+      analysis.risks.push({
+        type: 'Public Mint (Limited)',
+        severity: 'Medium',
+        description: 'Public mint function detected (has supply limit)',
+        details: 'Anyone can mint tokens, but there is a maximum supply limit. Still risky as it allows public token creation.',
+      })
+    } else if (hasOwnerControl && !hasMaxSupply) {
+      analysis.risks.push({
+        type: 'Owner-Controlled Unlimited Mint',
+        severity: 'High',
+        description: '⚠️ Owner can mint unlimited tokens',
+        details: 'Owner has mint function without supply limit. Owner can create unlimited tokens, potentially devaluing existing holdings.',
+      })
+    } else if (hasOwnerControl && hasMaxSupply) {
+      analysis.safeFeatures.push({
+        type: 'Controlled Mint',
+        description: '✅ Mint function is owner-only with supply limit (safe)',
+      })
+    } else {
+      analysis.warnings.push({
+        type: 'Mint Function Unclear',
+        description: 'Mint function exists but access control and supply limits are unclear',
+      })
+    }
+  } else {
+    analysis.safeFeatures.push({
+      type: 'No Mint Function',
+      description: '✅ No mint function - fixed supply token (safe)',
+    })
+  }
+  
+  // ==========================================
+  // 3. BURN FUNCTION ANALYSIS
+  // ==========================================
+  const burnPattern = /function\s+burn/i
+  if (burnPattern.test(sourceCode)) {
+    const burnOwnerOnly = /function\s+burn[^{]*onlyowner/i
+    if (burnOwnerOnly.test(sourceCode)) {
+      analysis.warnings.push({
+        type: 'Owner-Only Burn',
+        description: 'Burn function is owner-only - users cannot burn their own tokens',
+      })
+    } else {
+      analysis.safeFeatures.push({
+        type: 'Burn Function',
+        description: '✅ Burn function available - users can permanently remove tokens',
+      })
+    }
+  }
+  
+  // ==========================================
+  // 4. OWNER PRIVILEGES - Detailed Analysis
+  // ==========================================
   const ownerFunctions = []
-  const ownerFunctionPattern = /function\s+(\w+)[^{]*onlyowner/gi
+  const ownerFunctionPattern = /function\s+(\w+)[^{]*(onlyowner|onlyOwner|only\s+owner)/gi
   let match
   while ((match = ownerFunctionPattern.exec(sourceCode)) !== null) {
     ownerFunctions.push(match[1])
   }
   
-  if (ownerFunctions.length > 5) {
+  // Check for specific dangerous owner functions
+  const dangerousFunctions = []
+  if (/function\s+settax|function\s+setfee|function\s+changetax/i.test(sourceCode)) {
+    dangerousFunctions.push('Set Tax/Fee')
+  }
+  if (/function\s+setmaxwallet|function\s+setmaxhold/i.test(sourceCode)) {
+    dangerousFunctions.push('Set Max Wallet/Hold')
+  }
+  if (/function\s+exclude|function\s+include/i.test(sourceCode)) {
+    dangerousFunctions.push('Exclude/Include from fees')
+  }
+  if (/function\s+renounceownership|renounce/i.test(sourceCode)) {
+    analysis.safeFeatures.push({
+      type: 'Renounce Ownership',
+      description: '✅ Contract can renounce ownership (decentralized)',
+    })
+  }
+  
+  if (ownerFunctions.length > 10) {
     analysis.risks.push({
       type: 'Excessive Owner Powers',
+      severity: 'High',
+      description: `⚠️ Owner has ${ownerFunctions.length} owner-only functions`,
+      details: `Owner has significant control: ${ownerFunctions.slice(0, 5).join(', ')}${ownerFunctions.length > 5 ? '...' : ''}. Dangerous functions: ${dangerousFunctions.join(', ') || 'None detected'}. Owner can modify contract behavior, pause transfers, change fees, or blacklist addresses.`,
+      functionCount: ownerFunctions.length,
+      dangerousFunctions: dangerousFunctions,
+    })
+  } else if (ownerFunctions.length > 5) {
+    analysis.risks.push({
+      type: 'Moderate Owner Powers',
       severity: 'Medium',
-      description: `Contract has ${ownerFunctions.length} owner-only functions`,
-      details: 'Owner has significant control over the contract, including potential to pause, blacklist, or modify token behavior.',
+      description: `Owner has ${ownerFunctions.length} owner-only functions`,
+      details: `Owner functions: ${ownerFunctions.join(', ')}. ${dangerousFunctions.length > 0 ? `Dangerous: ${dangerousFunctions.join(', ')}.` : ''}`,
+      functionCount: ownerFunctions.length,
+      dangerousFunctions: dangerousFunctions,
     })
   } else if (ownerFunctions.length > 0) {
     analysis.warnings.push({
       type: 'Owner Functions',
-      description: `Contract has ${ownerFunctions.length} owner-only function(s)`,
+      description: `Contract has ${ownerFunctions.length} owner-only function(s): ${ownerFunctions.join(', ')}`,
+      functionCount: ownerFunctions.length,
     })
   }
   
-  // Pause mechanism
-  const pausePattern = /function\s+pause|paused\s*=\s*true/i
+  // ==========================================
+  // 5. PAUSE MECHANISM
+  // ==========================================
+  const pausePattern = /function\s+pause|paused\s*=\s*true|_paused/i
   if (pausePattern.test(sourceCode)) {
-    analysis.risks.push({
-      type: 'Pause Mechanism',
-      severity: 'Medium',
-      description: 'Contract can be paused by owner',
-      details: 'Owner can pause all transfers, potentially locking user funds.',
-    })
+    const pauseOwnerOnly = /function\s+pause[^{]*onlyowner/i
+    if (pauseOwnerOnly.test(sourceCode)) {
+      analysis.risks.push({
+        type: 'Pause Mechanism',
+        severity: 'High',
+        description: '⚠️ Owner can pause all transfers',
+        details: 'Owner has the ability to pause all token transfers, effectively locking all user funds in the contract. This is a centralization risk.',
+      })
+    } else {
+      analysis.risks.push({
+        type: 'Pause Mechanism',
+        severity: 'Critical',
+        description: '🚨 CRITICAL: Pause function may be publicly accessible',
+        details: 'Pause mechanism detected but access control is unclear. This could allow anyone to pause the contract.',
+      })
+    }
   }
   
-  // Blacklist mechanism
-  const blacklistPattern = /blacklist|isblacklisted/i
+  // ==========================================
+  // 6. BLACKLIST MECHANISM
+  // ==========================================
+  const blacklistPattern = /blacklist|isblacklisted|_blacklist/i
   if (blacklistPattern.test(sourceCode)) {
-    analysis.risks.push({
-      type: 'Blacklist Function',
-      severity: 'High',
-      description: 'Blacklist mechanism detected',
-      details: 'Owner can blacklist addresses, preventing them from trading tokens.',
-    })
+    const blacklistOwnerOnly = /function\s+(addblacklist|removeblacklist|setblacklist)[^{]*onlyowner/i
+    if (blacklistOwnerOnly.test(sourceCode)) {
+      analysis.risks.push({
+        type: 'Blacklist Function',
+        severity: 'High',
+        description: '⚠️ Owner can blacklist addresses',
+        details: 'Owner can add addresses to a blacklist, preventing them from buying or selling tokens. This is a centralization risk and can be used to censor users.',
+      })
+    } else {
+      analysis.risks.push({
+        type: 'Blacklist Function',
+        severity: 'Critical',
+        description: '🚨 CRITICAL: Blacklist function may be publicly accessible',
+        details: 'Blacklist mechanism detected but access control is unclear.',
+      })
+    }
   }
   
-  // Transfer restrictions
-  const transferRestrictionPattern = /transfer\s*\([^)]*\)\s*\{[^}]*require\s*\([^)]*\)/i
-  if (transferRestrictionPattern.test(sourceCode) && !code.includes('standard erc20')) {
+  // ==========================================
+  // 7. TAX/FEE MECHANISM
+  // ==========================================
+  const taxPattern = /tax|fee|_tax|_fee|transfertax|buytax|selltax/i
+  if (taxPattern.test(sourceCode)) {
+    const taxOwnerOnly = /function\s+(settax|setfee|changetax|changefee)[^{]*onlyowner/i
+    if (taxOwnerOnly.test(sourceCode)) {
+      analysis.risks.push({
+        type: 'Dynamic Tax/Fee',
+        severity: 'Medium',
+        description: 'Owner can change tax/fee rates',
+        details: 'Owner can modify transaction taxes or fees at any time. This can make trading unprofitable or change token economics.',
+      })
+    }
+  }
+  
+  // ==========================================
+  // 8. MAX WALLET/HOLD LIMITS
+  // ==========================================
+  const maxWalletPattern = /maxwallet|maxhold|maximumhold|_maxwallet/i
+  if (maxWalletPattern.test(sourceCode)) {
+    const maxWalletOwnerOnly = /function\s+(setmaxwallet|setmaxhold)[^{]*onlyowner/i
+    if (maxWalletOwnerOnly.test(sourceCode)) {
+      analysis.risks.push({
+        type: 'Max Wallet Limit',
+        severity: 'Medium',
+        description: 'Owner can set maximum wallet/hold limits',
+        details: 'Owner can limit how many tokens a single wallet can hold. This can prevent large purchases or force token distribution.',
+      })
+    }
+  }
+  
+  // ==========================================
+  // 9. TRANSFER RESTRICTIONS
+  // ==========================================
+  const transferRestrictionPattern = /transfer\s*\([^)]*\)\s*\{[^}]*require\s*\([^}]*\)/i
+  if (transferRestrictionPattern.test(sourceCode) && !/standard\s*erc20|erc20\s*standard/i.test(sourceCode)) {
     analysis.warnings.push({
-      type: 'Transfer Restrictions',
-      description: 'Non-standard transfer restrictions detected',
+      type: 'Non-Standard Transfer',
+      description: 'Non-standard transfer restrictions detected - may affect DEX compatibility',
     })
   }
   
-  // Reentrancy protection
-  const reentrancyPattern = /reentrancyguard|nonreentrant/i
+  // ==========================================
+  // 10. REENTRANCY PROTECTION
+  // ==========================================
+  const reentrancyPattern = /reentrancyguard|nonreentrant|reentrancy/i
   if (reentrancyPattern.test(sourceCode)) {
     analysis.safeFeatures.push({
       type: 'Reentrancy Protection',
-      description: 'Reentrancy guard implemented (safe)',
+      description: '✅ Reentrancy guard implemented (safe)',
     })
   } else {
     analysis.warnings.push({
       type: 'Reentrancy Risk',
-      description: 'No reentrancy protection detected',
+      description: 'No reentrancy protection detected - contract may be vulnerable to reentrancy attacks',
+    })
+  }
+  
+  // ==========================================
+  // 11. MULTI-SIG CHECK
+  // ==========================================
+  const multisigPattern = /multisig|gnosis|safe|require.*approval/i
+  if (multisigPattern.test(sourceCode)) {
+    analysis.safeFeatures.push({
+      type: 'Multi-Sig Support',
+      description: '✅ Multi-signature wallet support detected (more secure)',
     })
   }
 }
