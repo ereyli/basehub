@@ -7,6 +7,7 @@ import NetworkGuard from '../components/NetworkGuard'
 
 // Supported networks - must match backend configuration
 const SUPPORTED_NETWORKS = {
+  'base': { name: 'Base', color: '#4a90e2' },
   'ethereum': { name: 'Ethereum', color: '#627eea' },
   'arbitrum': { name: 'Arbitrum', color: '#28a0f0' },
   'abstract': { name: 'Abstract', color: '#9945ff' },
