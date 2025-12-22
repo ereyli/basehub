@@ -868,7 +868,7 @@ const Home = () => {
                             opacity: !isLoadingX402 ? 1 : 0.6,
                             position: 'relative',
                             background: game.color,
-                            padding: '16px',
+                            padding: '24px',
                             borderRadius: '16px',
                             color: 'white',
                             transition: 'all 0.3s ease',
