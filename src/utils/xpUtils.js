@@ -306,13 +306,20 @@ export const recordTransaction = async (transactionData) => {
 export const addBonusXP = async (walletAddress, gameType, isWin) => {
   if (!walletAddress || !gameType) return
 
-  // Base XP for playing
+  // Base XP for playing (varies by game type)
   let baseXP = 10
+  const gameTypeLower = gameType.toLowerCase()
+  
+  if (gameTypeLower === 'gm' || gameTypeLower === 'gn') {
+    baseXP = 30 // GM/GN gives 30 XP
+  } else if (gameTypeLower === 'flip' || gameTypeLower === 'luckynumber' || gameTypeLower === 'diceroll' || gameTypeLower === 'slot') {
+    baseXP = 60 // Flip, Lucky Number, Dice Roll, Slot give 60 XP
+  }
   
   // Bonus XP for winning
   let bonusXP = 0
   if (isWin) {
-    switch (gameType.toLowerCase()) {
+    switch (gameTypeLower) {
       case 'flip':
         bonusXP = 500 // 500 bonus for winning flip
         break

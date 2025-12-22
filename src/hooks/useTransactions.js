@@ -110,8 +110,8 @@ export const useTransactions = () => {
         console.log('⛽ Gas used:', receipt.gasUsed?.toString())
         
         try {
-          await addXP(address, 10) // GM gives 10 XP
-          await recordTransaction(address, 'GM_GAME', 10, txHash) // Record transaction
+          await addXP(address, 30) // GM gives 30 XP
+          await recordTransaction(address, 'GM_GAME', 30, txHash) // Record transaction
           await updateQuestProgress('gmUsed', 1) // Update quest progress
           await updateQuestProgress('transactions', 1) // Update transaction count
           console.log('✅ XP added, transaction recorded, and quest progress updated after confirmation')
@@ -186,8 +186,8 @@ export const useTransactions = () => {
         console.log('✅ GN transaction confirmed!', receipt)
         
         try {
-          await addXP(address, 10) // GN gives 10 XP
-          await recordTransaction(address, 'GN_GAME', 10, txHash) // Record transaction
+          await addXP(address, 30) // GN gives 30 XP
+          await recordTransaction(address, 'GN_GAME', 30, txHash) // Record transaction
           await updateQuestProgress('gnUsed', 1) // Update quest progress
           await updateQuestProgress('transactions', 1) // Update transaction count
           console.log('✅ XP added, transaction recorded, and quest progress updated after confirmation')
@@ -274,7 +274,7 @@ export const useTransactions = () => {
         
                try {
                  await addBonusXP(address, 'flip', playerWon)
-                 const xpEarned = playerWon ? 10 + 500 : 10
+                 const xpEarned = playerWon ? 60 + 500 : 60
                  await recordTransaction(address, 'FLIP_GAME', xpEarned, txHash) // Record transaction
                  await updateQuestProgress('coinFlipUsed', 1) // Update quest progress
                  await updateQuestProgress('transactions', 1) // Update transaction count
@@ -288,7 +288,7 @@ export const useTransactions = () => {
           playerChoice: selectedSide, 
           result: actualResult, 
           isWin: playerWon,
-          xpEarned: playerWon ? 510 : 10
+          xpEarned: playerWon ? 560 : 60
         }
         
       } catch (confirmError) {
@@ -362,7 +362,7 @@ export const useTransactions = () => {
         
                try {
                  await addBonusXP(address, 'luckynumber', playerWon)
-                 const xpEarned = playerWon ? 10 + 1000 : 10
+                 const xpEarned = playerWon ? 60 + 1000 : 60
                  await recordTransaction(address, 'LUCKY_NUMBER', xpEarned, txHash) // Record transaction
                  await updateQuestProgress('luckyNumberUsed', 1) // Update quest progress
                  await updateQuestProgress('transactions', 1) // Update transaction count
@@ -376,7 +376,7 @@ export const useTransactions = () => {
           playerGuess: guess, 
           winningNumber, 
           isWin: playerWon,
-          xpEarned: playerWon ? 1010 : 10
+          xpEarned: playerWon ? 1060 : 60
         }
         
       } catch (confirmError) {
@@ -451,7 +451,7 @@ export const useTransactions = () => {
         
                try {
                  await addBonusXP(address, 'diceroll', playerWon)
-                 const xpEarned = playerWon ? 10 + 1500 : 10
+                 const xpEarned = playerWon ? 60 + 1500 : 60
                  await recordTransaction(address, 'DICE_ROLL', xpEarned, txHash) // Record transaction
                  await updateQuestProgress('diceRollUsed', 1) // Update quest progress
                  await updateQuestProgress('transactions', 1) // Update transaction count
@@ -467,7 +467,7 @@ export const useTransactions = () => {
           dice2,
           diceTotal, 
           isWin: playerWon,
-          xpEarned: playerWon ? 1510 : 10
+          xpEarned: playerWon ? 1560 : 60
         }
         
       } catch (confirmError) {
@@ -500,7 +500,7 @@ export const useTransactions = () => {
       console.log('📡 Sending Slot transaction to blockchain...')
       
       let txHash
-      let xpEarned = 10 // Base XP for slot
+      let xpEarned = 60 // Base XP for slot
       
       if (action === 'purchaseCredits') {
         // Purchase credits
@@ -595,7 +595,7 @@ export const useTransactions = () => {
           
           console.log('🎰 Max count:', maxCount, 'Bonus XP:', bonusXp)
           
-          xpEarned = 10 + bonusXp // BASE_XP + bonus
+          xpEarned = 60 + bonusXp // BASE_XP + bonus
           
           try {
             await addXP(address, xpEarned)
@@ -616,8 +616,8 @@ export const useTransactions = () => {
         } else {
           // Credits purchase
           try {
-            await addXP(address, 10) // XP for purchasing credits
-            await recordTransaction(address, 'SLOT_GAME', 10, txHash)
+            await addXP(address, 60) // XP for purchasing credits
+            await recordTransaction(address, 'SLOT_GAME', 60, txHash)
             console.log('✅ XP added for credit purchase')
           } catch (xpError) {
             console.error('Error adding XP for credit purchase:', xpError)

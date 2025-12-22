@@ -106,7 +106,7 @@ const Home = () => {
     
     try {
       const result = await sendGNTransaction('GN from BaseHub! 🌙')
-      setSuccessMessage(`🌙 GN sent successfully! +10 XP earned!`)
+      setSuccessMessage(`🌙 GN sent successfully! +30 XP earned!`)
       setTimeout(() => setSuccessMessage(''), 3000)
     } catch (error) {
       console.error('GN transaction failed:', error)
@@ -165,7 +165,7 @@ const Home = () => {
       icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" loading="lazy" style={{ width: '50px', height: '50px', borderRadius: '25px', objectFit: 'cover' }} />,
       path: '/gm',
       color: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-      xpReward: '10 XP',
+      xpReward: '30 XP',
       bonusXP: null
     },
     {
@@ -175,7 +175,7 @@ const Home = () => {
       icon: <img src="/crypto-logos/basahub logo/GN.png" alt="GN Game" loading="lazy" style={{ width: '50px', height: '50px', borderRadius: '25px', objectFit: 'cover' }} />,
       path: '/gn',
       color: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-      xpReward: '10 XP',
+      xpReward: '30 XP',
       bonusXP: null
     },
     {
@@ -258,7 +258,7 @@ const Home = () => {
       icon: <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip" loading="lazy" style={{ width: '50px', height: '50px', borderRadius: '12px' }} />,
       path: '/flip',
       color: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-      xpReward: '10 XP',
+      xpReward: '60 XP',
       bonusXP: '+500 XP (Win)'
     },
     {
@@ -268,7 +268,7 @@ const Home = () => {
       icon: <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number" loading="lazy" style={{ width: '50px', height: '50px', borderRadius: '12px' }} />,
       path: '/lucky',
       color: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-      xpReward: '10 XP',
+      xpReward: '60 XP',
       bonusXP: '+1000 XP (Win)'
     },
     {
@@ -278,7 +278,7 @@ const Home = () => {
       icon: <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll" loading="lazy" style={{ width: '50px', height: '50px', borderRadius: '12px' }} />,
       path: '/dice',
       color: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-      xpReward: '10 XP',
+      xpReward: '60 XP',
       bonusXP: '+1500 XP (Win)'
     },
     {
@@ -288,7 +288,7 @@ const Home = () => {
       icon: <img src="/crypto-logos/basahub logo/CryptoSloth.png" alt="Crypto Slots" loading="lazy" style={{ width: '50px', height: '50px', borderRadius: '12px' }} />,
       path: '/slot',
       color: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-      xpReward: '10 XP',
+      xpReward: '60 XP',
       bonusXP: '+2000 XP (Combo)'
     },
   ]
