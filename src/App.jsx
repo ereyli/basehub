@@ -94,24 +94,26 @@ function FarcasterAppContent() {
       }}>
         {/* Logo with animation */}
         <div style={{
-          width: '100px',
-          height: '100px',
-          background: 'rgba(255, 255, 255, 0.1)',
+          width: '120px',
+          height: '120px',
+          background: 'transparent',
           borderRadius: '20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           marginBottom: '30px',
-          border: '2px solid rgba(255, 255, 255, 0.2)',
           animation: 'pulse 2s infinite'
         }}>
-          <div style={{
-            fontSize: '32px',
-            fontWeight: 'bold',
-            color: 'white'
-          }}>
-            🎮
-          </div>
+          <img 
+            src="/icon.png" 
+            alt="BaseHub Logo" 
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              borderRadius: '20px'
+            }}
+          />
         </div>
 
         {/* App Title */}
