@@ -552,9 +552,9 @@ const Home = () => {
                         transition: 'all 0.3s ease'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                         {game.icon}
-                        <h3 style={{ fontSize: '22px', fontWeight: 'bold', margin: 0, color: 'white' }}>
+                        <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white' }}>
                           {game.title}
                         </h3>
                       </div>
@@ -618,7 +618,7 @@ const Home = () => {
                     >
                       <div style={{
                         background: game.color,
-                        padding: '24px',
+                        padding: '16px',
                         borderRadius: '16px',
                         color: 'white',
                         transition: 'all 0.3s ease',
@@ -706,7 +706,7 @@ const Home = () => {
                     >
                       <div style={{
                         background: game.color,
-                        padding: '24px',
+                        padding: '16px',
                         borderRadius: '16px',
                         color: 'white',
                         transition: 'all 0.3s ease',
@@ -779,7 +779,7 @@ const Home = () => {
                     >
                       <div style={{
                         background: game.color,
-                        padding: '24px',
+                        padding: '16px',
                         borderRadius: '16px',
                         color: 'white',
                         transition: 'all 0.3s ease',
