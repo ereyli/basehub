@@ -231,7 +231,7 @@ function WebAppContent() {
       <div className="App web-app">
         <WebHeader />
         <WebXPDisplay />
-        <main className="container" style={{ paddingBottom: '100px' }}>
+        <main className="container" style={{ paddingLeft: '80px', paddingBottom: '40px' }}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/gm" element={<GMGame />} />

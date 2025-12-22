@@ -89,30 +89,31 @@ const WebBottomNav = () => {
 
   return (
     <>
-      {/* Bottom Navigation Bar */}
+      {/* Left Sidebar Navigation */}
       <div style={{
         position: 'fixed',
-        bottom: '0',
+        top: '80px',
         left: '0',
-        right: '0',
+        bottom: '0',
+        width: '80px',
         background: 'rgba(255, 255, 255, 0.98)',
         backdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(0, 0, 0, 0.1)',
-        zIndex: 9999,
-        padding: '12px 8px',
-        boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.1)',
+        borderRight: '1px solid rgba(0, 0, 0, 0.1)',
+        zIndex: 999,
+        padding: '20px 8px',
+        boxShadow: '2px 0 10px rgba(0, 0, 0, 0.1)',
         display: 'flex',
-        justifyContent: 'space-around',
+        flexDirection: 'column',
+        justifyContent: 'flex-start',
         alignItems: 'center',
-        gap: '4px',
-        maxWidth: '1600px',
-        margin: '0 auto'
+        gap: '12px',
+        overflowY: 'auto'
       }}>
         {/* GM/GN Tab */}
         <button
           onClick={() => handleTabClick('gmgn')}
           style={{
-            flex: 1,
+            width: '100%',
             padding: '12px 8px',
             border: 'none',
             borderRadius: '12px',
@@ -120,33 +121,33 @@ const WebBottomNav = () => {
               ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
               : 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)',
             color: activeTab === 'gmgn' ? 'white' : '#10b981',
-            fontSize: '12px',
+            fontSize: '10px',
             fontWeight: '700',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '6px',
+            gap: '4px',
             transition: 'all 0.2s ease',
-            minHeight: '64px',
+            minHeight: '70px',
             justifyContent: 'center',
             boxShadow: activeTab === 'gmgn' 
               ? '0 4px 12px rgba(16, 185, 129, 0.3)' 
               : '0 2px 4px rgba(16, 185, 129, 0.1)'
           }}
         >
-          <div style={{ display: 'flex', gap: '4px' }}>
-            <Sun size={18} />
-            <Moon size={18} />
+          <div style={{ display: 'flex', gap: '2px' }}>
+            <Sun size={20} />
+            <Moon size={20} />
           </div>
-          <span>GM/GN</span>
+          <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>GM/GN</span>
         </button>
 
         {/* GAMING Tab */}
         <button
           onClick={() => handleTabClick('gaming')}
           style={{
-            flex: 1,
+            width: '100%',
             padding: '12px 8px',
             border: 'none',
             borderRadius: '12px',
@@ -154,30 +155,30 @@ const WebBottomNav = () => {
               ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' 
               : 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.15) 100%)',
             color: activeTab === 'gaming' ? 'white' : '#f59e0b',
-            fontSize: '12px',
+            fontSize: '10px',
             fontWeight: '700',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '6px',
+            gap: '4px',
             transition: 'all 0.2s ease',
-            minHeight: '64px',
+            minHeight: '70px',
             justifyContent: 'center',
             boxShadow: activeTab === 'gaming' 
               ? '0 4px 12px rgba(245, 158, 11, 0.3)' 
               : '0 2px 4px rgba(245, 158, 11, 0.1)'
           }}
         >
-          <Gamepad2 size={18} />
-          <span>GAMING</span>
+          <Gamepad2 size={20} />
+          <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>GAMING</span>
         </button>
 
         {/* NFT Tab */}
         <button
           onClick={() => handleTabClick('nft')}
           style={{
-            flex: 1,
+            width: '100%',
             padding: '12px 8px',
             border: 'none',
             borderRadius: '12px',
@@ -185,30 +186,30 @@ const WebBottomNav = () => {
               ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' 
               : 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(124, 58, 237, 0.15) 100%)',
             color: activeTab === 'nft' ? 'white' : '#8b5cf6',
-            fontSize: '12px',
+            fontSize: '10px',
             fontWeight: '700',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '6px',
+            gap: '4px',
             transition: 'all 0.2s ease',
-            minHeight: '64px',
+            minHeight: '70px',
             justifyContent: 'center',
             boxShadow: activeTab === 'nft' 
               ? '0 4px 12px rgba(139, 92, 246, 0.3)' 
               : '0 2px 4px rgba(139, 92, 246, 0.1)'
           }}
         >
-          <Image size={18} />
-          <span>NFT</span>
+          <Image size={20} />
+          <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>NFT</span>
         </button>
 
         {/* ANALYSIS Tab */}
         <button
           onClick={() => handleTabClick('analysis')}
           style={{
-            flex: 1,
+            width: '100%',
             padding: '12px 8px',
             border: 'none',
             borderRadius: '12px',
@@ -216,30 +217,30 @@ const WebBottomNav = () => {
               ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' 
               : 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(29, 78, 216, 0.15) 100%)',
             color: activeTab === 'analysis' ? 'white' : '#3b82f6',
-            fontSize: '12px',
+            fontSize: '10px',
             fontWeight: '700',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '6px',
+            gap: '4px',
             transition: 'all 0.2s ease',
-            minHeight: '64px',
+            minHeight: '70px',
             justifyContent: 'center',
             boxShadow: activeTab === 'analysis' 
               ? '0 4px 12px rgba(59, 130, 246, 0.3)' 
               : '0 2px 4px rgba(59, 130, 246, 0.1)'
           }}
         >
-          <TrendingUp size={18} />
-          <span>ANALYSIS</span>
+          <TrendingUp size={20} />
+          <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>ANALYSIS</span>
         </button>
 
         {/* DEPLOY Tab */}
         <button
           onClick={() => handleTabClick('deploy')}
           style={{
-            flex: 1,
+            width: '100%',
             padding: '12px 8px',
             border: 'none',
             borderRadius: '12px',
@@ -247,23 +248,23 @@ const WebBottomNav = () => {
               ? 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)' 
               : 'linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(219, 39, 119, 0.15) 100%)',
             color: activeTab === 'deploy' ? 'white' : '#ec4899',
-            fontSize: '12px',
+            fontSize: '10px',
             fontWeight: '700',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '6px',
+            gap: '4px',
             transition: 'all 0.2s ease',
-            minHeight: '64px',
+            minHeight: '70px',
             justifyContent: 'center',
             boxShadow: activeTab === 'deploy' 
               ? '0 4px 12px rgba(236, 72, 153, 0.3)' 
               : '0 2px 4px rgba(236, 72, 153, 0.1)'
           }}
         >
-          <Rocket size={18} />
-          <span>DEPLOY</span>
+          <Rocket size={20} />
+          <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>DEPLOY</span>
         </button>
       </div>
 
@@ -288,21 +289,19 @@ const WebBottomNav = () => {
           {/* Content Panel */}
           <div style={{
             position: 'fixed',
-            bottom: '88px',
-            left: '50%',
-            transform: 'translateX(-50%)',
+            top: '80px',
+            left: '80px',
+            bottom: '0',
             background: 'rgba(255, 255, 255, 0.98)',
             backdropFilter: 'blur(20px)',
-            borderTop: '1px solid rgba(0, 0, 0, 0.1)',
-            zIndex: 9999,
-            padding: '16px',
-            maxHeight: '60vh',
-            maxWidth: '1600px',
-            width: '90%',
+            borderRight: '1px solid rgba(0, 0, 0, 0.1)',
+            zIndex: 998,
+            padding: '24px',
+            maxWidth: '400px',
+            width: '400px',
             overflowY: 'auto',
-            boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.1)',
-            animation: 'slideUp 0.3s ease',
-            borderRadius: '16px 16px 0 0'
+            boxShadow: '4px 0 20px rgba(0, 0, 0, 0.1)',
+            animation: 'slideInLeft 0.3s ease'
           }}>
             {/* Success Message */}
             {successMessage && (
@@ -576,13 +575,13 @@ const WebBottomNav = () => {
 
       {/* Add animations */}
       <style>{`
-        @keyframes slideUp {
+        @keyframes slideInLeft {
           from {
-            transform: translateX(-50%) translateY(100%);
+            transform: translateX(-100%);
             opacity: 0;
           }
           to {
-            transform: translateX(-50%) translateY(0);
+            transform: translateX(0);
             opacity: 1;
           }
         }
