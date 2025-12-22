@@ -99,7 +99,7 @@ const WebBottomNav = () => {
         background: 'rgba(255, 255, 255, 0.98)',
         backdropFilter: 'blur(20px)',
         borderRight: '1px solid rgba(0, 0, 0, 0.1)',
-        zIndex: 999,
+        zIndex: 1000,
         padding: '20px 8px',
         boxShadow: '2px 0 10px rgba(0, 0, 0, 0.1)',
         display: 'flex',
@@ -271,17 +271,17 @@ const WebBottomNav = () => {
       {/* Content Panel - Slides up from bottom */}
       {activeTab && (
         <>
-          {/* Overlay */}
+          {/* Overlay - Only covers main content, not sidebar */}
           <div
             onClick={() => setActiveTab(null)}
             style={{
               position: 'fixed',
-              top: '0',
-              left: '0',
+              top: '80px',
+              left: '80px',
               right: '0',
               bottom: '0',
               background: 'rgba(0, 0, 0, 0.3)',
-              zIndex: 9998,
+              zIndex: 999,
               animation: 'fadeIn 0.2s ease'
             }}
           />
@@ -295,7 +295,7 @@ const WebBottomNav = () => {
             background: 'rgba(255, 255, 255, 0.98)',
             backdropFilter: 'blur(20px)',
             borderRight: '1px solid rgba(0, 0, 0, 0.1)',
-            zIndex: 998,
+            zIndex: 1000,
             padding: '24px',
             maxWidth: '400px',
             width: '400px',
