@@ -854,7 +854,7 @@ const Home = () => {
                   </h2>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                  {games.filter(g => ['deploy', 'x402-premium'].includes(g.id)).map((game) => {
+                  {games.filter(g => ['deploy', 'deploy-erc721', 'deploy-erc1155', 'x402-premium'].includes(g.id)).map((game) => {
                     if (game.id === 'x402-premium') {
                       return (
                         <button
