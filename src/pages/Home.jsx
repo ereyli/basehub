@@ -863,16 +863,18 @@ const Home = () => {
                           style={{ 
                             textDecoration: 'none',
                             border: 'none',
+                            outline: 'none',
                             cursor: !isLoadingX402 ? 'pointer' : 'not-allowed',
                             opacity: !isLoadingX402 ? 1 : 0.6,
                             position: 'relative',
                             background: game.color,
-                            padding: '24px',
+                            padding: '16px',
                             borderRadius: '16px',
                             color: 'white',
                             transition: 'all 0.3s ease',
                             width: '100%',
-                            textAlign: 'left'
+                            textAlign: 'left',
+                            display: 'block'
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', position: 'relative' }}>
