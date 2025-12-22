@@ -528,19 +528,23 @@ const headerStyles = `
 
     .proof-of-usage {
       gap: 8px;
-      padding: 6px 12px;
-    }
-
-    .proof-section {
-      gap: 8px;
+      padding: 6px 10px;
+      display: flex;
+      flex-shrink: 0;
     }
 
     .proof-metric {
       font-size: 11px;
+      gap: 4px;
     }
 
     .proof-label {
       display: none;
+    }
+
+    .proof-value {
+      font-size: 11px;
+      font-weight: 700;
     }
 
     .logo-icon {
@@ -606,18 +610,23 @@ const headerStyles = `
     .proof-of-usage {
       gap: 6px;
       padding: 4px 8px;
-    }
-
-    .proof-section {
-      gap: 6px;
+      display: flex;
+      flex-shrink: 0;
     }
 
     .proof-metric {
       font-size: 10px;
+      gap: 3px;
     }
 
-    .proof-divider {
-      display: none;
+    .proof-metric svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .proof-value {
+      font-size: 10px;
+      font-weight: 700;
     }
   }
 `
