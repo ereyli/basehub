@@ -1733,6 +1733,20 @@ body {
   }
 }
 
+/* Web app - full width desktop layout */
+.web-app .container {
+  max-width: 100%;
+  padding: 0 40px;
+}
+
+@media (min-width: 1200px) {
+  .web-app .container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0 60px;
+  }
+}
+
 /* Button styles */
 .btn {
   display: inline-flex;

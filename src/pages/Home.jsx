@@ -8,7 +8,8 @@ import EmbedMeta from '../components/EmbedMeta'
 import TwitterShareButton from '../components/TwitterShareButton'
 import DailyQuestSystem from '../components/DailyQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'
-import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield } from 'lucide-react'
+import { shouldUseRainbowKit } from '../config/rainbowkit'
+import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon } from 'lucide-react'
 
 const Home = () => {
   const { isConnected } = useAccount()
@@ -31,6 +32,9 @@ const Home = () => {
     // Not in Farcaster environment, continue normally
     isInFarcaster = false
   }
+  
+  // Check if we're on web (not Farcaster)
+  const isWeb = shouldUseRainbowKit()
   
   const [leaderboard, setLeaderboard] = useState([])
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -500,6 +504,469 @@ const Home = () => {
             
           </div>
 
+          {/* Web: Categorized Layout */}
+          {isWeb ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', marginTop: '40px' }}>
+              {/* GM/GN Category */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                borderRadius: '20px',
+                padding: '32px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                border: '2px solid rgba(16, 185, 129, 0.2)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white'
+                  }}>
+                    <Sun size={24} />
+                  </div>
+                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                    GM / GN
+                  </h2>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                  {games.filter(g => g.id === 'gm' || g.id === 'gn').map((game) => (
+                    <button
+                      key={game.id}
+                      onClick={game.id === 'gm' ? handleGMClick : handleGNClick}
+                      disabled={!isConnected || (game.id === 'gm' ? isLoadingGM : isLoadingGN)}
+                      className="game-card"
+                      style={{ 
+                        textDecoration: 'none',
+                        border: 'none',
+                        cursor: isConnected && !(game.id === 'gm' ? isLoadingGM : isLoadingGN) ? 'pointer' : 'not-allowed',
+                        opacity: isConnected && !(game.id === 'gm' ? isLoadingGM : isLoadingGN) ? 1 : 0.6,
+                        position: 'relative',
+                        background: game.color,
+                        color: 'white',
+                        padding: '24px',
+                        borderRadius: '16px',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                        {game.icon}
+                        <h3 style={{ fontSize: '22px', fontWeight: 'bold', margin: 0, color: 'white' }}>
+                          {game.title}
+                        </h3>
+                      </div>
+                      <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0 }}>
+                        {game.description}
+                      </p>
+                      <div style={{
+                        position: 'absolute',
+                        top: '16px',
+                        right: '16px',
+                        background: 'rgba(255, 255, 255, 0.95)',
+                        borderRadius: '20px',
+                        padding: '6px 12px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        color: '#059669'
+                      }}>
+                        {game.xpReward}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* GAMING Category */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                borderRadius: '20px',
+                padding: '32px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                border: '2px solid rgba(245, 158, 11, 0.2)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white'
+                  }}>
+                    <Gamepad2 size={24} />
+                  </div>
+                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                    GAMING
+                  </h2>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                  {games.filter(g => ['flip', 'dice', 'slot', 'lucky'].includes(g.id)).map((game) => (
+                    <Link
+                      key={game.id}
+                      to={game.path}
+                      className="game-card"
+                      style={{ 
+                        textDecoration: 'none',
+                        position: 'relative',
+                        display: 'block'
+                      }}
+                    >
+                      <div style={{
+                        background: game.color,
+                        padding: '24px',
+                        borderRadius: '16px',
+                        color: 'white',
+                        transition: 'all 0.3s ease',
+                        height: '100%'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                          {game.icon}
+                          <h3 style={{ fontSize: '22px', fontWeight: 'bold', margin: 0, color: 'white' }}>
+                            {game.title}
+                          </h3>
+                        </div>
+                        <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0 }}>
+                          {game.description}
+                        </p>
+                        <div style={{
+                          position: 'absolute',
+                          top: '16px',
+                          right: '16px',
+                          background: 'rgba(255, 255, 255, 0.95)',
+                          borderRadius: '20px',
+                          padding: '6px 12px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          color: '#059669'
+                        }}>
+                          {game.xpReward}
+                        </div>
+                        {game.bonusXP && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '16px',
+                            left: '16px',
+                            background: 'rgba(255, 215, 0, 0.95)',
+                            borderRadius: '20px',
+                            padding: '6px 12px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            color: '#92400e'
+                          }}>
+                            {game.bonusXP}
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* NFT Category */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                borderRadius: '20px',
+                padding: '32px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                border: '2px solid rgba(139, 92, 246, 0.2)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white'
+                  }}>
+                    <Image size={24} />
+                  </div>
+                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                    NFT
+                  </h2>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                  {games.filter(g => ['ai-nft', 'deploy-erc721', 'deploy-erc1155'].includes(g.id)).map((game) => (
+                    <Link
+                      key={game.id}
+                      to={game.path}
+                      className="game-card"
+                      style={{ 
+                        textDecoration: 'none',
+                        position: 'relative',
+                        display: 'block'
+                      }}
+                    >
+                      <div style={{
+                        background: game.color,
+                        padding: '24px',
+                        borderRadius: '16px',
+                        color: 'white',
+                        transition: 'all 0.3s ease',
+                        height: '100%'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                          {game.icon}
+                          <h3 style={{ fontSize: '22px', fontWeight: 'bold', margin: 0, color: 'white' }}>
+                            {game.title}
+                          </h3>
+                        </div>
+                        <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0 }}>
+                          {game.description}
+                        </p>
+                        <div style={{
+                          position: 'absolute',
+                          top: '16px',
+                          right: '16px',
+                          background: 'rgba(255, 255, 255, 0.95)',
+                          borderRadius: '20px',
+                          padding: '6px 12px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          color: '#059669'
+                        }}>
+                          {game.xpReward}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* ANALYSIS Category */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                borderRadius: '20px',
+                padding: '32px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                border: '2px solid rgba(59, 130, 246, 0.2)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white'
+                  }}>
+                    <TrendingUp size={24} />
+                  </div>
+                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                    ANALYSIS
+                  </h2>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                  {games.filter(g => ['wallet-analysis', 'contract-security'].includes(g.id)).map((game) => (
+                    <Link
+                      key={game.id}
+                      to={game.path}
+                      className="game-card"
+                      style={{ 
+                        textDecoration: 'none',
+                        position: 'relative',
+                        display: 'block'
+                      }}
+                    >
+                      <div style={{
+                        background: game.color,
+                        padding: '24px',
+                        borderRadius: '16px',
+                        color: 'white',
+                        transition: 'all 0.3s ease',
+                        height: '100%'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                          {game.icon}
+                          <h3 style={{ fontSize: '22px', fontWeight: 'bold', margin: 0, color: 'white' }}>
+                            {game.title}
+                          </h3>
+                        </div>
+                        <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0 }}>
+                          {game.description}
+                        </p>
+                        <div style={{
+                          position: 'absolute',
+                          top: '16px',
+                          right: '16px',
+                          background: 'rgba(255, 255, 255, 0.95)',
+                          borderRadius: '20px',
+                          padding: '6px 12px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          color: '#059669'
+                        }}>
+                          {game.xpReward}
+                        </div>
+                        {game.bonusXP && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '16px',
+                            left: '16px',
+                            background: 'rgba(255, 215, 0, 0.95)',
+                            borderRadius: '20px',
+                            padding: '6px 12px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            color: '#92400e'
+                          }}>
+                            {game.bonusXP}
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* DEPLOY Category */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                borderRadius: '20px',
+                padding: '32px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                border: '2px solid rgba(236, 72, 153, 0.2)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white'
+                  }}>
+                    <Rocket size={24} />
+                  </div>
+                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                    DEPLOY
+                  </h2>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                  {games.filter(g => ['deploy', 'x402-premium'].includes(g.id)).map((game) => {
+                    if (game.id === 'x402-premium') {
+                      return (
+                        <button
+                          key={game.id}
+                          onClick={handleX402Payment}
+                          disabled={isLoadingX402}
+                          className="game-card"
+                          style={{ 
+                            textDecoration: 'none',
+                            border: 'none',
+                            cursor: !isLoadingX402 ? 'pointer' : 'not-allowed',
+                            opacity: !isLoadingX402 ? 1 : 0.6,
+                            position: 'relative',
+                            background: game.color,
+                            padding: '24px',
+                            borderRadius: '16px',
+                            color: 'white',
+                            transition: 'all 0.3s ease',
+                            width: '100%',
+                            textAlign: 'left'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                            {game.icon}
+                            <h3 style={{ fontSize: '22px', fontWeight: 'bold', margin: 0, color: 'white' }}>
+                              {game.title}
+                            </h3>
+                          </div>
+                          <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0 }}>
+                            {isLoadingX402 ? 'Processing payment...' : game.description}
+                          </p>
+                          <div style={{
+                            position: 'absolute',
+                            top: '16px',
+                            right: '16px',
+                            background: 'rgba(255, 255, 255, 0.95)',
+                            borderRadius: '20px',
+                            padding: '6px 12px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            color: '#059669'
+                          }}>
+                            {game.xpReward}
+                          </div>
+                          {game.bonusXP && (
+                            <div style={{
+                              position: 'absolute',
+                              top: '16px',
+                              left: '16px',
+                              background: 'rgba(255, 215, 0, 0.95)',
+                              borderRadius: '20px',
+                              padding: '6px 12px',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                              color: '#92400e'
+                            }}>
+                              {game.bonusXP}
+                            </div>
+                          )}
+                        </button>
+                      )
+                    }
+                    return (
+                      <Link
+                        key={game.id}
+                        to={game.path}
+                        className="game-card"
+                        style={{ 
+                          textDecoration: 'none',
+                          position: 'relative',
+                          display: 'block'
+                        }}
+                      >
+                        <div style={{
+                          background: game.color,
+                          padding: '24px',
+                          borderRadius: '16px',
+                          color: 'white',
+                          transition: 'all 0.3s ease',
+                          height: '100%'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                            {game.icon}
+                            <h3 style={{ fontSize: '22px', fontWeight: 'bold', margin: 0, color: 'white' }}>
+                              {game.title}
+                            </h3>
+                          </div>
+                          <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0 }}>
+                            {game.description}
+                          </p>
+                          <div style={{
+                            position: 'absolute',
+                            top: '16px',
+                            right: '16px',
+                            background: 'rgba(255, 255, 255, 0.95)',
+                            borderRadius: '20px',
+                            padding: '6px 12px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            color: '#059669'
+                          }}>
+                            {game.xpReward}
+                          </div>
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Farcaster: Original Grid Layout */
           <div className="games-grid">
             {games.map((game) => {
               // For x402 premium payment, use special payment button
@@ -725,22 +1192,22 @@ const Home = () => {
                   
                   {/* XP Reward Badge */}
                   {game.xpReward && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '12px',
-                      right: '12px',
+                  <div style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '12px',
                       background: 'rgba(209, 250, 229, 0.95)',
-                      backdropFilter: 'blur(10px)',
-                      borderRadius: '20px',
-                      padding: '4px 8px',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      color: '#059669',
-                      border: '1px solid rgba(5, 150, 105, 0.2)',
-                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                    }}>
-                      {game.xpReward}
-                    </div>
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: '20px',
+                    padding: '4px 8px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    color: '#059669',
+                    border: '1px solid rgba(5, 150, 105, 0.2)',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                  }}>
+                    {game.xpReward}
+                  </div>
                   )}
 
                   {/* Payment Amount Badge */}
@@ -802,6 +1269,7 @@ const Home = () => {
               )
             })}
           </div>
+          )}
 
         </div>
       </div>
@@ -942,10 +1410,10 @@ const Home = () => {
                 onClick={() => setVisiblePlayersCount(prev => Math.min(prev + 5, leaderboard.length))}
                 style={{ 
                   width: '100%',
-                  textAlign: 'center',
-                  padding: '12px',
-                  background: 'rgba(59, 130, 246, 0.1)',
-                  borderRadius: '8px',
+                textAlign: 'center',
+                padding: '12px',
+                background: 'rgba(59, 130, 246, 0.1)',
+                borderRadius: '8px',
                   border: '1px solid rgba(59, 130, 246, 0.2)',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
