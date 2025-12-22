@@ -15,7 +15,7 @@ const Header = () => {
   const { isInFarcaster, user } = useFarcaster()
   const { isCorrectNetwork, isChecking, switchToBaseNetwork } = useNetworkCheck()
   const baseConfig = getCurrentConfig()
-  const { last24hTxCount, activeUsers, loading: proofLoading } = useProofOfUsage()
+  const { last24hTxCount, activeUsers, allTimeTxCount, allTimeUsers, loading: proofLoading } = useProofOfUsage()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isSwitching, setIsSwitching] = useState(false)
 
@@ -67,15 +67,30 @@ const Header = () => {
           <div className="header-right">
             {/* Proof of Usage */}
             <div className="proof-of-usage">
-              <div className="proof-metric">
-                <Repeat size={14} />
-                <span className="proof-label">Last 24h:</span>
-                <span className="proof-value">{proofLoading ? '...' : last24hTxCount.toLocaleString()}</span>
+              <div className="proof-section">
+                <div className="proof-metric">
+                  <Repeat size={14} />
+                  <span className="proof-label">24h:</span>
+                  <span className="proof-value">{proofLoading ? '...' : last24hTxCount.toLocaleString()}</span>
+                </div>
+                <div className="proof-metric">
+                  <Users size={14} />
+                  <span className="proof-label">Users:</span>
+                  <span className="proof-value">{proofLoading ? '...' : activeUsers.toLocaleString()}</span>
+                </div>
               </div>
-              <div className="proof-metric">
-                <Users size={14} />
-                <span className="proof-label">Active:</span>
-                <span className="proof-value">{proofLoading ? '...' : activeUsers.toLocaleString()}</span>
+              <div className="proof-divider"></div>
+              <div className="proof-section">
+                <div className="proof-metric">
+                  <Repeat size={14} />
+                  <span className="proof-label">All:</span>
+                  <span className="proof-value">{proofLoading ? '...' : allTimeTxCount.toLocaleString()}</span>
+                </div>
+                <div className="proof-metric">
+                  <Users size={14} />
+                  <span className="proof-label">Users:</span>
+                  <span className="proof-value">{proofLoading ? '...' : allTimeUsers.toLocaleString()}</span>
+                </div>
               </div>
             </div>
 
@@ -331,11 +346,23 @@ const headerStyles = `
   .proof-of-usage {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     padding: 8px 16px;
     background: rgba(59, 130, 246, 0.05);
     border-radius: 12px;
     border: 1px solid rgba(59, 130, 246, 0.1);
+  }
+
+  .proof-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .proof-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(59, 130, 246, 0.2);
   }
 
   .proof-metric {
@@ -515,8 +542,12 @@ const headerStyles = `
     }
 
     .proof-of-usage {
-      gap: 12px;
+      gap: 8px;
       padding: 6px 12px;
+    }
+
+    .proof-section {
+      gap: 8px;
     }
 
     .proof-metric {
@@ -588,12 +619,20 @@ const headerStyles = `
     }
 
     .proof-of-usage {
-      gap: 8px;
+      gap: 6px;
       padding: 4px 8px;
+    }
+
+    .proof-section {
+      gap: 6px;
     }
 
     .proof-metric {
       font-size: 10px;
+    }
+
+    .proof-divider {
+      display: none;
     }
   }
 `

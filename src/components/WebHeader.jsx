@@ -13,7 +13,7 @@ const WebHeader = () => {
   const chainId = useChainId()
   const { isCorrectNetwork } = useNetworkCheck()
   const baseConfig = getCurrentConfig()
-  const { last24hTxCount, activeUsers, loading: proofLoading } = useProofOfUsage()
+  const { last24hTxCount, activeUsers, allTimeTxCount, allTimeUsers, loading: proofLoading } = useProofOfUsage()
   const [isScrolled, setIsScrolled] = React.useState(false)
 
   // Handle scroll detection
@@ -47,15 +47,30 @@ const WebHeader = () => {
           <div className="header-right">
             {/* Proof of Usage */}
             <div className="proof-of-usage">
-              <div className="proof-metric">
-                <Repeat size={14} />
-                <span className="proof-label">Last 24h:</span>
-                <span className="proof-value">{proofLoading ? '...' : last24hTxCount.toLocaleString()}</span>
+              <div className="proof-section">
+                <div className="proof-metric">
+                  <Repeat size={14} />
+                  <span className="proof-label">24h:</span>
+                  <span className="proof-value">{proofLoading ? '...' : last24hTxCount.toLocaleString()}</span>
+                </div>
+                <div className="proof-metric">
+                  <Users size={14} />
+                  <span className="proof-label">Users:</span>
+                  <span className="proof-value">{proofLoading ? '...' : activeUsers.toLocaleString()}</span>
+                </div>
               </div>
-              <div className="proof-metric">
-                <Users size={14} />
-                <span className="proof-label">Active:</span>
-                <span className="proof-value">{proofLoading ? '...' : activeUsers.toLocaleString()}</span>
+              <div className="proof-divider"></div>
+              <div className="proof-section">
+                <div className="proof-metric">
+                  <Repeat size={14} />
+                  <span className="proof-label">All:</span>
+                  <span className="proof-value">{proofLoading ? '...' : allTimeTxCount.toLocaleString()}</span>
+                </div>
+                <div className="proof-metric">
+                  <Users size={14} />
+                  <span className="proof-label">Users:</span>
+                  <span className="proof-value">{proofLoading ? '...' : allTimeUsers.toLocaleString()}</span>
+                </div>
               </div>
             </div>
 

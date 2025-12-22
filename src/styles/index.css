@@ -1293,11 +1293,23 @@ body {
 .proof-of-usage {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   padding: 8px 16px;
   background: rgba(59, 130, 246, 0.05);
   border-radius: 12px;
   border: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.proof-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.proof-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(59, 130, 246, 0.2);
 }
 
 .proof-metric {
@@ -1661,8 +1673,12 @@ body {
   }
 
   .web-header .proof-of-usage {
-    gap: 12px;
+    gap: 8px;
     padding: 6px 12px;
+  }
+
+  .web-header .proof-section {
+    gap: 8px;
   }
 
   .web-header .proof-metric {
@@ -1686,12 +1702,20 @@ body {
 
 @media (max-width: 480px) {
   .web-header .proof-of-usage {
-    gap: 8px;
+    gap: 6px;
     padding: 4px 8px;
+  }
+
+  .web-header .proof-section {
+    gap: 6px;
   }
 
   .web-header .proof-metric {
     font-size: 10px;
+  }
+
+  .web-header .proof-divider {
+    display: none;
   }
 }
 
