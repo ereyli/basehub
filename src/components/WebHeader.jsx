@@ -2,9 +2,10 @@ import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useChainId } from 'wagmi'
-import { Gamepad2, Home, ExternalLink, Twitter } from 'lucide-react'
+import { Gamepad2, Home, ExternalLink, Twitter, Repeat, Users } from 'lucide-react'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { getCurrentConfig } from '../config/base'
+import { useProofOfUsage } from '../hooks/useProofOfUsage'
 
 const WebHeader = () => {
   const location = useLocation()
@@ -12,6 +13,7 @@ const WebHeader = () => {
   const chainId = useChainId()
   const { isCorrectNetwork } = useNetworkCheck()
   const baseConfig = getCurrentConfig()
+  const { last24hTxCount, activeUsers, loading: proofLoading } = useProofOfUsage()
   const [isScrolled, setIsScrolled] = React.useState(false)
 
   // Handle scroll detection
@@ -43,6 +45,20 @@ const WebHeader = () => {
           
           {/* Navigation & Status */}
           <div className="header-right">
+            {/* Proof of Usage */}
+            <div className="proof-of-usage">
+              <div className="proof-metric">
+                <Repeat size={14} />
+                <span className="proof-label">Last 24h:</span>
+                <span className="proof-value">{proofLoading ? '...' : last24hTxCount.toLocaleString()}</span>
+              </div>
+              <div className="proof-metric">
+                <Users size={14} />
+                <span className="proof-label">Active:</span>
+                <span className="proof-value">{proofLoading ? '...' : activeUsers.toLocaleString()}</span>
+              </div>
+            </div>
+
             {location.pathname !== '/' && (
               <Link to="/" className="nav-button">
                 <Home size={16} />

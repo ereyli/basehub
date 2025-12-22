@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAccount, useChainId } from 'wagmi'
-import { Wallet, Home, Wifi, WifiOff, Gamepad2, Zap, Shield, ExternalLink, Twitter, RefreshCw } from 'lucide-react'
+import { Wallet, Home, Wifi, WifiOff, Gamepad2, Zap, Shield, ExternalLink, Twitter, RefreshCw, Repeat, Users } from 'lucide-react'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { getCurrentConfig } from '../config/base'
+import { useProofOfUsage } from '../hooks/useProofOfUsage'
 import WalletConnect from './WalletConnect'
 
 const Header = () => {
@@ -14,6 +15,7 @@ const Header = () => {
   const { isInFarcaster, user } = useFarcaster()
   const { isCorrectNetwork, isChecking, switchToBaseNetwork } = useNetworkCheck()
   const baseConfig = getCurrentConfig()
+  const { last24hTxCount, activeUsers, loading: proofLoading } = useProofOfUsage()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isSwitching, setIsSwitching] = useState(false)
 
@@ -63,6 +65,20 @@ const Header = () => {
           
           {/* Navigation & Status */}
           <div className="header-right">
+            {/* Proof of Usage */}
+            <div className="proof-of-usage">
+              <div className="proof-metric">
+                <Repeat size={14} />
+                <span className="proof-label">Last 24h:</span>
+                <span className="proof-value">{proofLoading ? '...' : last24hTxCount.toLocaleString()}</span>
+              </div>
+              <div className="proof-metric">
+                <Users size={14} />
+                <span className="proof-label">Active:</span>
+                <span className="proof-value">{proofLoading ? '...' : activeUsers.toLocaleString()}</span>
+              </div>
+            </div>
+
             {location.pathname !== '/' && (
               <Link to="/" className="nav-button">
                 <Home size={16} />
@@ -312,6 +328,39 @@ const headerStyles = `
     box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
   }
 
+  .proof-of-usage {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 16px;
+    background: rgba(59, 130, 246, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.1);
+  }
+
+  .proof-metric {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #374151;
+  }
+
+  .proof-metric svg {
+    color: #3b82f6;
+  }
+
+  .proof-label {
+    font-weight: 500;
+    color: #6b7280;
+  }
+
+  .proof-value {
+    font-weight: 700;
+    color: #1f2937;
+    font-variant-numeric: tabular-nums;
+  }
+
   .status-indicators {
     display: flex;
     align-items: center;
@@ -465,6 +514,19 @@ const headerStyles = `
       gap: 16px;
     }
 
+    .proof-of-usage {
+      gap: 12px;
+      padding: 6px 12px;
+    }
+
+    .proof-metric {
+      font-size: 11px;
+    }
+
+    .proof-label {
+      display: none;
+    }
+
     .logo-icon {
       width: 40px;
       height: 40px;
@@ -523,6 +585,15 @@ const headerStyles = `
 
     .action-button span {
       display: none;
+    }
+
+    .proof-of-usage {
+      gap: 8px;
+      padding: 4px 8px;
+    }
+
+    .proof-metric {
+      font-size: 10px;
     }
   }
 `
