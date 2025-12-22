@@ -336,7 +336,7 @@ export default function WalletAnalysis() {
               gap: '8px',
             }}>
               <Eye size={16} />
-              <span>Free API access on all networks • Payment is always on Base mainnet</span>
+              <span>Payment is always on Base mainnet</span>
             </div>
           </div>
 
