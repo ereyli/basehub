@@ -2,7 +2,7 @@ import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useChainId } from 'wagmi'
-import { Gamepad2, Home, ExternalLink, Twitter, Repeat, Users } from 'lucide-react'
+import { Gamepad2, Home, Repeat, Users } from 'lucide-react'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { getCurrentConfig } from '../config/base'
 import { useProofOfUsage } from '../hooks/useProofOfUsage'
@@ -80,20 +80,6 @@ const WebHeader = () => {
                 <span>Home</span>
               </Link>
             )}
-
-            {/* Social Links */}
-            <div className="social-links">
-              <a 
-                href="https://x.com/BaseHUBB" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="social-link twitter"
-                title="Follow us on X"
-              >
-                <Twitter size={16} />
-                <span>X</span>
-              </a>
-            </div>
 
             {/* Network Status */}
             {isConnected && (
