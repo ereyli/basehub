@@ -67,6 +67,19 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
         throw updateError
       }
 
+      // Record transaction in transactions table
+      try {
+        await recordTransaction({
+          wallet_address: walletAddress,
+          game_type: gameType,
+          xp_earned: xpAmount,
+          transaction_hash: null // Can be added later if needed
+        })
+      } catch (txError) {
+        // Don't fail the XP update if transaction recording fails
+        console.warn('⚠️ Failed to record transaction (non-critical):', txError)
+      }
+
       console.log(`✅ Updated ${walletAddress} with ${xpAmount} XP. Total: ${newTotalXP}`)
       return newTotalXP
     } else {
@@ -90,6 +103,19 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
       if (insertError) {
         console.error('❌ Error creating player:', insertError)
         throw insertError
+      }
+
+      // Record transaction in transactions table
+      try {
+        await recordTransaction({
+          wallet_address: walletAddress,
+          game_type: gameType,
+          xp_earned: xpAmount,
+          transaction_hash: null // Can be added later if needed
+        })
+      } catch (txError) {
+        // Don't fail the player creation if transaction recording fails
+        console.warn('⚠️ Failed to record transaction (non-critical):', txError)
       }
 
       console.log(`✅ Created new player ${walletAddress} with ${xpAmount} XP`)

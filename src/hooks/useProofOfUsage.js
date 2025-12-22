@@ -22,31 +22,36 @@ export const useProofOfUsage = () => {
       // Get last 24 hours timestamp
       const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
-      // 1. Count transactions in last 24 hours
+      // Get data from transactions table (now that addXP records transactions)
       const { count: txCount, error: txError } = await supabase
         .from('transactions')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', last24Hours)
 
-      if (txError) {
-        console.error('❌ Error fetching transaction count:', txError)
-      } else {
-        setLast24hTxCount(txCount || 0)
-      }
-
-      // 2. Count unique active users (wallet addresses) in last 24 hours
       const { data: activeUsersData, error: usersError } = await supabase
         .from('transactions')
         .select('wallet_address')
         .gte('created_at', last24Hours)
 
+      if (txError) {
+        console.error('❌ Error fetching transaction count:', txError)
+        setLast24hTxCount(0)
+      } else {
+        setLast24hTxCount(txCount || 0)
+        console.log('✅ Transaction count:', txCount)
+      }
+
       if (usersError) {
         console.error('❌ Error fetching active users:', usersError)
         setActiveUsers(0)
-      } else {
+      } else if (activeUsersData && activeUsersData.length > 0) {
         // Get unique wallet addresses
-        const uniqueWallets = new Set(activeUsersData?.map(tx => tx.wallet_address) || [])
+        const uniqueWallets = new Set(activeUsersData.map(tx => tx.wallet_address))
         setActiveUsers(uniqueWallets.size)
+        console.log('✅ Active users:', uniqueWallets.size)
+      } else {
+        setActiveUsers(0)
+        console.log('⚠️ No active users found in last 24 hours')
       }
     } catch (error) {
       console.error('❌ Error in fetchProofOfUsage:', error)
