@@ -291,7 +291,7 @@ const FarcasterXPDisplay = () => {
             color: '#374151'
           }}>
             <Repeat size={12} style={{ color: '#3b82f6' }} />
-            <span style={{ fontWeight: '500', color: '#6b7280', fontSize: '10px' }}>tx:</span>
+            <span style={{ fontWeight: '500', color: '#6b7280', fontSize: '10px' }}>24h tx:</span>
             <span style={{ fontWeight: '700', color: '#1f2937' }}>
               {proofLoading ? '...' : last24hTxCount.toLocaleString()}
             </span>
