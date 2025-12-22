@@ -50,12 +50,12 @@ const WebHeader = () => {
               <div className="proof-section">
                 <div className="proof-metric">
                   <Repeat size={14} />
-                  <span className="proof-label">24h:</span>
+                  <span className="proof-label">24h Transactions:</span>
                   <span className="proof-value">{proofLoading ? '...' : last24hTxCount.toLocaleString()}</span>
                 </div>
                 <div className="proof-metric">
                   <Users size={14} />
-                  <span className="proof-label">Users:</span>
+                  <span className="proof-label">24h Users:</span>
                   <span className="proof-value">{proofLoading ? '...' : activeUsers.toLocaleString()}</span>
                 </div>
               </div>
@@ -63,12 +63,12 @@ const WebHeader = () => {
               <div className="proof-section">
                 <div className="proof-metric">
                   <Repeat size={14} />
-                  <span className="proof-label">All:</span>
+                  <span className="proof-label">All Transactions:</span>
                   <span className="proof-value">{proofLoading ? '...' : allTimeTxCount.toLocaleString()}</span>
                 </div>
                 <div className="proof-metric">
                   <Users size={14} />
-                  <span className="proof-label">Users:</span>
+                  <span className="proof-label">All Users:</span>
                   <span className="proof-value">{proofLoading ? '...' : allTimeUsers.toLocaleString()}</span>
                 </div>
               </div>
