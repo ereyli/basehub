@@ -13,7 +13,7 @@ const WebHeader = () => {
   const chainId = useChainId()
   const { isCorrectNetwork } = useNetworkCheck()
   const baseConfig = getCurrentConfig()
-  const { last24hTxCount, activeUsers, loading: proofLoading } = useProofOfUsage()
+  const { last24hTxCount, activeUsers, totalUsers, loading: proofLoading } = useProofOfUsage()
   const [isScrolled, setIsScrolled] = React.useState(false)
 
   // Handle scroll detection
@@ -54,8 +54,8 @@ const WebHeader = () => {
               </div>
               <div className="proof-metric">
                 <Users size={14} />
-                <span className="proof-label">Users:</span>
-                <span className="proof-value">{proofLoading ? '...' : activeUsers.toLocaleString()}</span>
+                <span className="proof-label">Total Users:</span>
+                <span className="proof-value">{proofLoading ? '...' : totalUsers.toLocaleString()}</span>
               </div>
             </div>
 

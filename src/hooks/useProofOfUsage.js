@@ -4,8 +4,7 @@ import { supabase } from '../config/supabase'
 export const useProofOfUsage = () => {
   const [last24hTxCount, setLast24hTxCount] = useState(0)
   const [activeUsers, setActiveUsers] = useState(0)
-  const [allTimeTxCount, setAllTimeTxCount] = useState(0)
-  const [allTimeUsers, setAllTimeUsers] = useState(0)
+  const [totalUsers, setTotalUsers] = useState(0)
   const [loading, setLoading] = useState(true)
 
   const fetchProofOfUsage = async () => {
@@ -17,8 +16,7 @@ export const useProofOfUsage = () => {
         console.log('⚠️ Supabase not available, using default values')
         setLast24hTxCount(0)
         setActiveUsers(0)
-        setAllTimeTxCount(0)
-        setAllTimeUsers(0)
+        setTotalUsers(0)
         setLoading(false)
         return
       }
@@ -26,27 +24,24 @@ export const useProofOfUsage = () => {
       // Get last 24 hours timestamp
       const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
-      // 1. Get last 24 hours data
+      // 1. Get last 24 hours transaction count
       const { count: txCount24h, error: txError24h } = await supabase
         .from('transactions')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', last24Hours)
 
+      // 2. Get last 24 hours active users (unique wallet addresses from transactions)
       const { data: activeUsersData24h, error: usersError24h } = await supabase
         .from('transactions')
         .select('wallet_address')
         .gte('created_at', last24Hours)
 
-      // 2. Get all-time data
-      const { count: txCountAllTime, error: txErrorAllTime } = await supabase
-        .from('transactions')
+      // 3. Get total users count from players table
+      const { count: totalUsersCount, error: totalUsersError } = await supabase
+        .from('players')
         .select('*', { count: 'exact', head: true })
 
-      const { data: activeUsersDataAllTime, error: usersErrorAllTime } = await supabase
-        .from('transactions')
-        .select('wallet_address')
-
-      // Set last 24h data
+      // Set last 24h transaction count
       if (txError24h) {
         console.error('❌ Error fetching 24h transaction count:', txError24h)
         setLast24hTxCount(0)
@@ -55,6 +50,7 @@ export const useProofOfUsage = () => {
         console.log('✅ Last 24h transaction count:', txCount24h)
       }
 
+      // Set last 24h active users
       if (usersError24h) {
         console.error('❌ Error fetching 24h active users:', usersError24h)
         setActiveUsers(0)
@@ -66,31 +62,19 @@ export const useProofOfUsage = () => {
         setActiveUsers(0)
       }
 
-      // Set all-time data
-      if (txErrorAllTime) {
-        console.error('❌ Error fetching all-time transaction count:', txErrorAllTime)
-        setAllTimeTxCount(0)
+      // Set total users count
+      if (totalUsersError) {
+        console.error('❌ Error fetching total users count:', totalUsersError)
+        setTotalUsers(0)
       } else {
-        setAllTimeTxCount(txCountAllTime || 0)
-        console.log('✅ All-time transaction count:', txCountAllTime)
-      }
-
-      if (usersErrorAllTime) {
-        console.error('❌ Error fetching all-time active users:', usersErrorAllTime)
-        setAllTimeUsers(0)
-      } else if (activeUsersDataAllTime && activeUsersDataAllTime.length > 0) {
-        const uniqueWalletsAllTime = new Set(activeUsersDataAllTime.map(tx => tx.wallet_address))
-        setAllTimeUsers(uniqueWalletsAllTime.size)
-        console.log('✅ All-time active users:', uniqueWalletsAllTime.size)
-      } else {
-        setAllTimeUsers(0)
+        setTotalUsers(totalUsersCount || 0)
+        console.log('✅ Total users count:', totalUsersCount)
       }
     } catch (error) {
       console.error('❌ Error in fetchProofOfUsage:', error)
       setLast24hTxCount(0)
       setActiveUsers(0)
-      setAllTimeTxCount(0)
-      setAllTimeUsers(0)
+      setTotalUsers(0)
     } finally {
       setLoading(false)
     }
@@ -108,8 +92,7 @@ export const useProofOfUsage = () => {
   return {
     last24hTxCount,
     activeUsers,
-    allTimeTxCount,
-    allTimeUsers,
+    totalUsers,
     loading,
     refresh: fetchProofOfUsage
   }
