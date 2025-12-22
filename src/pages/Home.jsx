@@ -597,23 +597,6 @@ const Home = () => {
                       {isLoadingX402 ? 'Processing payment...' : game.description}
                     </p>
                     
-                    {/* Success message */}
-                    {successMessage && (
-                      <div style={{
-                        marginTop: '8px',
-                        padding: '8px',
-                        background: '#d1fae5',
-                        border: '1px solid #86efac',
-                        borderRadius: '8px',
-                        color: '#059669',
-                        fontSize: '12px',
-                        textAlign: 'center',
-                        fontWeight: '500'
-                      }}>
-                        {successMessage}
-                      </div>
-                    )}
-                    
                     {/* Error message */}
                     {x402Error && (
                       <div style={{
