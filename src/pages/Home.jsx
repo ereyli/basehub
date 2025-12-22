@@ -38,6 +38,7 @@ const Home = () => {
   const [successMessage, setSuccessMessage] = useState('')
   const [isLoadingGM, setIsLoadingGM] = useState(false)
   const [isLoadingGN, setIsLoadingGN] = useState(false)
+  const [visiblePlayersCount, setVisiblePlayersCount] = useState(5)
 
   // Load leaderboard
   useEffect(() => {
@@ -48,6 +49,8 @@ const Home = () => {
         const data = await getLeaderboard()
         console.log('Home page leaderboard data:', data)
         setLeaderboard(data)
+        // Reset visible players count when leaderboard reloads
+        setVisiblePlayersCount(5)
       } catch (error) {
         console.error('Error loading leaderboard:', error)
       } finally {
@@ -857,7 +860,7 @@ const Home = () => {
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              {leaderboard.length > 0 ? leaderboard.slice(0, 5).map((player, index) => (
+              {leaderboard.length > 0 ? leaderboard.slice(0, visiblePlayersCount).map((player, index) => (
                 <div
                   key={player.wallet_address}
                   className="leaderboard-item"
@@ -951,22 +954,36 @@ const Home = () => {
               )}
             </div>
 
-            {leaderboard.length > 5 && (
-              <div style={{ 
-                textAlign: 'center',
-                padding: '12px',
-                background: 'rgba(59, 130, 246, 0.1)',
-                borderRadius: '8px',
-                border: '1px solid rgba(59, 130, 246, 0.2)'
-              }}>
-                <p style={{ 
-                  color: '#6b7280',
-                  fontSize: '12px',
+            {leaderboard.length > visiblePlayersCount && (
+              <button
+                onClick={() => setVisiblePlayersCount(prev => Math.min(prev + 5, leaderboard.length))}
+                style={{ 
+                  width: '100%',
+                  textAlign: 'center',
+                  padding: '12px',
+                  background: 'rgba(59, 130, 246, 0.1)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(59, 130, 246, 0.2)',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  color: '#3b82f6',
+                  fontSize: '14px',
+                  fontWeight: '600',
                   margin: 0
-                }}>
-                  And {leaderboard.length - 5} more players...
-                </p>
-              </div>
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(59, 130, 246, 0.2)'
+                  e.target.style.transform = 'translateY(-2px)'
+                  e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)'
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'rgba(59, 130, 246, 0.1)'
+                  e.target.style.transform = 'translateY(0)'
+                  e.target.style.boxShadow = 'none'
+                }}
+              >
+                Show {Math.min(5, leaderboard.length - visiblePlayersCount)} more players...
+              </button>
             )}
           </div>
         </div>
