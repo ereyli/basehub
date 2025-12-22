@@ -504,8 +504,8 @@ const Home = () => {
             
           </div>
 
-          {/* Web: Categorized Layout */}
-          {isWeb ? (
+          {/* Categorized Layout - Both Web and Farcaster */}
+          {true ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', marginTop: '40px' }}>
               {/* GM/GN Category */}
               <div style={{

@@ -12,6 +12,7 @@ import FarcasterXPDisplay from './components/FarcasterXPDisplay'
 import FarcasterBottomNav from './components/FarcasterBottomNav'
 import WebHeader from './components/WebHeader'
 import WebXPDisplay from './components/WebXPDisplay'
+import WebBottomNav from './components/WebBottomNav'
 import SkeletonLoader from './components/SkeletonLoader'
 import { useNetworkInterceptor } from './hooks/useNetworkInterceptor'
 import Home from './pages/Home'
@@ -230,7 +231,7 @@ function WebAppContent() {
       <div className="App web-app">
         <WebHeader />
         <WebXPDisplay />
-        <main className="container">
+        <main className="container" style={{ paddingBottom: '100px' }}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/gm" element={<GMGame />} />
@@ -250,6 +251,7 @@ function WebAppContent() {
             <Route path="/contract-security" element={<ContractSecurity />} />
           </Routes>
         </main>
+        <WebBottomNav />
       </div>
     </Router>
   )
