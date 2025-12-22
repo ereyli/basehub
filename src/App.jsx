@@ -194,7 +194,7 @@ function FarcasterAppContent() {
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="App farcaster-app">
         <FarcasterXPDisplay />
-        <main className="container farcaster-main" style={{ paddingBottom: '80px' }}>
+        <main className="container farcaster-main" style={{ paddingBottom: '100px' }}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/gm" element={<GMGame />} />
