@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Twitter, Share2, Copy, Check } from 'lucide-react'
+import React, { useState, useRef, useEffect } from 'react'
+import { Twitter, Share2, Copy, Check, ChevronDown } from 'lucide-react'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 
 const TwitterShareButton = ({ 
@@ -9,6 +9,8 @@ const TwitterShareButton = ({
   style = {} 
 }) => {
   const [isCopied, setIsCopied] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const dropdownRef = useRef(null)
   
   // Only show for web users
   const isWeb = shouldUseRainbowKit()
@@ -31,12 +33,34 @@ const TwitterShareButton = ({
     return `https://twitter.com/intent/tweet?text=${encodeURIComponent(fullText)}`
   }
 
-  const handleTwitterShare = () => {
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false)
+      }
+    }
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('touchstart', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [showDropdown])
+
+  const handleTwitterShare = (e) => {
+    e.stopPropagation()
     const twitterUrl = generateTwitterUrl()
     window.open(twitterUrl, '_blank', 'width=550,height=420')
+    setShowDropdown(false)
   }
 
-  const handleCopyTweet = async () => {
+  const handleCopyTweet = async (e) => {
+    e.stopPropagation()
     const tweetText = generateTwitterContent()
     const webUrl = 'https://www.basehub.fun/'
     const farcasterUrl = 'https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub'
@@ -46,6 +70,7 @@ const TwitterShareButton = ({
       await navigator.clipboard.writeText(fullText)
       setIsCopied(true)
       setTimeout(() => setIsCopied(false), 3000)
+      setShowDropdown(false)
     } catch (error) {
       console.error('Failed to copy tweet:', error)
       // Fallback for older browsers
@@ -57,10 +82,12 @@ const TwitterShareButton = ({
       document.body.removeChild(textArea)
       setIsCopied(true)
       setTimeout(() => setIsCopied(false), 3000)
+      setShowDropdown(false)
     }
   }
 
-  const handleWebShare = async () => {
+  const handleWebShare = async (e) => {
+    e.stopPropagation()
     const tweetText = generateTwitterContent()
     const webUrl = 'https://www.basehub.fun/'
     const farcasterUrl = 'https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub'
@@ -73,19 +100,25 @@ const TwitterShareButton = ({
           text: fullText,
           url: webUrl
         })
+        setShowDropdown(false)
       } catch (error) {
         if (error.name !== 'AbortError') {
           console.error('Error sharing:', error)
-          handleCopyTweet()
+          handleCopyTweet(e)
         }
       }
     } else {
-      handleCopyTweet()
+      handleCopyTweet(e)
     }
   }
 
+  const handleDropdownToggle = (e) => {
+    e.stopPropagation()
+    setShowDropdown(!showDropdown)
+  }
+
   return (
-    <div className="twitter-share-container" style={{ position: 'relative', ...style }}>
+    <div className="twitter-share-container" ref={dropdownRef} style={{ position: 'relative', display: 'inline-flex', ...style }}>
       <button
         onClick={handleTwitterShare}
         className="twitter-share-button"
@@ -93,8 +126,11 @@ const TwitterShareButton = ({
           background: '#000000',
           color: 'white',
           border: '1px solid #333333',
-          borderRadius: '12px',
-          padding: '12px 20px',
+          borderTopLeftRadius: '12px',
+          borderBottomLeftRadius: '12px',
+          borderTopRightRadius: showDropdown ? '0' : '12px',
+          borderBottomRightRadius: showDropdown ? '0' : '12px',
+          padding: '12px 16px',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
@@ -103,138 +139,151 @@ const TwitterShareButton = ({
           fontWeight: '600',
           transition: 'all 0.3s ease',
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-          minWidth: '140px',
-          justifyContent: 'center'
+          borderRight: 'none',
+          zIndex: 1
         }}
         onMouseEnter={(e) => {
           e.target.style.background = '#1a1a1a'
           e.target.style.transform = 'translateY(-2px)'
           e.target.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.4)'
-          e.target.style.borderColor = '#555555'
         }}
         onMouseLeave={(e) => {
           e.target.style.background = '#000000'
           e.target.style.transform = 'translateY(0)'
           e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)'
-          e.target.style.borderColor = '#333333'
         }}
       >
-        {isCopied ? (
-          <>
-            <Check size={16} />
-            <span>Copied!</span>
-          </>
-        ) : (
-          <>
-            <Twitter size={16} />
-            <span>Share on X</span>
-          </>
-        )}
+        <Twitter size={16} />
+        <span>Share on X</span>
+      </button>
+
+      {/* Dropdown toggle button */}
+      <button
+        onClick={handleDropdownToggle}
+        style={{
+          background: '#000000',
+          color: 'white',
+          border: '1px solid #333333',
+          borderTopRightRadius: '12px',
+          borderBottomRightRadius: '12px',
+          borderLeft: '1px solid #444444',
+          padding: '12px 8px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.3s ease',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+          zIndex: 1
+        }}
+        onMouseEnter={(e) => {
+          e.target.style.background = '#1a1a1a'
+          e.target.style.transform = 'translateY(-2px)'
+          e.target.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.4)'
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.background = '#000000'
+          e.target.style.transform = 'translateY(0)'
+          e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)'
+        }}
+      >
+        <ChevronDown 
+          size={16} 
+          style={{ 
+            transform: showDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.3s ease'
+          }} 
+        />
       </button>
 
       {/* Share options dropdown */}
-      <div 
-        className="share-options"
-        style={{
-          position: 'absolute',
-          top: '100%',
-          right: 0,
-          marginTop: '8px',
-          background: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-          padding: '12px',
-          minWidth: '200px',
-          border: '1px solid rgba(0, 0, 0, 0.1)',
-          display: 'none',
-          zIndex: 1000
-        }}
-        onMouseEnter={(e) => {
-          e.target.style.display = 'block'
-        }}
-        onMouseLeave={(e) => {
-          e.target.style.display = 'none'
-        }}
-      >
-        <button
-          onClick={handleCopyTweet}
+      {showDropdown && (
+        <div 
+          className="share-options"
           style={{
-            width: '100%',
-            padding: '8px 12px',
-            border: 'none',
-            background: 'transparent',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '14px',
-            color: '#374151',
-            transition: 'background 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.background = 'rgba(29, 161, 242, 0.1)'
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.background = 'transparent'
+            position: 'absolute',
+            top: '100%',
+            right: 0,
+            marginTop: '8px',
+            background: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+            padding: '12px',
+            minWidth: '200px',
+            border: '1px solid rgba(0, 0, 0, 0.1)',
+            zIndex: 1000,
+            animation: 'slideDown 0.2s ease-out'
           }}
         >
-          {isCopied ? <Check size={16} /> : <Copy size={16} />}
-          <span>{isCopied ? 'Copied!' : 'Copy Tweet'}</span>
-        </button>
-        
-        <button
-          onClick={handleWebShare}
-          style={{
-            width: '100%',
-            padding: '8px 12px',
-            border: 'none',
-            background: 'transparent',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '14px',
-            color: '#374151',
-            transition: 'background 0.2s ease',
-            marginTop: '4px'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.background = 'rgba(29, 161, 242, 0.1)'
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.background = 'transparent'
-          }}
-        >
-          <Share2 size={16} />
-          <span>Share Anywhere</span>
-        </button>
-      </div>
+          <button
+            onClick={handleCopyTweet}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: 'none',
+              background: 'transparent',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px',
+              color: '#374151',
+              transition: 'background 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(0, 0, 0, 0.05)'
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'transparent'
+            }}
+          >
+            {isCopied ? <Check size={16} /> : <Copy size={16} />}
+            <span>{isCopied ? 'Copied!' : 'Copy Tweet'}</span>
+          </button>
+          
+          <button
+            onClick={handleWebShare}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: 'none',
+              background: 'transparent',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px',
+              color: '#374151',
+              transition: 'background 0.2s ease',
+              marginTop: '4px'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(0, 0, 0, 0.05)'
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'transparent'
+            }}
+          >
+            <Share2 size={16} />
+            <span>Share Anywhere</span>
+          </button>
+        </div>
+      )}
 
-      {/* Hover trigger for dropdown */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 999
-        }}
-        onMouseEnter={(e) => {
-          const dropdown = e.target.parentNode.querySelector('.share-options')
-          if (dropdown) {
-            dropdown.style.display = 'block'
+      <style>{`
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
           }
-        }}
-        onMouseLeave={(e) => {
-          const dropdown = e.target.parentNode.querySelector('.share-options')
-          if (dropdown) {
-            dropdown.style.display = 'none'
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
-        }}
-      />
+        }
+      `}</style>
     </div>
   )
 }
