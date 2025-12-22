@@ -194,7 +194,7 @@ const Home = () => {
     },
     {
       id: 'x402-premium',
-      title: 'BaseHub x402 Payment',
+      title: 'x402 test',
       description: 'Pay 0.1 USDC via x402',
       icon: <Star size={50} style={{ color: 'white' }} />,
       path: null, // Special handler
