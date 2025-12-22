@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
-import { Zap, Wallet, Home, LogOut, Wifi, RefreshCw, Menu, X } from 'lucide-react'
+import { Zap, Wallet, Home, LogOut, Wifi, RefreshCw, Menu, X, Repeat, Users } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { getXP } from '../utils/xpUtils'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
+import { useProofOfUsage } from '../hooks/useProofOfUsage'
 
 const FarcasterXPDisplay = () => {
   const { isConnected, address } = useAccount()
@@ -12,6 +13,7 @@ const FarcasterXPDisplay = () => {
   const { disconnect } = useDisconnect()
   const { isInFarcaster } = useFarcaster()
   const { isCorrectNetwork, switchToBaseNetwork } = useNetworkCheck()
+  const { last24hTxCount, totalUsers, loading: proofLoading } = useProofOfUsage()
   const navigate = useNavigate()
   const location = useLocation()
   const [totalXP, setTotalXP] = useState(0)
@@ -270,6 +272,43 @@ const FarcasterXPDisplay = () => {
       </div>
       
       <div className="header-right">
+        {/* Proof of Usage */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '4px 8px',
+          background: 'rgba(59, 130, 246, 0.1)',
+          borderRadius: '8px',
+          border: '1px solid rgba(59, 130, 246, 0.2)',
+          marginRight: '8px'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontSize: '11px',
+            color: '#374151'
+          }}>
+            <Repeat size={12} style={{ color: '#3b82f6' }} />
+            <span style={{ fontWeight: '700', color: '#1f2937' }}>
+              {proofLoading ? '...' : last24hTxCount.toLocaleString()}
+            </span>
+          </div>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontSize: '11px',
+            color: '#374151'
+          }}>
+            <Users size={12} style={{ color: '#3b82f6' }} />
+            <span style={{ fontWeight: '700', color: '#1f2937' }}>
+              {proofLoading ? '...' : totalUsers.toLocaleString()}
+            </span>
+          </div>
+        </div>
+
         {/* Switch Network Button - only show when not on Base */}
         {isConnected && !isInFarcaster && !isCorrectNetwork && (
           <button 

@@ -9,7 +9,6 @@ import { FarcasterProvider, useFarcaster } from './contexts/FarcasterContext'
 import { config } from './config/wagmi'
 import { rainbowkitConfig, shouldUseRainbowKit } from './config/rainbowkit'
 import FarcasterXPDisplay from './components/FarcasterXPDisplay'
-import Header from './components/Header'
 import WebHeader from './components/WebHeader'
 import WebXPDisplay from './components/WebXPDisplay'
 import SkeletonLoader from './components/SkeletonLoader'
@@ -193,7 +192,6 @@ function FarcasterAppContent() {
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="App farcaster-app">
-        <Header />
         <FarcasterXPDisplay />
         <main className="container farcaster-main">
           <Routes>
