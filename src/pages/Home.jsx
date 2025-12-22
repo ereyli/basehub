@@ -83,7 +83,7 @@ const Home = () => {
     
     try {
       const result = await sendGMTransaction('GM from BaseHub! 🎮')
-      setSuccessMessage(`🎉 GM sent successfully! +10 XP earned!`)
+      setSuccessMessage(`🎉 GM sent successfully! +30 XP earned!`)
       setTimeout(() => setSuccessMessage(''), 3000)
     } catch (error) {
       console.error('GM transaction failed:', error)
