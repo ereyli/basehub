@@ -931,29 +931,27 @@ const Home = () => {
                           color: 'white',
                           transition: 'all 0.3s ease',
                           height: '100%'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                        }}                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', position: 'relative' }}>
                             {game.icon}
-                            <h3 style={{ fontSize: '22px', fontWeight: 'bold', margin: 0, color: 'white' }}>
+                            <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1 }}>
                               {game.title}
                             </h3>
+                            <div style={{
+                              background: 'rgba(255, 255, 255, 0.95)',
+                              borderRadius: '20px',
+                              padding: '4px 10px',
+                              fontSize: '11px',
+                              fontWeight: 'bold',
+                              color: '#059669',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {game.xpReward}
+                            </div>
                           </div>
                           <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0 }}>
                             {game.description}
                           </p>
-                          <div style={{
-                            position: 'absolute',
-                            top: '16px',
-                            right: '16px',
-                            background: 'rgba(255, 255, 255, 0.95)',
-                            borderRadius: '20px',
-                            padding: '6px 12px',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            color: '#059669'
-                          }}>
-                            {game.xpReward}
-                          </div>
                         </div>
                       </Link>
                     )
