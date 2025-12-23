@@ -344,8 +344,8 @@ export default function AINFTLaunchpad() {
                       padding: '12px 16px',
                       border: `2px solid ${imageMode === 'prompt' ? '#3b82f6' : '#e5e7eb'}`,
                       borderRadius: '12px',
-                      background: imageMode === 'prompt' ? '#eff6ff' : '#ffffff',
-                      color: imageMode === 'prompt' ? '#1d4ed8' : '#6b7280',
+                      background: imageMode === 'prompt' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(30, 41, 59, 0.8)',
+                      color: imageMode === 'prompt' ? '#93c5fd' : '#9ca3af',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -374,8 +374,8 @@ export default function AINFTLaunchpad() {
                       padding: '12px 16px',
                       border: `2px solid ${imageMode === 'upload' ? '#3b82f6' : '#e5e7eb'}`,
                       borderRadius: '12px',
-                      background: imageMode === 'upload' ? '#eff6ff' : '#ffffff',
-                      color: imageMode === 'upload' ? '#1d4ed8' : '#6b7280',
+                      background: imageMode === 'upload' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(30, 41, 59, 0.8)',
+                      color: imageMode === 'upload' ? '#93c5fd' : '#9ca3af',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -423,8 +423,8 @@ export default function AINFTLaunchpad() {
                     <div style={{
                       marginTop: '8px',
                       padding: '8px 12px',
-                      background: '#f0f9ff',
-                      border: '1px solid #3b82f6',
+                      background: 'rgba(30, 41, 59, 0.8)',
+                      border: '1px solid rgba(59, 130, 246, 0.5)',
                       borderRadius: '8px',
                       display: 'flex',
                       alignItems: 'center',
@@ -439,7 +439,7 @@ export default function AINFTLaunchpad() {
                       <span style={{
                         fontSize: '12px',
                         fontWeight: '500',
-                        color: '#1e40af'
+                        color: '#93c5fd'
                       }}>
                         Detected Category: <strong>{detectedCategory}</strong>
                       </span>
@@ -452,7 +452,7 @@ export default function AINFTLaunchpad() {
                       display: 'block',
                       fontSize: '12px',
                       fontWeight: '500',
-                      color: '#6b7280',
+                      color: '#9ca3af',
                       marginBottom: '8px'
                     }}>
                       🎨 Art Style
@@ -471,8 +471,8 @@ export default function AINFTLaunchpad() {
                             padding: '8px 12px',
                             border: `2px solid ${selectedStyle === key ? '#3b82f6' : '#e5e7eb'}`,
                             borderRadius: '8px',
-                            background: selectedStyle === key ? '#eff6ff' : '#ffffff',
-                            color: selectedStyle === key ? '#1d4ed8' : '#6b7280',
+                            background: selectedStyle === key ? 'rgba(59, 130, 246, 0.2)' : 'rgba(30, 41, 59, 0.8)',
+                            color: selectedStyle === key ? '#93c5fd' : '#9ca3af',
                             cursor: 'pointer',
                             fontSize: '12px',
                             fontWeight: '500',
@@ -499,7 +499,7 @@ export default function AINFTLaunchpad() {
                         borderRadius: '12px',
                         padding: '24px',
                         textAlign: 'center',
-                        background: '#f9fafb',
+                        background: 'rgba(30, 41, 59, 0.8)',
                         cursor: 'pointer',
                         transition: 'all 0.2s'
                       }}
@@ -571,7 +571,7 @@ export default function AINFTLaunchpad() {
                         display: 'block',
                         fontSize: '12px',
                         fontWeight: '500',
-                        color: '#6b7280',
+                        color: '#9ca3af',
                         marginBottom: '8px'
                       }}>
                         🎨 Art Style (for metadata)
@@ -590,8 +590,8 @@ export default function AINFTLaunchpad() {
                               padding: '8px 12px',
                               border: `2px solid ${selectedStyle === key ? '#3b82f6' : '#e5e7eb'}`,
                               borderRadius: '8px',
-                              background: selectedStyle === key ? '#eff6ff' : '#ffffff',
-                              color: selectedStyle === key ? '#1d4ed8' : '#6b7280',
+                              background: selectedStyle === key ? 'rgba(59, 130, 246, 0.2)' : 'rgba(30, 41, 59, 0.8)',
+                              color: selectedStyle === key ? '#93c5fd' : '#9ca3af',
                               cursor: 'pointer',
                               fontSize: '12px',
                               fontWeight: '500',
@@ -695,7 +695,7 @@ export default function AINFTLaunchpad() {
                       <h3 style={{
                         fontSize: '18px',
                         fontWeight: 'bold',
-                        color: '#1f2937',
+                        color: '#e5e7eb',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
@@ -752,9 +752,9 @@ export default function AINFTLaunchpad() {
                       width: '100%',
                       margin: '0 auto 24px',
                       padding: '20px',
-                      background: '#f0f9ff',
+                      background: 'rgba(30, 41, 59, 0.8)',
                       borderRadius: '12px',
-                      border: '2px solid #3b82f6',
+                      border: '2px solid rgba(59, 130, 246, 0.5)',
                       minHeight: '400px'
                     }}>
                       {generatedImage ? (
@@ -771,7 +771,7 @@ export default function AINFTLaunchpad() {
                               display: 'block',
                               margin: '0 auto',
                               objectFit: 'contain',
-                              backgroundColor: '#ffffff'
+                              backgroundColor: 'rgba(30, 41, 59, 0.8)'
                             }}
                             onError={(e) => {
                               console.error('❌ Image failed to render');
@@ -851,7 +851,7 @@ export default function AINFTLaunchpad() {
                         
                         {useCustomMetadata && (
                           <div style={{
-                            background: '#f8fafc',
+                            background: 'rgba(30, 41, 59, 0.8)',
                             border: '1px solid #e2e8f0',
                             borderRadius: '8px',
                             padding: '16px',
@@ -862,7 +862,7 @@ export default function AINFTLaunchpad() {
                                 display: 'block',
                                 fontSize: '12px',
                                 fontWeight: '500',
-                                color: '#6b7280',
+                                color: '#9ca3af',
                                 marginBottom: '4px'
                               }}>
                                 NFT Name
@@ -888,7 +888,7 @@ export default function AINFTLaunchpad() {
                                 display: 'block',
                                 fontSize: '12px',
                                 fontWeight: '500',
-                                color: '#6b7280',
+                                color: '#9ca3af',
                                 marginBottom: '4px'
                               }}>
                                 Description
@@ -1035,7 +1035,7 @@ export default function AINFTLaunchpad() {
                             display: 'flex',
                             justifyContent: 'space-between',
                             padding: '10px 12px',
-                            background: tier.active ? '#e2e8f0' : '#ffffff',
+                            background: tier.active ? 'rgba(59, 130, 246, 0.2)' : 'rgba(30, 41, 59, 0.8)',
                             border: '1px solid #cbd5e1',
                             borderRadius: '6px',
                             fontSize: '12px'
