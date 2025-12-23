@@ -889,7 +889,8 @@ const Home = () => {
                             width: '100%',
                             textAlign: 'left',
                             display: 'block',
-                            boxShadow: 'none'
+                            boxShadow: 'none',
+                            borderRadius: '16px'
                           }}
                         >
                           <div style={{
@@ -898,8 +899,7 @@ const Home = () => {
                             borderRadius: '16px',
                             color: 'white',
                             transition: 'all 0.3s ease',
-                            height: '100%',
-                            border: '1px solid rgba(255, 255, 255, 0.1)'
+                            height: '100%'
                           }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
                               {game.icon}
