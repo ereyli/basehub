@@ -64,7 +64,7 @@ const Footer = () => {
               © {currentYear} BaseHub. All rights reserved.
             </p>
             <p className="footer-tagline">
-              Built on Base • Powered by Farcaster • Gamified for Everyone
+              Built on Base • Miniapp on Farcaster & Base App • Gamified for Everyone
             </p>
           </div>
           <div className="footer-social">
