@@ -12,6 +12,7 @@ import FarcasterXPDisplay from './components/FarcasterXPDisplay'
 import FarcasterBottomNav from './components/FarcasterBottomNav'
 import WebHeader from './components/WebHeader'
 import WebBottomNav from './components/WebBottomNav'
+import Footer from './components/Footer'
 import SkeletonLoader from './components/SkeletonLoader'
 import { useNetworkInterceptor } from './hooks/useNetworkInterceptor'
 import Home from './pages/Home'
@@ -215,6 +216,7 @@ function FarcasterAppContent() {
           </Routes>
         </main>
         <FarcasterBottomNav />
+        <Footer />
       </div>
     </Router>
   )
@@ -250,6 +252,7 @@ function WebAppContent() {
           </Routes>
         </main>
         <WebBottomNav />
+        <Footer />
       </div>
     </Router>
   )
