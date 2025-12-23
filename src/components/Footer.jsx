@@ -3,16 +3,11 @@ import { Link } from 'react-router-dom'
 import { Twitter, ExternalLink, Zap } from 'lucide-react'
 
 const Footer = () => {
-  // Safely check if we're in Farcaster environment
-  let isInFarcaster = false
-  try {
-    const { useFarcaster } = require('../contexts/FarcasterContext')
-    const farcasterContext = useFarcaster()
-    isInFarcaster = farcasterContext?.isInFarcaster || false
-  } catch (error) {
-    // If Farcaster context is not available (e.g., in web app), default to false
-    isInFarcaster = false
-  }
+  // Check if we're in Farcaster environment (safe check without hook)
+  const isInFarcaster = typeof window !== 'undefined' && 
+    (window.location !== window.parent.location ||
+     window.location.href.includes('farcaster.xyz') ||
+     window.location.href.includes('warpcast.com'))
   
   const currentYear = new Date().getFullYear()
 
