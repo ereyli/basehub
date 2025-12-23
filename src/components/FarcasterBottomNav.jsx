@@ -332,7 +332,7 @@ const FarcasterBottomNav = () => {
                 flexDirection: 'column',
                 gap: '12px'
               }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#1f2937' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#e5e7eb' }}>
                   GM / GN
                 </h3>
                 <div style={{ display: 'flex', gap: '12px' }}>
@@ -395,7 +395,7 @@ const FarcasterBottomNav = () => {
                 flexDirection: 'column',
                 gap: '12px'
               }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#1f2937' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#e5e7eb' }}>
                   Gaming
                 </h3>
                 <div style={{ 
@@ -441,7 +441,7 @@ const FarcasterBottomNav = () => {
                 flexDirection: 'column',
                 gap: '12px'
               }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#1f2937' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#e5e7eb' }}>
                   NFT Tools
                 </h3>
                 <div style={{ 
@@ -487,7 +487,7 @@ const FarcasterBottomNav = () => {
                 flexDirection: 'column',
                 gap: '12px'
               }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#1f2937' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#e5e7eb' }}>
                   Analysis Tools
                 </h3>
                 <div style={{ 
@@ -533,7 +533,7 @@ const FarcasterBottomNav = () => {
                 flexDirection: 'column',
                 gap: '12px'
               }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#1f2937' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#e5e7eb' }}>
                   Deploy Tools
                 </h3>
                 <div style={{ 

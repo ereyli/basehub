@@ -242,7 +242,7 @@ const headerStyles = `
   .logo-title {
     font-size: 24px;
     font-weight: 800;
-    color: #1f2937;
+    color: #e5e7eb;
     line-height: 1;
     background: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%);
     -webkit-background-clip: text;
@@ -252,7 +252,7 @@ const headerStyles = `
 
   .logo-subtitle {
     font-size: 12px;
-    color: #6b7280;
+    color: #9ca3af;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -355,7 +355,7 @@ const headerStyles = `
     align-items: center;
     gap: 6px;
     font-size: 12px;
-    color: #374151;
+    color: #e5e7eb;
   }
 
   .proof-metric svg {
@@ -364,12 +364,12 @@ const headerStyles = `
 
   .proof-label {
     font-weight: 500;
-    color: #6b7280;
+    color: #9ca3af;
   }
 
   .proof-value {
     font-weight: 700;
-    color: #1f2937;
+    color: #e5e7eb;
     font-variant-numeric: tabular-nums;
   }
 
@@ -456,7 +456,7 @@ const headerStyles = `
 
   .action-button.secondary {
     background: rgba(107, 114, 128, 0.1);
-    color: #6b7280;
+    color: #9ca3af;
     border: 1px solid rgba(107, 114, 128, 0.2);
   }
 
