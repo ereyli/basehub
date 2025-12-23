@@ -356,7 +356,7 @@ const Home = () => {
           <h3 style={{
             fontSize: '18px',
             fontWeight: 'bold',
-            color: '#1f2937',
+            color: '#e5e7eb',
             marginBottom: '8px'
           }}>
             Quick Navigation
@@ -441,7 +441,7 @@ const Home = () => {
               fontSize: '32px', 
               fontWeight: 'bold', 
               marginBottom: '8px',
-              color: '#1f2937'
+              color: '#e5e7eb'
             }}>
               Welcome to BaseHub
             </h1>
@@ -1091,7 +1091,7 @@ const Home = () => {
                       fontSize: '20px', 
                       fontWeight: 'bold', 
                       marginBottom: '8px',
-                      color: '#1f2937'
+                      color: '#e5e7eb'
                     }}>
                       {game.title}
                     </h3>
@@ -1199,7 +1199,7 @@ const Home = () => {
                     fontSize: '20px', 
                     fontWeight: 'bold', 
                     marginBottom: '8px',
-                    color: '#1f2937'
+                    color: '#e5e7eb'
                   }}>
                     {game.title}
                   </h3>
@@ -1293,7 +1293,7 @@ const Home = () => {
                     fontSize: '20px', 
                     fontWeight: 'bold', 
                     marginBottom: '8px',
-                    color: '#1f2937'
+                    color: '#e5e7eb'
                   }}>
                     {game.title}
                   </h3>
@@ -1337,7 +1337,7 @@ const Home = () => {
                 fontSize: '24px', 
                 fontWeight: 'bold', 
                 marginBottom: '8px',
-                color: '#1f2937'
+                color: '#e5e7eb'
               }}>
                 Top Players by XP
               </h2>
@@ -1375,7 +1375,7 @@ const Home = () => {
                       <span style={{ 
                         fontWeight: 'bold', 
                         fontSize: '14px',
-                        color: '#1f2937'
+                        color: '#e5e7eb'
                       }}>
                         {formatAddress(player.wallet_address)}
                       </span>
@@ -1433,7 +1433,7 @@ const Home = () => {
                     fontSize: '18px', 
                     fontWeight: 'bold', 
                     marginBottom: '8px',
-                    color: '#374151'
+                    color: '#9ca3af'
                   }}>
                     No Players Yet
                   </h3>
@@ -1486,7 +1486,7 @@ const Home = () => {
             fontSize: '20px', 
             fontWeight: 'bold', 
             marginBottom: '16px',
-            color: '#1f2937'
+            color: '#e5e7eb'
           }}>
             🌐 Connect With Us
           </h3>
