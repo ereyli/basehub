@@ -1535,7 +1535,7 @@ export default Home
 const styles = `
   .home {
     min-height: 100vh;
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    background: transparent;
     padding: 20px;
   }
 
