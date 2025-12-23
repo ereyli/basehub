@@ -2043,6 +2043,18 @@ body {
   }
 }
 
+/* Input placeholder styles for dark theme */
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af !important;
+  opacity: 0.7;
+}
+
+input,
+textarea {
+  color: #e5e7eb;
+}
+
 /* Wallet dropdown styles */
 .wallet-dropdown {
   position: relative;
