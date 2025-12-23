@@ -1732,19 +1732,6 @@ body {
 
 /* Mobile browser optimizations for web-app (not Farcaster) */
 @media (max-width: 768px) {
-  /* Scale down the entire web-app for mobile to fit everything */
-  .web-app {
-    zoom: 0.85;
-    -webkit-transform: scale(0.85);
-    -moz-transform: scale(0.85);
-    -ms-transform: scale(0.85);
-    transform: scale(0.85);
-    transform-origin: top center;
-    width: 117.65%; /* 100 / 0.85 to compensate for scale */
-    min-height: 117.65vh;
-    padding-top: 60px;
-  }
-  
   /* Hide left sidebar navigation on mobile completely */
   .web-app .web-bottom-nav {
     display: none !important;
@@ -1760,6 +1747,11 @@ body {
     max-width: 100% !important;
     margin-left: 0 !important;
     margin-right: 0 !important;
+  }
+  
+  /* Adjust padding for mobile */
+  .web-app {
+    padding-top: 60px;
   }
   
   /* Adjust header for mobile - prevent text overflow */
