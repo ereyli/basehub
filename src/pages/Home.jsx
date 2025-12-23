@@ -1508,18 +1508,20 @@ const Home = () => {
                 <span className="social-subtitle">@BaseHUBB</span>
               </div>
             </a>
-            <a 
-              href="https://basehub.fun" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="social-link-card website"
-            >
-              <ExternalLink size={24} />
-              <div>
-                <span className="social-title">Visit Website</span>
-                <span className="social-subtitle">basehub.fun</span>
-              </div>
-            </a>
+            {isInFarcaster && (
+              <a 
+                href="https://basehub.fun" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="social-link-card website"
+              >
+                <ExternalLink size={24} />
+                <div>
+                  <span className="social-title">Visit Website</span>
+                  <span className="social-subtitle">basehub.fun</span>
+                </div>
+              </a>
+            )}
           </div>
         </div>
       </div>
