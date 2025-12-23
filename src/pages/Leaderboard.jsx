@@ -176,10 +176,10 @@ const Leaderboard = () => {
                 alignItems: 'center',
                 gap: '4px',
                 padding: '4px 8px',
-                background: 'rgba(59, 130, 246, 0.1)',
-                border: '1px solid rgba(59, 130, 246, 0.2)',
+                background: 'rgba(30, 41, 59, 0.8)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: '6px',
-                color: '#3b82f6',
+                color: '#e5e7eb',
                 fontSize: '12px',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 opacity: loading ? 0.5 : 1
@@ -276,10 +276,10 @@ const Leaderboard = () => {
                   alignItems: 'center',
                   gap: '8px'
                 }}>
-                  <TrendingUp size={16} style={{ color: '#10b981' }} />
+                  <TrendingUp size={16} style={{ color: '#e5e7eb' }} />
                   <span style={{ 
                     fontWeight: 'bold',
-                    color: '#10b981',
+                    color: '#e5e7eb',
                     fontSize: '16px'
                   }}>
                     {player.total_xp} XP
@@ -374,8 +374,9 @@ const Leaderboard = () => {
                     alignItems: 'center',
                     gap: '8px',
                     padding: '12px 24px',
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
-                    color: 'white',
+                    background: 'rgba(30, 41, 59, 0.8)',
+                    color: '#e5e7eb',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
                     border: 'none',
                     borderRadius: '8px',
                     fontSize: '14px',
