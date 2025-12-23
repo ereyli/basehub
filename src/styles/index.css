@@ -236,12 +236,13 @@ body {
 
 /* Farcaster-specific card styles */
 .farcaster-app .card {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(30, 41, 59, 0.95);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   margin-bottom: 24px;
+  color: #e5e7eb;
 }
 
 /* Farcaster-specific welcome section */
@@ -1088,10 +1089,10 @@ body {
 }
 
 .skeleton-card {
-  background: white;
+  background: rgba(30, 41, 59, 0.95);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .skeleton-title {
@@ -2193,7 +2194,7 @@ body {
   justify-content: space-between;
   align-items: center;
   padding-top: 20px;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   flex-wrap: wrap;
   gap: 16px;
 }
