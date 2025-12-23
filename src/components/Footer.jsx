@@ -1,10 +1,19 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Twitter, ExternalLink, Zap } from 'lucide-react'
-import { useFarcaster } from '../contexts/FarcasterContext'
 
 const Footer = () => {
-  const { isInFarcaster } = useFarcaster()
+  // Safely check if we're in Farcaster environment
+  let isInFarcaster = false
+  try {
+    const { useFarcaster } = require('../contexts/FarcasterContext')
+    const farcasterContext = useFarcaster()
+    isInFarcaster = farcasterContext?.isInFarcaster || false
+  } catch (error) {
+    // If Farcaster context is not available (e.g., in web app), default to false
+    isInFarcaster = false
+  }
+  
   const currentYear = new Date().getFullYear()
 
   return (

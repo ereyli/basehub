@@ -72,7 +72,10 @@
           message.includes('ERR_ABORTED 401') ||
           message.includes('warpcast.com') ||
           message.includes('user-app-context') ||
-          message.includes('onboarding-state')) {
+          message.includes('onboarding-state') ||
+          message.includes('MetaMask encountered an error') ||
+          message.includes('Cannot set property ethereum') ||
+          message.includes('which has only a getter')) {
         return; // Don't log these errors
       }
       originalError.apply(console, args);
