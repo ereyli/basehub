@@ -288,7 +288,7 @@ const FarcasterXPDisplay = () => {
             alignItems: 'center',
             gap: '4px',
             fontSize: '11px',
-            color: '#374151'
+            color: '#e5e7eb'
           }}>
             <Repeat size={12} style={{ color: '#3b82f6' }} />
             <span style={{ fontWeight: '500', color: '#9ca3af', fontSize: '10px' }}>24h tx:</span>
@@ -301,7 +301,7 @@ const FarcasterXPDisplay = () => {
             alignItems: 'center',
             gap: '4px',
             fontSize: '11px',
-            color: '#374151'
+            color: '#e5e7eb'
           }}>
             <Users size={12} style={{ color: '#3b82f6' }} />
             <span style={{ fontWeight: '500', color: '#9ca3af', fontSize: '10px' }}>users:</span>
