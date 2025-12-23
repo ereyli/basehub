@@ -1732,9 +1732,9 @@ body {
 
 /* Mobile browser optimizations for web-app (not Farcaster) */
 @media (max-width: 768px) {
-  /* Hide left sidebar navigation on mobile completely */
+  /* Mobile sidebar is hidden by default, shown via toggle button */
   .web-app .web-bottom-nav {
-    display: none !important;
+    /* Sidebar visibility controlled by component state */
   }
   
   /* Remove left padding from container - sidebar is hidden */

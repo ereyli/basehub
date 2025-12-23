@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAccount } from 'wagmi'
 import { useTransactions } from '../hooks/useTransactions'
-import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket } from 'lucide-react'
+import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, ChevronRight, ChevronLeft } from 'lucide-react'
 
 const WebBottomNav = () => {
   const navigate = useNavigate()
@@ -12,6 +12,18 @@ const WebBottomNav = () => {
   const [isLoadingGM, setIsLoadingGM] = useState(false)
   const [isLoadingGN, setIsLoadingGN] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
+  const [isMobile, setIsMobile] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const handleTabClick = (tab) => {
     if (activeTab === tab) {
@@ -89,11 +101,42 @@ const WebBottomNav = () => {
 
   return (
     <>
+      {/* Toggle Button for Mobile */}
+      {isMobile && (
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          style={{
+            position: 'fixed',
+            top: '80px',
+            left: isSidebarOpen ? '80px' : '0',
+            zIndex: 1001,
+            width: '40px',
+            height: '40px',
+            background: 'rgba(30, 41, 59, 0.98)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderLeft: isSidebarOpen ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: isSidebarOpen ? '0 8px 8px 0' : '0 8px 8px 0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            boxShadow: '2px 0 10px rgba(0, 0, 0, 0.2)'
+          }}
+        >
+          {isSidebarOpen ? (
+            <ChevronLeft size={20} style={{ color: '#e5e7eb' }} />
+          ) : (
+            <ChevronRight size={20} style={{ color: '#e5e7eb' }} />
+          )}
+        </button>
+      )}
+
       {/* Left Sidebar Navigation */}
       <div style={{
         position: 'fixed',
         top: '80px',
-        left: '0',
+        left: isMobile && !isSidebarOpen ? '-80px' : '0',
         bottom: '0',
         width: '80px',
         background: 'rgba(30, 41, 59, 0.98)',
@@ -107,7 +150,8 @@ const WebBottomNav = () => {
         justifyContent: 'flex-start',
         alignItems: 'center',
         gap: '12px',
-        overflowY: 'auto'
+        overflowY: 'auto',
+        transition: 'left 0.3s ease'
       }}>
         {/* GM/GN Tab */}
         <button
