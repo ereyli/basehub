@@ -291,8 +291,8 @@ const FarcasterXPDisplay = () => {
             color: '#374151'
           }}>
             <Repeat size={12} style={{ color: '#3b82f6' }} />
-            <span style={{ fontWeight: '500', color: '#6b7280', fontSize: '10px' }}>24h tx:</span>
-            <span style={{ fontWeight: '700', color: '#1f2937' }}>
+            <span style={{ fontWeight: '500', color: '#9ca3af', fontSize: '10px' }}>24h tx:</span>
+            <span style={{ fontWeight: '700', color: '#e5e7eb' }}>
               {proofLoading ? '...' : last24hTxCount.toLocaleString()}
             </span>
           </div>
@@ -304,8 +304,8 @@ const FarcasterXPDisplay = () => {
             color: '#374151'
           }}>
             <Users size={12} style={{ color: '#3b82f6' }} />
-            <span style={{ fontWeight: '500', color: '#6b7280', fontSize: '10px' }}>users:</span>
-            <span style={{ fontWeight: '700', color: '#1f2937' }}>
+            <span style={{ fontWeight: '500', color: '#9ca3af', fontSize: '10px' }}>users:</span>
+            <span style={{ fontWeight: '700', color: '#e5e7eb' }}>
               {proofLoading ? '...' : totalUsers.toLocaleString()}
             </span>
           </div>
