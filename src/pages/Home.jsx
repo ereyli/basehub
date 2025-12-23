@@ -528,7 +528,7 @@ const Home = () => {
                   }}>
                     <Sun size={24} />
                   </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
                     GM / GN
                   </h2>
                 </div>
@@ -615,7 +615,7 @@ const Home = () => {
                   }}>
                     <Gamepad2 size={24} />
                   </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
                     GAMING
                   </h2>
                 </div>
@@ -703,7 +703,7 @@ const Home = () => {
                   }}>
                     <Image size={24} />
                   </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
                     NFT
                   </h2>
                 </div>
@@ -791,7 +791,7 @@ const Home = () => {
                   }}>
                     <TrendingUp size={24} />
                   </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
                     ANALYSIS
                   </h2>
                 </div>
@@ -879,7 +879,7 @@ const Home = () => {
                   }}>
                     <Rocket size={24} />
                   </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
                     DEPLOY
                   </h2>
                 </div>
