@@ -72,27 +72,19 @@ const Leaderboard = () => {
   const getRankIcon = (rank) => {
     switch (rank) {
       case 1:
-        return <Trophy size={24} style={{ color: '#FFD700' }} />
+        return <Trophy size={24} style={{ color: '#e5e7eb' }} />
       case 2:
-        return <Medal size={24} style={{ color: '#C0C0C0' }} />
+        return <Medal size={24} style={{ color: '#e5e7eb' }} />
       case 3:
-        return <Award size={24} style={{ color: '#CD7F32' }} />
+        return <Award size={24} style={{ color: '#e5e7eb' }} />
       default:
-        return <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#6b7280' }}>#{rank}</span>
+        return <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#e5e7eb' }}>#{rank}</span>
     }
   }
 
   const getRankColor = (rank) => {
-    switch (rank) {
-      case 1:
-        return 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)'
-      case 2:
-        return 'linear-gradient(135deg, #C0C0C0 0%, #A0A0A0 100%)'
-      case 3:
-        return 'linear-gradient(135deg, #CD7F32 0%, #B8860B 100%)'
-      default:
-        return 'linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%)'
-    }
+    // All ranks use white background
+    return 'rgba(255, 255, 255, 0.1)'
   }
 
   if (loading) {
@@ -142,10 +134,7 @@ const Leaderboard = () => {
           <div style={{ 
             fontSize: '48px', 
             marginBottom: '16px',
-            background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
+            color: '#e5e7eb'
           }}>
             🏆
           </div>
@@ -153,12 +142,12 @@ const Leaderboard = () => {
             fontSize: '28px', 
             fontWeight: 'bold', 
             marginBottom: '8px',
-            color: '#1f2937'
+            color: '#e5e7eb'
           }}>
             Leaderboard
           </h1>
           <p style={{ 
-            color: '#6b7280',
+            color: '#9ca3af',
             fontSize: '16px'
           }}>
             Top 10 players by total XP
@@ -223,9 +212,9 @@ const Leaderboard = () => {
                   alignItems: 'center',
                   padding: '16px',
                   marginBottom: '12px',
-                  background: index < 3 ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.5)',
+                  background: 'rgba(30, 41, 59, 0.8)',
                   borderRadius: '12px',
-                  border: index < 3 ? '2px solid rgba(255, 215, 0, 0.3)' : '1px solid rgba(0, 0, 0, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
                   transition: 'all 0.2s ease'
                 }}
               >
@@ -250,18 +239,19 @@ const Leaderboard = () => {
                     <span style={{ 
                       fontWeight: 'bold', 
                       fontSize: '16px',
-                      color: '#1f2937'
+                      color: '#e5e7eb'
                     }}>
                       {formatAddress(player.wallet_address)}
                     </span>
                     {index < 3 && (
                       <span style={{
-                        background: getRankColor(index + 1),
-                        color: 'white',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        color: '#e5e7eb',
                         padding: '2px 8px',
                         borderRadius: '12px',
                         fontSize: '10px',
-                        fontWeight: 'bold'
+                        fontWeight: 'bold',
+                        border: '1px solid rgba(255, 255, 255, 0.2)'
                       }}>
                         TOP {index + 1}
                       </span>
@@ -272,7 +262,7 @@ const Leaderboard = () => {
                     display: 'flex', 
                     gap: '16px',
                     fontSize: '14px',
-                    color: '#6b7280'
+                    color: '#9ca3af'
                   }}>
                     <span>Level {player.level}</span>
                     <span>{player.total_xp} XP</span>
@@ -309,9 +299,9 @@ const Leaderboard = () => {
                     alignItems: 'center',
                     padding: '16px',
                     marginBottom: '12px',
-                    background: 'rgba(255, 255, 255, 0.5)',
+                    background: 'rgba(30, 41, 59, 0.8)',
                     borderRadius: '12px',
-                    border: '1px solid rgba(0, 0, 0, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
                     transition: 'all 0.2s ease'
                   }}
                 >
@@ -323,7 +313,7 @@ const Leaderboard = () => {
                     height: '40px',
                     marginRight: '16px'
                   }}>
-                    <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#6b7280' }}>#{globalIndex}</span>
+                    <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#e5e7eb' }}>#{globalIndex}</span>
                   </div>
 
                   <div style={{ flex: 1 }}>
@@ -336,7 +326,7 @@ const Leaderboard = () => {
                       <span style={{ 
                         fontWeight: 'bold', 
                         fontSize: '16px',
-                        color: '#1f2937'
+                        color: '#e5e7eb'
                       }}>
                         {formatAddress(player.wallet_address)}
                       </span>
@@ -346,7 +336,7 @@ const Leaderboard = () => {
                       display: 'flex', 
                       gap: '16px',
                       fontSize: '14px',
-                      color: '#6b7280'
+                      color: '#9ca3af'
                     }}>
                       <span>Level {player.level}</span>
                       <span>{player.total_xp} XP</span>
@@ -424,12 +414,12 @@ const Leaderboard = () => {
             fontSize: '16px', 
             fontWeight: 'bold', 
             marginBottom: '8px',
-            color: '#1f2937'
+            color: '#e5e7eb'
           }}>
             🎯 How to climb the leaderboard:
           </h3>
           <ul style={{ 
-            color: '#6b7280', 
+            color: '#9ca3af', 
             fontSize: '14px',
             margin: 0,
             paddingLeft: '20px',

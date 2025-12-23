@@ -372,6 +372,7 @@ export default function WalletAnalysis() {
                     transition: 'all 0.3s',
                     background: 'rgba(30, 41, 59, 0.95)',
                     fontFamily: 'monospace',
+                    color: '#e5e7eb',
                   }}
                   onFocus={(e) => {
                     e.target.style.borderColor = '#667eea'
