@@ -1730,6 +1730,126 @@ body {
   }
 }
 
+/* Mobile browser optimizations for web-app (not Farcaster) */
+@media (max-width: 768px) {
+  /* Hide left sidebar on mobile */
+  .web-app .container {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    padding-top: 20px;
+  }
+  
+  /* Adjust header for mobile */
+  .web-app .web-header {
+    padding: 0;
+  }
+  
+  .web-app .web-header .header-container {
+    padding: 0 16px;
+  }
+  
+  .web-app .web-header .header-content {
+    height: 60px;
+    gap: 8px;
+  }
+  
+  .web-app .web-header .logo-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .web-app .web-header .logo-title {
+    font-size: 18px;
+  }
+  
+  .web-app .web-header .logo-subtitle {
+    font-size: 9px;
+  }
+  
+  .web-app .web-header .header-right {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  .web-app .web-header .header-xp-display {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  .web-app .web-header .header-xp-value {
+    font-size: 14px;
+  }
+  
+  .web-app .web-header .header-xp-label {
+    font-size: 10px;
+  }
+  
+  .web-app .web-header .proof-of-usage {
+    display: none; /* Hide on mobile to save space */
+  }
+  
+  /* Hide left sidebar navigation on mobile */
+  .web-app .web-bottom-nav {
+    display: none;
+  }
+  
+  /* Adjust padding for mobile */
+  .web-app {
+    padding-top: 60px;
+  }
+  
+  /* Make category cards more compact on mobile */
+  .web-app .home {
+    padding: 0;
+  }
+  
+  .web-app .category-section {
+    margin-bottom: 24px;
+  }
+  
+  .web-app .category-header {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  
+  .web-app .game-card {
+    padding: 16px;
+    min-height: auto;
+  }
+  
+  .web-app .game-card h3 {
+    font-size: 16px;
+  }
+  
+  .web-app .game-card p {
+    font-size: 13px;
+  }
+  
+  /* Footer adjustments for mobile */
+  .web-app .app-footer {
+    padding: 30px 16px 20px;
+  }
+  
+  .web-app .footer-container {
+    padding: 0 16px;
+  }
+  
+  .web-app .footer-content {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  
+  .web-app .footer-links {
+    gap: 24px;
+  }
+  
+  .web-app .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
 /* Button styles */
 .btn {
   display: inline-flex;
