@@ -980,11 +980,11 @@ const DailyQuestSystem = () => {
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+      background: 'rgba(30, 41, 59, 0.95)',
       borderRadius: '12px',
       padding: '16px',
       margin: '16px 0',
-      border: '1px solid #e2e8f0'
+      border: '1px solid rgba(255, 255, 255, 0.1)'
     }}>
       {/* Compact Header */}
       <div style={{
@@ -1011,14 +1011,14 @@ const DailyQuestSystem = () => {
               margin: '0',
               fontSize: '16px',
               fontWeight: 'bold',
-              color: '#1f2937'
+              color: '#e5e7eb'
             }}>
               Daily Quests
             </h3>
             <p style={{
               margin: '0',
               fontSize: '12px',
-              color: '#6b7280'
+              color: '#9ca3af'
             }}>
               {timeUntilNextDay ? (
                 `Next day in: ${timeUntilNextDay}`
@@ -1039,7 +1039,7 @@ const DailyQuestSystem = () => {
 
       {/* Compact Progress Bar */}
       <div style={{
-        background: '#e5e7eb',
+        background: 'rgba(255, 255, 255, 0.1)',
         borderRadius: '6px',
         height: '6px',
         marginBottom: '12px',
@@ -1063,23 +1063,23 @@ const DailyQuestSystem = () => {
           {timeUntilNextDay ? (
             <div style={{
               gridColumn: '1 / -1',
-              background: 'white',
+              background: 'rgba(30, 41, 59, 0.8)',
               borderRadius: '8px',
               padding: '20px',
               textAlign: 'center',
-              border: '1px solid #e5e7eb'
+              border: '1px solid rgba(255, 255, 255, 0.1)'
             }}>
               <div style={{
                 fontSize: '16px',
                 fontWeight: 'bold',
-                color: '#1f2937',
+                color: '#e5e7eb',
                 marginBottom: '8px'
               }}>
                 🎉 Day {currentDay} Completed!
               </div>
               <div style={{
                 fontSize: '14px',
-                color: '#6b7280',
+                color: '#9ca3af',
                 marginBottom: '12px'
               }}>
                 All quests completed. Next day unlocks in:
@@ -1105,10 +1105,10 @@ const DailyQuestSystem = () => {
               <div
                 key={`${quest.day}-${index}`}
                 style={{
-                  background: 'white',
+                  background: 'rgba(30, 41, 59, 0.8)',
                   borderRadius: '8px',
                   padding: '10px',
-                  border: '1px solid #e5e7eb',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
@@ -1134,7 +1134,7 @@ const DailyQuestSystem = () => {
                     margin: '0 0 2px 0',
                     fontSize: '12px',
                     fontWeight: '600',
-                    color: '#1f2937',
+                    color: '#e5e7eb',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -1144,7 +1144,7 @@ const DailyQuestSystem = () => {
                   <p style={{
                     margin: '0',
                     fontSize: '10px',
-                    color: '#6b7280'
+                    color: '#9ca3af'
                   }}>
                     {current}/{required}
                   </p>
