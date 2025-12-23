@@ -1309,12 +1309,12 @@ body {
 
 .proof-label {
   font-weight: 500;
-  color: #6b7280;
+  color: #9ca3af;
 }
 
 .proof-value {
   font-weight: 700;
-  color: #1f2937;
+  color: #e5e7eb;
   font-variant-numeric: tabular-nums;
 }
 
