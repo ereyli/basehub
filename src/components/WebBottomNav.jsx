@@ -96,9 +96,9 @@ const WebBottomNav = () => {
         left: '0',
         bottom: '0',
         width: '80px',
-        background: 'rgba(255, 255, 255, 0.98)',
+        background: 'rgba(30, 41, 59, 0.98)',
         backdropFilter: 'blur(20px)',
-        borderRight: '1px solid rgba(0, 0, 0, 0.1)',
+        borderRight: '1px solid rgba(255, 255, 255, 0.1)',
         zIndex: 1000,
         padding: '20px 8px',
         boxShadow: '2px 0 10px rgba(0, 0, 0, 0.1)',
@@ -292,9 +292,9 @@ const WebBottomNav = () => {
             top: '80px',
             left: '80px',
             bottom: '0',
-            background: 'rgba(255, 255, 255, 0.98)',
+            background: 'rgba(30, 41, 59, 0.98)',
             backdropFilter: 'blur(20px)',
-            borderRight: '1px solid rgba(0, 0, 0, 0.1)',
+            borderRight: '1px solid rgba(255, 255, 255, 0.1)',
             zIndex: 1000,
             padding: '24px',
             maxWidth: '400px',
@@ -330,7 +330,7 @@ const WebBottomNav = () => {
                 flexDirection: 'column',
                 gap: '12px'
               }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#1f2937' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#e5e7eb' }}>
                   GM / GN
                 </h3>
                 <div style={{ display: 'flex', gap: '12px' }}>
@@ -393,7 +393,7 @@ const WebBottomNav = () => {
                 flexDirection: 'column',
                 gap: '12px'
               }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#1f2937' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#e5e7eb' }}>
                   Gaming
                 </h3>
                 <div style={{ 
@@ -439,7 +439,7 @@ const WebBottomNav = () => {
                 flexDirection: 'column',
                 gap: '12px'
               }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#1f2937' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#e5e7eb' }}>
                   NFT Tools
                 </h3>
                 <div style={{ 
@@ -485,7 +485,7 @@ const WebBottomNav = () => {
                 flexDirection: 'column',
                 gap: '12px'
               }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#1f2937' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#e5e7eb' }}>
                   Analysis Tools
                 </h3>
                 <div style={{ 
@@ -531,7 +531,7 @@ const WebBottomNav = () => {
                 flexDirection: 'column',
                 gap: '12px'
               }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#1f2937' }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#e5e7eb' }}>
                   Deploy Tools
                 </h3>
                 <div style={{ 
