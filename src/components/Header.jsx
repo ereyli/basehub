@@ -59,7 +59,7 @@ const Header = () => {
             </div>
             <div className="logo-text">
               <span className="logo-title">BaseHub</span>
-              <span className="logo-subtitle">Gaming Platform</span>
+              <span className="logo-subtitle">Gamified smart contracts</span>
             </div>
           </Link>
           

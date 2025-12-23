@@ -958,25 +958,28 @@ const Home = () => {
                           color: 'white',
                           transition: 'all 0.3s ease',
                           height: '100%'
-                        }}                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', position: 'relative' }}>
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
                             {game.icon}
-                            <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1 }}>
+                            <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
                               {game.title}
                             </h3>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
                             <div style={{
                               background: 'rgba(255, 255, 255, 0.95)',
-                              borderRadius: '20px',
-                              padding: '4px 10px',
-                              fontSize: '11px',
+                              borderRadius: '12px',
+                              padding: '2px 8px',
+                              fontSize: '9px',
                               fontWeight: 'bold',
                               color: '#059669',
-                              whiteSpace: 'nowrap'
+                              whiteSpace: 'nowrap',
+                              lineHeight: '1.2'
                             }}>
                               {game.xpReward}
                             </div>
                           </div>
-                          <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0 }}>
+                          <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0, lineHeight: '1.4' }}>
                             {game.description}
                           </p>
                         </div>
