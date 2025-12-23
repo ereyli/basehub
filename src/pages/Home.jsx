@@ -1509,18 +1509,18 @@ const Home = () => {
               </div>
             </a>
             {isInFarcaster && (
-              <a 
-                href="https://basehub.fun" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="social-link-card website"
-              >
-                <ExternalLink size={24} />
-                <div>
-                  <span className="social-title">Visit Website</span>
-                  <span className="social-subtitle">basehub.fun</span>
-                </div>
-              </a>
+            <a 
+              href="https://basehub.fun" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="social-link-card website"
+            >
+              <ExternalLink size={24} />
+              <div>
+                <span className="social-title">Visit Website</span>
+                <span className="social-subtitle">basehub.fun</span>
+              </div>
+            </a>
             )}
           </div>
         </div>
@@ -1544,13 +1544,14 @@ const styles = `
   }
 
   .card {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(30, 41, 59, 0.95);
     backdrop-filter: blur(20px);
     border-radius: 20px;
     padding: 32px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 0.3s ease;
+    color: #e5e7eb;
   }
 
   .card:hover {
@@ -1567,14 +1568,14 @@ const styles = `
 
   .game-card {
     position: relative;
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(30, 41, 59, 0.95);
     backdrop-filter: blur(20px);
     border-radius: 20px;
     padding: 24px;
     text-align: center;
     transition: all 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     overflow: hidden;
   }
 
