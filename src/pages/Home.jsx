@@ -884,13 +884,11 @@ const Home = () => {
                             cursor: !isLoadingX402 ? 'pointer' : 'not-allowed',
                             opacity: !isLoadingX402 ? 1 : 0.6,
                             position: 'relative',
-                            background: 'transparent',
-                            padding: '0',
-                            width: '100%',
-                            textAlign: 'left',
                             display: 'block',
-                            boxShadow: 'none',
-                            borderRadius: '0'
+                            background: 'transparent',
+                            padding: '20px',
+                            textAlign: 'left',
+                            boxShadow: 'none'
                           }}
                         >
                           <div style={{
@@ -899,8 +897,7 @@ const Home = () => {
                             borderRadius: '16px',
                             color: 'white',
                             transition: 'all 0.3s ease',
-                            height: '100%',
-                            margin: '0'
+                            height: '100%'
                           }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
                               {game.icon}
