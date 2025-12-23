@@ -230,7 +230,6 @@ function WebAppContent() {
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="App web-app">
         <WebHeader />
-        <WebXPDisplay />
         <main className="container" style={{ paddingLeft: '80px', paddingBottom: '40px' }}>
           <Routes>
             <Route path="/" element={<Home />} />

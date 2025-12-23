@@ -1290,6 +1290,31 @@ body {
   gap: 16px;
 }
 
+.header-xp-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 193, 7, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 193, 7, 0.2);
+}
+
+.header-xp-value {
+  font-weight: 700;
+  font-size: 18px;
+  color: #1f2937;
+  line-height: 1;
+}
+
+.header-xp-label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .proof-of-usage {
   display: flex;
   align-items: center;
