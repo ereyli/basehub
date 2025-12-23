@@ -1732,65 +1732,18 @@ body {
 
 /* Mobile browser optimizations for web-app (not Farcaster) */
 @media (max-width: 768px) {
-  /* Hide left sidebar on mobile */
+  /* Hide left sidebar navigation on mobile completely */
+  .web-app .web-bottom-nav {
+    display: none !important;
+  }
+  
+  /* Remove left padding from container - sidebar is hidden */
   .web-app .container {
     padding-left: 16px !important;
     padding-right: 16px !important;
     padding-top: 20px;
-  }
-  
-  /* Adjust header for mobile */
-  .web-app .web-header {
-    padding: 0;
-  }
-  
-  .web-app .web-header .header-container {
-    padding: 0 16px;
-  }
-  
-  .web-app .web-header .header-content {
-    height: 60px;
-    gap: 8px;
-  }
-  
-  .web-app .web-header .logo-icon {
-    width: 36px;
-    height: 36px;
-  }
-  
-  .web-app .web-header .logo-title {
-    font-size: 18px;
-  }
-  
-  .web-app .web-header .logo-subtitle {
-    font-size: 9px;
-  }
-  
-  .web-app .web-header .header-right {
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  
-  .web-app .web-header .header-xp-display {
-    padding: 6px 12px;
-    font-size: 12px;
-  }
-  
-  .web-app .web-header .header-xp-value {
-    font-size: 14px;
-  }
-  
-  .web-app .web-header .header-xp-label {
-    font-size: 10px;
-  }
-  
-  .web-app .web-header .proof-of-usage {
-    display: none; /* Hide on mobile to save space */
-  }
-  
-  /* Hide left sidebar navigation on mobile */
-  .web-app .web-bottom-nav {
-    display: none;
+    width: 100% !important;
+    max-width: 100% !important;
   }
   
   /* Adjust padding for mobile */
@@ -1798,13 +1751,120 @@ body {
     padding-top: 60px;
   }
   
+  /* Adjust header for mobile - prevent text overflow */
+  .web-app .web-header {
+    padding: 0;
+    height: 60px;
+  }
+  
+  .web-app .web-header .header-container {
+    padding: 0 12px;
+    max-width: 100%;
+  }
+  
+  .web-app .web-header .header-content {
+    height: 60px;
+    gap: 6px;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+  
+  .web-app .web-header .logo-section {
+    flex-shrink: 0;
+    min-width: 0;
+  }
+  
+  .web-app .web-header .logo-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+  
+  .web-app .web-header .logo-text {
+    min-width: 0;
+    overflow: hidden;
+  }
+  
+  .web-app .web-header .logo-title {
+    font-size: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .web-app .web-header .logo-subtitle {
+    font-size: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: none; /* Hide subtitle on mobile to save space */
+  }
+  
+  .web-app .web-header .header-right {
+    gap: 4px;
+    flex-wrap: nowrap;
+    min-width: 0;
+    flex-shrink: 1;
+    overflow: hidden;
+  }
+  
+  .web-app .web-header .header-xp-display {
+    padding: 4px 8px;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+  
+  .web-app .web-header .header-xp-value {
+    font-size: 12px;
+  }
+  
+  .web-app .web-header .header-xp-label {
+    font-size: 9px;
+  }
+  
+  .web-app .web-header .proof-of-usage {
+    display: none !important; /* Hide on mobile to save space */
+  }
+  
+  .web-app .web-header .nav-button {
+    padding: 6px 10px;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+  
+  .web-app .web-header .nav-button span {
+    display: none; /* Hide "Home" text, show only icon */
+  }
+  
+  .web-app .web-header .network-status {
+    font-size: 10px;
+    padding: 4px 8px;
+    flex-shrink: 0;
+  }
+  
+  .web-app .web-header .network-status span {
+    font-size: 10px;
+  }
+  
+  /* RainbowKit button adjustments */
+  .web-app .web-header [data-rk] {
+    flex-shrink: 0;
+  }
+  
+  .web-app .web-header button[data-rk] {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+  }
+  
   /* Make category cards more compact on mobile */
   .web-app .home {
     padding: 0;
+    width: 100%;
   }
   
   .web-app .category-section {
     margin-bottom: 24px;
+    width: 100%;
   }
   
   .web-app .category-header {
@@ -1815,6 +1875,7 @@ body {
   .web-app .game-card {
     padding: 16px;
     min-height: auto;
+    width: 100%;
   }
   
   .web-app .game-card h3 {
@@ -1828,10 +1889,13 @@ body {
   /* Footer adjustments for mobile */
   .web-app .app-footer {
     padding: 30px 16px 20px;
+    width: 100%;
   }
   
   .web-app .footer-container {
     padding: 0 16px;
+    width: 100%;
+    max-width: 100%;
   }
   
   .web-app .footer-content {
@@ -1847,6 +1911,14 @@ body {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+  }
+  
+  /* Ensure all pages use full width on mobile */
+  .web-app main {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
   }
 }
 
