@@ -1426,7 +1426,7 @@ body {
 .web-xp-display {
   position: fixed;
   top: 100px;
-  right: 20px;
+  right: 10px;
   z-index: 1000;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
