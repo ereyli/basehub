@@ -70,7 +70,7 @@ const WebHeader = () => {
             {isConnected && (
               <div className={`network-status ${isCorrectNetwork ? 'connected' : 'error'}`}>
                 {isCorrectNetwork ? (
-                  <span>✅ Base Network</span>
+                  <span>Base Network</span>
                 ) : (
                   <span>❌ Wrong Network</span>
                 )}
