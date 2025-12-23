@@ -884,48 +884,56 @@ const Home = () => {
                             cursor: !isLoadingX402 ? 'pointer' : 'not-allowed',
                             opacity: !isLoadingX402 ? 1 : 0.6,
                             position: 'relative',
-                            background: game.color,
-                            padding: '24px',
-                            borderRadius: '16px',
-                            color: 'white',
-                            transition: 'all 0.3s ease',
+                            background: 'transparent',
+                            padding: '0',
                             width: '100%',
                             textAlign: 'left',
                             display: 'block'
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', position: 'relative' }}>
-                            {game.icon}
-                            <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1 }}>
-                              {game.title}
-                            </h3>
-                            <div style={{
-                              background: 'rgba(255, 255, 255, 0.95)',
-                              borderRadius: '20px',
-                              padding: '4px 10px',
-                              fontSize: '11px',
-                              fontWeight: 'bold',
-                              color: '#059669',
-                              whiteSpace: 'nowrap'
-                            }}>
-                              {game.xpReward}
+                          <div style={{
+                            background: game.color,
+                            padding: '24px',
+                            borderRadius: '16px',
+                            color: 'white',
+                            transition: 'all 0.3s ease',
+                            height: '100%'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
+                              {game.icon}
+                              <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
+                                {game.title}
+                              </h3>
                             </div>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                            {game.bonusXP && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
                               <div style={{
-                                background: 'rgba(255, 215, 0, 0.95)',
-                                borderRadius: '20px',
-                                padding: '4px 10px',
-                                fontSize: '11px',
+                                background: 'rgba(255, 255, 255, 0.95)',
+                                borderRadius: '12px',
+                                padding: '2px 8px',
+                                fontSize: '9px',
                                 fontWeight: 'bold',
-                                color: '#92400e',
-                                whiteSpace: 'nowrap'
+                                color: '#059669',
+                                whiteSpace: 'nowrap',
+                                lineHeight: '1.2'
                               }}>
-                                {game.bonusXP}
+                                {game.xpReward}
                               </div>
-                            )}
-                            <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0, flex: 1 }}>
+                              {game.bonusXP && (
+                                <div style={{
+                                  background: 'rgba(255, 215, 0, 0.95)',
+                                  borderRadius: '12px',
+                                  padding: '2px 8px',
+                                  fontSize: '9px',
+                                  fontWeight: 'bold',
+                                  color: '#92400e',
+                                  whiteSpace: 'nowrap',
+                                  lineHeight: '1.2'
+                                }}>
+                                  {game.bonusXP}
+                                </div>
+                              )}
+                            </div>
+                            <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0, lineHeight: '1.4' }}>
                               {isLoadingX402 ? 'Processing payment...' : game.description}
                             </p>
                           </div>
