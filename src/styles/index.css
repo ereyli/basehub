@@ -160,10 +160,10 @@ body {
 .farcaster-app .game-card {
   margin-bottom: 8px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(30, 41, 59, 0.95);
   backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
   padding: 12px;
   cursor: pointer;
@@ -186,12 +186,12 @@ body {
   font-size: 14px;
   font-weight: 700;
   margin-bottom: 4px;
-  color: #1f2937;
+  color: #e5e7eb;
 }
 
 .farcaster-app .game-card p {
   font-size: 11px;
-  color: #6b7280;
+  color: #9ca3af;
   margin-bottom: 6px;
   line-height: 1.4;
 }
@@ -1880,13 +1880,14 @@ body {
 }
 
 .game-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(30, 41, 59, 0.95);
   border-radius: 16px;
   padding: 20px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e5e7eb;
 }
 
 .game-card:hover {
