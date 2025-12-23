@@ -95,7 +95,7 @@ export default function ContractSecurity() {
       <div style={{
         minHeight: '100vh',
         height: 'auto',
-        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fce7f3 100%)',
+        background: '#0f172a',
         padding: '20px',
         paddingBottom: '60px',
         position: 'relative',
@@ -162,7 +162,7 @@ export default function ContractSecurity() {
             </h1>
             <p style={{
               fontSize: '18px',
-              color: '#4b5563',
+              color: '#9ca3af',
               marginBottom: '16px',
               fontWeight: '500',
             }}>
@@ -190,7 +190,7 @@ export default function ContractSecurity() {
           <div style={{
             marginBottom: '32px',
             padding: '28px',
-            background: 'white',
+            background: 'rgba(30, 41, 59, 0.95)',
             borderRadius: '24px',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
             border: '2px solid rgba(102, 126, 234, 0.1)',
@@ -205,7 +205,7 @@ export default function ContractSecurity() {
               <h3 style={{
                 fontSize: '20px',
                 fontWeight: 'bold',
-                color: '#1f2937',
+                color: '#e5e7eb',
                 margin: 0,
               }}>
                 Select Network to Analyze
@@ -300,7 +300,7 @@ export default function ContractSecurity() {
                     fontSize: '16px',
                     outline: 'none',
                     transition: 'all 0.3s',
-                    background: 'white',
+                    background: 'rgba(30, 41, 59, 0.95)',
                     fontFamily: 'monospace',
                   }}
                   onFocus={(e) => {
@@ -446,7 +446,7 @@ export default function ContractSecurity() {
 
               {/* Security Score Card */}
               <div style={{
-                background: 'white',
+                background: 'rgba(30, 41, 59, 0.95)',
                 borderRadius: '20px',
                 padding: '28px',
                 marginBottom: '24px',
@@ -475,7 +475,7 @@ export default function ContractSecurity() {
                       <h3 style={{
                         fontSize: '20px',
                         fontWeight: 'bold',
-                        color: '#1f2937',
+                        color: '#e5e7eb',
                         margin: 0,
                       }}>
                         Security Score
@@ -530,7 +530,7 @@ export default function ContractSecurity() {
               {/* Security Checks - All Checks with Pass/Fail */}
               {analysis.securityChecks && analysis.securityChecks.length > 0 && (
                 <div style={{
-                  background: 'white',
+                  background: 'rgba(30, 41, 59, 0.95)',
                   borderRadius: '20px',
                   padding: '24px',
                   marginBottom: '24px',
@@ -540,7 +540,7 @@ export default function ContractSecurity() {
                     fontSize: '18px',
                     fontWeight: 'bold',
                     marginBottom: '20px',
-                    color: '#1f2937',
+                    color: '#e5e7eb',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
@@ -583,7 +583,7 @@ export default function ContractSecurity() {
                           <div style={{
                             fontSize: '15px',
                             fontWeight: '700',
-                            color: '#1f2937',
+                            color: '#e5e7eb',
                             flex: 1,
                           }}>
                             {check.check}
@@ -614,7 +614,7 @@ export default function ContractSecurity() {
 
               {/* Contract Info */}
               <div style={{
-                background: 'white',
+                background: 'rgba(30, 41, 59, 0.95)',
                 borderRadius: '20px',
                 padding: '24px',
                 marginBottom: '24px',
@@ -624,7 +624,7 @@ export default function ContractSecurity() {
                   fontSize: '18px',
                   fontWeight: 'bold',
                   marginBottom: '16px',
-                  color: '#1f2937',
+                  color: '#e5e7eb',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '10px',
@@ -671,7 +671,7 @@ export default function ContractSecurity() {
               {/* Risks */}
               {analysis.risks && analysis.risks.length > 0 && (
                 <div style={{
-                  background: 'white',
+                  background: 'rgba(30, 41, 59, 0.95)',
                   borderRadius: '20px',
                   padding: '24px',
                   marginBottom: '24px',
@@ -681,7 +681,7 @@ export default function ContractSecurity() {
                     fontSize: '18px',
                     fontWeight: 'bold',
                     marginBottom: '16px',
-                    color: '#1f2937',
+                    color: '#e5e7eb',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
@@ -721,7 +721,7 @@ export default function ContractSecurity() {
                           <div style={{
                             fontSize: '18px',
                             fontWeight: '800',
-                            color: '#1f2937',
+                            color: '#e5e7eb',
                           }}>
                             {risk.type}
                           </div>
@@ -748,7 +748,7 @@ export default function ContractSecurity() {
                         {risk.details && (
                           <div style={{
                             fontSize: '14px',
-                            color: '#6b7280',
+                            color: '#9ca3af',
                             marginTop: '8px',
                             lineHeight: '1.6',
                             padding: '12px',
@@ -814,7 +814,7 @@ export default function ContractSecurity() {
                           <div style={{
                             marginTop: '8px',
                             fontSize: '12px',
-                            color: '#6b7280',
+                            color: '#9ca3af',
                             fontStyle: 'italic',
                           }}>
                             Total owner functions: {risk.functionCount}
@@ -829,7 +829,7 @@ export default function ContractSecurity() {
               {/* Warnings */}
               {analysis.warnings && analysis.warnings.length > 0 && (
                 <div style={{
-                  background: 'white',
+                  background: 'rgba(30, 41, 59, 0.95)',
                   borderRadius: '20px',
                   padding: '24px',
                   marginBottom: '24px',
@@ -839,7 +839,7 @@ export default function ContractSecurity() {
                     fontSize: '18px',
                     fontWeight: 'bold',
                     marginBottom: '16px',
-                    color: '#1f2937',
+                    color: '#e5e7eb',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
@@ -878,7 +878,7 @@ export default function ContractSecurity() {
               {/* Safe Features */}
               {analysis.safeFeatures && analysis.safeFeatures.length > 0 && (
                 <div style={{
-                  background: 'white',
+                  background: 'rgba(30, 41, 59, 0.95)',
                   borderRadius: '20px',
                   padding: '24px',
                   marginBottom: '24px',
@@ -888,7 +888,7 @@ export default function ContractSecurity() {
                     fontSize: '18px',
                     fontWeight: 'bold',
                     marginBottom: '16px',
-                    color: '#1f2937',
+                    color: '#e5e7eb',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
@@ -921,7 +921,7 @@ export default function ContractSecurity() {
                           <div style={{
                             fontSize: '14px',
                             fontWeight: '700',
-                            color: '#1f2937',
+                            color: '#e5e7eb',
                           }}>
                             {feature.type}
                           </div>
@@ -942,13 +942,13 @@ export default function ContractSecurity() {
               <div style={{
                 marginTop: '24px',
                 padding: '24px',
-                background: 'white',
+                background: 'rgba(30, 41, 59, 0.95)',
                 borderRadius: '20px',
                 textAlign: 'center',
                 boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
               }}>
                 <div style={{
-                  color: '#6b7280',
+                  color: '#9ca3af',
                   fontSize: '14px',
                   marginBottom: '12px',
                   fontWeight: '600',
@@ -959,7 +959,7 @@ export default function ContractSecurity() {
                   fontFamily: 'monospace',
                   fontSize: '16px',
                   fontWeight: '700',
-                  color: '#1f2937',
+                  color: '#e5e7eb',
                   wordBreak: 'break-all',
                   background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
                   padding: '12px 20px',

@@ -100,7 +100,7 @@ export default function WalletAnalysis() {
         </div>
         <div style={{
           fontSize: '13px',
-          color: '#6b7280',
+          color: '#9ca3af',
           fontWeight: '600',
         }}>
           {label}
@@ -109,7 +109,7 @@ export default function WalletAnalysis() {
       <div style={{
         fontSize: '22px',
         fontWeight: '800',
-        color: '#1f2937',
+        color: '#e5e7eb',
       }}>
         {value}
       </div>
@@ -135,7 +135,7 @@ export default function WalletAnalysis() {
         {icon}
         <div style={{
           fontSize: '12px',
-          color: '#6b7280',
+          color: '#9ca3af',
           fontWeight: '600',
         }}>
           {title}
@@ -144,7 +144,7 @@ export default function WalletAnalysis() {
       <div style={{
         fontSize: '16px',
         fontWeight: '700',
-        color: '#1f2937',
+        color: '#e5e7eb',
       }}>
         {value}
       </div>
@@ -165,7 +165,7 @@ export default function WalletAnalysis() {
       <div style={{
         minHeight: '100vh',
         height: 'auto',
-        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fce7f3 100%)',
+        background: '#0f172a',
         padding: '20px',
         paddingBottom: '60px',
         position: 'relative',
@@ -232,7 +232,7 @@ export default function WalletAnalysis() {
             </h1>
             <p style={{
               fontSize: '18px',
-              color: '#4b5563',
+              color: '#9ca3af',
               marginBottom: '16px',
               fontWeight: '500',
             }}>
@@ -260,7 +260,7 @@ export default function WalletAnalysis() {
           <div style={{
             marginBottom: '32px',
             padding: '28px',
-            background: 'white',
+            background: 'rgba(30, 41, 59, 0.95)',
             borderRadius: '24px',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
             border: '2px solid rgba(102, 126, 234, 0.1)',
@@ -275,7 +275,7 @@ export default function WalletAnalysis() {
               <h3 style={{
                 fontSize: '20px',
                 fontWeight: 'bold',
-                color: '#1f2937',
+                color: '#e5e7eb',
                 margin: 0,
               }}>
                 Select Network to Analyze
@@ -303,7 +303,7 @@ export default function WalletAnalysis() {
                     transition: 'all 0.2s ease',
                     fontSize: '14px',
                     fontWeight: selectedNetwork === key ? '700' : '600',
-                    color: selectedNetwork === key ? network.color : '#4b5563',
+                    color: selectedNetwork === key ? network.color : '#9ca3af',
                     textAlign: 'center',
                     boxShadow: selectedNetwork === key 
                       ? `0 4px 12px ${network.color}33`
@@ -370,7 +370,7 @@ export default function WalletAnalysis() {
                     fontSize: '16px',
                     outline: 'none',
                     transition: 'all 0.3s',
-                    background: 'white',
+                    background: 'rgba(30, 41, 59, 0.95)',
                     fontFamily: 'monospace',
                   }}
                   onFocus={(e) => {
@@ -507,7 +507,7 @@ export default function WalletAnalysis() {
 
               {/* Wallet Score Card - Compact with Progress Bar */}
               <div style={{
-                background: 'white',
+                background: 'rgba(30, 41, 59, 0.95)',
                 borderRadius: '20px',
                 padding: '28px',
                 marginBottom: '24px',
@@ -536,7 +536,7 @@ export default function WalletAnalysis() {
                       <h3 style={{
                         fontSize: '20px',
                         fontWeight: 'bold',
-                        color: '#1f2937',
+                        color: '#e5e7eb',
                         margin: 0,
                       }}>
                         Wallet Score
@@ -680,7 +680,7 @@ export default function WalletAnalysis() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '16px',
-                  color: '#1f2937',
+                  color: '#e5e7eb',
                 }}>
                   <div style={{
                     width: '48px',
@@ -728,13 +728,13 @@ export default function WalletAnalysis() {
                           fontSize: '20px',
                           fontWeight: 'bold',
                           marginBottom: '10px',
-                          color: '#1f2937',
+                          color: '#e5e7eb',
                         }}>
                           {token.symbol}
                         </div>
                         <div style={{
                           fontSize: '18px',
-                          color: '#6b7280',
+                          color: '#9ca3af',
                           fontFamily: 'monospace',
                           fontWeight: '600',
                         }}>
@@ -773,7 +773,7 @@ export default function WalletAnalysis() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '16px',
-                    color: '#1f2937',
+                    color: '#e5e7eb',
                   }}>
                     <div style={{
                       width: '48px',
@@ -800,7 +800,7 @@ export default function WalletAnalysis() {
                         key={index}
                         style={{
                           padding: '24px',
-                          background: 'white',
+                          background: 'rgba(30, 41, 59, 0.95)',
                           borderRadius: '16px',
                           fontSize: '17px',
                           display: 'flex',
@@ -838,7 +838,7 @@ export default function WalletAnalysis() {
                 border: '1px solid rgba(255, 255, 255, 0.5)',
               }}>
                 <div style={{
-                  color: '#6b7280',
+                  color: '#9ca3af',
                   fontSize: '15px',
                   marginBottom: '12px',
                   fontWeight: '600',
@@ -849,7 +849,7 @@ export default function WalletAnalysis() {
                   fontFamily: 'monospace',
                   fontSize: '18px',
                   fontWeight: '700',
-                  color: '#1f2937',
+                  color: '#e5e7eb',
                   wordBreak: 'break-all',
                   background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
                   padding: '16px 24px',
@@ -948,7 +948,7 @@ function LargeStatCard({ icon, label, value, color, bgGradient }) {
       <div style={{
         fontSize: '40px',
         fontWeight: '900',
-        color: '#1f2937',
+        color: '#e5e7eb',
         textAlign: 'center',
         lineHeight: '1.2',
       }}>
@@ -956,7 +956,7 @@ function LargeStatCard({ icon, label, value, color, bgGradient }) {
       </div>
       <div style={{
         fontSize: '18px',
-        color: '#6b7280',
+        color: '#9ca3af',
         fontWeight: '700',
         textAlign: 'center',
         textTransform: 'uppercase',
@@ -1012,7 +1012,7 @@ function DetailCard({ title, value, subtitle, icon, color }) {
         <span style={{
           fontSize: '18px',
           fontWeight: '700',
-          color: '#6b7280',
+          color: '#9ca3af',
         }}>
           {title}
         </span>
@@ -1020,7 +1020,7 @@ function DetailCard({ title, value, subtitle, icon, color }) {
       <div style={{
         fontSize: '36px',
         fontWeight: '900',
-        color: '#1f2937',
+        color: '#e5e7eb',
         marginBottom: subtitle ? '8px' : '0',
         lineHeight: '1.2',
       }}>

@@ -71,7 +71,7 @@ const DeployERC721 = () => {
               maxLength="20"
               required
             />
-            <small style={{ color: '#6b7280', fontSize: '12px' }}>
+            <small style={{ color: '#9ca3af', fontSize: '12px' }}>
               Max 20 characters for Farcaster compatibility
             </small>
           </div>
@@ -88,7 +88,7 @@ const DeployERC721 = () => {
               maxLength="10"
               required
             />
-            <small style={{ color: '#6b7280', fontSize: '12px' }}>
+            <small style={{ color: '#9ca3af', fontSize: '12px' }}>
               Max 10 characters for Farcaster compatibility
             </small>
           </div>
@@ -139,8 +139,8 @@ const DeployERC721 = () => {
           
           {isLoading && (
             <div style={{
-              background: '#f0f9ff',
-              border: '1px solid #0ea5e9',
+              background: 'rgba(30, 41, 59, 0.8)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
               color: '#0369a1',
               padding: '12px 16px',
               borderRadius: '8px',
