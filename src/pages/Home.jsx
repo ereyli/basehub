@@ -509,7 +509,7 @@ const Home = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', marginTop: '40px' }}>
               {/* GM/GN Category */}
               <div style={{
-                background: 'rgba(255, 255, 255, 0.95)',
+                background: 'rgba(30, 41, 59, 0.95)',
                 borderRadius: '20px',
                 padding: '32px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
@@ -560,7 +560,7 @@ const Home = () => {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
                         <div style={{
-                          background: 'rgba(255, 255, 255, 0.95)',
+                          background: 'rgba(30, 41, 59, 0.95)',
                           borderRadius: '12px',
                           padding: '2px 8px',
                           fontSize: '9px',
@@ -596,7 +596,7 @@ const Home = () => {
 
               {/* GAMING Category */}
               <div style={{
-                background: 'rgba(255, 255, 255, 0.95)',
+                background: 'rgba(30, 41, 59, 0.95)',
                 borderRadius: '20px',
                 padding: '32px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
@@ -647,7 +647,7 @@ const Home = () => {
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
                           <div style={{
-                            background: 'rgba(255, 255, 255, 0.95)',
+                            background: 'rgba(30, 41, 59, 0.95)',
                             borderRadius: '12px',
                             padding: '2px 8px',
                             fontSize: '9px',
@@ -684,7 +684,7 @@ const Home = () => {
 
               {/* NFT Category */}
               <div style={{
-                background: 'rgba(255, 255, 255, 0.95)',
+                background: 'rgba(30, 41, 59, 0.95)',
                 borderRadius: '20px',
                 padding: '32px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
@@ -735,7 +735,7 @@ const Home = () => {
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
                           <div style={{
-                            background: 'rgba(255, 255, 255, 0.95)',
+                            background: 'rgba(30, 41, 59, 0.95)',
                             borderRadius: '12px',
                             padding: '2px 8px',
                             fontSize: '9px',
@@ -772,7 +772,7 @@ const Home = () => {
 
               {/* ANALYSIS Category */}
               <div style={{
-                background: 'rgba(255, 255, 255, 0.95)',
+                background: 'rgba(30, 41, 59, 0.95)',
                 borderRadius: '20px',
                 padding: '32px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
@@ -823,7 +823,7 @@ const Home = () => {
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
                           <div style={{
-                            background: 'rgba(255, 255, 255, 0.95)',
+                            background: 'rgba(30, 41, 59, 0.95)',
                             borderRadius: '12px',
                             padding: '2px 8px',
                             fontSize: '9px',
@@ -860,7 +860,7 @@ const Home = () => {
 
               {/* DEPLOY Category */}
               <div style={{
-                background: 'rgba(255, 255, 255, 0.95)',
+                background: 'rgba(30, 41, 59, 0.95)',
                 borderRadius: '20px',
                 padding: '32px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
@@ -922,7 +922,7 @@ const Home = () => {
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
                               <div style={{
-                                background: 'rgba(255, 255, 255, 0.95)',
+                                background: 'rgba(30, 41, 59, 0.95)',
                                 borderRadius: '12px',
                                 padding: '2px 8px',
                                 fontSize: '9px',
@@ -982,7 +982,7 @@ const Home = () => {
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
                             <div style={{
-                              background: 'rgba(255, 255, 255, 0.95)',
+                              background: 'rgba(30, 41, 59, 0.95)',
                               borderRadius: '12px',
                               padding: '2px 8px',
                               fontSize: '9px',
@@ -1162,7 +1162,7 @@ const Home = () => {
                     position: 'absolute',
                     top: '12px',
                     right: '12px',
-                    background: 'rgba(255, 255, 255, 0.95)',
+                    background: 'rgba(30, 41, 59, 0.95)',
                     backdropFilter: 'blur(10px)',
                     borderRadius: '20px',
                     padding: '4px 8px',
