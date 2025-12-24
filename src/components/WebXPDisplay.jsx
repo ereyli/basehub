@@ -19,7 +19,7 @@ const WebXPDisplay = () => {
         if (error.message?.includes('not been authorized') || error.code === 4001) {
           console.log('ℹ️ Network switch request was rejected (this is normal)')
         } else {
-          console.error('Failed to auto-switch to Base:', error)
+        console.error('Failed to auto-switch to Base:', error)
         }
       })
     }
