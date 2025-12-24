@@ -105,23 +105,29 @@ const FlipGame = () => {
         
         // Play win/lose sound and show effects
         if (result.isWin) {
-          soundManager.playWinSound()
-          setShowConfetti(true)
+          setTimeout(() => {
+            soundManager.playWinSound()
+            setShowConfetti(true)
+          }, 300)
         } else {
-          soundManager.playLoseSound()
+          setTimeout(() => {
+            soundManager.playLoseSound()
+          }, 300)
         }
         
         // Show XP popup
-        setXpPopup({
-          amount: result.xpEarned || 10,
-          isWin: result.isWin
-        })
+        setTimeout(() => {
+          setXpPopup({
+            amount: result.xpEarned || 10,
+            isWin: result.isWin
+          })
+        }, 500)
         
         // Hide XP popup after animation
         setTimeout(() => {
           setXpPopup(null)
-        }, 3000)
-      }, 500)
+        }, 4000)
+      }, 800)
       
     } catch (error) {
       console.error('❌ Coin flip failed (transaction cancelled or failed):', error)
@@ -218,7 +224,7 @@ const FlipGame = () => {
           isSpinning={isSpinning}
           isRevealing={isRevealing}
           result={result}
-          size={140}
+          size={160}
           onSpinComplete={handleSpinComplete}
         />
       )}

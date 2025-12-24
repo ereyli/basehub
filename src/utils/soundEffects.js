@@ -36,16 +36,16 @@ class SoundManager {
     oscillator.connect(gainNode)
     gainNode.connect(this.audioContext.destination)
 
-    // Metallic spinning sound
+    // Metallic spinning sound - slower and smoother
     oscillator.type = 'sawtooth'
-    oscillator.frequency.setValueAtTime(200, this.audioContext.currentTime)
-    oscillator.frequency.exponentialRampToValueAtTime(150, this.audioContext.currentTime + 0.1)
+    oscillator.frequency.setValueAtTime(180, this.audioContext.currentTime)
+    oscillator.frequency.exponentialRampToValueAtTime(140, this.audioContext.currentTime + 0.2)
 
-    gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime)
-    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1)
+    gainNode.gain.setValueAtTime(0.08, this.audioContext.currentTime)
+    gainNode.gain.linearRampToValueAtTime(0.02, this.audioContext.currentTime + 0.2)
 
     oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + 0.1)
+    oscillator.stop(this.audioContext.currentTime + 0.2)
   }
 
   // Generate result reveal sound (ding)
@@ -60,13 +60,13 @@ class SoundManager {
     oscillator.connect(gainNode)
     gainNode.connect(this.audioContext.destination)
 
-    // Pleasant ding sound
+    // Pleasant ding sound - slower and more dramatic
     oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime)
-    oscillator.frequency.exponentialRampToValueAtTime(600, this.audioContext.currentTime + 0.2)
+    oscillator.frequency.setValueAtTime(700, this.audioContext.currentTime)
+    oscillator.frequency.exponentialRampToValueAtTime(500, this.audioContext.currentTime + 0.4)
 
-    gainNode.gain.setValueAtTime(0.2, this.audioContext.currentTime)
-    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.2)
+    gainNode.gain.setValueAtTime(0.15, this.audioContext.currentTime)
+    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.4)
 
     oscillator.start(this.audioContext.currentTime)
     oscillator.stop(this.audioContext.currentTime + 0.2)
@@ -92,11 +92,11 @@ class SoundManager {
       oscillator.frequency.setValueAtTime(freq, this.audioContext.currentTime)
 
       gainNode.gain.setValueAtTime(0.0001, this.audioContext.currentTime)
-      gainNode.gain.linearRampToValueAtTime(0.15, this.audioContext.currentTime + 0.1 + index * 0.1)
-      gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.5 + index * 0.1)
+      gainNode.gain.linearRampToValueAtTime(0.12, this.audioContext.currentTime + 0.15 + index * 0.15)
+      gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.8 + index * 0.15)
 
-      oscillator.start(this.audioContext.currentTime + index * 0.1)
-      oscillator.stop(this.audioContext.currentTime + 0.5 + index * 0.1)
+      oscillator.start(this.audioContext.currentTime + index * 0.15)
+      oscillator.stop(this.audioContext.currentTime + 0.8 + index * 0.15)
     })
   }
 
@@ -112,16 +112,16 @@ class SoundManager {
     oscillator.connect(gainNode)
     gainNode.connect(this.audioContext.destination)
 
-    // Soft descending tone
+    // Soft descending tone - slower and more gentle
     oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(400, this.audioContext.currentTime)
-    oscillator.frequency.exponentialRampToValueAtTime(300, this.audioContext.currentTime + 0.3)
+    oscillator.frequency.setValueAtTime(380, this.audioContext.currentTime)
+    oscillator.frequency.exponentialRampToValueAtTime(280, this.audioContext.currentTime + 0.5)
 
-    gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime)
-    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.3)
+    gainNode.gain.setValueAtTime(0.08, this.audioContext.currentTime)
+    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.5)
 
     oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + 0.3)
+    oscillator.stop(this.audioContext.currentTime + 0.5)
   }
 
   // Generate button click sound
@@ -154,7 +154,7 @@ class SoundManager {
 
     const interval = setInterval(() => {
       this.playCoinSpin()
-    }, 100) // Play every 100ms for continuous sound
+    }, 250) // Play every 250ms for smoother, slower sound
 
     return interval
   }
