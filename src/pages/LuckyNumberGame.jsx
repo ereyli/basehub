@@ -232,12 +232,12 @@ const LuckyNumberGame = () => {
       <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
 
       {/* Number Wheel Animation */}
-      {(isSpinning || isRevealing || showResult) && gameResult && (
+      {(isSpinning || isRevealing || showResult) && (
         <NumberWheel
           isSpinning={isSpinning}
           isRevealing={isRevealing}
-          winningNumber={gameResult.winningNumber}
-          selectedNumber={gameResult.selectedNumber}
+          winningNumber={gameResult?.winningNumber}
+          selectedNumber={gameResult?.selectedNumber || selectedNumber}
           onSpinComplete={handleSpinComplete}
         />
       )}
