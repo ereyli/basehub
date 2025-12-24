@@ -278,6 +278,59 @@ const LuckyNumberGame = () => {
       )}
 
       {/* Result Display with Animations */}
+      {showResult && gameResult && (
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          alignItems: 'center', 
+          gap: '12px',
+          justifyContent: 'center',
+          padding: '24px',
+          background: gameResult.won 
+            ? 'rgba(16, 185, 129, 0.15)' 
+            : 'rgba(239, 68, 68, 0.15)',
+          border: gameResult.won 
+            ? '2px solid rgba(16, 185, 129, 0.3)' 
+            : '2px solid rgba(239, 68, 68, 0.3)',
+          borderRadius: '16px',
+          marginBottom: '24px',
+          animation: gameResult.won ? 'winReveal 0.6s ease-out' : 'loseReveal 0.6s ease-out',
+          boxShadow: gameResult.won
+            ? '0 0 30px rgba(16, 185, 129, 0.3)'
+            : '0 0 20px rgba(239, 68, 68, 0.2)'
+        }}>
+          {gameResult.won ? (
+            <TrendingUp size={32} style={{ color: '#10b981', animation: 'bounce 0.6s ease-out' }} />
+          ) : (
+            <TrendingDown size={32} style={{ color: '#ef4444', animation: 'shake 0.6s ease-out' }} />
+          )}
+          <div 
+            style={{ 
+              fontWeight: 'bold',
+              fontSize: '24px',
+              color: gameResult.won ? '#10b981' : '#ef4444',
+              animation: gameResult.won ? 'bounce 0.6s ease-out 0.2s both' : 'shake 0.6s ease-out 0.2s both',
+              textAlign: 'center'
+            }}
+          >
+            {gameResult.won ? '🎉 YOU WIN!' : '😔 YOU LOST!'} 
+          </div>
+          <div style={{ fontSize: '16px', color: '#9ca3af', marginTop: '8px', textAlign: 'center' }}>
+            Your number: <strong style={{ color: '#e5e7eb' }}>{gameResult.selectedNumber}</strong> | 
+            Winning number: <strong style={{ color: '#e5e7eb' }}>{gameResult.winningNumber}</strong>
+          </div>
+          {lastTransaction && (
+            <div style={{ 
+              fontSize: '18px', 
+              fontWeight: 'bold',
+              color: gameResult.won ? '#10b981' : '#8b5cf6',
+              marginTop: '8px'
+            }}>
+              XP Earned: +{lastTransaction.xpEarned || 10} XP
+            </div>
+          )}
+        </div>
+      )}
 
       {lastPlayed && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
