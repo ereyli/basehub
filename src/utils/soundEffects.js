@@ -66,7 +66,7 @@ class SoundManager {
     oscillator.frequency.exponentialRampToValueAtTime(600, this.audioContext.currentTime + 0.2)
 
     gainNode.gain.setValueAtTime(0.2, this.audioContext.currentTime)
-    gainNode.gain.exponentialRampToValueAtTime(0, this.audioContext.currentTime + 0.2)
+    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.2)
 
     oscillator.start(this.audioContext.currentTime)
     oscillator.stop(this.audioContext.currentTime + 0.2)
@@ -91,9 +91,9 @@ class SoundManager {
       oscillator.type = 'sine'
       oscillator.frequency.setValueAtTime(freq, this.audioContext.currentTime)
 
-      gainNode.gain.setValueAtTime(0, this.audioContext.currentTime)
+      gainNode.gain.setValueAtTime(0.0001, this.audioContext.currentTime)
       gainNode.gain.linearRampToValueAtTime(0.15, this.audioContext.currentTime + 0.1 + index * 0.1)
-      gainNode.gain.exponentialRampToValueAtTime(0, this.audioContext.currentTime + 0.5 + index * 0.1)
+      gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.5 + index * 0.1)
 
       oscillator.start(this.audioContext.currentTime + index * 0.1)
       oscillator.stop(this.audioContext.currentTime + 0.5 + index * 0.1)
@@ -118,7 +118,7 @@ class SoundManager {
     oscillator.frequency.exponentialRampToValueAtTime(300, this.audioContext.currentTime + 0.3)
 
     gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime)
-    gainNode.gain.exponentialRampToValueAtTime(0, this.audioContext.currentTime + 0.3)
+    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.3)
 
     oscillator.start(this.audioContext.currentTime)
     oscillator.stop(this.audioContext.currentTime + 0.3)
@@ -140,7 +140,7 @@ class SoundManager {
     oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime)
 
     gainNode.gain.setValueAtTime(0.05, this.audioContext.currentTime)
-    gainNode.gain.exponentialRampToValueAtTime(0, this.audioContext.currentTime + 0.05)
+    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.05)
 
     oscillator.start(this.audioContext.currentTime)
     oscillator.stop(this.audioContext.currentTime + 0.05)
