@@ -36,13 +36,13 @@ class SoundManager {
     oscillator.connect(gainNode)
     gainNode.connect(this.audioContext.destination)
 
-    // Metallic spinning sound - slower and smoother
-    oscillator.type = 'sawtooth'
-    oscillator.frequency.setValueAtTime(180, this.audioContext.currentTime)
-    oscillator.frequency.exponentialRampToValueAtTime(140, this.audioContext.currentTime + 0.2)
+    // Metallic spinning sound - softer and more pleasant
+    oscillator.type = 'sine' // Changed from sawtooth to sine for softer sound
+    oscillator.frequency.setValueAtTime(200, this.audioContext.currentTime)
+    oscillator.frequency.exponentialRampToValueAtTime(160, this.audioContext.currentTime + 0.25)
 
-    gainNode.gain.setValueAtTime(0.08, this.audioContext.currentTime)
-    gainNode.gain.linearRampToValueAtTime(0.02, this.audioContext.currentTime + 0.2)
+    gainNode.gain.setValueAtTime(0.05, this.audioContext.currentTime) // Reduced from 0.08
+    gainNode.gain.linearRampToValueAtTime(0.015, this.audioContext.currentTime + 0.25)
 
     oscillator.start(this.audioContext.currentTime)
     oscillator.stop(this.audioContext.currentTime + 0.2)
@@ -60,13 +60,13 @@ class SoundManager {
     oscillator.connect(gainNode)
     gainNode.connect(this.audioContext.destination)
 
-    // Pleasant ding sound - slower and more dramatic
+    // Pleasant ding sound - softer and more pleasant
     oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(700, this.audioContext.currentTime)
-    oscillator.frequency.exponentialRampToValueAtTime(500, this.audioContext.currentTime + 0.4)
+    oscillator.frequency.setValueAtTime(650, this.audioContext.currentTime)
+    oscillator.frequency.exponentialRampToValueAtTime(480, this.audioContext.currentTime + 0.5)
 
-    gainNode.gain.setValueAtTime(0.15, this.audioContext.currentTime)
-    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.4)
+    gainNode.gain.setValueAtTime(0.12, this.audioContext.currentTime) // Reduced from 0.15
+    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.5)
 
     oscillator.start(this.audioContext.currentTime)
     oscillator.stop(this.audioContext.currentTime + 0.2)
@@ -92,7 +92,7 @@ class SoundManager {
       oscillator.frequency.setValueAtTime(freq, this.audioContext.currentTime)
 
       gainNode.gain.setValueAtTime(0.0001, this.audioContext.currentTime)
-      gainNode.gain.linearRampToValueAtTime(0.12, this.audioContext.currentTime + 0.15 + index * 0.15)
+      gainNode.gain.linearRampToValueAtTime(0.1, this.audioContext.currentTime + 0.15 + index * 0.15) // Reduced from 0.12
       gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.8 + index * 0.15)
 
       oscillator.start(this.audioContext.currentTime + index * 0.15)
@@ -112,13 +112,13 @@ class SoundManager {
     oscillator.connect(gainNode)
     gainNode.connect(this.audioContext.destination)
 
-    // Soft descending tone - slower and more gentle
+    // Soft descending tone - even softer and more gentle
     oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(380, this.audioContext.currentTime)
-    oscillator.frequency.exponentialRampToValueAtTime(280, this.audioContext.currentTime + 0.5)
+    oscillator.frequency.setValueAtTime(360, this.audioContext.currentTime)
+    oscillator.frequency.exponentialRampToValueAtTime(270, this.audioContext.currentTime + 0.6)
 
-    gainNode.gain.setValueAtTime(0.08, this.audioContext.currentTime)
-    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.5)
+    gainNode.gain.setValueAtTime(0.06, this.audioContext.currentTime) // Reduced from 0.08
+    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.6)
 
     oscillator.start(this.audioContext.currentTime)
     oscillator.stop(this.audioContext.currentTime + 0.5)
@@ -137,13 +137,13 @@ class SoundManager {
     gainNode.connect(this.audioContext.destination)
 
     oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime)
+    oscillator.frequency.setValueAtTime(750, this.audioContext.currentTime) // Slightly lower pitch
 
-    gainNode.gain.setValueAtTime(0.05, this.audioContext.currentTime)
-    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.05)
+    gainNode.gain.setValueAtTime(0.04, this.audioContext.currentTime) // Reduced from 0.05
+    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.06) // Slightly longer
 
     oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + 0.05)
+    oscillator.stop(this.audioContext.currentTime + 0.06)
   }
 
   // Loop coin spin sound
@@ -154,7 +154,7 @@ class SoundManager {
 
     const interval = setInterval(() => {
       this.playCoinSpin()
-    }, 250) // Play every 250ms for smoother, slower sound
+    }, 300) // Play every 300ms for even smoother, more pleasant sound
 
     return interval
   }
@@ -179,16 +179,16 @@ class SoundManager {
     oscillator.connect(gainNode)
     gainNode.connect(this.audioContext.destination)
 
-    // Mystical spinning sound - higher pitch, more magical
+    // Mystical spinning sound - softer and more pleasant
     oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(300, this.audioContext.currentTime)
-    oscillator.frequency.exponentialRampToValueAtTime(250, this.audioContext.currentTime + 0.18)
+    oscillator.frequency.setValueAtTime(320, this.audioContext.currentTime)
+    oscillator.frequency.exponentialRampToValueAtTime(260, this.audioContext.currentTime + 0.22)
 
-    gainNode.gain.setValueAtTime(0.06, this.audioContext.currentTime)
-    gainNode.gain.linearRampToValueAtTime(0.015, this.audioContext.currentTime + 0.18)
+    gainNode.gain.setValueAtTime(0.05, this.audioContext.currentTime) // Reduced from 0.06
+    gainNode.gain.linearRampToValueAtTime(0.012, this.audioContext.currentTime + 0.22)
 
     oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + 0.18)
+    oscillator.stop(this.audioContext.currentTime + 0.22)
   }
 
   // Generate number reveal sound (magical reveal)
@@ -203,15 +203,15 @@ class SoundManager {
     oscillator.connect(gainNode)
     gainNode.connect(this.audioContext.destination)
 
-    // Magical reveal sound - ascending then descending
+    // Magical reveal sound - softer and more pleasant
     oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(400, this.audioContext.currentTime)
-    oscillator.frequency.linearRampToValueAtTime(600, this.audioContext.currentTime + 0.2)
-    oscillator.frequency.exponentialRampToValueAtTime(450, this.audioContext.currentTime + 0.5)
+    oscillator.frequency.setValueAtTime(380, this.audioContext.currentTime)
+    oscillator.frequency.linearRampToValueAtTime(550, this.audioContext.currentTime + 0.25)
+    oscillator.frequency.exponentialRampToValueAtTime(420, this.audioContext.currentTime + 0.6)
 
-    gainNode.gain.setValueAtTime(0.12, this.audioContext.currentTime)
-    gainNode.gain.linearRampToValueAtTime(0.18, this.audioContext.currentTime + 0.2)
-    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.5)
+    gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime) // Reduced from 0.12
+    gainNode.gain.linearRampToValueAtTime(0.15, this.audioContext.currentTime + 0.25) // Reduced from 0.18
+    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.6)
 
     oscillator.start(this.audioContext.currentTime)
     oscillator.stop(this.audioContext.currentTime + 0.5)
@@ -231,11 +231,11 @@ class SoundManager {
 
     // Soft, pleasant click for number selection
     oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(600, this.audioContext.currentTime)
-    oscillator.frequency.exponentialRampToValueAtTime(500, this.audioContext.currentTime + 0.08)
+    oscillator.frequency.setValueAtTime(580, this.audioContext.currentTime)
+    oscillator.frequency.exponentialRampToValueAtTime(480, this.audioContext.currentTime + 0.1)
 
-    gainNode.gain.setValueAtTime(0.04, this.audioContext.currentTime)
-    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.08)
+    gainNode.gain.setValueAtTime(0.035, this.audioContext.currentTime) // Reduced from 0.04
+    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.1)
 
     oscillator.start(this.audioContext.currentTime)
     oscillator.stop(this.audioContext.currentTime + 0.08)
@@ -249,7 +249,7 @@ class SoundManager {
 
     const interval = setInterval(() => {
       this.playNumberSpin()
-    }, 180) // Play every 180ms for faster, more exciting sound
+    }, 280) // Play every 280ms for smoother, more pleasant sound
 
     return interval
   }
@@ -274,16 +274,16 @@ class SoundManager {
     oscillator.connect(gainNode)
     gainNode.connect(this.audioContext.destination)
 
-    // Wooden/metal rolling sound - lower pitch, more impact
-    oscillator.type = 'sawtooth'
-    oscillator.frequency.setValueAtTime(120, this.audioContext.currentTime)
-    oscillator.frequency.exponentialRampToValueAtTime(100, this.audioContext.currentTime + 0.15)
+    // Wooden/metal rolling sound - softer and more pleasant
+    oscillator.type = 'sine' // Changed from sawtooth to sine for much softer sound
+    oscillator.frequency.setValueAtTime(140, this.audioContext.currentTime)
+    oscillator.frequency.exponentialRampToValueAtTime(110, this.audioContext.currentTime + 0.2)
 
-    gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime)
-    gainNode.gain.linearRampToValueAtTime(0.03, this.audioContext.currentTime + 0.15)
+    gainNode.gain.setValueAtTime(0.06, this.audioContext.currentTime) // Reduced from 0.1
+    gainNode.gain.linearRampToValueAtTime(0.02, this.audioContext.currentTime + 0.2) // Reduced from 0.03
 
     oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + 0.15)
+    oscillator.stop(this.audioContext.currentTime + 0.2)
   }
 
   // Generate dice reveal sound (impact/thud)
@@ -303,25 +303,25 @@ class SoundManager {
     gain1.connect(this.audioContext.destination)
     gain2.connect(this.audioContext.destination)
 
-    // Impact sound - two tones for thud effect
+    // Impact sound - softer and more pleasant
     osc1.type = 'sine'
-    osc1.frequency.setValueAtTime(150, this.audioContext.currentTime)
-    osc1.frequency.exponentialRampToValueAtTime(100, this.audioContext.currentTime + 0.3)
+    osc1.frequency.setValueAtTime(160, this.audioContext.currentTime)
+    osc1.frequency.exponentialRampToValueAtTime(110, this.audioContext.currentTime + 0.4)
 
     osc2.type = 'sine'
-    osc2.frequency.setValueAtTime(200, this.audioContext.currentTime)
-    osc2.frequency.exponentialRampToValueAtTime(120, this.audioContext.currentTime + 0.3)
+    osc2.frequency.setValueAtTime(210, this.audioContext.currentTime)
+    osc2.frequency.exponentialRampToValueAtTime(130, this.audioContext.currentTime + 0.4)
 
-    gain1.gain.setValueAtTime(0.12, this.audioContext.currentTime)
-    gain1.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.3)
+    gain1.gain.setValueAtTime(0.09, this.audioContext.currentTime) // Reduced from 0.12
+    gain1.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.4)
 
-    gain2.gain.setValueAtTime(0.08, this.audioContext.currentTime)
-    gain2.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.3)
+    gain2.gain.setValueAtTime(0.06, this.audioContext.currentTime) // Reduced from 0.08
+    gain2.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.4)
 
     osc1.start(this.audioContext.currentTime)
     osc2.start(this.audioContext.currentTime)
-    osc1.stop(this.audioContext.currentTime + 0.3)
-    osc2.stop(this.audioContext.currentTime + 0.3)
+    osc1.stop(this.audioContext.currentTime + 0.4)
+    osc2.stop(this.audioContext.currentTime + 0.4)
   }
 
   // Generate dice select sound (soft click)
@@ -338,11 +338,11 @@ class SoundManager {
 
     // Soft, pleasant click for dice selection
     oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(500, this.audioContext.currentTime)
-    oscillator.frequency.exponentialRampToValueAtTime(400, this.audioContext.currentTime + 0.08)
+    oscillator.frequency.setValueAtTime(480, this.audioContext.currentTime)
+    oscillator.frequency.exponentialRampToValueAtTime(380, this.audioContext.currentTime + 0.1)
 
-    gainNode.gain.setValueAtTime(0.04, this.audioContext.currentTime)
-    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.08)
+    gainNode.gain.setValueAtTime(0.035, this.audioContext.currentTime) // Reduced from 0.04
+    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.1)
 
     oscillator.start(this.audioContext.currentTime)
     oscillator.stop(this.audioContext.currentTime + 0.08)
@@ -356,7 +356,7 @@ class SoundManager {
 
     const interval = setInterval(() => {
       this.playDiceRoll()
-    }, 150) // Play every 150ms for faster, more exciting sound
+    }, 320) // Play every 320ms for much smoother, more pleasant sound
 
     return interval
   }
