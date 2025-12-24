@@ -69,7 +69,7 @@ class SoundManager {
     gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.5)
 
     oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + 0.2)
+    oscillator.stop(this.audioContext.currentTime + 0.5)
   }
 
   // Generate win sound (victory fanfare)
