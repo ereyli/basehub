@@ -274,32 +274,6 @@ const DiceRollGame = () => {
       )}
 
       {/* Result Display with Animations */}
-      {showResult && gameResult && (
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '12px',
-          justifyContent: 'center',
-          padding: '12px',
-          background: gameResult.won ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-          border: gameResult.won ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
-          borderRadius: '8px',
-          marginBottom: '24px'
-        }}>
-          {gameResult.won ? (
-            <TrendingUp size={20} style={{ color: '#10b981' }} />
-          ) : (
-            <TrendingDown size={20} style={{ color: '#ef4444' }} />
-          )}
-          <span style={{ 
-            fontWeight: 'bold',
-            color: gameResult.won ? '#10b981' : '#ef4444'
-          }}>
-            {gameResult.won ? 'You Won!' : 'You Lost!'} 
-            Your guess: {gameResult.selectedNumber}, Rolled: {gameResult.rolledNumber}
-          </span>
-        </div>
-      )}
 
       {lastPlayed && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
