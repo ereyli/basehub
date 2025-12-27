@@ -200,35 +200,62 @@ async function getContractName(address) {
   return null
 }
 
-// Analyze risk level
+// Analyze risk level (inspired by RevokeCash approach)
+// RevokeCash considers:
+// 1. Unlimited approvals (maxUint256) = HIGH RISK
+// 2. Unknown contracts = MEDIUM/HIGH RISK
+// 3. High amounts relative to balance = MEDIUM RISK
+// 4. Known safe contracts (DEX routers, etc.) = LOW RISK
 function analyzeRisk(allowanceAmount, spenderAddress, tokenBalance) {
   const maxUint256Value = BigInt('115792089237316195423570985008687907853269984665640564039457584007913129639935')
   const amount = BigInt(allowanceAmount || '0')
   const balance = BigInt(tokenBalance || '0')
   
+  // Check if unlimited approval (RevokeCash's primary concern)
   const isUnlimited = amount >= maxUint256Value || amount === maxUint256
   
+  // Check if spender is a known safe contract
   const isKnownSafe = KNOWN_SAFE_CONTRACTS.some(
     safe => safe.toLowerCase() === spenderAddress.toLowerCase()
   )
   
-  const isHighAmount = balance > 0n && amount > balance * BigInt(2) // More than 2x balance
+  // Calculate if amount is significantly higher than balance
+  // RevokeCash flags approvals that are much higher than current balance
+  const isHighAmount = balance > 0n && amount > balance * BigInt(10) // 10x balance threshold (more conservative)
+  const isVeryHighAmount = balance > 0n && amount > balance * BigInt(100) // 100x balance = very risky
   
   let riskLevel = 'low'
   let reason = null
   
+  // Priority 1: Unlimited approvals are always HIGH RISK (RevokeCash's main focus)
   if (isUnlimited) {
     riskLevel = 'high'
-    reason = 'Unlimited approval - contract can drain all tokens'
-  } else if (!isKnownSafe && isHighAmount) {
+    reason = '⚠️ UNLIMITED APPROVAL - Contract can drain ALL tokens of this type'
+  } 
+  // Priority 2: Unknown contracts with very high amounts
+  else if (!isKnownSafe && isVeryHighAmount) {
     riskLevel = 'high'
-    reason = 'High approval amount to unknown contract'
-  } else if (!isKnownSafe && amount > 0n) {
+    reason = 'High approval amount (100x+ balance) to unknown contract'
+  }
+  // Priority 3: Unknown contracts with high amounts
+  else if (!isKnownSafe && isHighAmount) {
+    riskLevel = 'high'
+    reason = 'High approval amount (10x+ balance) to unknown contract'
+  }
+  // Priority 4: Any approval to unknown contract
+  else if (!isKnownSafe && amount > 0n) {
     riskLevel = 'medium'
-    reason = 'Approval to unknown contract'
-  } else if (isHighAmount) {
+    reason = 'Approval to unknown contract - verify before keeping'
+  }
+  // Priority 5: Known safe contracts with high amounts
+  else if (isHighAmount) {
     riskLevel = 'medium'
-    reason = 'High approval amount'
+    reason = 'High approval amount - consider reducing if not needed'
+  }
+  // Priority 6: Known safe contracts with reasonable amounts
+  else {
+    riskLevel = 'low'
+    reason = 'Approval to known safe contract'
   }
   
   return { riskLevel, reason }
