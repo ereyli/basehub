@@ -355,10 +355,38 @@ async function scanAllowances(walletAddress) {
     })
     
     if (logsData.status !== '1') {
-      console.error(`❌ API returned error status: ${logsData.message || 'Unknown error'}`)
-      if (logsData.message && logsData.message.includes('rate limit')) {
-        throw new Error('Basescan API rate limit exceeded. Please try again later.')
+      console.error(`❌ API returned error status: ${logsData.status}`)
+      console.error(`❌ API message: ${logsData.message || 'Unknown error'}`)
+      console.error(`❌ API result:`, logsData.result)
+      
+      if (logsData.message && (logsData.message.includes('rate limit') || logsData.message.includes('Max rate limit'))) {
+        throw new Error('API rate limit exceeded. Please try again later.')
       }
+      
+      // If API says "No records found", return empty array (not an error)
+      if (logsData.message && (logsData.message.includes('No records found') || logsData.message.includes('No logs found'))) {
+        console.log('ℹ️ No Approval events found for this wallet')
+        return []
+      }
+      
+      // For other errors, return empty array but log the error
+      console.error(`⚠️ API error, returning empty array: ${logsData.message}`)
+      return []
+    }
+    
+    if (!logsData.result) {
+      console.log('⚠️ API returned no result field')
+      return []
+    }
+    
+    // Handle case where result is not an array (e.g., empty string or null)
+    if (!Array.isArray(logsData.result)) {
+      console.log('⚠️ API result is not an array:', typeof logsData.result, logsData.result)
+      return []
+    }
+    
+    if (logsData.result.length === 0) {
+      console.log('ℹ️ No Approval events found for this wallet')
       return []
     }
     
