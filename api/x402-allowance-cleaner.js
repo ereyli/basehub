@@ -429,6 +429,13 @@ async function scanAllowances(walletAddress) {
                 balance.toString()
               )
               
+              // Format amount for display (like RevokeCash does)
+              const maxUint256Value = BigInt('115792089237316195423570985008687907853269984665640564039457584007913129639935')
+              const isUnlimited = currentAllowance >= maxUint256Value
+              const amountFormatted = isUnlimited 
+                ? 'Unlimited' 
+                : formatUnits(currentAllowance, tokenInfo.decimals)
+              
               allowances.push({
                 tokenAddress,
                 tokenSymbol: tokenInfo.symbol,
@@ -437,6 +444,8 @@ async function scanAllowances(walletAddress) {
                 spenderAddress,
                 spenderName: spenderName || null,
                 amount: currentAllowance.toString(),
+                amountFormatted,
+                isUnlimited,
                 riskLevel,
                 reason
               })
