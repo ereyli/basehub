@@ -70,6 +70,34 @@ const ERC20_ABI = [
     type: 'function'
   },
   {
+    inputs: [{ name: 'account', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'symbol',
+    outputs: [{ name: '', type: 'string' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'name',
+    outputs: [{ name: '', type: 'string' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'decimals',
+    outputs: [{ name: '', type: 'uint8' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
     anonymous: false,
     inputs: [
       { indexed: true, name: 'owner', type: 'address' },
@@ -206,100 +234,158 @@ function analyzeRisk(allowanceAmount, spenderAddress, tokenBalance) {
   return { riskLevel, reason }
 }
 
-// Scan allowances for a wallet
+// Get token info from Basescan API
+async function getTokenInfo(tokenAddress) {
+  try {
+    const url = `https://api.basescan.org/api?module=token&action=tokeninfo&contractaddress=${tokenAddress}&apikey=${BASESCAN_API_KEY}`
+    const response = await fetch(url)
+    const data = await response.json()
+    
+    if (data.status === '1' && data.result) {
+      return {
+        symbol: data.result.symbol || 'UNKNOWN',
+        name: data.result.name || 'Unknown Token',
+        decimals: parseInt(data.result.decimals || '18')
+      }
+    }
+  } catch (error) {
+    console.error(`Error fetching token info for ${tokenAddress}:`, error)
+  }
+  
+  // Fallback: try to read from contract
+  try {
+    const [symbol, name, decimals] = await Promise.all([
+      publicClient.readContract({
+        address: tokenAddress,
+        abi: ERC20_ABI,
+        functionName: 'symbol'
+      }).catch(() => 'UNKNOWN'),
+      publicClient.readContract({
+        address: tokenAddress,
+        abi: ERC20_ABI,
+        functionName: 'name'
+      }).catch(() => 'Unknown Token'),
+      publicClient.readContract({
+        address: tokenAddress,
+        abi: ERC20_ABI,
+        functionName: 'decimals'
+      }).catch(() => 18)
+    ])
+    
+    return { symbol, name, decimals: typeof decimals === 'number' ? decimals : 18 }
+  } catch (error) {
+    console.error(`Error reading token info from contract ${tokenAddress}:`, error)
+    return { symbol: 'UNKNOWN', name: 'Unknown Token', decimals: 18 }
+  }
+}
+
+// Scan allowances for a wallet using Basescan API
 async function scanAllowances(walletAddress) {
-  console.log(`🔍 Scanning allowances for: ${walletAddress}`)
+  console.log(`🔍 Scanning allowances for: ${walletAddress} using Basescan API`)
   
   const allowances = []
-  
-  // Get Approval events from last 1000 blocks (approximately 1 day on Base)
-  const currentBlock = await publicClient.getBlockNumber()
-  const fromBlock = currentBlock - BigInt(1000)
+  const BASE_CHAIN_ID = 8453 // Base mainnet
   
   try {
-    // Scan each token
-    for (const token of BASE_TOKENS) {
-      console.log(`📊 Scanning ${token.symbol}...`)
-      
+    // Get all Approval events using Basescan API
+    // Approval event signature: 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925
+    // topics[0] = event signature
+    // topics[1] = owner (indexed)
+    // topics[2] = spender (indexed)
+    // data = value (uint256)
+    
+    const ownerTopic = '0x000000000000000000000000' + walletAddress.slice(2).toLowerCase()
+    const approvalEventSignature = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
+    
+    // Get logs from Basescan API - scan from block 0 to latest
+    // Note: Basescan API may have rate limits, so we'll use pagination if needed
+    const logsUrl = `https://api.basescan.org/api?module=logs&action=getLogs&fromBlock=0&toBlock=latest&address=&topic0=${approvalEventSignature}&topic1=${ownerTopic}&topic1_2_opr=and&apikey=${BASESCAN_API_KEY}`
+    
+    console.log(`📡 Fetching Approval events from Basescan API...`)
+    console.log(`🔗 API URL: ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
+    
+    const logsResponse = await fetch(logsUrl, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'BaseHub-AllowanceCleaner/1.0',
+      },
+    })
+    
+    console.log(`📡 API Response status: ${logsResponse.status} ${logsResponse.statusText}`)
+    
+    if (!logsResponse.ok) {
+      const errorText = await logsResponse.text().catch(() => 'Could not read error')
+      console.error(`❌ API HTTP error: ${logsResponse.status}`, errorText.substring(0, 500))
+      throw new Error(`Basescan API error: ${logsResponse.status}`)
+    }
+    
+    const logsData = await logsResponse.json()
+    console.log(`📊 API Response:`, {
+      status: logsData.status,
+      message: logsData.message,
+      resultCount: logsData.result && Array.isArray(logsData.result) ? logsData.result.length : 0,
+    })
+    
+    if (logsData.status !== '1') {
+      console.error(`❌ API returned error status: ${logsData.message || 'Unknown error'}`)
+      if (logsData.message && logsData.message.includes('rate limit')) {
+        throw new Error('Basescan API rate limit exceeded. Please try again later.')
+      }
+      return []
+    }
+    
+    if (!logsData.result || !Array.isArray(logsData.result)) {
+      console.log('⚠️ No Approval events found or invalid response format')
+      return []
+    }
+    
+    console.log(`✅ Found ${logsData.result.length} Approval events`)
+    
+    // Group by token address and get unique spender addresses
+    const tokenSpenderMap = new Map() // tokenAddress -> Set of spender addresses
+    
+    for (const log of logsData.result) {
       try {
-        // Get Approval events for this token using event signature
-        // Approval(address indexed owner, address indexed spender, uint256 value)
-        const approvalEventSignature = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
+        const tokenAddress = log.address.toLowerCase()
+        const spenderAddress = '0x' + log.topics[2].slice(-40).toLowerCase()
         
-        // Get logs with topic filter for owner address
-        const ownerTopic = '0x000000000000000000000000' + walletAddress.slice(2).toLowerCase()
-        
-        const logs = await publicClient.getLogs({
-          address: token.address,
-          event: {
-            type: 'event',
-            name: 'Approval',
-            inputs: [
-              { indexed: true, name: 'owner', type: 'address' },
-              { indexed: true, name: 'spender', type: 'address' },
-              { indexed: false, name: 'value', type: 'uint256' }
-            ]
-          },
-          args: {
-            owner: walletAddress
-          },
-          fromBlock,
-          toBlock: 'latest'
-        }).catch(async (error) => {
-          // Fallback: Get all Approval events and filter manually
-          console.log(`⚠️ Direct event filter failed, using fallback method for ${token.symbol}`)
-          try {
-            const allLogs = await publicClient.getLogs({
-              address: token.address,
-              event: {
-                type: 'event',
-                name: 'Approval',
-                inputs: [
-                  { indexed: true, name: 'owner', type: 'address' },
-                  { indexed: true, name: 'spender', type: 'address' },
-                  { indexed: false, name: 'value', type: 'uint256' }
-                ]
-              },
-              fromBlock,
-              toBlock: 'latest'
-            })
-            
-            // Filter by owner address
-            return allLogs.filter(log => {
-              const logOwner = '0x' + log.topics[1].slice(-40).toLowerCase()
-              return logOwner === walletAddress.toLowerCase()
-            })
-          } catch (fallbackError) {
-            console.error(`Error in fallback method for ${token.symbol}:`, fallbackError)
-            return []
-          }
-        })
+        if (!tokenSpenderMap.has(tokenAddress)) {
+          tokenSpenderMap.set(tokenAddress, new Set())
+        }
+        tokenSpenderMap.get(tokenAddress).add(spenderAddress)
+      } catch (error) {
+        console.error('Error parsing log:', error)
+      }
+    }
+    
+    console.log(`📊 Found ${tokenSpenderMap.size} unique tokens with approvals`)
+    
+    // Check current allowance for each token-spender pair
+    for (const [tokenAddress, spenders] of tokenSpenderMap) {
+      try {
+        // Get token info
+        const tokenInfo = await getTokenInfo(tokenAddress)
+        console.log(`📊 Checking ${tokenInfo.symbol} (${tokenAddress})...`)
         
         // Get current balance
-        const balance = await publicClient.readContract({
-          address: token.address,
-          abi: ERC20_ABI,
-          functionName: 'balanceOf',
-          args: [walletAddress]
-        })
+        let balance = 0n
+        try {
+          balance = await publicClient.readContract({
+            address: tokenAddress,
+            abi: ERC20_ABI,
+            functionName: 'balanceOf',
+            args: [walletAddress]
+          })
+        } catch (error) {
+          console.error(`Error getting balance for ${tokenInfo.symbol}:`, error)
+        }
         
-        // Process each approval event
-        const uniqueSpenders = new Set()
-        
-        for (const log of logs) {
+        // Check each spender
+        for (const spenderAddress of spenders) {
           try {
-            // Parse event data - topics[2] is spender (indexed)
-            const spenderAddress = '0x' + log.topics[2].slice(-40).toLowerCase()
-            
-            // Skip if we've already processed this spender
-            if (uniqueSpenders.has(spenderAddress)) {
-              continue
-            }
-            uniqueSpenders.add(spenderAddress)
-            
             // Check current allowance (might have been revoked)
             const currentAllowance = await publicClient.readContract({
-              address: token.address,
+              address: tokenAddress,
               abi: ERC20_ABI,
               functionName: 'allowance',
               args: [walletAddress, spenderAddress]
@@ -315,10 +401,10 @@ async function scanAllowances(walletAddress) {
               )
               
               allowances.push({
-                tokenAddress: token.address,
-                tokenSymbol: token.symbol,
-                tokenName: token.name,
-                decimals: token.decimals,
+                tokenAddress,
+                tokenSymbol: tokenInfo.symbol,
+                tokenName: tokenInfo.name,
+                decimals: tokenInfo.decimals,
                 spenderAddress,
                 spenderName: spenderName || null,
                 amount: currentAllowance.toString(),
@@ -327,11 +413,11 @@ async function scanAllowances(walletAddress) {
               })
             }
           } catch (error) {
-            console.error(`Error processing approval event for ${token.symbol}:`, error)
+            console.error(`Error checking allowance for ${tokenInfo.symbol} -> ${spenderAddress}:`, error)
           }
         }
       } catch (error) {
-        console.error(`Error scanning ${token.symbol}:`, error)
+        console.error(`Error processing token ${tokenAddress}:`, error)
       }
     }
     
