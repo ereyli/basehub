@@ -325,12 +325,11 @@ async function scanAllowances(walletAddress) {
     const ownerTopic = '0x000000000000000000000000' + walletAddress.slice(2).toLowerCase()
     const approvalEventSignature = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
     
-    // Get logs from Basescan API - scan from block 0 to latest
-    // Basescan API format: topic0=event_signature, topic1=owner_address (padded to 32 bytes)
-    // Note: Basescan may limit results, so we might need pagination
-    const logsUrl = `https://api.basescan.org/api?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
+    // Use Etherscan API V2 (same as wallet analysis) - it supports Base via chainId=8453
+    // This is more reliable than Basescan API
+    const logsUrl = `https://api.etherscan.io/v2/api?chainid=${BASE_CHAIN_ID}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
     
-    console.log(`📡 Fetching Approval events from Basescan API...`)
+    console.log(`📡 Fetching Approval events from Etherscan API V2 (Base chainId: ${BASE_CHAIN_ID})...`)
     console.log(`🔗 API URL: ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
     
     const logsResponse = await fetch(logsUrl, {
@@ -345,7 +344,7 @@ async function scanAllowances(walletAddress) {
     if (!logsResponse.ok) {
       const errorText = await logsResponse.text().catch(() => 'Could not read error')
       console.error(`❌ API HTTP error: ${logsResponse.status}`, errorText.substring(0, 500))
-      throw new Error(`Basescan API error: ${logsResponse.status}`)
+      throw new Error(`Etherscan API V2 error: ${logsResponse.status}`)
     }
     
     const logsData = await logsResponse.json()
