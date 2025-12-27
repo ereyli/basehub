@@ -325,11 +325,11 @@ async function scanAllowances(walletAddress) {
     const ownerTopic = '0x000000000000000000000000' + walletAddress.slice(2).toLowerCase()
     const approvalEventSignature = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
     
-    // Use Etherscan API V2 (same as wallet analysis) - it supports Base via chainId=8453
-    // This is more reliable than Basescan API
-    const logsUrl = `https://api.etherscan.io/v2/api?chainid=${BASE_CHAIN_ID}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
+    // Use Basescan API directly (original working approach)
+    // Try both Basescan and Etherscan API V2 as fallback
+    let logsUrl = `https://api.basescan.org/api?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
     
-    console.log(`📡 Fetching Approval events from Etherscan API V2 (Base chainId: ${BASE_CHAIN_ID})...`)
+    console.log(`📡 Fetching Approval events from Basescan API...`)
     console.log(`🔗 API URL: ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
     
     const logsResponse = await fetch(logsUrl, {
@@ -344,7 +344,32 @@ async function scanAllowances(walletAddress) {
     if (!logsResponse.ok) {
       const errorText = await logsResponse.text().catch(() => 'Could not read error')
       console.error(`❌ API HTTP error: ${logsResponse.status}`, errorText.substring(0, 500))
-      throw new Error(`Etherscan API V2 error: ${logsResponse.status}`)
+      // Try Etherscan API V2 as fallback
+      console.log(`⚠️ Basescan API failed, trying Etherscan API V2 as fallback...`)
+      const fallbackUrl = `https://api.etherscan.io/v2/api?chainid=${BASE_CHAIN_ID}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
+      const fallbackResponse = await fetch(fallbackUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'BaseHub-AllowanceCleaner/1.0',
+        },
+      })
+      
+      if (!fallbackResponse.ok) {
+        const errorText = await fallbackResponse.text().catch(() => 'Could not read error')
+        console.error(`❌ Fallback API HTTP error: ${fallbackResponse.status}`, errorText.substring(0, 500))
+        throw new Error(`Basescan API error: ${logsResponse.status}`)
+      }
+      
+      // Use fallback response
+      const fallbackData = await fallbackResponse.json()
+      logsData = fallbackData
+      console.log(`✅ Using Etherscan API V2 fallback`)
+    } else {
+      logsData = await logsResponse.json()
+    }
+    
+    if (!logsData) {
+      throw new Error(`API error: ${logsResponse.status}`)
     }
     
     const logsData = await logsResponse.json()
