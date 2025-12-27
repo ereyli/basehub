@@ -21,6 +21,17 @@ const PRICE = '$0.01' // 0.01 USDC
 const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' // Base USDC
 const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || 'SI8ECAC19FPN92K9MCNQENMGY6Z6MRM14Q'
 
+// Supported networks for allowance scanning (same as wallet analysis)
+const SUPPORTED_NETWORKS = {
+  'base': { chainId: 8453, name: 'Base Mainnet', currency: 'ETH', rpc: 'https://mainnet.base.org' },
+  'ethereum': { chainId: 1, name: 'Ethereum Mainnet', currency: 'ETH', rpc: 'https://eth.llamarpc.com' },
+  'polygon': { chainId: 137, name: 'Polygon Mainnet', currency: 'MATIC', rpc: 'https://polygon-rpc.com' },
+  'arbitrum': { chainId: 42161, name: 'Arbitrum One', currency: 'ETH', rpc: 'https://arb1.arbitrum.io/rpc' },
+  'optimism': { chainId: 10, name: 'Optimism', currency: 'ETH', rpc: 'https://mainnet.optimism.io' },
+  'bsc': { chainId: 56, name: 'BNB Chain', currency: 'BNB', rpc: 'https://bsc-dataseed.binance.org' },
+  'avalanche': { chainId: 43114, name: 'Avalanche', currency: 'AVAX', rpc: 'https://api.avax.network/ext/bc/C/rpc' },
+}
+
 // Base network popular tokens to scan
 const BASE_TOKENS = [
   {
@@ -306,117 +317,107 @@ async function getTokenInfo(tokenAddress) {
   }
 }
 
-// Scan allowances for a wallet using Basescan API
-async function scanAllowances(walletAddress) {
-  console.log(`🔍 Scanning allowances for: ${walletAddress} using Basescan API`)
+// Scan allowances for a wallet using RPC eth_getLogs (RevokeCash approach)
+// This is more reliable than API-based approaches
+async function scanAllowances(walletAddress, selectedNetwork = 'base') {
+  console.log(`🔍 Scanning allowances for: ${walletAddress} on ${selectedNetwork}`)
   
   const allowances = []
-  const BASE_CHAIN_ID = 8453 // Base mainnet
+  
+  // Get network config
+  const network = SUPPORTED_NETWORKS[selectedNetwork] || SUPPORTED_NETWORKS['base']
+  const chainId = network.chainId
+  
+  console.log(`🌐 Using network: ${network.name} (chainId: ${chainId})`)
+  
+  // Create public client for the selected network
+  const publicClient = createNetworkClient(network)
   
   try {
-    // Get all Approval events using Basescan API
+    // RevokeCash approach: Use RPC eth_getLogs to get Approval events
+    // This is more reliable than API-based approaches
     // Approval event signature: 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925
-    // topics[0] = event signature
-    // topics[1] = owner (indexed)
-    // topics[2] = spender (indexed)
-    // data = value (uint256)
+    const approvalEventSignature = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
     
     // Format owner address as topic (32 bytes, padded)
     const ownerTopic = '0x000000000000000000000000' + walletAddress.slice(2).toLowerCase()
-    const approvalEventSignature = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
     
-    // Use Basescan API directly (original working approach)
-    // Try both Basescan and Etherscan API V2 as fallback
-    let logsUrl = `https://api.basescan.org/api?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
+    console.log(`📡 Fetching Approval events using RPC eth_getLogs...`)
     
-    console.log(`📡 Fetching Approval events from Basescan API...`)
-    console.log(`🔗 API URL: ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
-    
-    const logsResponse = await fetch(logsUrl, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'BaseHub-AllowanceCleaner/1.0',
-      },
-    })
-    
-    console.log(`📡 API Response status: ${logsResponse.status} ${logsResponse.statusText}`)
-    
-    if (!logsResponse.ok) {
-      const errorText = await logsResponse.text().catch(() => 'Could not read error')
-      console.error(`❌ API HTTP error: ${logsResponse.status}`, errorText.substring(0, 500))
-      // Try Etherscan API V2 as fallback
-      console.log(`⚠️ Basescan API failed, trying Etherscan API V2 as fallback...`)
-      const fallbackUrl = `https://api.etherscan.io/v2/api?chainid=${BASE_CHAIN_ID}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
-      const fallbackResponse = await fetch(fallbackUrl, {
+    // Use RPC eth_getLogs (RevokeCash approach)
+    // This is more reliable and doesn't depend on API rate limits
+    let logs = []
+    try {
+      logs = await publicClient.getLogs({
+        address: undefined, // Get logs from all addresses
+        event: {
+          type: 'event',
+          name: 'Approval',
+          inputs: [
+            { indexed: true, name: 'owner', type: 'address' },
+            { indexed: true, name: 'spender', type: 'address' },
+            { indexed: false, name: 'value', type: 'uint256' }
+          ]
+        },
+        args: {
+          owner: walletAddress
+        },
+        fromBlock: 0n, // From genesis
+        toBlock: 'latest'
+      })
+      console.log(`✅ RPC eth_getLogs returned ${logs.length} Approval events`)
+    } catch (rpcError) {
+      console.error(`❌ RPC eth_getLogs failed:`, rpcError.message)
+      console.log(`⚠️ Falling back to Etherscan API V2...`)
+      
+      // Fallback to Etherscan API V2
+      const logsUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
+      
+      const logsResponse = await fetch(logsUrl, {
         headers: {
           'Accept': 'application/json',
           'User-Agent': 'BaseHub-AllowanceCleaner/1.0',
         },
       })
       
-      if (!fallbackResponse.ok) {
-        const errorText = await fallbackResponse.text().catch(() => 'Could not read error')
-        console.error(`❌ Fallback API HTTP error: ${fallbackResponse.status}`, errorText.substring(0, 500))
-        throw new Error(`Basescan API error: ${logsResponse.status}`)
+      if (!logsResponse.ok) {
+        throw new Error(`API fallback failed: ${logsResponse.status}`)
       }
       
-      // Use fallback response
-      const fallbackData = await fallbackResponse.json()
-      logsData = fallbackData
-      console.log(`✅ Using Etherscan API V2 fallback`)
-    } else {
-      logsData = await logsResponse.json()
-    }
-    
-    console.log(`📊 API Response:`, {
-      status: logsData.status,
-      message: logsData.message,
-      resultCount: logsData.result && Array.isArray(logsData.result) ? logsData.result.length : 0,
-    })
-    
-    if (logsData.status !== '1') {
-      console.error(`❌ API returned error status: ${logsData.status}`)
-      console.error(`❌ API message: ${logsData.message || 'Unknown error'}`)
-      console.error(`❌ API result:`, logsData.result)
+      const logsData = await logsResponse.json()
       
-      if (logsData.message && (logsData.message.includes('rate limit') || logsData.message.includes('Max rate limit'))) {
-        throw new Error('API rate limit exceeded. Please try again later.')
-      }
-      
-      // If API says "No records found", return empty array (not an error)
-      if (logsData.message && (logsData.message.includes('No records found') || logsData.message.includes('No logs found'))) {
-        console.log('ℹ️ No Approval events found for this wallet')
+      if (logsData.status !== '1' || !Array.isArray(logsData.result)) {
+        console.log('⚠️ API returned no results')
         return []
       }
       
-      // For other errors, return empty array but log the error
-      console.error(`⚠️ API error, returning empty array: ${logsData.message}`)
-      return []
+      // Convert API response to viem log format
+      logs = logsData.result.map(log => ({
+        address: log.address,
+        topics: log.topics,
+        data: log.data,
+        blockNumber: BigInt(log.blockNumber || '0'),
+        transactionHash: log.transactionHash,
+        blockHash: log.blockHash,
+        transactionIndex: parseInt(log.transactionIndex || '0'),
+        logIndex: parseInt(log.logIndex || '0'),
+        removed: false
+      }))
+      
+      console.log(`✅ API fallback returned ${logs.length} Approval events`)
     }
     
-    if (!logsData.result) {
-      console.log('⚠️ API returned no result field')
-      return []
-    }
-    
-    // Handle case where result is not an array (e.g., empty string or null)
-    if (!Array.isArray(logsData.result)) {
-      console.log('⚠️ API result is not an array:', typeof logsData.result, logsData.result)
-      return []
-    }
-    
-    if (logsData.result.length === 0) {
+    if (logs.length === 0) {
       console.log('ℹ️ No Approval events found for this wallet')
       return []
     }
     
-    // Remove duplicate check - already checked above
-    console.log(`✅ Found ${logsData.result.length} Approval events from API`)
+    console.log(`✅ Found ${logs.length} Approval events`)
     
     // Group by token address and get unique spender addresses
     const tokenSpenderMap = new Map() // tokenAddress -> Set of spender addresses
     
-    for (const log of logsData.result) {
+    for (const log of logs) {
       try {
         // Validate log structure
         if (!log.address || !log.topics || !Array.isArray(log.topics) || log.topics.length < 3) {
@@ -424,17 +425,25 @@ async function scanAllowances(walletAddress) {
           continue
         }
         
-        const tokenAddress = log.address.toLowerCase()
+        const tokenAddress = (log.address || '').toLowerCase()
+        if (!tokenAddress) {
+          console.warn('⚠️ Log missing address:', log)
+          continue
+        }
+        
         // topics[0] = event signature
         // topics[1] = owner (indexed, padded to 32 bytes)
         // topics[2] = spender (indexed, padded to 32 bytes)
-        const spenderTopic = log.topics[2]
-        if (!spenderTopic || spenderTopic.length < 42) {
+        const spenderTopic = log.topics && log.topics[2] ? log.topics[2] : null
+        if (!spenderTopic || (typeof spenderTopic === 'string' && spenderTopic.length < 42)) {
           console.warn('⚠️ Invalid spender topic:', spenderTopic)
           continue
         }
         
-        const spenderAddress = '0x' + spenderTopic.slice(-40).toLowerCase()
+        // Handle both string and hex format
+        const spenderAddress = typeof spenderTopic === 'string' 
+          ? '0x' + spenderTopic.slice(-40).toLowerCase()
+          : '0x' + spenderTopic.slice(-40).toLowerCase()
         
         // Use a composite key to handle multiple approvals to same spender (they might have different amounts)
         // But we'll check current allowance anyway, so unique token-spender pairs are enough

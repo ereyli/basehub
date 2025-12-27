@@ -134,6 +134,7 @@ export const useAllowanceCleaner = () => {
         },
         body: JSON.stringify({ 
           walletAddress: address,
+          network: 'base', // Default to Base, can be extended to support multi-chain
         }),
       })
 
