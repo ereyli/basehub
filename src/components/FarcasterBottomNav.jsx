@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAccount } from 'wagmi'
 import { useTransactions } from '../hooks/useTransactions'
-import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket } from 'lucide-react'
+import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, Trash2 } from 'lucide-react'
 
 const FarcasterBottomNav = () => {
   const navigate = useNavigate()
@@ -82,6 +82,7 @@ const FarcasterBottomNav = () => {
   const analysisTools = [
     { id: 'wallet-analysis', title: 'Wallet Analysis', icon: <TrendingUp size={20} />, path: '/wallet-analysis', color: '#3b82f6' },
     { id: 'contract-security', title: 'Contract Security', icon: <Shield size={20} />, path: '/contract-security', color: '#10b981' },
+    { id: 'allowance-cleaner', title: 'Allowance Cleaner', icon: <Trash2 size={20} />, path: '/allowance-cleaner', color: '#ef4444' },
   ]
 
   const deployTools = [

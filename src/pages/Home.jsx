@@ -9,7 +9,7 @@ import TwitterShareButton from '../components/TwitterShareButton'
 import DailyQuestSystem from '../components/DailyQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
-import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon } from 'lucide-react'
+import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2 } from 'lucide-react'
 
 const Home = () => {
   const { isConnected } = useAccount()
@@ -223,6 +223,17 @@ const Home = () => {
       color: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
       xpReward: '500 XP',
       bonusXP: '0.50 USDC',
+      isX402: true // Mark as x402 payment
+    },
+    {
+      id: 'allowance-cleaner',
+      title: 'Allowance Cleaner',
+      description: 'Scan and revoke risky token approvals',
+      icon: <Trash2 size={35} style={{ color: 'white' }} />,
+      path: '/allowance-cleaner',
+      color: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+      xpReward: '300 XP',
+      bonusXP: '0.01 USDC',
       isX402: true // Mark as x402 payment
     },
     {
@@ -796,7 +807,7 @@ const Home = () => {
                   </h2>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                  {games.filter(g => ['wallet-analysis', 'contract-security'].includes(g.id)).map((game) => (
+                  {games.filter(g => ['wallet-analysis', 'contract-security', 'allowance-cleaner'].includes(g.id)).map((game) => (
                     <Link
                       key={game.id}
                       to={game.path}
