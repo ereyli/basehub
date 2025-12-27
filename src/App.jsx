@@ -31,6 +31,8 @@ import AINFTLaunchpad from './pages/AINFTLaunchpad'
 import SharePage from './pages/SharePage'
 import WalletAnalysis from './pages/WalletAnalysis'
 import ContractSecurity from './pages/ContractSecurity'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsOfService from './pages/TermsOfService'
 import './styles/index.css'
 
 const queryClient = new QueryClient()
@@ -213,6 +215,8 @@ function FarcasterAppContent() {
             <Route path="/share" element={<SharePage />} />
             <Route path="/wallet-analysis" element={<WalletAnalysis />} />
             <Route path="/contract-security" element={<ContractSecurity />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
           </Routes>
         </main>
         <FarcasterBottomNav />
@@ -249,6 +253,8 @@ function WebAppContent() {
             <Route path="/share" element={<SharePage />} />
             <Route path="/wallet-analysis" element={<WalletAnalysis />} />
             <Route path="/contract-security" element={<ContractSecurity />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
           </Routes>
         </main>
         <WebBottomNav />

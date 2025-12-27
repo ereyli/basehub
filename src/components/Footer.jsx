@@ -41,6 +41,11 @@ const Footer = () => {
                 Follow on X
               </a>
             </div>
+            <div className="footer-link-group">
+              <h4 className="footer-link-title">Legal</h4>
+              <Link to="/privacy" className="footer-link">Privacy Policy</Link>
+              <Link to="/terms" className="footer-link">Terms of Service</Link>
+            </div>
             {isInFarcaster && (
               <div className="footer-link-group">
                 <h4 className="footer-link-title">Resources</h4>
