@@ -390,12 +390,8 @@ async function scanAllowances(walletAddress) {
       return []
     }
     
-    if (!logsData.result || !Array.isArray(logsData.result)) {
-      console.log('⚠️ No Approval events found or invalid response format')
-      return []
-    }
-    
-    console.log(`✅ Found ${logsData.result.length} Approval events`)
+    // Remove duplicate check - already checked above
+    console.log(`✅ Found ${logsData.result.length} Approval events from API`)
     
     // Group by token address and get unique spender addresses
     const tokenSpenderMap = new Map() // tokenAddress -> Set of spender addresses
