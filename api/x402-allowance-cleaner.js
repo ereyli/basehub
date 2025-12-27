@@ -173,18 +173,18 @@ async function getContractName(address) {
 }
 
 // Analyze risk level
-function analyzeRisk(allowance, tokenInfo) {
-  const isUnlimited = allowance.amount === 'unlimited' || 
-                     allowance.amount === '115792089237316195423570985008687907853269984665640564039457584007913129639935' ||
-                     allowance.amount === maxUint256.toString()
+function analyzeRisk(allowanceAmount, spenderAddress, tokenBalance) {
+  const maxUint256Value = BigInt('115792089237316195423570985008687907853269984665640564039457584007913129639935')
+  const amount = BigInt(allowanceAmount || '0')
+  const balance = BigInt(tokenBalance || '0')
+  
+  const isUnlimited = amount >= maxUint256Value || amount === maxUint256
   
   const isKnownSafe = KNOWN_SAFE_CONTRACTS.some(
-    safe => safe.toLowerCase() === allowance.spenderAddress.toLowerCase()
+    safe => safe.toLowerCase() === spenderAddress.toLowerCase()
   )
   
-  const amount = BigInt(allowance.amount || '0')
-  const tokenBalance = BigInt(tokenInfo.balance || '0')
-  const isHighAmount = amount > tokenBalance * BigInt(2) // More than 2x balance
+  const isHighAmount = balance > 0n && amount > balance * BigInt(2) // More than 2x balance
   
   let riskLevel = 'low'
   let reason = null
@@ -195,7 +195,7 @@ function analyzeRisk(allowance, tokenInfo) {
   } else if (!isKnownSafe && isHighAmount) {
     riskLevel = 'high'
     reason = 'High approval amount to unknown contract'
-  } else if (!isKnownSafe) {
+  } else if (!isKnownSafe && amount > 0n) {
     riskLevel = 'medium'
     reason = 'Approval to unknown contract'
   } else if (isHighAmount) {
@@ -222,7 +222,13 @@ async function scanAllowances(walletAddress) {
       console.log(`📊 Scanning ${token.symbol}...`)
       
       try {
-        // Get Approval events for this token
+        // Get Approval events for this token using event signature
+        // Approval(address indexed owner, address indexed spender, uint256 value)
+        const approvalEventSignature = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
+        
+        // Get logs with topic filter for owner address
+        const ownerTopic = '0x000000000000000000000000' + walletAddress.slice(2).toLowerCase()
+        
         const logs = await publicClient.getLogs({
           address: token.address,
           event: {
@@ -235,10 +241,38 @@ async function scanAllowances(walletAddress) {
             ]
           },
           args: {
-            owner: walletAddress.toLowerCase()
+            owner: walletAddress
           },
           fromBlock,
           toBlock: 'latest'
+        }).catch(async (error) => {
+          // Fallback: Get all Approval events and filter manually
+          console.log(`⚠️ Direct event filter failed, using fallback method for ${token.symbol}`)
+          try {
+            const allLogs = await publicClient.getLogs({
+              address: token.address,
+              event: {
+                type: 'event',
+                name: 'Approval',
+                inputs: [
+                  { indexed: true, name: 'owner', type: 'address' },
+                  { indexed: true, name: 'spender', type: 'address' },
+                  { indexed: false, name: 'value', type: 'uint256' }
+                ]
+              },
+              fromBlock,
+              toBlock: 'latest'
+            })
+            
+            // Filter by owner address
+            return allLogs.filter(log => {
+              const logOwner = '0x' + log.topics[1].slice(-40).toLowerCase()
+              return logOwner === walletAddress.toLowerCase()
+            })
+          } catch (fallbackError) {
+            console.error(`Error in fallback method for ${token.symbol}:`, fallbackError)
+            return []
+          }
         })
         
         // Get current balance
@@ -249,13 +283,21 @@ async function scanAllowances(walletAddress) {
           args: [walletAddress]
         })
         
-        // Process each approval
+        // Process each approval event
+        const uniqueSpenders = new Set()
+        
         for (const log of logs) {
-          const spenderAddress = log.args.spender
-          const amount = log.args.value
-          
-          // Check current allowance (might have been revoked)
           try {
+            // Parse event data - topics[2] is spender (indexed)
+            const spenderAddress = '0x' + log.topics[2].slice(-40).toLowerCase()
+            
+            // Skip if we've already processed this spender
+            if (uniqueSpenders.has(spenderAddress)) {
+              continue
+            }
+            uniqueSpenders.add(spenderAddress)
+            
+            // Check current allowance (might have been revoked)
             const currentAllowance = await publicClient.readContract({
               address: token.address,
               abi: ERC20_ABI,
@@ -265,10 +307,11 @@ async function scanAllowances(walletAddress) {
             
             // Only include if allowance is still active
             if (currentAllowance > 0n) {
-              const spenderName = await getContractName(spenderAddress)
+              const spenderName = await getContractName(spenderAddress).catch(() => null)
               const { riskLevel, reason } = analyzeRisk(
-                { amount: currentAllowance.toString(), spenderAddress },
-                { balance: balance.toString() }
+                currentAllowance.toString(),
+                spenderAddress,
+                balance.toString()
               )
               
               allowances.push({
@@ -284,7 +327,7 @@ async function scanAllowances(walletAddress) {
               })
             }
           } catch (error) {
-            console.error(`Error checking allowance for ${token.symbol}:`, error)
+            console.error(`Error processing approval event for ${token.symbol}:`, error)
           }
         }
       } catch (error) {
@@ -345,5 +388,73 @@ app.post('/', async (c) => {
   }
 })
 
-export default app
+// ==========================================
+// Export for Vercel (serverless function)
+// ==========================================
+export default async function handler(req, res) {
+  try {
+    console.log('🔍 Allowance Cleaner handler called:', {
+      method: req.method,
+      url: req.url,
+    })
+
+    const protocol = req.headers['x-forwarded-proto'] || 'https'
+    const host = req.headers.host || req.headers['x-forwarded-host'] || 'localhost'
+    const fullUrl = `${protocol}://${host}/`
+
+    let body = undefined
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      if (req.body) {
+        body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body)
+        console.log('📦 Request body prepared:', body.substring(0, 200))
+      }
+    }
+
+    const request = new Request(fullUrl, {
+      method: req.method || 'GET',
+      headers: new Headers(req.headers || {}),
+      body: body,
+    })
+
+    const response = await app.fetch(request)
+
+    console.log('📥 Hono app response:', {
+      status: response.status,
+      statusText: response.statusText,
+    })
+
+    response.headers.forEach((value, key) => {
+      res.setHeader(key, value)
+    })
+
+    const responseBody = await response.text()
+    console.log('📦 Response body length:', responseBody.length)
+    
+    res.status(response.status)
+
+    if (responseBody) {
+      const contentType = response.headers.get('content-type') || ''
+      if (contentType.includes('application/json')) {
+        try {
+          const jsonData = JSON.parse(responseBody)
+          res.json(jsonData)
+        } catch (parseError) {
+          res.send(responseBody)
+        }
+      } else {
+        res.send(responseBody)
+      }
+    } else {
+      res.end()
+    }
+  } catch (error) {
+    console.error('❌ Handler error:', error)
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: error.message,
+      })
+    }
+  }
+}
 

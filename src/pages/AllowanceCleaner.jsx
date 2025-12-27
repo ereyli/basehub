@@ -111,7 +111,10 @@ export default function AllowanceCleaner() {
             marginBottom: '24px'
           }}>
             <AlertTriangle size={24} style={{ marginBottom: '8px' }} />
-            <p style={{ margin: 0, fontWeight: '600' }}>Please connect your wallet to use Allowance Cleaner</p>
+            <p style={{ margin: 0, fontWeight: '600' }}>Please connect your wallet to scan allowances</p>
+            <p style={{ margin: '8px 0 0 0', fontSize: '14px', opacity: 0.8 }}>
+              Your connected wallet will be scanned automatically
+            </p>
           </div>
         )}
 

@@ -125,9 +125,13 @@ export const useAllowanceCleaner = () => {
         MAX_PAYMENT_AMOUNT
       )
 
-      console.log('💳 Making payment request to /api/x402-allowance-cleaner...')
+      // Use full API URL for production
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://basehub-alpha.vercel.app'
+      const endpoint = `${apiUrl}/api/x402-allowance-cleaner`
+      
+      console.log('💳 Making payment request to:', endpoint)
 
-      const response = await fetchWithPayment('/api/x402-allowance-cleaner', {
+      const response = await fetchWithPayment(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
