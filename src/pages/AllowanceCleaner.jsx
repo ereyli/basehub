@@ -252,8 +252,36 @@ export default function AllowanceCleaner() {
                 </p>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {allowances.map((allowance, index) => {
+              <div>
+                {/* Risk Categories */}
+                {['high', 'medium', 'low'].map(riskLevel => {
+                  const categoryAllowances = allowances.filter(a => a.riskLevel === riskLevel)
+                  if (categoryAllowances.length === 0) return null
+                  
+                  return (
+                    <div key={riskLevel} style={{ marginBottom: '32px' }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px', 
+                        marginBottom: '16px',
+                        padding: '12px 16px',
+                        background: `rgba(${riskLevel === 'high' ? '239, 68, 68' : riskLevel === 'medium' ? '245, 158, 11' : '16, 185, 129'}, 0.1)`,
+                        border: `1px solid rgba(${riskLevel === 'high' ? '239, 68, 68' : riskLevel === 'medium' ? '245, 158, 11' : '16, 185, 129'}, 0.3)`,
+                        borderRadius: '12px'
+                      }}>
+                        {getRiskIcon(riskLevel)}
+                        <span style={{ 
+                          color: getRiskColor(riskLevel), 
+                          fontWeight: '700',
+                          fontSize: '16px',
+                          textTransform: 'uppercase'
+                        }}>
+                          {riskLevel} Risk ({categoryAllowances.length})
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        {categoryAllowances.map((allowance, index) => {
                   const isUnlimited = allowance.amount === 'unlimited' || allowance.amount === 'max'
                   const displayAmount = isUnlimited 
                     ? 'Unlimited' 
@@ -373,6 +401,10 @@ export default function AllowanceCleaner() {
                           View on BaseScan
                           <ExternalLink size={12} />
                         </a>
+                      </div>
+                    </div>
+                  )
+                })}
                       </div>
                     </div>
                   )

@@ -402,17 +402,36 @@ async function scanAllowances(walletAddress) {
     
     for (const log of logsData.result) {
       try {
-        const tokenAddress = log.address.toLowerCase()
-        const spenderAddress = '0x' + log.topics[2].slice(-40).toLowerCase()
+        // Validate log structure
+        if (!log.address || !log.topics || !Array.isArray(log.topics) || log.topics.length < 3) {
+          console.warn('⚠️ Invalid log structure:', log)
+          continue
+        }
         
+        const tokenAddress = log.address.toLowerCase()
+        // topics[0] = event signature
+        // topics[1] = owner (indexed, padded to 32 bytes)
+        // topics[2] = spender (indexed, padded to 32 bytes)
+        const spenderTopic = log.topics[2]
+        if (!spenderTopic || spenderTopic.length < 42) {
+          console.warn('⚠️ Invalid spender topic:', spenderTopic)
+          continue
+        }
+        
+        const spenderAddress = '0x' + spenderTopic.slice(-40).toLowerCase()
+        
+        // Use a composite key to handle multiple approvals to same spender (they might have different amounts)
+        // But we'll check current allowance anyway, so unique token-spender pairs are enough
         if (!tokenSpenderMap.has(tokenAddress)) {
           tokenSpenderMap.set(tokenAddress, new Set())
         }
         tokenSpenderMap.get(tokenAddress).add(spenderAddress)
       } catch (error) {
-        console.error('Error parsing log:', error)
+        console.error('Error parsing log:', error, 'Log:', log)
       }
     }
+    
+    console.log(`📊 Parsed ${tokenSpenderMap.size} unique tokens with ${Array.from(tokenSpenderMap.values()).reduce((sum, set) => sum + set.size, 0)} total spender addresses`)
     
     console.log(`📊 Found ${tokenSpenderMap.size} unique tokens with approvals`)
     
