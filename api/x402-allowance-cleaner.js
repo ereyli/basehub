@@ -294,12 +294,14 @@ async function scanAllowances(walletAddress) {
     // topics[2] = spender (indexed)
     // data = value (uint256)
     
+    // Format owner address as topic (32 bytes, padded)
     const ownerTopic = '0x000000000000000000000000' + walletAddress.slice(2).toLowerCase()
     const approvalEventSignature = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
     
     // Get logs from Basescan API - scan from block 0 to latest
-    // Note: Basescan API may have rate limits, so we'll use pagination if needed
-    const logsUrl = `https://api.basescan.org/api?module=logs&action=getLogs&fromBlock=0&toBlock=latest&address=&topic0=${approvalEventSignature}&topic1=${ownerTopic}&topic1_2_opr=and&apikey=${BASESCAN_API_KEY}`
+    // Basescan API format: topic0=event_signature, topic1=owner_address (padded to 32 bytes)
+    // Note: Basescan may limit results, so we might need pagination
+    const logsUrl = `https://api.basescan.org/api?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
     
     console.log(`📡 Fetching Approval events from Basescan API...`)
     console.log(`🔗 API URL: ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
