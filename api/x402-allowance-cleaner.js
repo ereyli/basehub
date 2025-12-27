@@ -368,11 +368,6 @@ async function scanAllowances(walletAddress) {
       logsData = await logsResponse.json()
     }
     
-    if (!logsData) {
-      throw new Error(`API error: ${logsResponse.status}`)
-    }
-    
-    const logsData = await logsResponse.json()
     console.log(`📊 API Response:`, {
       status: logsData.status,
       message: logsData.message,
