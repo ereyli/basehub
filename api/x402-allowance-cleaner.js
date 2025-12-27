@@ -272,8 +272,40 @@ function analyzeRisk(allowanceAmount, spenderAddress, tokenBalance) {
   return { riskLevel, reason }
 }
 
-// Get token info from Basescan API
-async function getTokenInfo(tokenAddress) {
+// Get token info from contract or API
+async function getTokenInfo(tokenAddress, publicClient) {
+  // First try to read from contract (faster, no API call needed)
+  try {
+    const [symbol, name, decimals] = await Promise.all([
+      publicClient.readContract({
+        address: tokenAddress,
+        abi: ERC20_ABI,
+        functionName: 'symbol'
+      }).catch(() => null),
+      publicClient.readContract({
+        address: tokenAddress,
+        abi: ERC20_ABI,
+        functionName: 'name'
+      }).catch(() => null),
+      publicClient.readContract({
+        address: tokenAddress,
+        abi: ERC20_ABI,
+        functionName: 'decimals'
+      }).catch(() => null)
+    ])
+    
+    if (symbol && name && decimals !== null) {
+      return { 
+        symbol: symbol || 'UNKNOWN', 
+        name: name || 'Unknown Token', 
+        decimals: typeof decimals === 'number' ? decimals : (typeof decimals === 'bigint' ? Number(decimals) : 18)
+      }
+    }
+  } catch (error) {
+    console.error(`Error reading token info from contract ${tokenAddress}:`, error)
+  }
+  
+  // Fallback: Try Basescan/Etherscan API (only for Base)
   try {
     const url = `https://api.basescan.org/api?module=token&action=tokeninfo&contractaddress=${tokenAddress}&apikey=${BASESCAN_API_KEY}`
     const response = await fetch(url)
@@ -287,34 +319,11 @@ async function getTokenInfo(tokenAddress) {
       }
     }
   } catch (error) {
-    console.error(`Error fetching token info for ${tokenAddress}:`, error)
+    console.error(`Error fetching token info from API for ${tokenAddress}:`, error)
   }
   
-  // Fallback: try to read from contract
-  try {
-    const [symbol, name, decimals] = await Promise.all([
-      publicClient.readContract({
-        address: tokenAddress,
-        abi: ERC20_ABI,
-        functionName: 'symbol'
-      }).catch(() => 'UNKNOWN'),
-      publicClient.readContract({
-        address: tokenAddress,
-        abi: ERC20_ABI,
-        functionName: 'name'
-      }).catch(() => 'Unknown Token'),
-      publicClient.readContract({
-        address: tokenAddress,
-        abi: ERC20_ABI,
-        functionName: 'decimals'
-      }).catch(() => 18)
-    ])
-    
-    return { symbol, name, decimals: typeof decimals === 'number' ? decimals : 18 }
-  } catch (error) {
-    console.error(`Error reading token info from contract ${tokenAddress}:`, error)
-    return { symbol: 'UNKNOWN', name: 'Unknown Token', decimals: 18 }
-  }
+  // Final fallback
+  return { symbol: 'UNKNOWN', name: 'Unknown Token', decimals: 18 }
 }
 
 // Scan allowances for a wallet using RPC eth_getLogs (RevokeCash approach)
@@ -464,7 +473,7 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     for (const [tokenAddress, spenders] of tokenSpenderMap) {
       try {
         // Get token info
-        const tokenInfo = await getTokenInfo(tokenAddress)
+        const tokenInfo = await getTokenInfo(tokenAddress, publicClient)
         console.log(`📊 Checking ${tokenInfo.symbol} (${tokenAddress})...`)
         
         // Get current balance
