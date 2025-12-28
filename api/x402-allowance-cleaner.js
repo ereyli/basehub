@@ -173,7 +173,7 @@ function analyzeRisk(allowanceAmount, spenderAddress, tokenBalance) {
   return { riskLevel: 'low', reason: 'Reasonable allowance' }
 }
 
-// Main scan function
+// Main scan function - RevokeCash inspired approach
 async function scanAllowances(walletAddress, selectedNetwork = 'base') {
   console.log(`🔍 Scanning: ${walletAddress} on ${selectedNetwork}`)
   
@@ -181,8 +181,8 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
   const network = SUPPORTED_NETWORKS[selectedNetwork] || SUPPORTED_NETWORKS['base']
   const publicClient = createNetworkClient(network)
   
-  // Get tokens with pagination (up to 10,000 records)
-  console.log(`📦 Fetching tokens with pagination...`)
+  // STEP 1: Get tokens with pagination (up to 10,000 records)
+  console.log(`📦 STEP 1: Fetching tokens with pagination...`)
   const uniqueTokens = new Set()
   
   try {
@@ -225,12 +225,100 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     console.error(`❌ Token fetch error:`, err.message)
   }
   
-  // Check allowances
-  console.log(`✅ Checking allowances...`)
+  // STEP 2: Try to fetch Approval events via RPC eth_getLogs (RevokeCash method)
+  console.log(`\n🔐 STEP 2: Trying to fetch Approval events via RPC...`)
+  const tokenSpenderPairs = new Map() // Map<tokenAddress, Set<spenderAddress>>
   
-  for (const tokenAddress of uniqueTokens) {
+  // Initialize with tokens we found
+  uniqueTokens.forEach(token => {
+    tokenSpenderPairs.set(token, new Set())
+  })
+  
+  try {
+    // Approval event signature
+    const approvalTopic = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
+    // Pad wallet address to 32 bytes for topic filtering
+    const ownerTopic = '0x000000000000000000000000' + walletAddress.slice(2).toLowerCase()
+    
+    console.log(`  📡 Fetching Approval events via RPC for owner: ${walletAddress}`)
+    
+    // Use RPC to get logs (RevokeCash approach)
+    const logsResponse = await fetch(network.rpc, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'eth_getLogs',
+        params: [{
+          fromBlock: '0x0', // From genesis
+          toBlock: 'latest',
+          topics: [approvalTopic, ownerTopic] // Filter by Approval event and owner
+        }],
+        id: 1
+      })
+    })
+    
+    if (logsResponse.ok) {
+      const logsData = await logsResponse.json()
+      
+      if (logsData.result && Array.isArray(logsData.result)) {
+        console.log(`  ✅ Found ${logsData.result.length} Approval events via RPC`)
+        
+        // Parse logs to extract token-spender pairs
+        logsData.result.forEach(log => {
+          try {
+            const tokenAddress = log.address.toLowerCase()
+            // topic[1] = owner (already filtered), topic[2] = spender
+            if (log.topics && log.topics[2]) {
+              const spenderAddress = '0x' + log.topics[2].slice(26).toLowerCase()
+              
+              if (!tokenSpenderPairs.has(tokenAddress)) {
+                tokenSpenderPairs.set(tokenAddress, new Set())
+                uniqueTokens.add(tokenAddress)
+              }
+              tokenSpenderPairs.get(tokenAddress).add(spenderAddress)
+            }
+          } catch (e) {
+            // Skip malformed logs
+          }
+        })
+        
+        console.log(`  ✅ Extracted spenders from Approval events`)
+      } else {
+        console.log(`  ⚠️ RPC returned no Approval events`)
+      }
+    } else {
+      console.log(`  ⚠️ RPC request failed: ${logsResponse.status}`)
+    }
+  } catch (rpcError) {
+    console.error(`  ❌ RPC error:`, rpcError.message)
+  }
+  
+  // STEP 3: Add common spenders to all tokens
+  console.log(`\n🎯 STEP 3: Adding common spenders...`)
+  uniqueTokens.forEach(token => {
+    if (!tokenSpenderPairs.has(token)) {
+      tokenSpenderPairs.set(token, new Set())
+    }
+    COMMON_SPENDERS.forEach(spender => {
+      tokenSpenderPairs.get(token).add(spender.toLowerCase())
+    })
+  })
+  
+  const totalSpenderChecks = Array.from(tokenSpenderPairs.values()).reduce((sum, spenders) => sum + spenders.size, 0)
+  console.log(`✅ Will check ${totalSpenderChecks} token-spender pairs`)
+  
+  // STEP 4: Check on-chain allowances
+  console.log(`\n✅ STEP 4: Checking on-chain allowances...`)
+  
+  let checkedCount = 0
+  for (const [tokenAddress, spenders] of tokenSpenderPairs) {
+    if (spenders.size === 0) continue
+    
     try {
       const tokenInfo = await getTokenInfo(tokenAddress, publicClient)
+      console.log(`  📊 [${checkedCount + 1}/${tokenSpenderPairs.size}] Checking ${tokenInfo.symbol} (${tokenAddress})`)
+      checkedCount++
       
       let balance = 0n
       try {
@@ -242,7 +330,7 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
         })
       } catch (e) {}
       
-      for (const spender of COMMON_SPENDERS) {
+      for (const spender of spenders) {
         try {
           const allowance = await publicClient.readContract({
             address: tokenAddress,
@@ -269,6 +357,8 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
               riskLevel,
               reason
             })
+            
+            console.log(`    ✅ Found approval: ${tokenInfo.symbol} -> ${spender.substring(0, 10)}... (${isUnlimited ? 'Unlimited' : allowance.toString()})`)
           }
         } catch (e) {}
       }
@@ -280,7 +370,7 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     return order[b.riskLevel] - order[a.riskLevel]
   })
   
-  console.log(`✅ Found ${allowances.length} allowances`)
+  console.log(`\n✅ Scan completed: Found ${allowances.length} active allowances`)
   return allowances
 }
 
