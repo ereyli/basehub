@@ -369,17 +369,16 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     
     let logs = []
     
-    // Use Etherscan API V2 for all networks (same as Wallet Analysis)
-    // Etherscan API V2 supports all networks including Base
-    // Calculate block range for 1 year (approximately)
-    // Average block time: ~2s for Base, ~12s for Ethereum, etc.
-    // For safety, use a very large range or calculate based on network
+    // Use each network's own API endpoint (not Etherscan V2)
+    // Each network has its own block explorer with its own API
     try {
-      console.log(`📡 Fetching Approval events from Etherscan API V2 for ${network.name} (chainId: ${chainId})...`)
+      const apiUrl = network.apiUrl || 'https://api.etherscan.io/api'
+      console.log(`📡 Fetching Approval events from ${network.name}'s block explorer API...`)
       console.log(`📅 Scanning from genesis block (0) to latest - covering all historical approvals`)
+      console.log(`🌐 API endpoint: ${apiUrl}`)
       
-      // Use fromBlock=0 to get ALL historical approvals (not just recent ones)
-      const logsUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
+      // Use network-specific API endpoint
+      const logsUrl = `${apiUrl}?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
       
       console.log(`🔗 API URL: ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
       
