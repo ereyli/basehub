@@ -179,11 +179,7 @@ app.use(
 // Helper functions
 // ==========================================
 
-// Create public client for Base
-const publicClient = createPublicClient({
-  chain: base,
-  transport: http('https://mainnet.base.org')
-})
+// Public clients are now created per-network in scanAllowances function
 
 // Get contract name from Basescan API
 async function getContractName(address) {
