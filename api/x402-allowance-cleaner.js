@@ -369,18 +369,11 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     
     let logs = []
     
-    // Try API first - use Basescan for Base, Etherscan V2 for others
+    // Use Etherscan API V2 for all networks (same as Wallet Analysis)
+    // Etherscan API V2 supports all networks including Base
     try {
-      let logsUrl
-      if (chainId === 8453) {
-        // Base network - use Basescan API
-        console.log(`📡 Fetching Approval events from Basescan API for Base...`)
-        logsUrl = `https://api.basescan.org/api?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
-      } else {
-        // Other networks - use Etherscan API V2
-        console.log(`📡 Fetching Approval events from Etherscan API V2 for chainId ${chainId}...`)
-        logsUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
-      }
+      console.log(`📡 Fetching Approval events from Etherscan API V2 for ${network.name} (chainId: ${chainId})...`)
+      const logsUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
       
       console.log(`🔗 API URL: ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
       
@@ -439,8 +432,7 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     }
     
     // If API returned no results or failed, try RPC as fallback (for smaller ranges)
-    // But skip RPC for Base if API already returned empty (likely no approvals)
-    if (logs.length === 0 && chainId !== 8453) {
+    if (logs.length === 0) {
       try {
         console.log(`⚠️ API returned no results, trying RPC eth_getLogs as fallback...`)
         // Use a more recent block range to avoid timeout (last 100k blocks ~2 weeks)
@@ -468,14 +460,10 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
       } catch (rpcError) {
         console.error(`❌ RPC eth_getLogs also failed:`, rpcError.message)
         console.error(`❌ RPC error details:`, rpcError)
-        // For other networks, if both failed, throw error
+        // If both API and RPC failed, throw error
         const rpcErrorMessage = rpcError.message || 'Unknown RPC error'
         throw new Error(`Failed to fetch Approval events. API and RPC both failed. Error: ${rpcErrorMessage}. Please try again later or check if the network is supported.`)
       }
-    } else if (logs.length === 0 && chainId === 8453) {
-      // For Base, if API returned empty, assume no approvals (API is reliable)
-      console.log('ℹ️ Base API returned empty, no approvals found')
-      return []
     }
     
     if (logs.length === 0) {
@@ -554,6 +542,8 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
         // Check each spender
         for (const spenderAddress of spenders) {
           try {
+            console.log(`  🔍 Checking allowance: ${tokenInfo.symbol} -> ${spenderAddress.substring(0, 10)}...`)
+            
             // Check current allowance (might have been revoked)
             const currentAllowance = await publicClient.readContract({
               address: tokenAddress,
@@ -562,8 +552,11 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
               args: [walletAddress, spenderAddress]
             })
             
+            console.log(`  📊 Current allowance for ${tokenInfo.symbol}: ${currentAllowance.toString()}`)
+            
             // Only include if allowance is still active
             if (currentAllowance > 0n) {
+              console.log(`  ✅ Active allowance found: ${tokenInfo.symbol} -> ${spenderAddress}`)
               const spenderName = await getContractName(spenderAddress).catch(() => null)
               const { riskLevel, reason } = analyzeRisk(
                 currentAllowance.toString(),
@@ -591,9 +584,12 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
                 riskLevel,
                 reason
               })
+            } else {
+              console.log(`  ⚠️ Allowance is 0 (revoked): ${tokenInfo.symbol} -> ${spenderAddress}`)
             }
           } catch (error) {
-            console.error(`Error checking allowance for ${tokenInfo.symbol} -> ${spenderAddress}:`, error)
+            console.error(`  ❌ Error checking allowance for ${tokenInfo.symbol} -> ${spenderAddress}:`, error.message)
+            // Continue with other spenders even if one fails
           }
         }
       } catch (error) {
