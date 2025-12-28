@@ -21,15 +21,58 @@ const PRICE = '$0.01' // 0.01 USDC
 const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' // Base USDC
 const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || 'SI8ECAC19FPN92K9MCNQENMGY6Z6MRM14Q'
 
-// Supported networks for allowance scanning (same as wallet analysis)
+// Supported networks for allowance scanning
+// Each network has its own block explorer API endpoint
 const SUPPORTED_NETWORKS = {
-  'base': { chainId: 8453, name: 'Base Mainnet', currency: 'ETH', rpc: 'https://base.llamarpc.com' }, // More reliable public RPC
-  'ethereum': { chainId: 1, name: 'Ethereum Mainnet', currency: 'ETH', rpc: 'https://eth.llamarpc.com' },
-  'polygon': { chainId: 137, name: 'Polygon Mainnet', currency: 'MATIC', rpc: 'https://polygon-rpc.com' },
-  'arbitrum': { chainId: 42161, name: 'Arbitrum One', currency: 'ETH', rpc: 'https://arb1.arbitrum.io/rpc' },
-  'optimism': { chainId: 10, name: 'Optimism', currency: 'ETH', rpc: 'https://mainnet.optimism.io' },
-  'bsc': { chainId: 56, name: 'BNB Chain', currency: 'BNB', rpc: 'https://bsc-dataseed.binance.org' },
-  'avalanche': { chainId: 43114, name: 'Avalanche', currency: 'AVAX', rpc: 'https://api.avax.network/ext/bc/C/rpc' },
+  'base': { 
+    chainId: 8453, 
+    name: 'Base Mainnet', 
+    currency: 'ETH', 
+    rpc: 'https://base.llamarpc.com',
+    apiUrl: 'https://api.basescan.org/api'
+  },
+  'ethereum': { 
+    chainId: 1, 
+    name: 'Ethereum Mainnet', 
+    currency: 'ETH', 
+    rpc: 'https://eth.llamarpc.com',
+    apiUrl: 'https://api.etherscan.io/api'
+  },
+  'polygon': { 
+    chainId: 137, 
+    name: 'Polygon Mainnet', 
+    currency: 'MATIC', 
+    rpc: 'https://polygon-rpc.com',
+    apiUrl: 'https://api.polygonscan.com/api'
+  },
+  'arbitrum': { 
+    chainId: 42161, 
+    name: 'Arbitrum One', 
+    currency: 'ETH', 
+    rpc: 'https://arb1.arbitrum.io/rpc',
+    apiUrl: 'https://api.arbiscan.io/api'
+  },
+  'optimism': { 
+    chainId: 10, 
+    name: 'Optimism', 
+    currency: 'ETH', 
+    rpc: 'https://mainnet.optimism.io',
+    apiUrl: 'https://api-optimistic.etherscan.io/api'
+  },
+  'bsc': { 
+    chainId: 56, 
+    name: 'BNB Chain', 
+    currency: 'BNB', 
+    rpc: 'https://bsc-dataseed.binance.org',
+    apiUrl: 'https://api.bscscan.com/api'
+  },
+  'avalanche': { 
+    chainId: 43114, 
+    name: 'Avalanche', 
+    currency: 'AVAX', 
+    rpc: 'https://api.avax.network/ext/bc/C/rpc',
+    apiUrl: 'https://api.snowtrace.io/api'
+  },
 }
 
 // Base network popular tokens to scan
