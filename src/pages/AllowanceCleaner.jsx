@@ -53,6 +53,19 @@ export default function AllowanceCleaner() {
     }
   }
 
+  const handleNetworkChange = async (networkKey) => {
+    setSelectedNetwork(networkKey)
+    
+    // If already scanned, automatically start new scan with selected network
+    if (hasScanned && isConnected && !isScanning) {
+      try {
+        await scanAllowances(networkKey)
+      } catch (err) {
+        console.error('Auto-scan failed:', err)
+      }
+    }
+  }
+
   const handleRevoke = async (tokenAddress, spenderAddress, index) => {
     try {
       setRevokingIndex(index)
@@ -146,7 +159,7 @@ export default function AllowanceCleaner() {
             {Object.entries(SUPPORTED_NETWORKS).map(([key, network]) => (
               <button
                 key={key}
-                onClick={() => !isScanning && setSelectedNetwork(key)}
+                onClick={() => !isScanning && handleNetworkChange(key)}
                 disabled={isScanning}
                 style={{
                   padding: '12px 16px',
