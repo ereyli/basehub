@@ -237,9 +237,11 @@ async function getTokenInfo(tokenAddress, publicClient) {
   }
 }
 
-// Rate limiter helper
+// Rate limiter helper - more conservative to avoid hitting limits
 async function rateLimitedDelay(network) {
-  const delayMs = 1000 / network.apiRateLimit
+  // Use 250ms delay (4 calls/sec max) to stay safely under 5 calls/sec limit
+  // This accounts for concurrent requests and timing variations
+  const delayMs = 250 // Conservative: 4 calls/sec instead of 5
   await new Promise(resolve => setTimeout(resolve, delayMs))
 }
 
@@ -362,7 +364,9 @@ async function fetchTokenTransfers(walletAddress, network, uniqueTokens, tokenMe
             console.log(`       - Rate limit exceeded`)
           }
         } else if (data.message && data.message.includes('rate limit')) {
-          console.log(`    ⚠️ ${standard}: Rate limit reached, stopping`)
+          console.log(`    ⚠️ ${standard}: Rate limit hit - ${data.result}`)
+          console.log(`    ⏳ Waiting 2 seconds before continuing...`)
+          await new Promise(resolve => setTimeout(resolve, 2000))
         } else {
           if (page === 1) console.log(`    ℹ️ ${standard}: ${data.message}`)
         }
@@ -522,12 +526,14 @@ async function fetchApprovalEvents(walletAddress, network, uniqueTokens) {
         if (logsData.message === 'No records found') {
           console.log(`  ℹ️ ${approvalType.name}: No approval events found`)
         } else if (logsData.message === 'NOTOK') {
-          console.log(`  ⚠️ ${approvalType.name}: API key issue or rate limit`)
+          console.log(`  ⚠️ ${approvalType.name}: API returned NOTOK`)
           if (logsData.result) {
             console.log(`  ℹ️ API details:`, logsData.result)
           }
         } else if (logsData.message && logsData.message.includes('rate limit')) {
-          console.log(`  ⚠️ ${approvalType.name}: Rate limit exceeded`)
+          console.log(`  ⚠️ ${approvalType.name}: Rate limit hit - ${logsData.result}`)
+          console.log(`  ⏳ Waiting 2 seconds before continuing...`)
+          await new Promise(resolve => setTimeout(resolve, 2000)) // Extra delay on rate limit
         } else {
           console.log(`  ⚠️ ${approvalType.name}: ${logsData.message}`)
         }
