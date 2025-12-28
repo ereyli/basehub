@@ -15,6 +15,21 @@ console.log('🚀 Allowance Cleaner API loaded')
 const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || 'SI8ECAC19FPN92K9MCNQENMGY6Z6MRM14Q'
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY || 'e_3LRKM0RipM2jfrPRn-CemN5EgByDgA'
 
+// Event signatures for all approval types
+const EVENT_SIGNATURES = {
+  // ERC20 Approval: event Approval(address indexed owner, address indexed spender, uint256 value)
+  ERC20_APPROVAL: '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925',
+  
+  // ERC721 Approval: event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId)
+  ERC721_APPROVAL: '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925',
+  
+  // ERC721 ApprovalForAll: event ApprovalForAll(address indexed owner, address indexed operator, bool approved)
+  ERC721_APPROVAL_FOR_ALL: '0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31',
+  
+  // ERC1155 ApprovalForAll: event ApprovalForAll(address indexed account, address indexed operator, bool approved)
+  ERC1155_APPROVAL_FOR_ALL: '0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31',
+}
+
 console.log('🔑 API Keys:')
 console.log('  - Basescan:', BASESCAN_API_KEY ? `${BASESCAN_API_KEY.substring(0, 10)}...` : 'NOT SET')
 console.log('  - Alchemy:', ALCHEMY_API_KEY ? `${ALCHEMY_API_KEY.substring(0, 10)}...` : 'NOT SET')
