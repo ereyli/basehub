@@ -16,8 +16,9 @@ const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || 'SI8ECAC19FPN92K9MCNQEN
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY || 'e_3LRKM0RipM2jfrPRn-CemN5EgByDgA'
 
 console.log('🔑 API Keys:')
-console.log('  - Basescan:', BASESCAN_API_KEY ? 'SET' : 'NOT SET')
-console.log('  - Alchemy:', ALCHEMY_API_KEY ? 'SET' : 'NOT SET')
+console.log('  - Basescan:', BASESCAN_API_KEY ? `${BASESCAN_API_KEY.substring(0, 10)}...` : 'NOT SET')
+console.log('  - Alchemy:', ALCHEMY_API_KEY ? `${ALCHEMY_API_KEY.substring(0, 10)}...` : 'NOT SET')
+console.log('  - Alchemy Full Key:', ALCHEMY_API_KEY) // Debug: Show full key
 
 // Supported networks with Alchemy RPCs
 const SUPPORTED_NETWORKS = {
