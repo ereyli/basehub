@@ -286,7 +286,7 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     console.error(`❌ Token fetch error:`, err.message)
   }
   
-  // STEP 2: Try to fetch Approval events via RPC eth_getLogs (RevokeCash method)
+  // STEP 2: Try to fetch Approval events via RPC eth_getLogs
   console.log(`\n🔐 STEP 2: Trying to fetch Approval events via RPC...`)
   const tokenSpenderPairs = new Map() // Map<tokenAddress, Set<spenderAddress>>
   
