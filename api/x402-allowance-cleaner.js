@@ -4,8 +4,6 @@
 
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { paymentMiddleware } from 'x402-hono'
-import { facilitator } from '@coinbase/x402'
 import { createPublicClient, http, formatUnits } from 'viem'
 import { base, mainnet, polygon, arbitrum, optimism, bsc, avalanche } from 'viem/chains'
 
@@ -17,6 +15,18 @@ const app = new Hono()
 console.log('📦 Environment:')
 console.log('  - NODE_ENV:', process.env.NODE_ENV)
 console.log('  - BASESCAN_API_KEY:', process.env.BASESCAN_API_KEY ? 'SET' : 'NOT SET')
+
+// ==========================================
+// Configuration
+// ==========================================
+
+const NETWORK = 'base' // Payment network (Base mainnet)
+const RECEIVING_ADDRESS = '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
+const PRICE = '$0.01' // 0.01 USDC
+const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' // Base USDC
+const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || 'SI8ECAC19FPN92K9MCNQENMGY6Z6MRM14Q'
+
+console.log('💰 Payment config:', { NETWORK, PRICE, RECEIVING_ADDRESS })
 
 // ==========================================
 // Configuration
@@ -494,21 +504,7 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
 // ==========================================
 app.post('/', async (c) => {
   try {
-    // Check payment status from x402 middleware
-    const paymentStatus = c.get('paymentStatus')
-    if (paymentStatus === 'pending') {
-      console.log('⚠️ Payment required')
-      return c.json({ 
-        success: false, 
-        error: 'Payment required',
-        paymentRequired: true,
-        price: PRICE,
-        network: NETWORK,
-        currency: USDC_ADDRESS
-      }, 402)
-    }
-    
-    console.log('✅ Payment verified, proceeding with scan')
+    console.log('📥 Received scan request')
     
     const { walletAddress, network } = await c.req.json()
     
