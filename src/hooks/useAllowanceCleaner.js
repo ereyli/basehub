@@ -174,12 +174,27 @@ export const useAllowanceCleaner = () => {
         } else if (response.status === 400) {
           errorMessage = errorData.error || errorData.message || 'Invalid request'
         } else if (response.status === 500) {
-          errorMessage = errorData.message || 'Server error. Please try again later.'
+          // Try to get more detailed error message
+          if (errorData.error) {
+            errorMessage = errorData.error
+          } else if (errorData.message) {
+            errorMessage = errorData.message
+          } else if (errorData.details) {
+            errorMessage = `Server error: ${errorData.details.substring(0, 200)}`
+          } else {
+            errorMessage = 'Server error. Please try again later. If the problem persists, try a different network.'
+          }
         } else if (errorData.message) {
           errorMessage = errorData.message
         } else if (errorData.error) {
           errorMessage = errorData.error
         }
+
+        console.error('❌ Error from API:', {
+          status: response.status,
+          errorData,
+          errorMessage
+        })
 
         throw new Error(errorMessage)
       }
