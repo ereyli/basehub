@@ -439,6 +439,7 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
         console.log(`📊 API Response data:`, {
           status: logsData.status,
           message: logsData.message,
+          result: logsData.result, // Log full result to see actual error
           resultCount: logsData.result && Array.isArray(logsData.result) ? logsData.result.length : 'not an array',
           resultType: typeof logsData.result
         })
