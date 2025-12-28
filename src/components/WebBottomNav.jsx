@@ -219,37 +219,6 @@ const WebBottomNav = () => {
           <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>GAMING</span>
         </button>
 
-        {/* NFT Tab */}
-        <button
-          onClick={() => handleTabClick('nft')}
-          style={{
-            width: '100%',
-            padding: '12px 8px',
-            border: 'none',
-            borderRadius: '12px',
-            background: activeTab === 'nft' 
-              ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' 
-              : 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(124, 58, 237, 0.15) 100%)',
-            color: activeTab === 'nft' ? 'white' : '#8b5cf6',
-            fontSize: '10px',
-            fontWeight: '700',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '4px',
-            transition: 'all 0.2s ease',
-            minHeight: '70px',
-            justifyContent: 'center',
-            boxShadow: activeTab === 'nft' 
-              ? '0 4px 12px rgba(139, 92, 246, 0.3)' 
-              : '0 2px 4px rgba(139, 92, 246, 0.1)'
-          }}
-        >
-          <Image size={20} />
-          <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>NFT</span>
-        </button>
-
         {/* ANALYSIS Tab */}
         <button
           onClick={() => handleTabClick('analysis')}
@@ -279,6 +248,37 @@ const WebBottomNav = () => {
         >
           <TrendingUp size={20} />
           <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>ANALYSIS</span>
+        </button>
+
+        {/* NFT Tab */}
+        <button
+          onClick={() => handleTabClick('nft')}
+          style={{
+            width: '100%',
+            padding: '12px 8px',
+            border: 'none',
+            borderRadius: '12px',
+            background: activeTab === 'nft' 
+              ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' 
+              : 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(124, 58, 237, 0.15) 100%)',
+            color: activeTab === 'nft' ? 'white' : '#8b5cf6',
+            fontSize: '10px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '4px',
+            transition: 'all 0.2s ease',
+            minHeight: '70px',
+            justifyContent: 'center',
+            boxShadow: activeTab === 'nft' 
+              ? '0 4px 12px rgba(139, 92, 246, 0.3)' 
+              : '0 2px 4px rgba(139, 92, 246, 0.1)'
+          }}
+        >
+          <Image size={20} />
+          <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>NFT</span>
         </button>
 
         {/* DEPLOY Tab */}
