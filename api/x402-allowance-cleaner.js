@@ -339,19 +339,12 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
   const publicClient = createNetworkClient(network)
   
   try {
-    // RevokeCash approach: Use RPC eth_getLogs to get Approval events
-    // This is more reliable than API-based approaches
+    // RevokeCash approach: Use Etherscan-compatible API first (more reliable for large ranges)
+    // RPC eth_getLogs can timeout for very large ranges, so we use API as primary method
     // Approval event signature: 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925
     const approvalEventSignature = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
     
     // Format owner address as topic (32 bytes, padded)
-    const ownerTopic = '0x000000000000000000000000' + walletAddress.slice(2).toLowerCase()
-    
-    console.log(`📡 Fetching Approval events using RPC eth_getLogs...`)
-    
-    // RevokeCash approach: Use Etherscan-compatible API first (more reliable for large ranges)
-    // RPC eth_getLogs can timeout for very large ranges, so we use API as primary method
-    const approvalEventSignature = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
     const ownerTopic = '0x000000000000000000000000' + walletAddress.slice(2).toLowerCase()
     
     let logs = []
