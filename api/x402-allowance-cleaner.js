@@ -449,13 +449,12 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     if (logs.length === 0) {
       try {
         console.log(`⚠️ API returned no results, trying RPC eth_getLogs as fallback...`)
-        // Use a more recent block range to avoid timeout (last 100k blocks ~2 weeks)
-        const currentBlock = await publicClient.getBlockNumber()
-        const fromBlock = currentBlock > 100000n ? currentBlock - 100000n : 0n
-        
-        console.log(`📡 RPC: Fetching logs from block ${fromBlock} to latest...`)
+        // Try to get all historical logs (from genesis)
+        // If RPC doesn't support full history, try last 1 year of blocks
+        console.log(`📡 RPC: Fetching logs from genesis block (0) to latest for full history...`)
         
         // Use raw RPC call to avoid viem format issues
+        // Try from genesis first
         const rpcResponse = await fetch(network.rpc, {
           method: 'POST',
           headers: {
@@ -470,7 +469,7 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
                 ownerTopic,
                 null // spender can be any
               ],
-              fromBlock: `0x${fromBlock.toString(16)}`,
+              fromBlock: '0x0', // Start from genesis
               toBlock: 'latest'
             }],
             id: 1
@@ -588,18 +587,31 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
             console.log(`  🔍 Checking allowance: ${tokenInfo.symbol} -> ${spenderAddress.substring(0, 10)}...`)
             
             // Check current allowance (might have been revoked)
-            const currentAllowance = await publicClient.readContract({
-              address: tokenAddress,
-              abi: ERC20_ABI,
-              functionName: 'allowance',
-              args: [walletAddress, spenderAddress]
-            })
+            let currentAllowance = 0n
+            try {
+              currentAllowance = await publicClient.readContract({
+                address: tokenAddress,
+                abi: ERC20_ABI,
+                functionName: 'allowance',
+                args: [walletAddress, spenderAddress]
+              })
+            } catch (allowanceError) {
+              console.error(`  ❌ Error reading allowance: ${allowanceError.message}`)
+              // If we can't read allowance, still show it but mark as unknown
+              currentAllowance = -1n // Use -1 to indicate unknown
+            }
             
-            console.log(`  📊 Current allowance for ${tokenInfo.symbol}: ${currentAllowance.toString()}`)
+            console.log(`  📊 Current allowance for ${tokenInfo.symbol}: ${currentAllowance.toString() === '-1' ? 'UNKNOWN (error reading)' : currentAllowance.toString()}`)
             
-            // Only include if allowance is still active
-            if (currentAllowance > 0n) {
-              console.log(`  ✅ Active allowance found: ${tokenInfo.symbol} -> ${spenderAddress}`)
+            // Include ALL approvals found, even if current allowance is 0
+            // User might want to see historical approvals that were revoked
+            // But prioritize active ones
+            if (currentAllowance > 0n || currentAllowance === -1n) {
+              if (currentAllowance > 0n) {
+                console.log(`  ✅ Active allowance found: ${tokenInfo.symbol} -> ${spenderAddress}`)
+              } else {
+                console.log(`  ⚠️ Allowance status unknown (showing anyway): ${tokenInfo.symbol} -> ${spenderAddress}`)
+              }
               const spenderName = await getContractName(spenderAddress).catch(() => null)
               const { riskLevel, reason } = analyzeRisk(
                 currentAllowance.toString(),
