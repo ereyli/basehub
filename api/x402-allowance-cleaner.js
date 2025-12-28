@@ -438,8 +438,9 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
       // The error will be thrown if RPC also fails
     }
     
-    // If API returned no results, try RPC as fallback (for smaller ranges)
-    if (logs.length === 0) {
+    // If API returned no results or failed, try RPC as fallback (for smaller ranges)
+    // But skip RPC for Base if API already returned empty (likely no approvals)
+    if (logs.length === 0 && chainId !== 8453) {
       try {
         console.log(`⚠️ API returned no results, trying RPC eth_getLogs as fallback...`)
         // Use a more recent block range to avoid timeout (last 100k blocks ~2 weeks)
@@ -467,10 +468,14 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
       } catch (rpcError) {
         console.error(`❌ RPC eth_getLogs also failed:`, rpcError.message)
         console.error(`❌ RPC error details:`, rpcError)
-        // If both API and RPC failed, throw an error with details
+        // For other networks, if both failed, throw error
         const rpcErrorMessage = rpcError.message || 'Unknown RPC error'
         throw new Error(`Failed to fetch Approval events. API and RPC both failed. Error: ${rpcErrorMessage}. Please try again later or check if the network is supported.`)
       }
+    } else if (logs.length === 0 && chainId === 8453) {
+      // For Base, if API returned empty, assume no approvals (API is reliable)
+      console.log('ℹ️ Base API returned empty, no approvals found')
+      return []
     }
     
     if (logs.length === 0) {
