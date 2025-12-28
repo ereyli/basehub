@@ -339,6 +339,7 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
         console.log(`  ⚠️ Could not get current block, will skip RPC scan`)
         throw new Error('Block number fetch failed')
       }
+    } // <-- Missing closing brace for blockNumberResponse.ok check
     
     // Use RPC to get logs (RevokeCash approach with limited range)
     const logsResponse = await fetch(network.rpc, {
