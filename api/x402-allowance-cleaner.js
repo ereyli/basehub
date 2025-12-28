@@ -641,6 +641,7 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
   console.log(`\n✅ STEP 4: Checking on-chain allowances...`)
   
   let checkedCount = 0
+  let foundCount = 0
   for (const [tokenAddress, spenders] of tokenSpenderPairs) {
     if (spenders.size === 0) continue
     
@@ -652,6 +653,7 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
       }
       
       console.log(`  📊 [${checkedCount + 1}/${tokenSpenderPairs.size}] Checking ${tokenInfo.symbol} (${tokenAddress})`)
+      console.log(`     Will check ${spenders.size} spenders for this token`)
       checkedCount++
       
       let balance = 0n
@@ -662,10 +664,12 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
           functionName: 'balanceOf',
           args: [walletAddress]
         })
+        console.log(`     Balance: ${formatUnits(balance, tokenInfo.decimals)} ${tokenInfo.symbol}`)
       } catch (e) {
-        // Token might not support balanceOf (NFTs)
+        console.log(`     ⚠️ Could not fetch balance (might be NFT or non-standard token)`)
       }
       
+      let spenderCheckedCount = 0
       for (const spender of spenders) {
         try {
           const allowance = await publicClient.readContract({
@@ -675,7 +679,15 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
             args: [walletAddress, spender]
           })
           
+          spenderCheckedCount++
+          
+          // Debug: Log every allowance check result
+          if (spenderCheckedCount <= 3 || allowance > 0n) {
+            console.log(`     [${spenderCheckedCount}/${spenders.size}] Spender ${spender.substring(0, 10)}... allowance: ${allowance > 0n ? allowance.toString() : '0'}`)
+          }
+          
           if (allowance > 0n) {
+            foundCount++
             const { riskLevel, reason } = analyzeRisk(allowance.toString(), spender, balance.toString())
             const maxUint = BigInt('115792089237316195423570985008687907853269984665640564039457584007913129639935')
             const isUnlimited = allowance >= maxUint
@@ -737,10 +749,18 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     return order[b.riskLevel] - order[a.riskLevel]
   })
   
+  console.log(`\n📊 Scan Summary:`)
+  console.log(`   - Tokens checked: ${checkedCount}`)
+  console.log(`   - Total spender checks: ${totalSpenderChecks}`)
+  console.log(`   - Active allowances found: ${foundCount}`)
   console.log(`\n✅ Scan completed: Found ${allowances.length} active allowances`)
   console.log(`   - High risk: ${allowances.filter(a => a.riskLevel === 'high').length}`)
   console.log(`   - Medium risk: ${allowances.filter(a => a.riskLevel === 'medium').length}`)
   console.log(`   - Low risk: ${allowances.filter(a => a.riskLevel === 'low').length}`)
+  
+  if (allowances.length === 0 && checkedCount > 0) {
+    console.log(`\n   ℹ️ All checked allowances are 0 (already revoked or never approved)`)
+  }
   
   return allowances
 }
