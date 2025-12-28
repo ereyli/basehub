@@ -604,44 +604,59 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
             console.log(`  📊 Current allowance for ${tokenInfo.symbol}: ${currentAllowance.toString() === '-1' ? 'UNKNOWN (error reading)' : currentAllowance.toString()}`)
             
             // Include ALL approvals found, even if current allowance is 0
-            // User might want to see historical approvals that were revoked
-            // But prioritize active ones
-            if (currentAllowance > 0n || currentAllowance === -1n) {
-              if (currentAllowance > 0n) {
-                console.log(`  ✅ Active allowance found: ${tokenInfo.symbol} -> ${spenderAddress}`)
-              } else {
-                console.log(`  ⚠️ Allowance status unknown (showing anyway): ${tokenInfo.symbol} -> ${spenderAddress}`)
-              }
-              const spenderName = await getContractName(spenderAddress).catch(() => null)
-              const { riskLevel, reason } = analyzeRisk(
+            // User wants to see all historical approvals, not just active ones
+            const spenderName = await getContractName(spenderAddress).catch(() => null)
+            
+            // Determine risk level and reason
+            let riskLevel = 'low'
+            let reason = 'Approval found'
+            
+            if (currentAllowance > 0n) {
+              console.log(`  ✅ Active allowance found: ${tokenInfo.symbol} -> ${spenderAddress}`)
+              const riskAnalysis = analyzeRisk(
                 currentAllowance.toString(),
                 spenderAddress,
                 balance.toString()
               )
-              
-              // Format amount for display (like RevokeCash does)
-              const maxUint256Value = BigInt('115792089237316195423570985008687907853269984665640564039457584007913129639935')
-              const isUnlimited = currentAllowance >= maxUint256Value
-              const amountFormatted = isUnlimited 
-                ? 'Unlimited' 
-                : formatUnits(currentAllowance, tokenInfo.decimals)
-              
-              allowances.push({
-                tokenAddress,
-                tokenSymbol: tokenInfo.symbol,
-                tokenName: tokenInfo.name,
-                decimals: tokenInfo.decimals,
-                spenderAddress,
-                spenderName: spenderName || null,
-                amount: currentAllowance.toString(),
-                amountFormatted,
-                isUnlimited,
-                riskLevel,
-                reason
-              })
-            } else {
+              riskLevel = riskAnalysis.riskLevel
+              reason = riskAnalysis.reason
+            } else if (currentAllowance === 0n) {
               console.log(`  ⚠️ Allowance is 0 (revoked): ${tokenInfo.symbol} -> ${spenderAddress}`)
+              riskLevel = 'low'
+              reason = 'Approval was revoked (allowance is 0)'
+            } else {
+              console.log(`  ⚠️ Allowance status unknown (showing anyway): ${tokenInfo.symbol} -> ${spenderAddress}`)
+              riskLevel = 'medium'
+              reason = 'Could not verify current allowance status'
             }
+            
+            // Format amount for display (like RevokeCash does)
+            const maxUint256Value = BigInt('115792089237316195423570985008687907853269984665640564039457584007913129639935')
+            const isUnlimited = currentAllowance >= maxUint256Value && currentAllowance !== -1n
+            const amountFormatted = isUnlimited 
+              ? 'Unlimited' 
+              : currentAllowance === -1n
+              ? 'Unknown (check failed)'
+              : currentAllowance === 0n
+              ? '0 (Revoked)'
+              : formatUnits(currentAllowance, tokenInfo.decimals)
+            
+            allowances.push({
+              tokenAddress,
+              tokenSymbol: tokenInfo.symbol,
+              tokenName: tokenInfo.name,
+              decimals: tokenInfo.decimals,
+              spenderAddress,
+              spenderName: spenderName || null,
+              amount: currentAllowance === -1n ? '0' : currentAllowance.toString(),
+              amountFormatted,
+              isUnlimited: isUnlimited,
+              isActive: currentAllowance > 0n,
+              isUnknown: currentAllowance === -1n,
+              isRevoked: currentAllowance === 0n,
+              riskLevel,
+              reason
+            })
           } catch (error) {
             console.error(`  ❌ Error checking allowance for ${tokenInfo.symbol} -> ${spenderAddress}:`, error.message)
             // Continue with other spenders even if one fails
