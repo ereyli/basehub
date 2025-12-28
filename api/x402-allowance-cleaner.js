@@ -301,8 +301,8 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     console.error(`❌ Token fetch error:`, err.message)
   }
   
-  // STEP 2: Try to fetch Approval events via RPC eth_getLogs
-  console.log(`\n🔐 STEP 2: Trying to fetch Approval events via RPC...`)
+  // STEP 2: Fetch ALL Approval events using Etherscan API getLogs (NO BLOCK LIMIT!)
+  console.log(`\n🔐 STEP 2: Fetching ALL approval events (ERC20 + NFT) via Etherscan API...`)
   const tokenSpenderPairs = new Map() // Map<tokenAddress, Set<spenderAddress>>
   
   // Initialize with tokens we found
@@ -311,116 +311,90 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
   })
   
   try {
-    // Approval event signature
-    const approvalTopic = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
-    // Pad wallet address to 32 bytes for topic filtering
     const ownerTopic = '0x000000000000000000000000' + walletAddress.slice(2).toLowerCase()
     
-    console.log(`  📡 RPC URL: ${network.rpc}`)
-    console.log(`  📡 Fetching Approval events via RPC for owner: ${walletAddress}`)
-    
-    // Get current block number first
-    const blockNumberResponse = await fetch(network.rpc, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
+    // Event signatures for all approval types
+    const approvalTypes = [
+      { 
+        name: 'ERC20/ERC721 Approval', 
+        // event Approval(address indexed owner, address indexed spender, uint256 value)
+        topic: '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
       },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'eth_blockNumber',
-        params: [],
-        id: 1
+      { 
+        name: 'ERC721/ERC1155 ApprovalForAll', 
+        // event ApprovalForAll(address indexed owner, address indexed operator, bool approved)
+        topic: '0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31'
+      },
+    ]
+    
+    for (const approvalType of approvalTypes) {
+      console.log(`\n  📋 Fetching ${approvalType.name} events...`)
+      
+      // Etherscan getLogs API - supports fromBlock=0 to latest (FULL HISTORY!)
+      // https://docs.etherscan.io/api-endpoints/logs#get-event-logs-by-address
+      const logsUrl = `${network.apiUrl}?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalType.topic}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
+      
+      console.log(`  🌐 API URL: ${network.apiUrl}`)
+      console.log(`  🔍 Scanning from block 0 to latest (FULL HISTORY)`)
+      
+      const logsResponse = await fetch(logsUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'BaseHub-AllowanceCleaner/1.0',
+        },
       })
-    })
-    
-    let toBlock = 'latest'
-    let fromBlock = '0x0'
-    
-    if (blockNumberResponse.ok) {
-      const blockData = await blockNumberResponse.json()
-      if (blockData.result) {
-        const currentBlock = parseInt(blockData.result, 16)
-        console.log(`  📊 Current block: ${currentBlock}`)
-        
-        // Reduce block range to 2000 blocks (more conservative for Alchemy)
-        // This is about 6-8 hours on most chains
-        const blockRange = 2000
-        fromBlock = '0x' + Math.max(0, currentBlock - blockRange).toString(16)
-        toBlock = '0x' + currentBlock.toString(16)
-        
-        console.log(`  📊 Scanning blocks ${parseInt(fromBlock, 16)} to ${parseInt(toBlock, 16)} (${blockRange} blocks)`)
-      } else {
-        console.log(`  ⚠️ Could not get current block, will skip RPC scan`)
-        throw new Error('Block number fetch failed')
+      
+      if (!logsResponse.ok) {
+        console.error(`  ❌ API HTTP error: ${logsResponse.status}`)
+        continue
       }
-    } // <-- Missing closing brace for blockNumberResponse.ok check
-    
-    // Use RPC to get logs (RevokeCash approach with limited range)
-    const logsResponse = await fetch(network.rpc, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'eth_getLogs',
-        params: [{
-          fromBlock: fromBlock, // Last 10,000 blocks
-          toBlock: toBlock,
-          topics: [approvalTopic, ownerTopic] // Filter by Approval event and owner
-        }],
-        id: 2
-      })
-    })
-    
-    console.log(`  📡 RPC Response status: ${logsResponse.status}`)
-    
-    if (logsResponse.ok) {
+      
       const logsData = await logsResponse.json()
       
-      console.log(`  📊 RPC Response data:`, {
-        hasError: !!logsData.error,
-        hasResult: !!logsData.result,
-        resultType: Array.isArray(logsData.result) ? 'array' : typeof logsData.result,
-        resultLength: Array.isArray(logsData.result) ? logsData.result.length : 'N/A'
+      console.log(`  📊 API Response:`, {
+        status: logsData.status,
+        message: logsData.message,
+        resultLength: Array.isArray(logsData.result) ? logsData.result.length : 0
       })
       
-      if (logsData.error) {
-        console.error(`  ❌ RPC returned error:`, logsData.error)
-        console.log(`  ⚠️ RPC error - will use common spenders only`)
-      } else if (logsData.result && Array.isArray(logsData.result)) {
-        console.log(`  ✅ Found ${logsData.result.length} Approval events via RPC`)
+      if (logsData.status === '1' && Array.isArray(logsData.result)) {
+        console.log(`  ✅ Found ${logsData.result.length} ${approvalType.name} events`)
         
         // Parse logs to extract token-spender pairs
         logsData.result.forEach(log => {
           try {
             const tokenAddress = log.address.toLowerCase()
-            // topic[1] = owner (already filtered), topic[2] = spender
+            
+            // topic[0] = event signature
+            // topic[1] = owner (indexed)
+            // topic[2] = spender/operator (indexed)
             if (log.topics && log.topics[2]) {
               const spenderAddress = '0x' + log.topics[2].slice(26).toLowerCase()
               
               if (!tokenSpenderPairs.has(tokenAddress)) {
                 tokenSpenderPairs.set(tokenAddress, new Set())
-                uniqueTokens.add(tokenAddress)
+                uniqueTokens.add(tokenAddress) // Add to uniqueTokens for on-chain checks
               }
               tokenSpenderPairs.get(tokenAddress).add(spenderAddress)
             }
           } catch (e) {
-            // Skip malformed logs
+            console.warn('  ⚠️ Error parsing log:', e.message)
           }
         })
         
-        console.log(`  ✅ Extracted spenders from Approval events`)
+        console.log(`  ✅ Extracted spenders from ${approvalType.name} events`)
       } else {
-        console.log(`  ⚠️ RPC returned no Approval events`)
+        console.log(`  ⚠️ No ${approvalType.name} events found`)
+        if (logsData.message && logsData.message !== 'No records found') {
+          console.warn(`  ⚠️ API message: ${logsData.message}`)
+        }
       }
-    } else {
-      console.log(`  ⚠️ RPC request failed: ${logsResponse.status}`)
+      
+      // Rate limiting: wait 350ms between requests
+      await new Promise(resolve => setTimeout(resolve, 350))
     }
-  } catch (rpcError) {
-    console.error(`  ❌ RPC error:`, rpcError.message)
+  } catch (err) {
+    console.error(`  ❌ Approval events fetch error:`, err.message)
   }
   
   // STEP 3: Add common spenders to all tokens
