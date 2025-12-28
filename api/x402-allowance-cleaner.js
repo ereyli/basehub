@@ -458,26 +458,21 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     // If this fails, we'll use common spenders list
     // ========================================
     console.log(`\n🔐 STEP 2: Trying to fetch Approval events (optional)...`)
-    const approvalEventSignature = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
     
-    // Format owner address as topic (32 bytes, padded)
+    // Try to get approval events (but don't fail if this doesn't work)
+    const approvalEventSignature = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
     const ownerTopic = '0x000000000000000000000000' + walletAddress.slice(2).toLowerCase()
     
-    let logs = []
+    let logsUrl
+    if (useV2) {
+      logsUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&page=1&offset=1000&apikey=${BASESCAN_API_KEY}`
+    } else {
+      logsUrl = `${apiUrl}?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&page=1&offset=1000&apikey=${BASESCAN_API_KEY}`
+    }
     
-    // Use each network's own API endpoint (not Etherscan V2)
-    // Each network has its own block explorer with its own API
+    console.log(`🔗 Approval Events URL: ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
+    
     try {
-      const apiUrl = network.apiUrl || 'https://api.etherscan.io/api'
-      console.log(`📡 Fetching Approval events from ${network.name}'s block explorer API...`)
-      console.log(`📅 Scanning from genesis block (0) to latest - covering all historical approvals`)
-      console.log(`🌐 API endpoint: ${apiUrl}`)
-      
-      // Use network-specific API endpoint
-      const logsUrl = `${apiUrl}?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
-      
-      console.log(`🔗 API URL: ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
-      
       const logsResponse = await fetch(logsUrl, {
         headers: {
           'Accept': 'application/json',
@@ -485,73 +480,169 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
         },
       })
       
-      console.log(`📡 API Response status: ${logsResponse.status} ${logsResponse.statusText}`)
-      
       if (logsResponse.ok) {
         const logsData = await logsResponse.json()
-        console.log(`📊 API Response data:`, {
+        console.log(`📊 Approval Events Response:`, {
           status: logsData.status,
           message: logsData.message,
-          result: logsData.result, // Log full result to see actual error
           resultCount: logsData.result && Array.isArray(logsData.result) ? logsData.result.length : 'not an array',
-          resultType: typeof logsData.result
         })
         
         if (logsData.status === '1' && Array.isArray(logsData.result)) {
-          // Convert API response to viem log format
-          logs = logsData.result.map(log => ({
-            address: log.address,
-            topics: log.topics,
-            data: log.data,
-            blockNumber: BigInt(log.blockNumber || '0'),
-            transactionHash: log.transactionHash,
-            blockHash: log.blockHash,
-            transactionIndex: parseInt(log.transactionIndex || '0'),
-            logIndex: parseInt(log.logIndex || '0'),
-            removed: false
-          }))
-          console.log(`✅ API returned ${logs.length} Approval events`)
-        } else if (logsData.status === '0') {
-          // API returned error status
-          const errorMsg = logsData.message || 'Unknown API error'
-          console.log(`⚠️ API returned error status: ${errorMsg}`)
-          
-          // Check if it's a "no records found" case
-          if (errorMsg.includes('No records found') || errorMsg.includes('No logs found') || errorMsg.includes('No transactions found')) {
-            console.log('ℹ️ No Approval events found for this wallet on this network')
-            return []
-          }
-          
-          // For other errors, log but don't throw yet - will try RPC fallback
-          console.warn(`⚠️ API error but will try RPC fallback: ${errorMsg}`)
+          // Parse approval events to find spenders
+          logsData.result.forEach(log => {
+            try {
+              const tokenAddress = log.address.toLowerCase()
+              const spenderAddress = '0x' + log.topics[2].slice(26) // topic2 is spender
+              
+              uniqueTokens.add(tokenAddress)
+              
+              if (!tokenSpenderHints.has(tokenAddress)) {
+                tokenSpenderHints.set(tokenAddress, new Set())
+              }
+              tokenSpenderHints.get(tokenAddress).add(spenderAddress.toLowerCase())
+            } catch (error) {
+              console.error('Error parsing approval log:', error)
+            }
+          })
+          console.log(`✅ Found ${tokenSpenderHints.size} tokens with approval events`)
         } else {
-          console.log(`⚠️ API returned unexpected status: ${logsData.status}, message: ${logsData.message || 'No message'}`)
-          // Don't throw, will try RPC fallback
+          console.log(`⚠️ Approval events API failed (${logsData.message || logsData.result}), will check common spenders`)
         }
-      } else {
-        const errorText = await logsResponse.text().catch(() => 'Could not read error')
-        console.error(`❌ API HTTP error: ${logsResponse.status}`, errorText.substring(0, 500))
-        // Don't throw here, will try RPC fallback
       }
-    } catch (apiError) {
-      console.error(`❌ API failed:`, apiError.message)
-      console.error(`❌ Full error:`, apiError)
-      // Don't throw here, try RPC fallback first
-      // The error will be thrown if RPC also fails
+    } catch (error) {
+      console.log(`⚠️ Approval events request failed:`, error.message)
     }
     
-    // If API returned no results or failed, try RPC as fallback (for smaller ranges)
-    // But use raw eth_getLogs call instead of viem's getLogs to avoid format issues
-    if (logs.length === 0) {
+    // ========================================
+    // STEP 3: Common DEX/Protocol Spenders (fallback if no approval events found)
+    // ========================================
+    const COMMON_SPENDERS = [
+      // Base Mainnet DEXes and Protocols
+      '0x327Df1E6de05895d2ab08513aaDD9313Fe505d86', // Aerodrome Router
+      '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43', // Aerodrome V2
+      '0x2626664c2603336E57B271c5C0b26F421741e481', // BaseSwap Router
+      '0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24', // UniswapV2 Router (Base)
+      '0x198EF79F1F515F02dFE9e3115eD9fC07183f02fC', // Odos Router
+      '0x1111111254EEB25477B68fb85Ed929f73A960582', // 1inch v5 Router
+      '0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD', // Uniswap Universal Router
+      '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D', // Uniswap V2 Router (if on Base)
+    ]
+    
+    console.log(`\n📋 STEP 3: Will check common spenders for each token`)
+    console.log(`  - Found ${uniqueTokens.size} tokens from transfers`)
+    console.log(`  - Found ${tokenSpenderHints.size} tokens with known spenders from approval events`)
+    console.log(`  - Will also check ${COMMON_SPENDERS.length} common DEX/protocol addresses`)
+    
+    // ========================================
+    // STEP 4: Check on-chain allowances for each token
+    // ========================================
+    console.log(`\n✅ STEP 4: Checking on-chain allowances...`)
+    
+    if (uniqueTokens.size === 0) {
+      console.log(`⚠️ No tokens found in transfer history. Wallet may not have interacted with any tokens on this network.`)
+      return []
+    }
+    
+    for (const tokenAddress of uniqueTokens) {
       try {
-        console.log(`⚠️ API returned no results, trying RPC eth_getLogs as fallback...`)
-        // Try to get all historical logs (from genesis)
-        // If RPC doesn't support full history, try last 1 year of blocks
-        console.log(`📡 RPC: Fetching logs from genesis block (0) to latest for full history...`)
+        // Get token info
+        const tokenInfo = await getTokenInfo(tokenAddress, publicClient)
+        console.log(`📊 Checking ${tokenInfo.symbol} (${tokenAddress})...`)
         
-        // Use raw RPC call to avoid viem format issues
-        // Try from genesis first
-        const rpcResponse = await fetch(network.rpc, {
+        // Get current balance
+        let balance = 0n
+        try {
+          balance = await publicClient.readContract({
+            address: tokenAddress,
+            abi: ERC20_ABI,
+            functionName: 'balanceOf',
+            args: [walletAddress]
+          })
+        } catch (error) {
+          console.error(`Error getting balance:`, error.message)
+        }
+        
+        // Collect spenders to check: from approval events + common spenders
+        const spendersToCheck = new Set()
+        
+        // Add spenders from approval events (if we have them)
+        if (tokenSpenderHints.has(tokenAddress)) {
+          tokenSpenderHints.get(tokenAddress).forEach(s => spendersToCheck.add(s))
+        }
+        
+        // Add common spenders
+        COMMON_SPENDERS.forEach(s => spendersToCheck.add(s.toLowerCase()))
+        
+        console.log(`  🔍 Checking ${spendersToCheck.size} potential spenders...`)
+        
+        // Check each spender
+        for (const spenderAddress of spendersToCheck) {
+          try {
+            // Check current allowance
+            const currentAllowance = await publicClient.readContract({
+              address: tokenAddress,
+              abi: ERC20_ABI,
+              functionName: 'allowance',
+              args: [walletAddress, spenderAddress]
+            })
+            
+            // Only include if allowance > 0 (active approvals)
+            if (currentAllowance > 0n) {
+              console.log(`  ✅ FOUND: ${tokenInfo.symbol} -> ${spenderAddress.substring(0, 10)}... = ${currentAllowance.toString()}`)
+              
+              const spenderName = await getContractName(spenderAddress).catch(() => null)
+              const { riskLevel, reason } = analyzeRisk(
+                currentAllowance.toString(),
+                spenderAddress,
+                balance.toString()
+              )
+              
+              // Format amount
+              const maxUint256Value = BigInt('115792089237316195423570985008687907853269984665640564039457584007913129639935')
+              const isUnlimited = currentAllowance >= maxUint256Value
+              const amountFormatted = isUnlimited 
+                ? 'Unlimited' 
+                : formatUnits(currentAllowance, tokenInfo.decimals)
+              
+              allowances.push({
+                tokenAddress,
+                tokenSymbol: tokenInfo.symbol,
+                tokenName: tokenInfo.name,
+                decimals: tokenInfo.decimals,
+                spenderAddress,
+                spenderName: spenderName || null,
+                amount: currentAllowance.toString(),
+                amountFormatted,
+                isUnlimited,
+                isActive: true,
+                isUnknown: false,
+                isRevoked: false,
+                riskLevel,
+                reason
+              })
+            }
+          } catch (error) {
+            // Silently skip failed checks (might be non-ERC20 contracts)
+          }
+        }
+      } catch (error) {
+        console.error(`Error processing token ${tokenAddress}:`, error.message)
+      }
+    }
+    
+    console.log(`\n🎉 Scan complete!`)
+    console.log(`📊 Found ${allowances.length} active allowances`)
+    console.log(`📊 High risk: ${allowances.filter(a => a.riskLevel === 'high').length}`)
+    console.log(`📊 Medium risk: ${allowances.filter(a => a.riskLevel === 'medium').length}`)
+    console.log(`📊 Low risk: ${allowances.filter(a => a.riskLevel === 'low').length}`)
+    
+    return allowances
+  } catch (error) {
+    console.error('Error scanning allowances:', error)
+    throw error
+  }
+}
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
