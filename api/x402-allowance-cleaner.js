@@ -391,7 +391,8 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
         console.log(`📊 API Response data:`, {
           status: logsData.status,
           message: logsData.message,
-          resultCount: logsData.result && Array.isArray(logsData.result) ? logsData.result.length : 'not an array'
+          resultCount: logsData.result && Array.isArray(logsData.result) ? logsData.result.length : 'not an array',
+          resultType: typeof logsData.result
         })
         
         if (logsData.status === '1' && Array.isArray(logsData.result)) {
@@ -408,21 +409,27 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
             removed: false
           }))
           console.log(`✅ API returned ${logs.length} Approval events`)
-        } else {
-          console.log(`⚠️ API returned status: ${logsData.status}, message: ${logsData.message || 'No message'}`)
-          if (logsData.message && (logsData.message.includes('No records found') || logsData.message.includes('No logs found'))) {
+        } else if (logsData.status === '0') {
+          // API returned error status
+          const errorMsg = logsData.message || 'Unknown API error'
+          console.log(`⚠️ API returned error status: ${errorMsg}`)
+          
+          // Check if it's a "no records found" case
+          if (errorMsg.includes('No records found') || errorMsg.includes('No logs found') || errorMsg.includes('No transactions found')) {
             console.log('ℹ️ No Approval events found for this wallet on this network')
             return []
           }
-          // If API returned an error status, throw an error with details
-          if (logsData.message) {
-            throw new Error(`API error: ${logsData.message}`)
-          }
+          
+          // For other errors, log but don't throw yet - will try RPC fallback
+          console.warn(`⚠️ API error but will try RPC fallback: ${errorMsg}`)
+        } else {
+          console.log(`⚠️ API returned unexpected status: ${logsData.status}, message: ${logsData.message || 'No message'}`)
+          // Don't throw, will try RPC fallback
         }
       } else {
         const errorText = await logsResponse.text().catch(() => 'Could not read error')
         console.error(`❌ API HTTP error: ${logsResponse.status}`, errorText.substring(0, 500))
-        throw new Error(`API HTTP error: ${logsResponse.status} - ${errorText.substring(0, 200)}`)
+        // Don't throw here, will try RPC fallback
       }
     } catch (apiError) {
       console.error(`❌ API failed:`, apiError.message)
@@ -432,6 +439,7 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     }
     
     // If API returned no results or failed, try RPC as fallback (for smaller ranges)
+    // But use raw eth_getLogs call instead of viem's getLogs to avoid format issues
     if (logs.length === 0) {
       try {
         console.log(`⚠️ API returned no results, trying RPC eth_getLogs as fallback...`)
@@ -439,24 +447,53 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
         const currentBlock = await publicClient.getBlockNumber()
         const fromBlock = currentBlock > 100000n ? currentBlock - 100000n : 0n
         
-        logs = await publicClient.getLogs({
-          address: undefined, // Get logs from all addresses
-          event: {
-            type: 'event',
-            name: 'Approval',
-            inputs: [
-              { indexed: true, name: 'owner', type: 'address' },
-              { indexed: true, name: 'spender', type: 'address' },
-              { indexed: false, name: 'value', type: 'uint256' }
-            ]
+        console.log(`📡 RPC: Fetching logs from block ${fromBlock} to latest...`)
+        
+        // Use raw RPC call to avoid viem format issues
+        const rpcResponse = await fetch(network.rpc, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-          args: {
-            owner: walletAddress
-          },
-          fromBlock: fromBlock,
-          toBlock: 'latest'
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            method: 'eth_getLogs',
+            params: [{
+              topics: [
+                approvalEventSignature,
+                ownerTopic,
+                null // spender can be any
+              ],
+              fromBlock: `0x${fromBlock.toString(16)}`,
+              toBlock: 'latest'
+            }],
+            id: 1
+          })
         })
-        console.log(`✅ RPC eth_getLogs returned ${logs.length} Approval events (from block ${fromBlock})`)
+        
+        if (rpcResponse.ok) {
+          const rpcData = await rpcResponse.json()
+          if (rpcData.result && Array.isArray(rpcData.result)) {
+            logs = rpcData.result.map(log => ({
+              address: log.address,
+              topics: log.topics,
+              data: log.data,
+              blockNumber: BigInt(log.blockNumber || '0'),
+              transactionHash: log.transactionHash,
+              blockHash: log.blockHash,
+              transactionIndex: parseInt(log.transactionIndex || '0'),
+              logIndex: parseInt(log.logIndex || '0'),
+              removed: false
+            }))
+            console.log(`✅ RPC eth_getLogs returned ${logs.length} Approval events (from block ${fromBlock})`)
+          } else {
+            console.log(`⚠️ RPC returned no results`)
+          }
+        } else {
+          const errorText = await rpcResponse.text().catch(() => 'Could not read error')
+          console.error(`❌ RPC HTTP error: ${rpcResponse.status}`, errorText.substring(0, 500))
+          throw new Error(`RPC failed: ${rpcResponse.status} - ${errorText.substring(0, 200)}`)
+        }
       } catch (rpcError) {
         console.error(`❌ RPC eth_getLogs also failed:`, rpcError.message)
         console.error(`❌ RPC error details:`, rpcError)
