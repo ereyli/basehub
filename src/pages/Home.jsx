@@ -233,7 +233,7 @@ const Home = () => {
       path: '/allowance-cleaner',
       color: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
       xpReward: '300 XP',
-      bonusXP: '0.01 USDC',
+      bonusXP: '0.1 USDC',
       isX402: true // Mark as x402 payment
     },
     {

@@ -130,7 +130,7 @@ export default function AllowanceCleaner() {
             </h1>
           </div>
           <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0 }}>
-            Scan and revoke risky token approvals to protect your assets. Pay 0.01 USDC to scan your wallet.
+            Scan and revoke risky token approvals to protect your assets. Pay 0.1 USDC to scan your wallet.
           </p>
         </div>
 
@@ -293,7 +293,7 @@ export default function AllowanceCleaner() {
               ) : (
                 <>
                   <Search size={20} />
-                  Scan Allowances (0.01 USDC)
+                  Scan Allowances (0.1 USDC)
                 </>
               )}
             </button>

@@ -117,8 +117,8 @@ export const useAllowanceCleaner = () => {
     try {
       console.log('🔍 Starting allowance scan for:', address)
 
-      // x402 payment: 0.01 USDC = 10000 base units (6 decimals)
-      const MAX_PAYMENT_AMOUNT = BigInt(10000) // 0.01 USDC max
+      // x402 payment: 0.1 USDC = 100000 base units (6 decimals)
+      const MAX_PAYMENT_AMOUNT = BigInt(100000) // 0.1 USDC max
 
       const fetchWithPayment = wrapFetchWithPayment(
         fetch,
@@ -164,7 +164,7 @@ export const useAllowanceCleaner = () => {
           }
 
           if (errorText === 'insufficient_funds' || errorText.includes('insufficient_funds')) {
-            errorMessage = 'Insufficient USDC balance. Please ensure you have at least 0.01 USDC in your wallet on Base network.'
+            errorMessage = 'Insufficient USDC balance. Please ensure you have at least 0.1 USDC in your wallet on Base network.'
           } else if (errorText === 'X-PAYMENT header is required' || errorText.includes('X-PAYMENT')) {
             errorMessage = 'Payment required. Please complete the payment in your wallet.'
           } else if (errorText.trim()) {

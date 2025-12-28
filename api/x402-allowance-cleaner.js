@@ -1,6 +1,6 @@
 // Allowance Cleaner Endpoint for BaseHub
 // Scans wallet for token approvals and identifies risky ones
-// Payment: 0.01 USDC on Base (to be added)
+// Payment: 0.1 USDC on Base via x402
 
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
