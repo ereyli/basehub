@@ -246,21 +246,59 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     // Pad wallet address to 32 bytes for topic filtering
     const ownerTopic = '0x000000000000000000000000' + walletAddress.slice(2).toLowerCase()
     
+    console.log(`  📡 RPC URL: ${network.rpc}`)
     console.log(`  📡 Fetching Approval events via RPC for owner: ${walletAddress}`)
     
-    // Use RPC to get logs (RevokeCash approach)
+    // Get current block number first
+    const blockNumberResponse = await fetch(network.rpc, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'eth_blockNumber',
+        params: [],
+        id: 1
+      })
+    })
+    
+    let toBlock = 'latest'
+    let fromBlock = '0x0'
+    
+    if (blockNumberResponse.ok) {
+      const blockData = await blockNumberResponse.json()
+      if (blockData.result) {
+        const currentBlock = parseInt(blockData.result, 16)
+        console.log(`  📊 Current block: ${currentBlock}`)
+        
+        // Scan last 10,000 blocks (Alchemy limit is around 10,000 blocks per getLogs call)
+        // This covers approximately last 1 month on most chains
+        const blockRange = 10000
+        fromBlock = '0x' + Math.max(0, currentBlock - blockRange).toString(16)
+        toBlock = '0x' + currentBlock.toString(16)
+        
+        console.log(`  📊 Scanning blocks ${parseInt(fromBlock, 16)} to ${parseInt(toBlock, 16)} (${blockRange} blocks)`)
+      }
+    }
+    
+    // Use RPC to get logs (RevokeCash approach with limited range)
     const logsResponse = await fetch(network.rpc, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
       body: JSON.stringify({
         jsonrpc: '2.0',
         method: 'eth_getLogs',
         params: [{
-          fromBlock: '0x0', // From genesis
-          toBlock: 'latest',
+          fromBlock: fromBlock, // Last 10,000 blocks
+          toBlock: toBlock,
           topics: [approvalTopic, ownerTopic] // Filter by Approval event and owner
         }],
-        id: 1
+        id: 2
       })
     })
     
