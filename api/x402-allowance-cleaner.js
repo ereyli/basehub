@@ -181,21 +181,46 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
   const network = SUPPORTED_NETWORKS[selectedNetwork] || SUPPORTED_NETWORKS['base']
   const publicClient = createNetworkClient(network)
   
-  // Get tokens
-  console.log(`📦 Fetching tokens...`)
+  // Get tokens with pagination (up to 10,000 records)
+  console.log(`📦 Fetching tokens with pagination...`)
   const uniqueTokens = new Set()
   
   try {
-    const url = `${network.apiUrl}?module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=latest&page=1&offset=1000&sort=desc&apikey=${BASESCAN_API_KEY}`
-    const res = await fetch(url)
-    const data = await res.json()
-    
-    if (data.status === '1' && Array.isArray(data.result)) {
-      data.result.forEach(tx => {
-        if (tx.contractAddress) uniqueTokens.add(tx.contractAddress.toLowerCase())
+    // Fetch multiple pages to get more tokens
+    for (let page = 1; page <= 10; page++) {
+      const url = `${network.apiUrl}?module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=latest&page=${page}&offset=1000&sort=desc&apikey=${BASESCAN_API_KEY}`
+      console.log(`  📄 Fetching page ${page}...`)
+      
+      const res = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'BaseHub-AllowanceCleaner/1.0',
+        },
       })
-      console.log(`✅ Found ${uniqueTokens.size} tokens`)
+      
+      const data = await res.json()
+      
+      if (data.status === '1' && Array.isArray(data.result) && data.result.length > 0) {
+        data.result.forEach(tx => {
+          if (tx.contractAddress) uniqueTokens.add(tx.contractAddress.toLowerCase())
+        })
+        console.log(`  ✅ Page ${page}: ${data.result.length} transactions, total ${uniqueTokens.size} unique tokens`)
+        
+        // If less than 1000 results, we've reached the end
+        if (data.result.length < 1000) {
+          console.log(`  ⏹️ Last page reached`)
+          break
+        }
+        
+        // Rate limiting: wait 350ms between requests (free tier: 3 calls/sec)
+        await new Promise(resolve => setTimeout(resolve, 350))
+      } else {
+        console.log(`  ⏹️ No more data on page ${page}`)
+        break
+      }
     }
+    
+    console.log(`✅ Total found: ${uniqueTokens.size} unique tokens`)
   } catch (err) {
     console.error(`❌ Token fetch error:`, err.message)
   }
