@@ -389,18 +389,25 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
           console.log(`✅ Etherscan API V2 returned ${logs.length} Approval events`)
         } else {
           console.log(`⚠️ Etherscan API returned status: ${logsData.status}, message: ${logsData.message || 'No message'}`)
-          if (logsData.message && logsData.message.includes('No records found')) {
+          if (logsData.message && (logsData.message.includes('No records found') || logsData.message.includes('No logs found'))) {
             console.log('ℹ️ No Approval events found for this wallet on this network')
             return []
+          }
+          // If API returned an error status, throw an error with details
+          if (logsData.message) {
+            throw new Error(`Etherscan API error: ${logsData.message}`)
           }
         }
       } else {
         const errorText = await logsResponse.text().catch(() => 'Could not read error')
         console.error(`❌ API HTTP error: ${logsResponse.status}`, errorText.substring(0, 500))
+        throw new Error(`Etherscan API HTTP error: ${logsResponse.status} - ${errorText.substring(0, 200)}`)
       }
     } catch (apiError) {
       console.error(`❌ Etherscan API V2 failed:`, apiError.message)
       console.error(`❌ Full error:`, apiError)
+      // Don't throw here, try RPC fallback first
+      // The error will be thrown if RPC also fails
     }
     
     // If API returned no results, try RPC as fallback (for smaller ranges)
@@ -433,7 +440,8 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
         console.error(`❌ RPC eth_getLogs also failed:`, rpcError.message)
         console.error(`❌ RPC error details:`, rpcError)
         // If both API and RPC failed, throw an error with details
-        throw new Error(`Failed to fetch Approval events: ${rpcError.message}. Please try again later.`)
+        const rpcErrorMessage = rpcError.message || 'Unknown RPC error'
+        throw new Error(`Failed to fetch Approval events. API and RPC both failed. Error: ${rpcErrorMessage}. Please try again later or check if the network is supported.`)
       }
     }
     
@@ -572,9 +580,22 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
   } catch (error) {
     console.error('❌ Error scanning allowances:', error)
     console.error('❌ Error stack:', error.stack)
+    console.error('❌ Error name:', error.name)
+    console.error('❌ Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)))
+    
     // Return a more user-friendly error message
-    const errorMessage = error.message || 'Failed to scan allowances'
-    throw new Error(`Allowance scan failed: ${errorMessage}`)
+    let errorMessage = error.message || 'Failed to scan allowances'
+    
+    // Provide more specific error messages
+    if (errorMessage.includes('timeout') || errorMessage.includes('TIMEOUT')) {
+      errorMessage = 'Request timed out. The network may be slow. Please try again.'
+    } else if (errorMessage.includes('rate limit') || errorMessage.includes('rate limit')) {
+      errorMessage = 'API rate limit exceeded. Please wait a moment and try again.'
+    } else if (errorMessage.includes('network') || errorMessage.includes('Network')) {
+      errorMessage = `Network error: ${errorMessage}. Please check your connection and try again.`
+    }
+    
+    throw new Error(errorMessage)
   }
 }
 
@@ -606,9 +627,18 @@ app.post('/', async (c) => {
     }
     
     console.log(`🔍 Starting allowance scan for: ${walletAddress} on ${selectedNetwork}`)
+    console.log(`📋 Network config:`, SUPPORTED_NETWORKS[selectedNetwork])
     
     // Scan allowances for the selected network
-    const allowances = await scanAllowances(walletAddress, selectedNetwork)
+    let allowances = []
+    try {
+      allowances = await scanAllowances(walletAddress, selectedNetwork)
+      console.log(`✅ Scan completed: Found ${allowances.length} allowances`)
+    } catch (scanError) {
+      console.error('❌ Scan error caught in endpoint:', scanError)
+      // Re-throw with more context
+      throw new Error(`Allowance scan failed for ${selectedNetwork}: ${scanError.message}`)
+    }
     
     return c.json({
       success: true,
