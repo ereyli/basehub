@@ -642,6 +642,8 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
   
   let checkedCount = 0
   let foundCount = 0
+  let totalSpenderChecks = 0
+  
   for (const [tokenAddress, spenders] of tokenSpenderPairs) {
     if (spenders.size === 0) continue
     
@@ -652,9 +654,9 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
         tokenInfo = await getTokenInfo(tokenAddress, publicClient)
       }
       
-      console.log(`  📊 [${checkedCount + 1}/${tokenSpenderPairs.size}] Checking ${tokenInfo.symbol} (${tokenAddress})`)
-      console.log(`     Will check ${spenders.size} spenders for this token`)
       checkedCount++
+      console.log(`\n📊 [${checkedCount}/${tokenSpenderPairs.size}] Checking ${tokenInfo.symbol} (${tokenAddress})`)
+      console.log(`   Will check ${spenders.size} spenders for this token`)
       
       let balance = 0n
       try {
@@ -664,13 +666,16 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
           functionName: 'balanceOf',
           args: [walletAddress]
         })
-        console.log(`     Balance: ${formatUnits(balance, tokenInfo.decimals)} ${tokenInfo.symbol}`)
+        console.log(`   Balance: ${balance > 0n ? formatUnits(balance, tokenInfo.decimals) : '0'} ${tokenInfo.symbol}`)
       } catch (e) {
-        console.log(`     ⚠️ Could not fetch balance (might be NFT or non-standard token)`)
+        console.log(`   ⚠️ Could not fetch balance (might be NFT or non-standard token)`)
       }
       
-      let spenderCheckedCount = 0
+      let spenderCheckCount = 0
       for (const spender of spenders) {
+        spenderCheckCount++
+        totalSpenderChecks++
+        
         try {
           const allowance = await publicClient.readContract({
             address: tokenAddress,
@@ -679,11 +684,9 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
             args: [walletAddress, spender]
           })
           
-          spenderCheckedCount++
-          
-          // Debug: Log every allowance check result
-          if (spenderCheckedCount <= 3 || allowance > 0n) {
-            console.log(`     [${spenderCheckedCount}/${spenders.size}] Spender ${spender.substring(0, 10)}... allowance: ${allowance > 0n ? allowance.toString() : '0'}`)
+          // Log ALL spender checks (first 3 + all non-zero)
+          if (spenderCheckCount <= 3 || allowance > 0n) {
+            console.log(`   [${spenderCheckCount}/${spenders.size}] Spender ${spender.substring(0, 10)}... allowance: ${allowance > 0n ? allowance.toString() : '0'}`)
           }
           
           if (allowance > 0n) {
@@ -732,14 +735,21 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
               reason
             })
             
-            console.log(`    ✅ Found approval: ${tokenInfo.symbol} -> ${spender.substring(0, 10)}... (${isUnlimited ? 'Unlimited' : allowance.toString()})`)
+            console.log(`   ✅ Found approval: ${tokenInfo.symbol} -> ${spender.substring(0, 10)}... (${isUnlimited ? 'Unlimited' : allowance.toString()})`)
           }
         } catch (e) {
-          // Allowance check failed, skip
+          // Allowance check failed, log error
+          if (spenderCheckCount <= 3) {
+            console.log(`   [${spenderCheckCount}/${spenders.size}] Spender ${spender.substring(0, 10)}... allowance check failed: ${e.message}`)
+          }
         }
       }
+      
+      console.log(`   ✅ Completed checking ${spenderCheckCount} spenders for ${tokenInfo.symbol}`)
+      
     } catch (err) {
       // Token info failed, skip
+      console.log(`   ⚠️ Failed to get token info for ${tokenAddress}: ${err.message}`)
     }
   }
   
