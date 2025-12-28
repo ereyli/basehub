@@ -369,10 +369,18 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     
     let logs = []
     
-    // Try Etherscan API V2 first (works for all supported chains)
+    // Try API first - use Basescan for Base, Etherscan V2 for others
     try {
-      console.log(`📡 Fetching Approval events from Etherscan API V2 for chainId ${chainId}...`)
-      const logsUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
+      let logsUrl
+      if (chainId === 8453) {
+        // Base network - use Basescan API
+        console.log(`📡 Fetching Approval events from Basescan API for Base...`)
+        logsUrl = `https://api.basescan.org/api?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
+      } else {
+        // Other networks - use Etherscan API V2
+        console.log(`📡 Fetching Approval events from Etherscan API V2 for chainId ${chainId}...`)
+        logsUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
+      }
       
       console.log(`🔗 API URL: ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
       
@@ -406,25 +414,25 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
             logIndex: parseInt(log.logIndex || '0'),
             removed: false
           }))
-          console.log(`✅ Etherscan API V2 returned ${logs.length} Approval events`)
+          console.log(`✅ API returned ${logs.length} Approval events`)
         } else {
-          console.log(`⚠️ Etherscan API returned status: ${logsData.status}, message: ${logsData.message || 'No message'}`)
+          console.log(`⚠️ API returned status: ${logsData.status}, message: ${logsData.message || 'No message'}`)
           if (logsData.message && (logsData.message.includes('No records found') || logsData.message.includes('No logs found'))) {
             console.log('ℹ️ No Approval events found for this wallet on this network')
             return []
           }
           // If API returned an error status, throw an error with details
           if (logsData.message) {
-            throw new Error(`Etherscan API error: ${logsData.message}`)
+            throw new Error(`API error: ${logsData.message}`)
           }
         }
       } else {
         const errorText = await logsResponse.text().catch(() => 'Could not read error')
         console.error(`❌ API HTTP error: ${logsResponse.status}`, errorText.substring(0, 500))
-        throw new Error(`Etherscan API HTTP error: ${logsResponse.status} - ${errorText.substring(0, 200)}`)
+        throw new Error(`API HTTP error: ${logsResponse.status} - ${errorText.substring(0, 200)}`)
       }
     } catch (apiError) {
-      console.error(`❌ Etherscan API V2 failed:`, apiError.message)
+      console.error(`❌ API failed:`, apiError.message)
       console.error(`❌ Full error:`, apiError)
       // Don't throw here, try RPC fallback first
       // The error will be thrown if RPC also fails
