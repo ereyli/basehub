@@ -100,8 +100,8 @@ export const useAllowanceCleaner = () => {
   const [allowances, setAllowances] = useState([])
   const [hasScanned, setHasScanned] = useState(false)
 
-  // Scan allowances for connected wallet
-  const scanAllowances = async () => {
+  // Scan allowances for connected wallet on selected network
+  const scanAllowances = async (network = 'base') => {
     if (!address) {
       throw new Error('Wallet not connected. Please connect your wallet first.')
     }
@@ -134,7 +134,7 @@ export const useAllowanceCleaner = () => {
         },
         body: JSON.stringify({ 
           walletAddress: address,
-          network: 'base', // Default to Base, can be extended to support multi-chain
+          network: network, // Selected network for scanning
         }),
       })
 

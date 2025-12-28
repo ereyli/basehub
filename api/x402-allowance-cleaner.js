@@ -349,33 +349,16 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     
     console.log(`📡 Fetching Approval events using RPC eth_getLogs...`)
     
-    // Use RPC eth_getLogs (RevokeCash approach)
-    // This is more reliable and doesn't depend on API rate limits
+    // RevokeCash approach: Use Etherscan-compatible API first (more reliable for large ranges)
+    // RPC eth_getLogs can timeout for very large ranges, so we use API as primary method
+    const approvalEventSignature = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
+    const ownerTopic = '0x000000000000000000000000' + walletAddress.slice(2).toLowerCase()
+    
     let logs = []
+    
+    // Try Etherscan API V2 first (works for all supported chains)
     try {
-      logs = await publicClient.getLogs({
-        address: undefined, // Get logs from all addresses
-        event: {
-          type: 'event',
-          name: 'Approval',
-          inputs: [
-            { indexed: true, name: 'owner', type: 'address' },
-            { indexed: true, name: 'spender', type: 'address' },
-            { indexed: false, name: 'value', type: 'uint256' }
-          ]
-        },
-        args: {
-          owner: walletAddress
-        },
-        fromBlock: 0n, // From genesis
-        toBlock: 'latest'
-      })
-      console.log(`✅ RPC eth_getLogs returned ${logs.length} Approval events`)
-    } catch (rpcError) {
-      console.error(`❌ RPC eth_getLogs failed:`, rpcError.message)
-      console.log(`⚠️ Falling back to Etherscan API V2...`)
-      
-      // Fallback to Etherscan API V2
+      console.log(`📡 Fetching Approval events from Etherscan API V2...`)
       const logsUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
       
       const logsResponse = await fetch(logsUrl, {
@@ -385,31 +368,62 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
         },
       })
       
-      if (!logsResponse.ok) {
-        throw new Error(`API fallback failed: ${logsResponse.status}`)
+      if (logsResponse.ok) {
+        const logsData = await logsResponse.json()
+        
+        if (logsData.status === '1' && Array.isArray(logsData.result)) {
+          // Convert API response to viem log format
+          logs = logsData.result.map(log => ({
+            address: log.address,
+            topics: log.topics,
+            data: log.data,
+            blockNumber: BigInt(log.blockNumber || '0'),
+            transactionHash: log.transactionHash,
+            blockHash: log.blockHash,
+            transactionIndex: parseInt(log.transactionIndex || '0'),
+            logIndex: parseInt(log.logIndex || '0'),
+            removed: false
+          }))
+          console.log(`✅ Etherscan API V2 returned ${logs.length} Approval events`)
+        } else {
+          console.log(`⚠️ Etherscan API returned status: ${logsData.status}, message: ${logsData.message}`)
+        }
       }
-      
-      const logsData = await logsResponse.json()
-      
-      if (logsData.status !== '1' || !Array.isArray(logsData.result)) {
-        console.log('⚠️ API returned no results')
+    } catch (apiError) {
+      console.error(`❌ Etherscan API V2 failed:`, apiError.message)
+    }
+    
+    // If API returned no results, try RPC as fallback (for smaller ranges)
+    if (logs.length === 0) {
+      try {
+        console.log(`⚠️ API returned no results, trying RPC eth_getLogs as fallback...`)
+        // Use a more recent block range to avoid timeout (last 100k blocks ~2 weeks)
+        const currentBlock = await publicClient.getBlockNumber()
+        const fromBlock = currentBlock > 100000n ? currentBlock - 100000n : 0n
+        
+        logs = await publicClient.getLogs({
+          address: undefined, // Get logs from all addresses
+          event: {
+            type: 'event',
+            name: 'Approval',
+            inputs: [
+              { indexed: true, name: 'owner', type: 'address' },
+              { indexed: true, name: 'spender', type: 'address' },
+              { indexed: false, name: 'value', type: 'uint256' }
+            ]
+          },
+          args: {
+            owner: walletAddress
+          },
+          fromBlock: fromBlock,
+          toBlock: 'latest'
+        })
+        console.log(`✅ RPC eth_getLogs returned ${logs.length} Approval events (from block ${fromBlock})`)
+      } catch (rpcError) {
+        console.error(`❌ RPC eth_getLogs also failed:`, rpcError.message)
+        // Return empty array instead of throwing - user can still see the UI
         return []
       }
-      
-      // Convert API response to viem log format
-      logs = logsData.result.map(log => ({
-        address: log.address,
-        topics: log.topics,
-        data: log.data,
-        blockNumber: BigInt(log.blockNumber || '0'),
-        transactionHash: log.transactionHash,
-        blockHash: log.blockHash,
-        transactionIndex: parseInt(log.transactionIndex || '0'),
-        logIndex: parseInt(log.logIndex || '0'),
-        removed: false
-      }))
-      
-      console.log(`✅ API fallback returned ${logs.length} Approval events`)
     }
     
     if (logs.length === 0) {

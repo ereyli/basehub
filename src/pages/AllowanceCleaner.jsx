@@ -31,6 +31,18 @@ export default function AllowanceCleaner() {
   } = useAllowanceCleaner()
 
   const [revokingIndex, setRevokingIndex] = useState(null)
+  const [selectedNetwork, setSelectedNetwork] = useState('base')
+  
+  // Supported networks for scanning (payment is always on Base)
+  const networks = [
+    { value: 'base', label: 'Base', chainId: 8453 },
+    { value: 'ethereum', label: 'Ethereum', chainId: 1 },
+    { value: 'polygon', label: 'Polygon', chainId: 137 },
+    { value: 'arbitrum', label: 'Arbitrum', chainId: 42161 },
+    { value: 'optimism', label: 'Optimism', chainId: 10 },
+    { value: 'bsc', label: 'BNB Chain', chainId: 56 },
+    { value: 'avalanche', label: 'Avalanche', chainId: 43114 },
+  ]
 
   const handleScan = async () => {
     try {
