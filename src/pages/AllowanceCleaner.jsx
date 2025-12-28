@@ -10,11 +10,23 @@ import {
   Trash2,
   Loader2,
   Search,
-  ExternalLink
+  ExternalLink,
+  BarChart3
 } from 'lucide-react'
 import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
 import { formatUnits } from 'viem'
+
+// Supported networks - must match backend configuration
+const SUPPORTED_NETWORKS = {
+  'base': { name: 'Base', color: '#4a90e2' },
+  'ethereum': { name: 'Ethereum', color: '#627eea' },
+  'polygon': { name: 'Polygon', color: '#8247e5' },
+  'arbitrum': { name: 'Arbitrum', color: '#28a0f0' },
+  'optimism': { name: 'Optimism', color: '#ff0420' },
+  'bsc': { name: 'BNB Chain', color: '#f0b90b' },
+  'avalanche': { name: 'Avalanche', color: '#e84142' },
+}
 
 export default function AllowanceCleaner() {
   const { address, isConnected } = useAccount()
@@ -32,17 +44,6 @@ export default function AllowanceCleaner() {
 
   const [revokingIndex, setRevokingIndex] = useState(null)
   const [selectedNetwork, setSelectedNetwork] = useState('base')
-  
-  // Supported networks for scanning (payment is always on Base)
-  const networks = [
-    { value: 'base', label: 'Base', chainId: 8453 },
-    { value: 'ethereum', label: 'Ethereum', chainId: 1 },
-    { value: 'polygon', label: 'Polygon', chainId: 137 },
-    { value: 'arbitrum', label: 'Arbitrum', chainId: 42161 },
-    { value: 'optimism', label: 'Optimism', chainId: 10 },
-    { value: 'bsc', label: 'BNB Chain', chainId: 56 },
-    { value: 'avalanche', label: 'Avalanche', chainId: 43114 },
-  ]
 
   const handleScan = async () => {
     try {
@@ -110,50 +111,93 @@ export default function AllowanceCleaner() {
           <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0 }}>
             Scan and revoke risky token approvals to protect your assets. Pay 0.01 USDC to scan your wallet.
           </p>
-          
-          {/* Network Selection */}
-          <div style={{ marginTop: '16px' }}>
-            <label style={{ 
-              display: 'block', 
-              color: '#9ca3af', 
-              fontSize: '12px', 
-              marginBottom: '8px',
-              fontWeight: '600'
+        </div>
+
+        {/* Network Selection - Same style as Wallet Analysis */}
+        <div style={{
+          background: 'rgba(15, 23, 42, 0.8)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '16px',
+          padding: '24px',
+          marginBottom: '24px'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginBottom: '16px'
+          }}>
+            <BarChart3 size={20} style={{ color: '#8b5cf6' }} />
+            <h3 style={{
+              margin: 0,
+              fontSize: '16px',
+              fontWeight: '700',
+              color: '#e5e7eb'
             }}>
-              Select Network to Scan:
-            </label>
-            <select
-              value={selectedNetwork}
-              onChange={(e) => setSelectedNetwork(e.target.value)}
-              disabled={isScanning}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '8px',
-                background: 'rgba(15, 23, 42, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: '#e5e7eb',
-                fontSize: '14px',
-                cursor: isScanning ? 'not-allowed' : 'pointer',
-                outline: 'none',
-                opacity: isScanning ? 0.6 : 1
-              }}
-            >
-              {networks.map(net => (
-                <option key={net.value} value={net.value}>
-                  {net.label} (Chain ID: {net.chainId})
-                </option>
-              ))}
-            </select>
-            <p style={{ 
-              color: '#6b7280', 
-              fontSize: '11px', 
-              marginTop: '6px', 
-              marginBottom: 0 
-            }}>
-              💡 Payment is always on Base network, but you can scan any supported network
-            </p>
+              Select Network to Analyze
+            </h3>
           </div>
+          
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+            gap: '12px'
+          }}>
+            {Object.entries(SUPPORTED_NETWORKS).map(([key, network]) => (
+              <button
+                key={key}
+                onClick={() => !isScanning && setSelectedNetwork(key)}
+                disabled={isScanning}
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  cursor: isScanning ? 'not-allowed' : 'pointer',
+                  background: selectedNetwork === key 
+                    ? `linear-gradient(135deg, ${network.color}22 0%, ${network.color}44 100%)`
+                    : 'rgba(30, 41, 59, 0.6)',
+                  border: selectedNetwork === key 
+                    ? `2px solid ${network.color}`
+                    : '2px solid rgba(255, 255, 255, 0.1)',
+                  fontSize: '14px',
+                  fontWeight: selectedNetwork === key ? '700' : '600',
+                  color: selectedNetwork === key ? network.color : '#9ca3af',
+                  transition: 'all 0.2s',
+                  boxShadow: selectedNetwork === key 
+                    ? `0 4px 12px ${network.color}33`
+                    : 'none',
+                  opacity: isScanning ? 0.6 : 1
+                }}
+                onMouseEnter={(e) => {
+                  if (!isScanning && selectedNetwork !== key) {
+                    e.target.style.boxShadow = `0 6px 16px ${network.color}44`
+                    e.target.style.background = `linear-gradient(135deg, ${network.color}15 0%, ${network.color}25 100%)`
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedNetwork !== key) {
+                    e.target.style.boxShadow = 'none'
+                    e.target.style.background = 'rgba(30, 41, 59, 0.6)'
+                  } else {
+                    e.target.style.boxShadow = selectedNetwork === key 
+                      ? `0 4px 12px ${network.color}33`
+                      : 'none'
+                  }
+                }}
+              >
+                {network.name}
+              </button>
+            ))}
+          </div>
+          
+          <p style={{ 
+            color: '#6b7280', 
+            fontSize: '12px', 
+            marginTop: '16px', 
+            marginBottom: 0 
+          }}>
+            💡 Payment is always on Base network, but you can scan any supported network
+          </p>
         </div>
 
         {!isConnected && (
