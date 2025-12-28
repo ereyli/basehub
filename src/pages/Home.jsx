@@ -693,33 +693,33 @@ const Home = () => {
                 </div>
               </div>
 
-              {/* NFT Category */}
+              {/* ANALYSIS Category */}
               <div style={{
                 background: 'rgba(30, 41, 59, 0.95)',
                 borderRadius: '20px',
                 padding: '32px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '2px solid rgba(139, 92, 246, 0.2)'
+                border: '2px solid rgba(59, 130, 246, 0.2)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                   <div style={{
                     width: '48px',
                     height: '48px',
                     borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white'
                   }}>
-                    <Image size={24} />
+                    <TrendingUp size={24} />
                   </div>
                   <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
-                    NFT
+                    ANALYSIS
                   </h2>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                  {games.filter(g => ['ai-nft', 'deploy-erc721', 'deploy-erc1155'].includes(g.id)).map((game) => (
+                  {games.filter(g => ['wallet-analysis', 'contract-security', 'allowance-cleaner'].includes(g.id)).map((game) => (
                     <Link
                       key={game.id}
                       to={game.path}
@@ -781,33 +781,33 @@ const Home = () => {
                 </div>
               </div>
 
-              {/* ANALYSIS Category */}
+              {/* NFT Category */}
               <div style={{
                 background: 'rgba(30, 41, 59, 0.95)',
                 borderRadius: '20px',
                 padding: '32px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '2px solid rgba(59, 130, 246, 0.2)'
+                border: '2px solid rgba(139, 92, 246, 0.2)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                   <div style={{
                     width: '48px',
                     height: '48px',
                     borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                    background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white'
                   }}>
-                    <TrendingUp size={24} />
+                    <Image size={24} />
                   </div>
                   <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
-                    ANALYSIS
+                    NFT
                   </h2>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                  {games.filter(g => ['wallet-analysis', 'contract-security', 'allowance-cleaner'].includes(g.id)).map((game) => (
+                  {games.filter(g => ['ai-nft', 'deploy-erc721', 'deploy-erc1155'].includes(g.id)).map((game) => (
                     <Link
                       key={game.id}
                       to={game.path}
