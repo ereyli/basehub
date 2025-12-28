@@ -327,15 +327,16 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
       },
     ]
     
+    let apiWorked = false
+    
     for (const approvalType of approvalTypes) {
       console.log(`\n  📋 Fetching ${approvalType.name} events...`)
       
-      // Etherscan getLogs API - supports fromBlock=0 to latest (FULL HISTORY!)
-      // https://docs.etherscan.io/api-endpoints/logs#get-event-logs-by-address
+      // Try Etherscan API first (supports full history on most chains)
       const logsUrl = `${network.apiUrl}?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalType.topic}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
       
       console.log(`  🌐 API URL: ${network.apiUrl}`)
-      console.log(`  🔍 Scanning from block 0 to latest (FULL HISTORY)`)
+      console.log(`  🔍 Scanning from block 0 to latest (FULL HISTORY via API)`)
       
       const logsResponse = await fetch(logsUrl, {
         headers: {
@@ -357,8 +358,10 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
         resultLength: Array.isArray(logsData.result) ? logsData.result.length : 0
       })
       
+      // If API works (status '1'), use it
       if (logsData.status === '1' && Array.isArray(logsData.result)) {
-        console.log(`  ✅ Found ${logsData.result.length} ${approvalType.name} events`)
+        console.log(`  ✅ Found ${logsData.result.length} ${approvalType.name} events via API`)
+        apiWorked = true
         
         // Parse logs to extract token-spender pairs
         logsData.result.forEach(log => {
@@ -384,7 +387,7 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
         
         console.log(`  ✅ Extracted spenders from ${approvalType.name} events`)
       } else {
-        console.log(`  ⚠️ No ${approvalType.name} events found`)
+        console.log(`  ⚠️ API returned NOTOK or no events`)
         if (logsData.message && logsData.message !== 'No records found') {
           console.warn(`  ⚠️ API message: ${logsData.message}`)
         }
@@ -392,6 +395,103 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
       
       // Rate limiting: wait 350ms between requests
       await new Promise(resolve => setTimeout(resolve, 350))
+    }
+    
+    // If API didn't work (NOTOK on all chains), try RPC fallback with chunking
+    if (!apiWorked) {
+      console.log(`\n  ⚠️ Etherscan API didn't work, trying RPC fallback with chunked requests...`)
+      
+      try {
+        // Get current block number
+        const blockResponse = await fetch(network.rpc, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            method: 'eth_blockNumber',
+            params: [],
+            id: 1
+          })
+        })
+        
+        if (!blockResponse.ok) {
+          throw new Error(`RPC blockNumber failed: ${blockResponse.status}`)
+        }
+        
+        const blockData = await blockResponse.json()
+        const currentBlock = parseInt(blockData.result, 16)
+        console.log(`  📊 Current block: ${currentBlock}`)
+        
+        // Chunk the scan into 5000-block segments (more conservative)
+        const chunkSize = 5000
+        const maxChunks = 20 // Limit to last 100k blocks (~ 2 weeks on most chains)
+        
+        for (const approvalType of approvalTypes) {
+          console.log(`\n  📋 RPC: Fetching ${approvalType.name} events in chunks...`)
+          
+          for (let i = 0; i < maxChunks; i++) {
+            const toBlock = currentBlock - (i * chunkSize)
+            const fromBlock = Math.max(0, toBlock - chunkSize)
+            
+            if (fromBlock < 0) break
+            
+            console.log(`    📦 Chunk ${i + 1}: blocks ${fromBlock} to ${toBlock}`)
+            
+            const rpcResponse = await fetch(network.rpc, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                jsonrpc: '2.0',
+                method: 'eth_getLogs',
+                params: [{
+                  fromBlock: '0x' + fromBlock.toString(16),
+                  toBlock: '0x' + toBlock.toString(16),
+                  topics: [approvalType.topic, ownerTopic]
+                }],
+                id: 2
+              })
+            })
+            
+            if (!rpcResponse.ok) {
+              console.warn(`    ⚠️ RPC chunk ${i + 1} failed: ${rpcResponse.status}`)
+              continue
+            }
+            
+            const rpcData = await rpcResponse.json()
+            
+            if (rpcData.error) {
+              console.warn(`    ⚠️ RPC error: ${rpcData.error.message}`)
+              continue
+            }
+            
+            if (rpcData.result && Array.isArray(rpcData.result) && rpcData.result.length > 0) {
+              console.log(`    ✅ Found ${rpcData.result.length} events in chunk ${i + 1}`)
+              
+              rpcData.result.forEach(log => {
+                try {
+                  const tokenAddress = log.address.toLowerCase()
+                  if (log.topics && log.topics[2]) {
+                    const spenderAddress = '0x' + log.topics[2].slice(26).toLowerCase()
+                    
+                    if (!tokenSpenderPairs.has(tokenAddress)) {
+                      tokenSpenderPairs.set(tokenAddress, new Set())
+                      uniqueTokens.add(tokenAddress)
+                    }
+                    tokenSpenderPairs.get(tokenAddress).add(spenderAddress)
+                  }
+                } catch (e) {
+                  // Skip malformed logs
+                }
+              })
+            }
+            
+            // Rate limiting for RPC
+            await new Promise(resolve => setTimeout(resolve, 200))
+          }
+        }
+      } catch (rpcError) {
+        console.error(`  ❌ RPC fallback error:`, rpcError.message)
+      }
     }
   } catch (err) {
     console.error(`  ❌ Approval events fetch error:`, err.message)
