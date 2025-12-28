@@ -47,7 +47,7 @@ export default function AllowanceCleaner() {
 
   const handleScan = async () => {
     try {
-      await scanAllowances()
+      await scanAllowances(selectedNetwork)
     } catch (err) {
       console.error('Scan failed:', err)
     }
