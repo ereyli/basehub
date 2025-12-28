@@ -412,16 +412,27 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     
     let logs = []
     
-    // Use each network's own API endpoint (not Etherscan V2)
-    // Each network has its own block explorer with its own API
+    // Try network-specific API first (more reliable for paid-tier networks like Base)
+    // If that fails, fall back to Etherscan V2 API (supports all chains)
+    // According to https://docs.etherscan.io/supported-chains
     try {
       const apiUrl = network.apiUrl || 'https://api.etherscan.io/api'
-      console.log(`📡 Fetching Approval events from ${network.name}'s block explorer API...`)
+      const useV2 = !network.apiUrl // Use V2 if no specific API URL
+      
+      console.log(`📡 Fetching Approval events from ${network.name}'s block explorer...`)
       console.log(`📅 Scanning from genesis block (0) to latest - covering all historical approvals`)
+      console.log(`🌐 API type: ${useV2 ? 'Etherscan V2 (multi-chain)' : 'Network-specific API'}`)
       console.log(`🌐 API endpoint: ${apiUrl}`)
       
-      // Use network-specific API endpoint
-      const logsUrl = `${apiUrl}?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
+      // Use network-specific API endpoint or Etherscan V2
+      let logsUrl
+      if (useV2) {
+        // Etherscan V2 API with chainid parameter
+        logsUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
+      } else {
+        // Network-specific API (Basescan, Polygonscan, etc)
+        logsUrl = `${apiUrl}?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
+      }
       
       console.log(`🔗 API URL: ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
       
