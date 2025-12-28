@@ -426,41 +426,25 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
       console.log(`🌐 API endpoint: ${apiUrl}`)
       console.log(`⚠️ Note: Etherscan API has 1000 record limit per query, will paginate if needed`)
       
-      // Pagination loop to get all logs (max 1000 per request)
-      let page = 1
-      let hasMore = true
-      const allLogs = []
+    // Pagination loop to get all logs (max 1000 per request)
+    let page = 1
+    let hasMore = true
+    const allLogs = []
+    
+    while (hasMore && page <= 10) { // Limit to 10 pages (10,000 records max)
+      // Use network-specific API endpoint or Etherscan V2
+      let logsUrl
+      if (useV2) {
+        // Etherscan V2 API with chainid parameter + pagination
+        logsUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&page=${page}&offset=1000&apikey=${BASESCAN_API_KEY}`
+      } else {
+        // Network-specific API (Basescan, Polygonscan, etc) + pagination
+        logsUrl = `${apiUrl}?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&page=${page}&offset=1000&apikey=${BASESCAN_API_KEY}`
+      }
       
-      while (hasMore && page <= 10) { // Limit to 10 pages (10,000 records max)
-        // Use network-specific API endpoint or Etherscan V2
-        let logsUrl
-        if (useV2) {
-          // Etherscan V2 API with chainid parameter + pagination
-          logsUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&page=${page}&offset=1000&apikey=${BASESCAN_API_KEY}`
-        } else {
-          // Network-specific API (Basescan, Polygonscan, etc) + pagination
-          logsUrl = `${apiUrl}?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&page=${page}&offset=1000&apikey=${BASESCAN_API_KEY}`
-        }
+      console.log(`🔗 API URL (page ${page}): ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
       
-      // Pagination loop to get all logs (max 1000 per request)
-      let page = 1
-      let hasMore = true
-      const allLogs = []
-      
-      while (hasMore && page <= 10) { // Limit to 10 pages (10,000 records max)
-        // Use network-specific API endpoint or Etherscan V2
-        let logsUrl
-        if (useV2) {
-          // Etherscan V2 API with chainid parameter + pagination
-          logsUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&page=${page}&offset=1000&apikey=${BASESCAN_API_KEY}`
-        } else {
-          // Network-specific API (Basescan, Polygonscan, etc) + pagination
-          logsUrl = `${apiUrl}?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&page=${page}&offset=1000&apikey=${BASESCAN_API_KEY}`
-        }
-        
-        console.log(`🔗 API URL (page ${page}): ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
-        
-        const logsResponse = await fetch(logsUrl, {
+      const logsResponse = await fetch(logsUrl, {
           headers: {
             'Accept': 'application/json',
             'User-Agent': 'BaseHub-AllowanceCleaner/1.0',
