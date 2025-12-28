@@ -634,8 +634,8 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     })
   })
   
-  const totalSpenderChecks = Array.from(tokenSpenderPairs.values()).reduce((sum, spenders) => sum + spenders.size, 0)
-  console.log(`✅ Will check ${totalSpenderChecks} token-spender pairs`)
+  const totalSpenderPairs = Array.from(tokenSpenderPairs.values()).reduce((sum, spenders) => sum + spenders.size, 0)
+  console.log(`✅ Will check ${totalSpenderPairs} token-spender pairs`)
   
   // STEP 4: Check on-chain allowances
   console.log(`\n✅ STEP 4: Checking on-chain allowances...`)
