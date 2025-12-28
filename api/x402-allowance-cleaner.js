@@ -311,13 +311,11 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     }
     
     // ========================================
-    // STEP 2: Fetch Approval events
-    // This helps identify spenders for each token
+    // STEP 2: Use common spenders (RevokeCash approach)
+    // Since Basescan getLogs API doesn't return approval events reliably,
+    // we check against a curated list of common protocols
     // ========================================
-    console.log(`\n🔐 STEP 2: Fetching Approval events...`)
-    
-    const approvalEventSignature = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
-    const ownerTopic = '0x000000000000000000000000' + walletAddress.slice(2).toLowerCase()
+    console.log(`\n🔐 STEP 2: Preparing common spenders to check...`)
     
     const tokenSpenderMap = new Map() // Map<tokenAddress, Set<spenderAddress>>
     
@@ -326,79 +324,33 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
       tokenSpenderMap.set(tokenAddress, new Set())
     })
     
-    try {
-      // Pagination loop (max 1000 records per request)
-      let page = 1
-      let hasMore = true
-      let totalApprovals = 0
-      
-      while (hasMore && page <= 10) { // Max 10 pages (10,000 records)
-        const logsUrl = `${apiUrl}?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&page=${page}&offset=1000&apikey=${BASESCAN_API_KEY}`
-        
-        console.log(`🔗 Approval Events URL (page ${page}): ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
-        
-        const logsResponse = await fetch(logsUrl, {
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'BaseHub-AllowanceCleaner/1.0',
-          },
-        })
-        
-        if (logsResponse.ok) {
-          const logsData = await logsResponse.json()
-          console.log(`📊 Approval Events Response (page ${page}):`, {
-            status: logsData.status,
-            message: logsData.message,
-            resultCount: Array.isArray(logsData.result) ? logsData.result.length : 'not an array',
-          })
-          
-          if (logsData.status === '1' && Array.isArray(logsData.result)) {
-            const pageLogs = logsData.result
-            
-            // Parse logs and collect token-spender pairs
-            pageLogs.forEach(log => {
-              try {
-                const tokenAddress = log.address.toLowerCase()
-                const ownerFromLog = '0x' + log.topics[1].slice(26).toLowerCase()
-                const spenderAddress = '0x' + log.topics[2].slice(26).toLowerCase()
-                
-                // Only process if owner matches wallet being scanned
-                if (ownerFromLog === walletAddress.toLowerCase()) {
-                  if (!tokenSpenderMap.has(tokenAddress)) {
-                    tokenSpenderMap.set(tokenAddress, new Set())
-                  }
-                  tokenSpenderMap.get(tokenAddress).add(spenderAddress)
-                }
-              } catch (parseError) {
-                console.error('Error parsing Approval log:', parseError)
-              }
-            })
-            
-            totalApprovals += pageLogs.length
-            console.log(`✅ Page ${page}: ${pageLogs.length} events (total: ${totalApprovals})`)
-            
-            if (pageLogs.length < 1000) {
-              hasMore = false
-            } else {
-              page++
-              // Rate limiting: 350ms delay for free tier (3 calls/second)
-              await new Promise(resolve => setTimeout(resolve, 350))
-            }
-          } else {
-            console.log(`⚠️ API returned error on page ${page}: ${logsData.message || 'Unknown'}`)
-            hasMore = false
-          }
-        } else {
-          console.error(`❌ Approval Events API error on page ${page}: ${logsResponse.status}`)
-          hasMore = false
-        }
-      }
-      
-      console.log(`✅ Total Approval events found: ${totalApprovals}`)
-    } catch (approvalError) {
-      console.error(`❌ Approval events fetch failed:`, approvalError.message)
-      // Continue even if approval fetch fails
-    }
+    // Common spender addresses on Base (DEXes, bridges, protocols)
+    const COMMON_SPENDERS = [
+      '0x4200000000000000000000000000000000000006', // WETH
+      '0x2626664c2603336E57B271c5C0b26F421741e481', // Uniswap V3 Router
+      '0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD', // Uniswap Universal Router
+      '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43', // Aerodrome Router
+      '0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2', // Aerodrome Router V2
+      '0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb', // BaseSwap Router
+      '0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24', // OpenSea Seaport
+      '0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC', // OpenSea Seaport 1.5
+      '0x6131B5fae19EA4f9D964eAc0408E4408b66337b5', // Kyberswap Aggregator
+      '0x1111111254EEB25477B68fb85Ed929f73A960582', // 1inch v5 Router
+      '0x11111112542D85B3EF69AE05771c2dCCff4fAa26', // 1inch v4 Router
+      '0xDef1C0ded9bec7F1a1670819833240f027b25EfF', // 0x Exchange Proxy
+      '0x216B4B4Ba9F3e719726886d34a177484278Bfcae', // TokenPocket
+      '0x3328F7f4A1D1C57c35df56bBf0c9dCAFCA309C49', // Stargate Bridge
+      '0xB4B0ea46Fe0E9e8EAB4aFb765b527739F2718671', // Relay Bridge
+    ]
+    
+    // Add common spenders to each token
+    uniqueTokens.forEach(tokenAddress => {
+      COMMON_SPENDERS.forEach(spender => {
+        tokenSpenderMap.get(tokenAddress).add(spender.toLowerCase())
+      })
+    })
+    
+    console.log(`✅ Will check ${COMMON_SPENDERS.length} common spenders for ${uniqueTokens.size} tokens`)
     
     console.log(`\n📊 Found ${tokenSpenderMap.size} unique tokens with ${Array.from(tokenSpenderMap.values()).reduce((sum, set) => sum + set.size, 0)} total spender addresses`)
     
