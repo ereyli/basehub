@@ -13,41 +13,46 @@ console.log('🚀 Allowance Cleaner API loaded')
 
 // Configuration
 const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || 'SI8ECAC19FPN92K9MCNQENMGY6Z6MRM14Q'
+const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY || 'e_3LRKM0RipM2jfrPRn-CemN5EgByDgA'
+
+console.log('🔑 API Keys:')
+console.log('  - Basescan:', BASESCAN_API_KEY ? 'SET' : 'NOT SET')
+console.log('  - Alchemy:', ALCHEMY_API_KEY ? 'SET' : 'NOT SET')
 
 // Supported networks with Alchemy RPCs
 const SUPPORTED_NETWORKS = {
   'base': { 
     chainId: 8453, 
     name: 'Base Mainnet', 
-    rpc: 'https://base-mainnet.g.alchemy.com/v2/e_3LRKM0RipM2jfrPRn-CemN5EgByDgA',
+    rpc: `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
     apiUrl: 'https://api.basescan.org/api',
     viemChain: base
   },
   'ethereum': { 
     chainId: 1, 
     name: 'Ethereum Mainnet', 
-    rpc: 'https://eth-mainnet.g.alchemy.com/v2/e_3LRKM0RipM2jfrPRn-CemN5EgByDgA',
+    rpc: `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
     apiUrl: 'https://api.etherscan.io/api',
     viemChain: mainnet
   },
   'polygon': { 
     chainId: 137, 
     name: 'Polygon Mainnet', 
-    rpc: 'https://polygon-mainnet.g.alchemy.com/v2/e_3LRKM0RipM2jfrPRn-CemN5EgByDgA',
+    rpc: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
     apiUrl: 'https://api.polygonscan.com/api',
     viemChain: polygon
   },
   'arbitrum': { 
     chainId: 42161, 
     name: 'Arbitrum One', 
-    rpc: 'https://arb-mainnet.g.alchemy.com/v2/e_3LRKM0RipM2jfrPRn-CemN5EgByDgA',
+    rpc: `https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
     apiUrl: 'https://api.arbiscan.io/api',
     viemChain: arbitrum
   },
   'optimism': { 
     chainId: 10, 
     name: 'Optimism', 
-    rpc: 'https://opt-mainnet.g.alchemy.com/v2/e_3LRKM0RipM2jfrPRn-CemN5EgByDgA',
+    rpc: `https://opt-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
     apiUrl: 'https://api-optimistic.etherscan.io/api',
     viemChain: optimism
   },
