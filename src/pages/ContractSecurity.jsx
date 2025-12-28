@@ -224,30 +224,34 @@ export default function ContractSecurity() {
                     padding: '16px',
                     background: selectedNetwork === key 
                       ? `linear-gradient(135deg, ${network.color}22 0%, ${network.color}44 100%)`
-                      : 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)',
+                      : 'rgba(30, 41, 59, 0.6)',
                     border: selectedNetwork === key 
                       ? `2px solid ${network.color}`
-                      : '2px solid transparent',
+                      : '2px solid rgba(255, 255, 255, 0.1)',
                     borderRadius: '16px',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     fontSize: '14px',
                     fontWeight: selectedNetwork === key ? '700' : '600',
-                    color: selectedNetwork === key ? network.color : '#4b5563',
+                    color: selectedNetwork === key ? network.color : '#9ca3af',
                     textAlign: 'center',
                     boxShadow: selectedNetwork === key 
                       ? `0 4px 12px ${network.color}33`
-                      : '0 2px 8px rgba(0, 0, 0, 0.04)',
+                      : 'none',
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.transform = 'translateY(-2px)'
-                    e.target.style.boxShadow = `0 6px 16px ${network.color}44`
+                    if (selectedNetwork !== key) {
+                      e.target.style.background = `linear-gradient(135deg, ${network.color}15 0%, ${network.color}25 100%)`
+                      e.target.style.boxShadow = `0 6px 16px ${network.color}44`
+                    }
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.transform = 'translateY(0)'
-                    e.target.style.boxShadow = selectedNetwork === key 
-                      ? `0 4px 12px ${network.color}33`
-                      : '0 2px 8px rgba(0, 0, 0, 0.04)'
+                    if (selectedNetwork !== key) {
+                      e.target.style.background = 'rgba(30, 41, 59, 0.6)'
+                      e.target.style.boxShadow = 'none'
+                    } else {
+                      e.target.style.boxShadow = `0 4px 12px ${network.color}33`
+                    }
                   }}
                 >
                   {network.name}
@@ -257,10 +261,11 @@ export default function ContractSecurity() {
             <div style={{
               marginTop: '16px',
               padding: '12px 16px',
-              background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+              background: 'rgba(15, 23, 42, 0.8)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
               borderRadius: '12px',
               fontSize: '13px',
-              color: '#1e40af',
+              color: '#6b7280',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
