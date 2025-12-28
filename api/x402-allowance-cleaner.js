@@ -264,10 +264,22 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
       })
     })
     
+    console.log(`  📡 RPC Response status: ${logsResponse.status}`)
+    
     if (logsResponse.ok) {
       const logsData = await logsResponse.json()
       
-      if (logsData.result && Array.isArray(logsData.result)) {
+      console.log(`  📊 RPC Response data:`, {
+        hasError: !!logsData.error,
+        hasResult: !!logsData.result,
+        resultType: Array.isArray(logsData.result) ? 'array' : typeof logsData.result,
+        resultLength: Array.isArray(logsData.result) ? logsData.result.length : 'N/A'
+      })
+      
+      if (logsData.error) {
+        console.error(`  ❌ RPC returned error:`, logsData.error)
+        console.log(`  ⚠️ RPC error - will use common spenders only`)
+      } else if (logsData.result && Array.isArray(logsData.result)) {
         console.log(`  ✅ Found ${logsData.result.length} Approval events via RPC`)
         
         // Parse logs to extract token-spender pairs
