@@ -242,30 +242,267 @@ function analyzeRisk(allowanceAmount, spenderAddress, tokenBalance) {
   }
 }
 
-// Scan allowances - SIMPLE and SAFE version (test mode)
+// Scan allowances using HYBRID approach (RevokeCash method)
+// 1. Fetch token transfers (tokentx) to find all tokens user has interacted with
+// 2. Fetch Approval events (getLogs) to find known spenders
+// 3. For each token, check on-chain allowance for all spenders found
 async function scanAllowances(walletAddress, selectedNetwork = 'base') {
   try {
     console.log(`🔍 Scanning allowances for: ${walletAddress} on ${selectedNetwork}`)
+    console.log(`📋 Using HYBRID approach: Token transfers + Approval events + On-chain checks`)
     
     const allowances = []
     
     // Get network config
     const network = SUPPORTED_NETWORKS[selectedNetwork] || SUPPORTED_NETWORKS['base']
     const chainId = network.chainId
+    const apiUrl = network.apiUrl
     
     console.log(`🌐 Using network: ${network.name} (chainId: ${chainId})`)
+    console.log(`🔗 API URL: ${apiUrl}`)
     
-    // Create public client
+    // Create public client for on-chain reads
     const publicClient = createNetworkClient(network)
     
-    // For now, return empty array to test the flow
-    // We'll implement proper scanning after fixing the infrastructure
-    console.log('⚠️ Using simplified scan (testing mode)')
-    console.log('✅ Scan completed successfully')
+    // ========================================
+    // STEP 1: Get all ERC20 token transfers
+    // This helps identify which tokens the user has interacted with
+    // ========================================
+    console.log(`\n📦 STEP 1: Fetching token transfers...`)
     
+    const uniqueTokens = new Set()
+    
+    try {
+      const tokentxUrl = `${apiUrl}?module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=latest&page=1&offset=1000&sort=desc&apikey=${BASESCAN_API_KEY}`
+      
+      console.log(`🔗 TokenTX URL: ${tokentxUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
+      
+      const tokentxResponse = await fetch(tokentxUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'BaseHub-AllowanceCleaner/1.0',
+        },
+      })
+      
+      if (tokentxResponse.ok) {
+        const tokentxData = await tokentxResponse.json()
+        console.log(`📊 TokenTX Response:`, {
+          status: tokentxData.status,
+          message: tokentxData.message,
+          resultCount: Array.isArray(tokentxData.result) ? tokentxData.result.length : 'not an array',
+        })
+        
+        if (tokentxData.status === '1' && Array.isArray(tokentxData.result)) {
+          tokentxData.result.forEach(tx => {
+            if (tx.contractAddress) {
+              uniqueTokens.add(tx.contractAddress.toLowerCase())
+            }
+          })
+          console.log(`✅ Found ${uniqueTokens.size} unique tokens from transfer history`)
+        } else {
+          console.log(`⚠️ No token transfers found: ${tokentxData.message || 'Unknown'}`)
+        }
+      } else {
+        console.error(`❌ TokenTX API error: ${tokentxResponse.status}`)
+      }
+    } catch (tokentxError) {
+      console.error(`❌ TokenTX failed:`, tokentxError.message)
+      // Continue even if tokentx fails
+    }
+    
+    // ========================================
+    // STEP 2: Fetch Approval events
+    // This helps identify spenders for each token
+    // ========================================
+    console.log(`\n🔐 STEP 2: Fetching Approval events...`)
+    
+    const approvalEventSignature = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
+    const ownerTopic = '0x000000000000000000000000' + walletAddress.slice(2).toLowerCase()
+    
+    const tokenSpenderMap = new Map() // Map<tokenAddress, Set<spenderAddress>>
+    
+    // Initialize map with tokens from transfers
+    uniqueTokens.forEach(tokenAddress => {
+      tokenSpenderMap.set(tokenAddress, new Set())
+    })
+    
+    try {
+      // Pagination loop (max 1000 records per request)
+      let page = 1
+      let hasMore = true
+      let totalApprovals = 0
+      
+      while (hasMore && page <= 10) { // Max 10 pages (10,000 records)
+        const logsUrl = `${apiUrl}?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&page=${page}&offset=1000&apikey=${BASESCAN_API_KEY}`
+        
+        console.log(`🔗 Approval Events URL (page ${page}): ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
+        
+        const logsResponse = await fetch(logsUrl, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'BaseHub-AllowanceCleaner/1.0',
+          },
+        })
+        
+        if (logsResponse.ok) {
+          const logsData = await logsResponse.json()
+          console.log(`📊 Approval Events Response (page ${page}):`, {
+            status: logsData.status,
+            message: logsData.message,
+            resultCount: Array.isArray(logsData.result) ? logsData.result.length : 'not an array',
+          })
+          
+          if (logsData.status === '1' && Array.isArray(logsData.result)) {
+            const pageLogs = logsData.result
+            
+            // Parse logs and collect token-spender pairs
+            pageLogs.forEach(log => {
+              try {
+                const tokenAddress = log.address.toLowerCase()
+                const ownerFromLog = '0x' + log.topics[1].slice(26).toLowerCase()
+                const spenderAddress = '0x' + log.topics[2].slice(26).toLowerCase()
+                
+                // Only process if owner matches wallet being scanned
+                if (ownerFromLog === walletAddress.toLowerCase()) {
+                  if (!tokenSpenderMap.has(tokenAddress)) {
+                    tokenSpenderMap.set(tokenAddress, new Set())
+                  }
+                  tokenSpenderMap.get(tokenAddress).add(spenderAddress)
+                }
+              } catch (parseError) {
+                console.error('Error parsing Approval log:', parseError)
+              }
+            })
+            
+            totalApprovals += pageLogs.length
+            console.log(`✅ Page ${page}: ${pageLogs.length} events (total: ${totalApprovals})`)
+            
+            if (pageLogs.length < 1000) {
+              hasMore = false
+            } else {
+              page++
+              // Rate limiting: 350ms delay for free tier (3 calls/second)
+              await new Promise(resolve => setTimeout(resolve, 350))
+            }
+          } else {
+            console.log(`⚠️ API returned error on page ${page}: ${logsData.message || 'Unknown'}`)
+            hasMore = false
+          }
+        } else {
+          console.error(`❌ Approval Events API error on page ${page}: ${logsResponse.status}`)
+          hasMore = false
+        }
+      }
+      
+      console.log(`✅ Total Approval events found: ${totalApprovals}`)
+    } catch (approvalError) {
+      console.error(`❌ Approval events fetch failed:`, approvalError.message)
+      // Continue even if approval fetch fails
+    }
+    
+    console.log(`\n📊 Found ${tokenSpenderMap.size} unique tokens with ${Array.from(tokenSpenderMap.values()).reduce((sum, set) => sum + set.size, 0)} total spender addresses`)
+    
+    // ========================================
+    // STEP 3: Check on-chain allowances
+    // For each token-spender pair, check current allowance
+    // ========================================
+    console.log(`\n✅ STEP 3: Checking on-chain allowances...`)
+    
+    for (const [tokenAddress, spenders] of tokenSpenderMap) {
+      // Skip if no spenders found for this token
+      if (spenders.size === 0) {
+        console.log(`⏭️ Skipping ${tokenAddress} (no spenders found)`)
+        continue
+      }
+      
+      try {
+        // Get token info
+        const tokenInfo = await getTokenInfo(tokenAddress, publicClient)
+        console.log(`📊 Checking ${tokenInfo.symbol} (${tokenAddress})...`)
+        
+        // Get current balance
+        let balance = 0n
+        try {
+          balance = await publicClient.readContract({
+            address: tokenAddress,
+            abi: ERC20_ABI,
+            functionName: 'balanceOf',
+            args: [walletAddress]
+          })
+        } catch (balanceError) {
+          console.error(`  ⚠️ Error getting balance: ${balanceError.message}`)
+        }
+        
+        // Check each spender
+        for (const spenderAddress of spenders) {
+          try {
+            console.log(`  🔍 Checking: ${tokenInfo.symbol} -> ${spenderAddress.substring(0, 10)}...`)
+            
+            // Check current on-chain allowance
+            const currentAllowance = await publicClient.readContract({
+              address: tokenAddress,
+              abi: ERC20_ABI,
+              functionName: 'allowance',
+              args: [walletAddress, spenderAddress]
+            })
+            
+            console.log(`  📊 Allowance: ${currentAllowance.toString()}`)
+            
+            // Only include active allowances (> 0)
+            if (currentAllowance > 0n) {
+              console.log(`  ✅ Active allowance found!`)
+              
+              const spenderName = await getContractName(spenderAddress).catch(() => null)
+              const { riskLevel, reason } = analyzeRisk(
+                currentAllowance.toString(),
+                spenderAddress,
+                balance.toString()
+              )
+              
+              // Format amount
+              const maxUint256Value = BigInt('115792089237316195423570985008687907853269984665640564039457584007913129639935')
+              const isUnlimited = currentAllowance >= maxUint256Value
+              const amountFormatted = isUnlimited 
+                ? 'Unlimited' 
+                : formatUnits(currentAllowance, tokenInfo.decimals)
+              
+              allowances.push({
+                tokenAddress,
+                tokenSymbol: tokenInfo.symbol,
+                tokenName: tokenInfo.name,
+                decimals: tokenInfo.decimals,
+                spenderAddress,
+                spenderName: spenderName || null,
+                amount: currentAllowance.toString(),
+                amountFormatted,
+                isUnlimited,
+                riskLevel,
+                reason
+              })
+            } else {
+              console.log(`  ⚠️ Allowance is 0 (revoked or never set)`)
+            }
+          } catch (allowanceError) {
+            console.error(`  ❌ Error checking allowance: ${allowanceError.message}`)
+          }
+        }
+      } catch (tokenError) {
+        console.error(`❌ Error processing token ${tokenAddress}:`, tokenError.message)
+      }
+    }
+    
+    // Sort by risk level (high first)
+    allowances.sort((a, b) => {
+      const riskOrder = { high: 3, medium: 2, low: 1 }
+      return riskOrder[b.riskLevel] - riskOrder[a.riskLevel]
+    })
+    
+    console.log(`\n✅ Scan completed: Found ${allowances.length} active allowances`)
     return allowances
+    
   } catch (error) {
     console.error('❌ Error in scanAllowances:', error)
+    console.error('❌ Stack:', error.stack)
     throw new Error(`Scan failed: ${error.message}`)
   }
 }
