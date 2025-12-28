@@ -395,10 +395,8 @@ export default function AllowanceCleaner() {
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         {categoryAllowances.map((allowance, index) => {
-                  const isUnlimited = allowance.amount === 'unlimited' || allowance.amount === 'max'
-                  const displayAmount = isUnlimited 
-                    ? 'Unlimited' 
-                    : formatUnits(BigInt(allowance.amount || '0'), allowance.decimals || 18)
+                  // Use backend's formatted amount if available
+                  const displayAmount = allowance.amountFormatted || 'Unknown'
 
                   return (
                     <div
@@ -424,7 +422,7 @@ export default function AllowanceCleaner() {
                               {allowance.riskLevel} Risk
                             </span>
                           </div>
-                          <div style={{ color: '#e5e7eb', fontWeight: '600', marginBottom: '4px' }}>
+                          <div style={{ color: '#e5e7eb', fontWeight: '600', marginBottom: '4px', fontSize: '16px' }}>
                             {allowance.tokenSymbol || 'Unknown Token'}
                           </div>
                           <div style={{ color: '#9ca3af', fontSize: '12px', fontFamily: 'monospace' }}>
@@ -433,14 +431,34 @@ export default function AllowanceCleaner() {
                         </div>
                         <div style={{ flex: 1, minWidth: '200px' }}>
                           <div style={{ color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>Approved Amount</div>
-                          <div style={{ color: isUnlimited ? '#ef4444' : '#e5e7eb', fontWeight: '600' }}>
-                            {displayAmount} {allowance.tokenSymbol || ''}
+                          <div style={{ 
+                            color: allowance.isUnlimited ? '#ef4444' : '#e5e7eb', 
+                            fontWeight: '600',
+                            fontSize: '15px',
+                            wordBreak: 'break-word' // Prevent overflow
+                          }}>
+                            {displayAmount}
                           </div>
+                          {allowance.isUnlimited && (
+                            <div style={{
+                              display: 'inline-block',
+                              marginTop: '6px',
+                              padding: '4px 8px',
+                              background: 'rgba(239, 68, 68, 0.2)',
+                              border: '1px solid rgba(239, 68, 68, 0.4)',
+                              borderRadius: '6px',
+                              color: '#ef4444',
+                              fontSize: '11px',
+                              fontWeight: '600'
+                            }}>
+                              ⚠️ Unlimited allowance
+                            </div>
+                          )}
                         </div>
                         <div style={{ flex: 1, minWidth: '200px' }}>
                           <div style={{ color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>Spender</div>
-                          <div style={{ color: '#e5e7eb', fontSize: '12px', fontFamily: 'monospace', marginBottom: '4px' }}>
-                            {allowance.spenderAddress.slice(0, 6)}...{allowance.spenderAddress.slice(-4)}
+                          <div style={{ color: '#e5e7eb', fontSize: '13px', fontFamily: 'monospace', marginBottom: '4px' }}>
+                            {allowance.spenderAddress.slice(0, 8)}...{allowance.spenderAddress.slice(-6)}
                           </div>
                           {allowance.spenderName && (
                             <div style={{ color: '#9ca3af', fontSize: '12px' }}>

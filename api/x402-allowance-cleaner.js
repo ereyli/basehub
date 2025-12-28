@@ -680,6 +680,28 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
             const maxUint = BigInt('115792089237316195423570985008687907853269984665640564039457584007913129639935')
             const isUnlimited = allowance >= maxUint
             
+            // Format amount for display
+            let displayAmount = 'Unlimited'
+            if (!isUnlimited) {
+              const formatted = formatUnits(allowance, tokenInfo.decimals)
+              const num = parseFloat(formatted)
+              
+              // Format based on size
+              if (num >= 1e9) {
+                displayAmount = `${(num / 1e9).toFixed(2)}B ${tokenInfo.symbol}`
+              } else if (num >= 1e6) {
+                displayAmount = `${(num / 1e6).toFixed(2)}M ${tokenInfo.symbol}`
+              } else if (num >= 1e3) {
+                displayAmount = `${(num / 1e3).toFixed(2)}K ${tokenInfo.symbol}`
+              } else if (num >= 1) {
+                displayAmount = `${num.toFixed(4)} ${tokenInfo.symbol}`
+              } else if (num > 0) {
+                displayAmount = `${num.toExponential(2)} ${tokenInfo.symbol}`
+              } else {
+                displayAmount = `0 ${tokenInfo.symbol}`
+              }
+            }
+            
             allowances.push({
               tokenAddress,
               tokenSymbol: tokenInfo.symbol,
@@ -687,9 +709,10 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
               tokenType: tokenInfo.type || 'ERC20',
               decimals: tokenInfo.decimals,
               spenderAddress: spender,
-              spenderName: null, // Could be enhanced with contract name lookup
+              spenderName: null,
               amount: allowance.toString(),
-              amountFormatted: isUnlimited ? 'Unlimited' : formatUnits(allowance, tokenInfo.decimals),
+              amountFormatted: displayAmount,
+              amountRaw: formatUnits(allowance, tokenInfo.decimals),
               balance: balance.toString(),
               balanceFormatted: balance > 0n ? formatUnits(balance, tokenInfo.decimals) : '0',
               isUnlimited,
