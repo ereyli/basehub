@@ -732,7 +732,9 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
               balanceFormatted: balance > 0n ? formatUnits(balance, tokenInfo.decimals) : '0',
               isUnlimited,
               riskLevel,
-              reason
+              reason,
+              network: selectedNetwork, // Add network info for frontend
+              chainId: networkConfig.chainId // Add chainId for verification
             })
             
             console.log(`   ✅ Found approval: ${tokenInfo.symbol} -> ${spender.substring(0, 10)}... (${isUnlimited ? 'Unlimited' : allowance.toString()})`)

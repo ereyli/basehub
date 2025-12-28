@@ -29,7 +29,7 @@ const SUPPORTED_NETWORKS = {
 }
 
 export default function AllowanceCleaner() {
-  const { address, isConnected } = useAccount()
+  const { address, isConnected, chain } = useAccount()
   const { 
     scanAllowances, 
     revokeAllowance, 
@@ -39,7 +39,8 @@ export default function AllowanceCleaner() {
     isRevoking,
     error, 
     allowances,
-    hasScanned
+    hasScanned,
+    scannedNetwork
   } = useAllowanceCleaner()
 
   const [revokingIndex, setRevokingIndex] = useState(null)
@@ -472,6 +473,22 @@ export default function AllowanceCleaner() {
                               {allowance.spenderName}
                             </div>
                           )}
+                          {/* Show which network this allowance is from */}
+                          {allowance.network && (
+                            <div style={{
+                              display: 'inline-block',
+                              marginTop: '6px',
+                              padding: '3px 8px',
+                              background: `rgba(${SUPPORTED_NETWORKS[allowance.network]?.color || '#666'}22)`,
+                              border: `1px solid ${SUPPORTED_NETWORKS[allowance.network]?.color || '#666'}44`,
+                              borderRadius: '6px',
+                              color: SUPPORTED_NETWORKS[allowance.network]?.color || '#9ca3af',
+                              fontSize: '10px',
+                              fontWeight: '600'
+                            }}>
+                              📍 {SUPPORTED_NETWORKS[allowance.network]?.name || allowance.network}
+                            </div>
+                          )}
                         </div>
                       </div>
                       
@@ -489,13 +506,37 @@ export default function AllowanceCleaner() {
                         </div>
                       )}
 
-                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      {/* Network mismatch warning */}
+                      {allowance.network && allowance.network !== scannedNetwork && (
+                        <div style={{
+                          background: 'rgba(245, 158, 11, 0.1)',
+                          border: '1px solid rgba(245, 158, 11, 0.3)',
+                          borderRadius: '8px',
+                          padding: '12px',
+                          marginBottom: '12px',
+                          color: '#f59e0b',
+                          fontSize: '13px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}>
+                          <AlertTriangle size={16} />
+                          <div>
+                            <strong>Network Mismatch:</strong> This allowance is on {SUPPORTED_NETWORKS[allowance.network]?.name || allowance.network}.
+                            Currently viewing {SUPPORTED_NETWORKS[scannedNetwork]?.name || scannedNetwork} results.
+                          </div>
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <button
                           onClick={() => handleRevoke(allowance.tokenAddress, allowance.spenderAddress, index)}
-                          disabled={isRevoking || revokingIndex === index}
+                          disabled={isRevoking || revokingIndex === index || (allowance.network && allowance.network !== scannedNetwork)}
                           style={{
                             background: (allowance.riskLevel === 'high' || allowance.riskLevel === 'medium')
-                              ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                              ? (allowance.network && allowance.network !== scannedNetwork 
+                                  ? 'rgba(239, 68, 68, 0.3)' 
+                                  : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)')
                               : 'rgba(59, 130, 246, 0.2)',
                             color: (allowance.riskLevel === 'high' || allowance.riskLevel === 'medium') ? 'white' : '#9ca3af',
                             border: 'none',
@@ -503,18 +544,26 @@ export default function AllowanceCleaner() {
                             padding: '10px 20px',
                             fontSize: '14px',
                             fontWeight: '600',
-                            cursor: (isRevoking || revokingIndex === index) ? 'not-allowed' : 'pointer',
+                            cursor: (isRevoking || revokingIndex === index || (allowance.network && allowance.network !== scannedNetwork)) ? 'not-allowed' : 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '6px',
                             transition: 'all 0.2s',
-                            opacity: (isRevoking || revokingIndex === index) ? 0.5 : 1
+                            opacity: (isRevoking || revokingIndex === index || (allowance.network && allowance.network !== scannedNetwork)) ? 0.5 : 1
                           }}
+                          title={allowance.network && allowance.network !== scannedNetwork 
+                            ? `Switch to ${SUPPORTED_NETWORKS[allowance.network]?.name || allowance.network} to revoke` 
+                            : 'Revoke this allowance'}
                         >
                           {revokingIndex === index ? (
                             <>
                               <Loader2 size={14} className="spin" />
                               Revoking...
+                            </>
+                          ) : allowance.network && allowance.network !== scannedNetwork ? (
+                            <>
+                              <XCircle size={14} />
+                              Wrong Network
                             </>
                           ) : (
                             <>
@@ -524,7 +573,7 @@ export default function AllowanceCleaner() {
                           )}
                         </button>
                         <a
-                          href={`${SUPPORTED_NETWORKS[selectedNetwork].explorerUrl}/address/${allowance.spenderAddress}`}
+                          href={`${SUPPORTED_NETWORKS[allowance.network || scannedNetwork]?.explorerUrl || SUPPORTED_NETWORKS[selectedNetwork].explorerUrl}/address/${allowance.spenderAddress}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
@@ -536,7 +585,7 @@ export default function AllowanceCleaner() {
                             gap: '4px'
                           }}
                         >
-                          View on {SUPPORTED_NETWORKS[selectedNetwork].name}Scan
+                          View on {SUPPORTED_NETWORKS[allowance.network || scannedNetwork]?.name || SUPPORTED_NETWORKS[selectedNetwork].name}Scan
                           <ExternalLink size={12} />
                         </a>
                       </div>

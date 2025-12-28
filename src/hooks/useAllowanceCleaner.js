@@ -99,6 +99,7 @@ export const useAllowanceCleaner = () => {
   const [error, setError] = useState(null)
   const [allowances, setAllowances] = useState([])
   const [hasScanned, setHasScanned] = useState(false)
+  const [scannedNetwork, setScannedNetwork] = useState(null) // Track which network was scanned
 
   // Scan allowances for connected wallet on selected network
   const scanAllowances = async (network = 'base') => {
@@ -205,6 +206,7 @@ export const useAllowanceCleaner = () => {
       if (result.success && result.allowances) {
         setAllowances(result.allowances)
         setHasScanned(true)
+        setScannedNetwork(network) // Remember which network was scanned
         
         // Award XP for successful scan
         if (address) {
@@ -383,6 +385,7 @@ export const useAllowanceCleaner = () => {
     error,
     allowances,
     hasScanned,
+    scannedNetwork, // Export scannedNetwork
     isConnected: !!walletClient,
   }
 }
