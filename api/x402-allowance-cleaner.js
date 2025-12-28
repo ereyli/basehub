@@ -413,8 +413,8 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
   }
 }
 
-// Analyze risk level of an allowance
-function analyzeRisk(allowanceAmount, spenderAddress, tokenBalance) {
+// Get contract name from Etherscan
+async function getContractName(contractAddress) {
     // RPC eth_getLogs can timeout for very large ranges, so we use API as primary method
     // Approval event signature: 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925
     const approvalEventSignature = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
