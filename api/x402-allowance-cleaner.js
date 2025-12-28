@@ -555,7 +555,7 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
 // ==========================================
 app.post('/', async (c) => {
   try {
-    const { walletAddress } = await c.req.json()
+    const { walletAddress, network } = await c.req.json()
     
     if (!walletAddress) {
       return c.json({ success: false, error: 'Wallet address is required' }, 400)
@@ -566,10 +566,21 @@ app.post('/', async (c) => {
       return c.json({ success: false, error: 'Invalid wallet address format' }, 400)
     }
     
-    console.log(`🔍 Starting allowance scan for: ${walletAddress}`)
+    // Default to Base if network not specified
+    const selectedNetwork = network || 'base'
     
-    // Scan allowances
-    const allowances = await scanAllowances(walletAddress)
+    if (!SUPPORTED_NETWORKS[selectedNetwork]) {
+      return c.json({ 
+        success: false, 
+        error: 'Unsupported network',
+        supportedNetworks: Object.keys(SUPPORTED_NETWORKS)
+      }, 400)
+    }
+    
+    console.log(`🔍 Starting allowance scan for: ${walletAddress} on ${selectedNetwork}`)
+    
+    // Scan allowances for the selected network
+    const allowances = await scanAllowances(walletAddress, selectedNetwork)
     
     return c.json({
       success: true,
