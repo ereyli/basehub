@@ -194,8 +194,9 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
   try {
     // Fetch multiple pages to get more tokens
     for (let page = 1; page <= 10; page++) {
-      const url = `${network.apiUrl}?module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=latest&page=${page}&offset=1000&sort=desc&apikey=${BASESCAN_API_KEY}`
-      console.log(`  📄 Fetching page ${page}...`)
+      // Use network-specific API URL
+      const url = `${network.apiUrl}?module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=99999999&page=${page}&offset=1000&sort=desc&apikey=${BASESCAN_API_KEY}`
+      console.log(`  📄 Fetching page ${page} from ${network.name} API...`)
       
       const res = await fetch(url, {
         headers: {
@@ -204,7 +205,18 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
         },
       })
       
+      if (!res.ok) {
+        console.error(`  ❌ API HTTP error: ${res.status}`)
+        break
+      }
+      
       const data = await res.json()
+      
+      console.log(`  📊 API Response:`, {
+        status: data.status,
+        message: data.message,
+        resultLength: Array.isArray(data.result) ? data.result.length : 0
+      })
       
       if (data.status === '1' && Array.isArray(data.result) && data.result.length > 0) {
         data.result.forEach(tx => {
@@ -222,11 +234,54 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
         await new Promise(resolve => setTimeout(resolve, 350))
       } else {
         console.log(`  ⏹️ No more data on page ${page}`)
+        if (data.message && data.message !== 'No transactions found') {
+          console.error(`  ⚠️ API message: ${data.message}`)
+        }
         break
       }
     }
     
     console.log(`✅ Total found: ${uniqueTokens.size} unique tokens`)
+    
+    // If no tokens found via API, add common tokens for this network
+    if (uniqueTokens.size === 0) {
+      console.log(`  ⚠️ No tokens found via API, adding popular tokens for ${network.name}`)
+      
+      // Add popular tokens based on network
+      const popularTokens = {
+        'base': [
+          '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // USDC
+          '0x4200000000000000000000000000000000000006', // WETH
+          '0x50c5725949A68F4B1E3295a3Fd0E88C1C4d3F3C9', // DAI
+        ],
+        'ethereum': [
+          '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
+          '0xdAC17F958D2ee523a2206206994597C13D831ec7', // USDT
+          '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // WETH
+          '0x6B175474E89094C44Da98b954EedeAC495271d0F', // DAI
+        ],
+        'polygon': [
+          '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', // USDC
+          '0xc2132D05D31c914a87C6611C10748AEb04B58e8F', // USDT
+          '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270', // WMATIC
+        ],
+        'arbitrum': [
+          '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8', // USDC
+          '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', // USDT
+          '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', // WETH
+        ],
+        'optimism': [
+          '0x7F5c764cBc14f9669B88837ca1490cCa17c31607', // USDC
+          '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58', // USDT
+          '0x4200000000000000000000000000000000000006', // WETH
+        ]
+      }
+      
+      const tokens = popularTokens[selectedNetwork] || popularTokens['base']
+      tokens.forEach(token => uniqueTokens.add(token.toLowerCase()))
+      
+      console.log(`  ✅ Added ${tokens.length} popular tokens`)
+    }
   } catch (err) {
     console.error(`❌ Token fetch error:`, err.message)
   }
@@ -273,15 +328,17 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
         const currentBlock = parseInt(blockData.result, 16)
         console.log(`  📊 Current block: ${currentBlock}`)
         
-        // Scan last 10,000 blocks (Alchemy limit is around 10,000 blocks per getLogs call)
-        // This covers approximately last 1 month on most chains
-        const blockRange = 10000
+        // Reduce block range to 2000 blocks (more conservative for Alchemy)
+        // This is about 6-8 hours on most chains
+        const blockRange = 2000
         fromBlock = '0x' + Math.max(0, currentBlock - blockRange).toString(16)
         toBlock = '0x' + currentBlock.toString(16)
         
         console.log(`  📊 Scanning blocks ${parseInt(fromBlock, 16)} to ${parseInt(toBlock, 16)} (${blockRange} blocks)`)
+      } else {
+        console.log(`  ⚠️ Could not get current block, will skip RPC scan`)
+        throw new Error('Block number fetch failed')
       }
-    }
     
     // Use RPC to get logs (RevokeCash approach with limited range)
     const logsResponse = await fetch(network.rpc, {
