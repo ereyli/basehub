@@ -415,6 +415,7 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     // Try network-specific API first (more reliable for paid-tier networks like Base)
     // If that fails, fall back to Etherscan V2 API (supports all chains)
     // According to https://docs.etherscan.io/supported-chains
+    // IMPORTANT: getLogs has 1000 record limit per query, need pagination!
     try {
       const apiUrl = network.apiUrl || 'https://api.etherscan.io/api'
       const useV2 = !network.apiUrl // Use V2 if no specific API URL
@@ -423,16 +424,23 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
       console.log(`📅 Scanning from genesis block (0) to latest - covering all historical approvals`)
       console.log(`🌐 API type: ${useV2 ? 'Etherscan V2 (multi-chain)' : 'Network-specific API'}`)
       console.log(`🌐 API endpoint: ${apiUrl}`)
+      console.log(`⚠️ Note: Etherscan API has 1000 record limit per query, will paginate if needed`)
       
-      // Use network-specific API endpoint or Etherscan V2
-      let logsUrl
-      if (useV2) {
-        // Etherscan V2 API with chainid parameter
-        logsUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
-      } else {
-        // Network-specific API (Basescan, Polygonscan, etc)
-        logsUrl = `${apiUrl}?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
-      }
+      // Pagination loop to get all logs (max 1000 per request)
+      let page = 1
+      let hasMore = true
+      const allLogs = []
+      
+      while (hasMore && page <= 10) { // Limit to 10 pages (10,000 records max)
+        // Use network-specific API endpoint or Etherscan V2
+        let logsUrl
+        if (useV2) {
+          // Etherscan V2 API with chainid parameter + pagination
+          logsUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&page=${page}&offset=1000&apikey=${BASESCAN_API_KEY}`
+        } else {
+          // Network-specific API (Basescan, Polygonscan, etc) + pagination
+          logsUrl = `${apiUrl}?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&page=${page}&offset=1000&apikey=${BASESCAN_API_KEY}`
+        }
       
       console.log(`🔗 API URL: ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
       
