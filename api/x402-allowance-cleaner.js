@@ -351,8 +351,10 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     
     // Try Etherscan API V2 first (works for all supported chains)
     try {
-      console.log(`📡 Fetching Approval events from Etherscan API V2...`)
+      console.log(`📡 Fetching Approval events from Etherscan API V2 for chainId ${chainId}...`)
       const logsUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&apikey=${BASESCAN_API_KEY}`
+      
+      console.log(`🔗 API URL: ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
       
       const logsResponse = await fetch(logsUrl, {
         headers: {
@@ -361,8 +363,15 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
         },
       })
       
+      console.log(`📡 API Response status: ${logsResponse.status} ${logsResponse.statusText}`)
+      
       if (logsResponse.ok) {
         const logsData = await logsResponse.json()
+        console.log(`📊 API Response data:`, {
+          status: logsData.status,
+          message: logsData.message,
+          resultCount: logsData.result && Array.isArray(logsData.result) ? logsData.result.length : 'not an array'
+        })
         
         if (logsData.status === '1' && Array.isArray(logsData.result)) {
           // Convert API response to viem log format
@@ -379,11 +388,19 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
           }))
           console.log(`✅ Etherscan API V2 returned ${logs.length} Approval events`)
         } else {
-          console.log(`⚠️ Etherscan API returned status: ${logsData.status}, message: ${logsData.message}`)
+          console.log(`⚠️ Etherscan API returned status: ${logsData.status}, message: ${logsData.message || 'No message'}`)
+          if (logsData.message && logsData.message.includes('No records found')) {
+            console.log('ℹ️ No Approval events found for this wallet on this network')
+            return []
+          }
         }
+      } else {
+        const errorText = await logsResponse.text().catch(() => 'Could not read error')
+        console.error(`❌ API HTTP error: ${logsResponse.status}`, errorText.substring(0, 500))
       }
     } catch (apiError) {
       console.error(`❌ Etherscan API V2 failed:`, apiError.message)
+      console.error(`❌ Full error:`, apiError)
     }
     
     // If API returned no results, try RPC as fallback (for smaller ranges)
@@ -552,8 +569,11 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     return allowances
     
   } catch (error) {
-    console.error('Error scanning allowances:', error)
-    throw error
+    console.error('❌ Error scanning allowances:', error)
+    console.error('❌ Error stack:', error.stack)
+    // Return a more user-friendly error message
+    const errorMessage = error.message || 'Failed to scan allowances'
+    throw new Error(`Allowance scan failed: ${errorMessage}`)
   }
 }
 
@@ -598,11 +618,19 @@ app.post('/', async (c) => {
     })
     
   } catch (error) {
-    console.error('❌ Allowance scan error:', error)
-    return c.json({
+    console.error('❌ Allowance scan endpoint error:', error)
+    console.error('❌ Error stack:', error.stack)
+    
+    // Return detailed error for debugging
+    const errorMessage = error.message || 'Failed to scan allowances'
+    const errorDetails = {
       success: false,
-      error: error.message || 'Failed to scan allowances'
-    }, 500)
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }
+    
+    console.error('❌ Returning error response:', errorDetails)
+    return c.json(errorDetails, 500)
   }
 })
 
