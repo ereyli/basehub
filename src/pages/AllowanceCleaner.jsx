@@ -110,6 +110,50 @@ export default function AllowanceCleaner() {
           <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0 }}>
             Scan and revoke risky token approvals to protect your assets. Pay 0.01 USDC to scan your wallet.
           </p>
+          
+          {/* Network Selection */}
+          <div style={{ marginTop: '16px' }}>
+            <label style={{ 
+              display: 'block', 
+              color: '#9ca3af', 
+              fontSize: '12px', 
+              marginBottom: '8px',
+              fontWeight: '600'
+            }}>
+              Select Network to Scan:
+            </label>
+            <select
+              value={selectedNetwork}
+              onChange={(e) => setSelectedNetwork(e.target.value)}
+              disabled={isScanning}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                background: 'rgba(15, 23, 42, 0.8)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: '#e5e7eb',
+                fontSize: '14px',
+                cursor: isScanning ? 'not-allowed' : 'pointer',
+                outline: 'none',
+                opacity: isScanning ? 0.6 : 1
+              }}
+            >
+              {networks.map(net => (
+                <option key={net.value} value={net.value}>
+                  {net.label} (Chain ID: {net.chainId})
+                </option>
+              ))}
+            </select>
+            <p style={{ 
+              color: '#6b7280', 
+              fontSize: '11px', 
+              marginTop: '6px', 
+              marginBottom: 0 
+            }}>
+              💡 Payment is always on Base network, but you can scan any supported network
+            </p>
+          </div>
         </div>
 
         {!isConnected && (
