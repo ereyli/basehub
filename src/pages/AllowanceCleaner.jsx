@@ -19,13 +19,13 @@ import { formatUnits } from 'viem'
 
 // Supported networks - must match backend configuration
 const SUPPORTED_NETWORKS = {
-  'base': { name: 'Base', color: '#4a90e2' },
-  'ethereum': { name: 'Ethereum', color: '#627eea' },
-  'polygon': { name: 'Polygon', color: '#8247e5' },
-  'arbitrum': { name: 'Arbitrum', color: '#28a0f0' },
-  'optimism': { name: 'Optimism', color: '#ff0420' },
-  'bsc': { name: 'BNB Chain', color: '#f0b90b' },
-  'avalanche': { name: 'Avalanche', color: '#e84142' },
+  'base': { name: 'Base', color: '#4a90e2', explorerUrl: 'https://basescan.org' },
+  'ethereum': { name: 'Ethereum', color: '#627eea', explorerUrl: 'https://etherscan.io' },
+  'polygon': { name: 'Polygon', color: '#8247e5', explorerUrl: 'https://polygonscan.com' },
+  'arbitrum': { name: 'Arbitrum', color: '#28a0f0', explorerUrl: 'https://arbiscan.io' },
+  'optimism': { name: 'Optimism', color: '#ff0420', explorerUrl: 'https://optimistic.etherscan.io' },
+  'bsc': { name: 'BNB Chain', color: '#f0b90b', explorerUrl: 'https://bscscan.com' },
+  'avalanche': { name: 'Avalanche', color: '#e84142', explorerUrl: 'https://snowtrace.io' },
 }
 
 export default function AllowanceCleaner() {
@@ -524,7 +524,7 @@ export default function AllowanceCleaner() {
                           )}
                         </button>
                         <a
-                          href={`https://basescan.org/address/${allowance.spenderAddress}`}
+                          href={`${SUPPORTED_NETWORKS[selectedNetwork].explorerUrl}/address/${allowance.spenderAddress}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
@@ -536,7 +536,7 @@ export default function AllowanceCleaner() {
                             gap: '4px'
                           }}
                         >
-                          View on BaseScan
+                          View on {SUPPORTED_NETWORKS[selectedNetwork].name}Scan
                           <ExternalLink size={12} />
                         </a>
                       </div>

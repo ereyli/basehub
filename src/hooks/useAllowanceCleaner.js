@@ -245,21 +245,23 @@ export const useAllowanceCleaner = () => {
 
     try {
       console.log('🔄 Revoking allowance:', { 
-        tokenAddress, 
-        spenderAddress,
-        functionName: 'approve',
-        args: [spenderAddress, '0']
+        token: tokenAddress, 
+        spender: spenderAddress,
+        operation: 'ERC20 approve(spender, 0)',
+        description: 'This will SET the allowance to 0, NOT transfer tokens'
       })
 
-      // ERC20 approve(address spender, uint256 amount) to revoke
+      // ERC20 approve(address spender, uint256 amount) - Set allowance to 0 to revoke
+      // This is NOT a token transfer! It's setting approval amount to zero.
       const txHash = await writeContractAsync({
         address: tokenAddress,
         abi: ERC20_ABI,
         functionName: 'approve',
-        args: [spenderAddress, BigInt(0)], // Explicitly use BigInt(0)
+        args: [spenderAddress, 0n], // 0n = BigInt zero = revoke approval
       })
 
       console.log('✅ Revoke transaction sent:', txHash)
+      console.log('   ℹ️ This transaction calls approve(spender, 0) to revoke the allowance')
 
       // Wait for confirmation with timeout
       const receipt = await waitForTransactionReceipt(config, {
