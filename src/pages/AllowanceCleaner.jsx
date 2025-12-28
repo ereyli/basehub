@@ -69,9 +69,16 @@ export default function AllowanceCleaner() {
   const handleRevoke = async (tokenAddress, spenderAddress, index) => {
     try {
       setRevokingIndex(index)
+      console.log('🔄 Starting revoke for:', { tokenAddress, spenderAddress })
+      
       await revokeAllowance(tokenAddress, spenderAddress)
+      
+      console.log('✅ Revoke successful, UI should update automatically')
+      
+      // Success notification (optional - you could add a toast here)
     } catch (err) {
-      console.error('Revoke failed:', err)
+      console.error('❌ Revoke failed:', err)
+      // Error is already set in the hook
     } finally {
       setRevokingIndex(null)
     }

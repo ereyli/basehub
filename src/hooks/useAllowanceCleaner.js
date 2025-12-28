@@ -244,35 +244,65 @@ export const useAllowanceCleaner = () => {
     setError(null)
 
     try {
-      console.log('🔄 Revoking allowance:', { tokenAddress, spenderAddress })
+      console.log('🔄 Revoking allowance:', { 
+        tokenAddress, 
+        spenderAddress,
+        functionName: 'approve',
+        args: [spenderAddress, '0']
+      })
 
+      // ERC20 approve(address spender, uint256 amount) to revoke
       const txHash = await writeContractAsync({
         address: tokenAddress,
         abi: ERC20_ABI,
         functionName: 'approve',
-        args: [spenderAddress, 0n], // Set allowance to 0
+        args: [spenderAddress, BigInt(0)], // Explicitly use BigInt(0)
       })
 
       console.log('✅ Revoke transaction sent:', txHash)
 
-      // Wait for confirmation
+      // Wait for confirmation with timeout
       const receipt = await waitForTransactionReceipt(config, {
         hash: txHash,
         confirmations: 1,
+        timeout: 60_000, // 60 seconds timeout
       })
 
       console.log('✅ Revoke transaction confirmed:', receipt)
 
-      // Update allowances list - remove the revoked one
-      setAllowances(prev => prev.filter(
-        allowance => !(allowance.tokenAddress.toLowerCase() === tokenAddress.toLowerCase() && 
-                      allowance.spenderAddress.toLowerCase() === spenderAddress.toLowerCase())
-      ))
+      // Force update allowances list - remove the revoked one immediately
+      setAllowances(prev => {
+        const updated = prev.filter(
+          allowance => !(
+            allowance.tokenAddress.toLowerCase() === tokenAddress.toLowerCase() && 
+            allowance.spenderAddress.toLowerCase() === spenderAddress.toLowerCase()
+          )
+        )
+        console.log('📝 Allowances updated:', {
+          before: prev.length,
+          after: updated.length,
+          removed: prev.length - updated.length
+        })
+        return updated
+      })
+
+      // Show success message
+      console.log('🎉 Allowance successfully revoked!')
 
       return { txHash, receipt }
     } catch (err) {
       console.error('❌ Revoke error:', err)
-      const errorMessage = err.message || 'Revoke failed. Please try again.'
+      
+      // More detailed error message
+      let errorMessage = 'Revoke failed. Please try again.'
+      if (err.message?.includes('User rejected')) {
+        errorMessage = 'Transaction rejected by user'
+      } else if (err.message?.includes('insufficient funds')) {
+        errorMessage = 'Insufficient funds for gas'
+      } else if (err.message) {
+        errorMessage = err.message
+      }
+      
       setError(errorMessage)
       throw err
     } finally {
