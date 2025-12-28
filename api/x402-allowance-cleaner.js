@@ -529,15 +529,15 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
           hasMore = false
         }
       }
-      
-      logs = allLogs
-      console.log(`✅ Total Approval events collected: ${logs.length}`)
-    } catch (apiError) {
-      console.error(`❌ API failed:`, apiError.message)
-      console.error(`❌ Full error:`, apiError)
-      // Don't throw here, try RPC fallback first
-      // The error will be thrown if RPC also fails
-    }
+    
+    logs = allLogs
+    console.log(`✅ Total Approval events collected: ${logs.length}`)
+  } catch (apiError) {
+    console.error(`❌ API failed:`, apiError.message)
+    console.error(`❌ Full error:`, apiError)
+    // Don't throw here, try RPC fallback first
+    // The error will be thrown if RPC also fails
+  }
     
     // If API returned no results or failed, try RPC as fallback (for smaller ranges)
     // But use raw eth_getLogs call instead of viem's getLogs to avoid format issues
