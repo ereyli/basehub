@@ -385,10 +385,13 @@ async function getTokenInfo(tokenAddress, publicClient) {
   return { symbol: 'UNKNOWN', name: 'Unknown Token', decimals: 18 }
 }
 
-// Scan allowances for a wallet using RPC eth_getLogs (RevokeCash approach)
-// This is more reliable than API-based approaches
+// Scan allowances for a wallet using HYBRID approach (RevokeCash method)
+// 1. Get all ERC20 token transfers to/from the wallet (to find which tokens user interacted with)
+// 2. For each unique token, check current allowance for all spenders
+// This is more reliable than just scanning Approval events (which may be incomplete)
 async function scanAllowances(walletAddress, selectedNetwork = 'base') {
   console.log(`🔍 Scanning allowances for: ${walletAddress} on ${selectedNetwork}`)
+  console.log(`📋 Using HYBRID approach: Token transfers + Approval events + On-chain allowance checks`)
   
   const allowances = []
   
@@ -402,8 +405,59 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
   const publicClient = createNetworkClient(network)
   
   try {
-    // RevokeCash approach: Use Etherscan-compatible API first (more reliable for large ranges)
-    // RPC eth_getLogs can timeout for very large ranges, so we use API as primary method
+    // ========================================
+    // STEP 1: Get all token transfers (ERC20 Transfer events)
+    // This helps us identify which tokens the user has interacted with
+    // ========================================
+    console.log(`\n📦 STEP 1: Fetching token transfers to identify tokens...`)
+    
+    const apiUrl = network.apiUrl || 'https://api.etherscan.io/api'
+    const useV2 = !network.apiUrl
+    
+    let tokentxUrl
+    if (useV2) {
+      tokentxUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=latest&page=1&offset=1000&sort=desc&apikey=${BASESCAN_API_KEY}`
+    } else {
+      tokentxUrl = `${apiUrl}?module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=latest&page=1&offset=1000&sort=desc&apikey=${BASESCAN_API_KEY}`
+    }
+    
+    console.log(`🔗 Token TX API URL: ${tokentxUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
+    
+    const tokentxResponse = await fetch(tokentxUrl, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'BaseHub-AllowanceCleaner/1.0',
+      },
+    })
+    
+    const uniqueTokens = new Set()
+    
+    if (tokentxResponse.ok) {
+      const tokentxData = await tokentxResponse.json()
+      console.log(`📊 Token TX Response:`, {
+        status: tokentxData.status,
+        message: tokentxData.message,
+        resultCount: tokentxData.result && Array.isArray(tokentxData.result) ? tokentxData.result.length : 'not an array',
+      })
+      
+      if (tokentxData.status === '1' && Array.isArray(tokentxData.result)) {
+        tokentxData.result.forEach(tx => {
+          if (tx.contractAddress) {
+            uniqueTokens.add(tx.contractAddress.toLowerCase())
+          }
+        })
+        console.log(`✅ Found ${uniqueTokens.size} unique tokens from transfer history`)
+      } else {
+        console.log(`⚠️ No token transfers found or API error`)
+      }
+    }
+    
+    // ========================================
+    // STEP 2: Get all Approval events for this wallet
+    // This gives us spender addresses
+    // ========================================
+    console.log(`\n🔐 STEP 2: Fetching Approval events...`)
+    
     // Approval event signature: 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925
     const approvalEventSignature = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
     
@@ -412,39 +466,93 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
     
     let logs = []
     
-    // Try network-specific API first (more reliable for paid-tier networks like Base)
-    // If that fails, fall back to Etherscan V2 API (supports all chains)
-    // According to https://docs.etherscan.io/supported-chains
-    // IMPORTANT: getLogs has 1000 record limit per query, need pagination!
-    try {
-      const apiUrl = network.apiUrl || 'https://api.etherscan.io/api'
-      const useV2 = !network.apiUrl // Use V2 if no specific API URL
-      
-      console.log(`📡 Fetching Approval events from ${network.name}'s block explorer...`)
-      console.log(`📅 Scanning from genesis block (0) to latest - covering all historical approvals`)
-      console.log(`🌐 API type: ${useV2 ? 'Etherscan V2 (multi-chain)' : 'Network-specific API'}`)
-      console.log(`🌐 API endpoint: ${apiUrl}`)
-      console.log(`⚠️ Note: Etherscan API has 1000 record limit per query, will paginate if needed`)
-      
-    // Pagination loop to get all logs (max 1000 per request)
+    // Pagination loop to get all Approval event logs
     let page = 1
     let hasMore = true
     const allLogs = []
     
-    while (hasMore && page <= 10) { // Limit to 10 pages (10,000 records max)
-      // Use network-specific API endpoint or Etherscan V2
+    while (hasMore && page <= 10) {
       let logsUrl
       if (useV2) {
-        // Etherscan V2 API with chainid parameter + pagination
         logsUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&page=${page}&offset=1000&apikey=${BASESCAN_API_KEY}`
       } else {
-        // Network-specific API (Basescan, Polygonscan, etc) + pagination
         logsUrl = `${apiUrl}?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&page=${page}&offset=1000&apikey=${BASESCAN_API_KEY}`
       }
       
-      console.log(`🔗 API URL (page ${page}): ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
+      console.log(`🔗 Approval Events API URL (page ${page}): ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
       
       const logsResponse = await fetch(logsUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'BaseHub-AllowanceCleaner/1.0',
+        },
+      })
+      
+      if (logsResponse.ok) {
+        const logsData = await logsResponse.json()
+        
+        if (logsData.status === '1' && Array.isArray(logsData.result)) {
+          const pageLogs = logsData.result.map(log => ({
+            address: log.address,
+            topics: log.topics,
+            data: log.data,
+            blockNumber: BigInt(log.blockNumber || '0'),
+          }))
+          
+          allLogs.push(...pageLogs)
+          console.log(`✅ Page ${page} returned ${pageLogs.length} Approval events (total: ${allLogs.length})`)
+          
+          if (pageLogs.length < 1000) {
+            hasMore = false
+          } else {
+            page++
+            await new Promise(resolve => setTimeout(resolve, 350)) // Rate limiting
+          }
+        } else {
+          hasMore = false
+        }
+      } else {
+        hasMore = false
+      }
+    }
+    
+    logs = allLogs
+    console.log(`✅ Total Approval events found: ${logs.length}`)
+    
+    // ========================================
+    // STEP 3: Parse events and collect token-spender pairs
+    // ========================================
+    console.log(`\n🔍 STEP 3: Parsing events and collecting token-spender pairs...`)
+    
+    const tokenSpenderMap = new Map()
+    
+    // Add tokens from approval events
+    for (const log of logs) {
+      try {
+        const tokenAddress = log.address.toLowerCase()
+        const spenderAddress = '0x' + log.topics[2].slice(26) // topic2 is spender
+        
+        uniqueTokens.add(tokenAddress)
+        
+        if (!tokenSpenderMap.has(tokenAddress)) {
+          tokenSpenderMap.set(tokenAddress, new Set())
+        }
+        tokenSpenderMap.get(tokenAddress).add(spenderAddress.toLowerCase())
+      } catch (error) {
+        console.error('Error parsing approval log:', error)
+      }
+    }
+    
+    console.log(`📊 Found ${uniqueTokens.size} unique tokens total`)
+    console.log(`📊 Found ${tokenSpenderMap.size} tokens with approval events`)
+    
+    // ========================================
+    // STEP 4: For each token, check ALL spenders' allowances
+    // This is the key: we check on-chain allowance for each token-spender pair
+    // ========================================
+    console.log(`\n✅ STEP 4: Checking on-chain allowances for each token-spender pair...`)
+    
+    for (const [tokenAddress, spenders] of tokenSpenderMap) {
           headers: {
             'Accept': 'application/json',
             'User-Agent': 'BaseHub-AllowanceCleaner/1.0',
