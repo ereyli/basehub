@@ -179,7 +179,27 @@ app.use(
 // Helper functions
 // ==========================================
 
-// Public clients are now created per-network in scanAllowances function
+// Create public client function for different networks
+function createNetworkClient(networkConfig) {
+  // For Base, use the base chain from viem
+  if (networkConfig.chainId === 8453) {
+    return createPublicClient({
+      chain: base,
+      transport: http(networkConfig.rpc)
+    })
+  }
+  
+  // For other networks, create a custom chain config
+  return createPublicClient({
+    chain: {
+      id: networkConfig.chainId,
+      name: networkConfig.name,
+      nativeCurrency: { name: networkConfig.currency, symbol: networkConfig.currency, decimals: 18 },
+      rpcUrls: { default: { http: [networkConfig.rpc] } }
+    },
+    transport: http(networkConfig.rpc)
+  })
+}
 
 // Get contract name from Basescan API
 async function getContractName(address) {
