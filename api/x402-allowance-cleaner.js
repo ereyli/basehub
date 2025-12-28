@@ -431,8 +431,9 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
         console.log(`✅ RPC eth_getLogs returned ${logs.length} Approval events (from block ${fromBlock})`)
       } catch (rpcError) {
         console.error(`❌ RPC eth_getLogs also failed:`, rpcError.message)
-        // Return empty array instead of throwing - user can still see the UI
-        return []
+        console.error(`❌ RPC error details:`, rpcError)
+        // If both API and RPC failed, throw an error with details
+        throw new Error(`Failed to fetch Approval events: ${rpcError.message}. Please try again later.`)
       }
     }
     
