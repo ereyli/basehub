@@ -385,10 +385,12 @@ async function getTokenInfo(tokenAddress, publicClient) {
   return { symbol: 'UNKNOWN', name: 'Unknown Token', decimals: 18 }
 }
 
-// Scan allowances for a wallet using RPC eth_getLogs (RevokeCash approach)
-// This is more reliable than API-based approaches
+// Scan allowances using TOKEN TRANSFER history + on-chain checks
+// This is MORE RELIABLE than getLogs for Approval events
+// RevokeCash also uses this approach
 async function scanAllowances(walletAddress, selectedNetwork = 'base') {
   console.log(`🔍 Scanning allowances for: ${walletAddress} on ${selectedNetwork}`)
+  console.log(`📋 Method: Token TX History + On-chain Allowance Checks (RevokeCash approach)`)
   
   const allowances = []
   
@@ -402,9 +404,60 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
   const publicClient = createNetworkClient(network)
   
   try {
-    // RevokeCash approach: Use Etherscan-compatible API first (more reliable for large ranges)
-    // RPC eth_getLogs can timeout for very large ranges, so we use API as primary method
-    // Approval event signature: 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925
+    // ========================================
+    // STEP 1: Get token transfer history (ERC20 tokentx)
+    // This tells us which tokens the user has interacted with
+    // ========================================
+    console.log(`\n📦 STEP 1: Fetching token transfer history...`)
+    
+    const apiUrl = network.apiUrl || 'https://api.etherscan.io/api'
+    const useV2 = !network.apiUrl
+    
+    let tokentxUrl
+    if (useV2) {
+      tokentxUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=latest&page=1&offset=100&sort=desc&apikey=${BASESCAN_API_KEY}`
+    } else {
+      tokentxUrl = `${apiUrl}?module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=latest&page=1&offset=100&sort=desc&apikey=${BASESCAN_API_KEY}`
+    }
+    
+    console.log(`🔗 TokenTX URL: ${tokentxUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
+    
+    const tokentxResponse = await fetch(tokentxUrl, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'BaseHub-AllowanceCleaner/1.0',
+      },
+    })
+    
+    const uniqueTokens = new Set()
+    const tokenSpenderHints = new Map() // Store spenders we see in approval events
+    
+    if (tokentxResponse.ok) {
+      const tokentxData = await tokentxResponse.json()
+      console.log(`📊 TokenTX Response:`, {
+        status: tokentxData.status,
+        message: tokentxData.message,
+        result: tokentxData.result && Array.isArray(tokentxData.result) ? `Array[${tokentxData.result.length}]` : tokentxData.result,
+        resultCount: tokentxData.result && Array.isArray(tokentxData.result) ? tokentxData.result.length : 'not an array',
+      })
+      
+      if (tokentxData.status === '1' && Array.isArray(tokentxData.result)) {
+        tokentxData.result.forEach(tx => {
+          if (tx.contractAddress) {
+            uniqueTokens.add(tx.contractAddress.toLowerCase())
+          }
+        })
+        console.log(`✅ Found ${uniqueTokens.size} unique tokens from transfer history`)
+      } else {
+        console.log(`⚠️ TokenTX API error or no transfers: ${tokentxData.result || tokentxData.message}`)
+      }
+    }
+    
+    // ========================================
+    // STEP 2: Get approval events (if API works)
+    // If this fails, we'll use common spenders list
+    // ========================================
+    console.log(`\n🔐 STEP 2: Trying to fetch Approval events (optional)...`)
     const approvalEventSignature = '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
     
     // Format owner address as topic (32 bytes, padded)
