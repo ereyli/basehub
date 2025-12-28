@@ -23,7 +23,7 @@ const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || 'SI8ECAC19FPN92K9MCNQEN
 
 // Supported networks for allowance scanning (same as wallet analysis)
 const SUPPORTED_NETWORKS = {
-  'base': { chainId: 8453, name: 'Base Mainnet', currency: 'ETH', rpc: 'https://mainnet.base.org' },
+  'base': { chainId: 8453, name: 'Base Mainnet', currency: 'ETH', rpc: 'https://base.llamarpc.com' }, // More reliable public RPC
   'ethereum': { chainId: 1, name: 'Ethereum Mainnet', currency: 'ETH', rpc: 'https://eth.llamarpc.com' },
   'polygon': { chainId: 137, name: 'Polygon Mainnet', currency: 'MATIC', rpc: 'https://polygon-rpc.com' },
   'arbitrum': { chainId: 42161, name: 'Arbitrum One', currency: 'ETH', rpc: 'https://arb1.arbitrum.io/rpc' },
