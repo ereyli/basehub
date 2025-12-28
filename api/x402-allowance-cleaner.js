@@ -4,6 +4,8 @@
 
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { paymentMiddleware } from 'x402-hono'
+import { facilitator } from '@coinbase/x402'
 import { createPublicClient, http, formatUnits } from 'viem'
 import { base, mainnet, polygon, arbitrum, optimism, bsc, avalanche } from 'viem/chains'
 
