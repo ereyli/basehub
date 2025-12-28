@@ -442,62 +442,96 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
           logsUrl = `${apiUrl}?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&page=${page}&offset=1000&apikey=${BASESCAN_API_KEY}`
         }
       
-      console.log(`🔗 API URL: ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
+      // Pagination loop to get all logs (max 1000 per request)
+      let page = 1
+      let hasMore = true
+      const allLogs = []
       
-      const logsResponse = await fetch(logsUrl, {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'BaseHub-AllowanceCleaner/1.0',
-        },
-      })
-      
-      console.log(`📡 API Response status: ${logsResponse.status} ${logsResponse.statusText}`)
-      
-      if (logsResponse.ok) {
-        const logsData = await logsResponse.json()
-        console.log(`📊 API Response data:`, {
-          status: logsData.status,
-          message: logsData.message,
-          resultCount: logsData.result && Array.isArray(logsData.result) ? logsData.result.length : 'not an array',
-          resultType: typeof logsData.result
+      while (hasMore && page <= 10) { // Limit to 10 pages (10,000 records max)
+        // Use network-specific API endpoint or Etherscan V2
+        let logsUrl
+        if (useV2) {
+          // Etherscan V2 API with chainid parameter + pagination
+          logsUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&page=${page}&offset=1000&apikey=${BASESCAN_API_KEY}`
+        } else {
+          // Network-specific API (Basescan, Polygonscan, etc) + pagination
+          logsUrl = `${apiUrl}?module=logs&action=getLogs&fromBlock=0&toBlock=latest&topic0=${approvalEventSignature}&topic1=${ownerTopic}&page=${page}&offset=1000&apikey=${BASESCAN_API_KEY}`
+        }
+        
+        console.log(`🔗 API URL (page ${page}): ${logsUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN')}`)
+        
+        const logsResponse = await fetch(logsUrl, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'BaseHub-AllowanceCleaner/1.0',
+          },
         })
         
-        if (logsData.status === '1' && Array.isArray(logsData.result)) {
-          // Convert API response to viem log format
-          logs = logsData.result.map(log => ({
-            address: log.address,
-            topics: log.topics,
-            data: log.data,
-            blockNumber: BigInt(log.blockNumber || '0'),
-            transactionHash: log.transactionHash,
-            blockHash: log.blockHash,
-            transactionIndex: parseInt(log.transactionIndex || '0'),
-            logIndex: parseInt(log.logIndex || '0'),
-            removed: false
-          }))
-          console.log(`✅ API returned ${logs.length} Approval events`)
-        } else if (logsData.status === '0') {
-          // API returned error status
-          const errorMsg = logsData.message || 'Unknown API error'
-          console.log(`⚠️ API returned error status: ${errorMsg}`)
+        console.log(`📡 API Response status (page ${page}): ${logsResponse.status} ${logsResponse.statusText}`)
+        
+        if (logsResponse.ok) {
+          const logsData = await logsResponse.json()
+          console.log(`📊 API Response data (page ${page}):`, {
+            status: logsData.status,
+            message: logsData.message,
+            resultCount: logsData.result && Array.isArray(logsData.result) ? logsData.result.length : 'not an array',
+            resultType: typeof logsData.result
+          })
           
-          // Check if it's a "no records found" case
-          if (errorMsg.includes('No records found') || errorMsg.includes('No logs found') || errorMsg.includes('No transactions found')) {
-            console.log('ℹ️ No Approval events found for this wallet on this network')
-            return []
+          if (logsData.status === '1' && Array.isArray(logsData.result)) {
+            // Convert API response to viem log format
+            const pageLogs = logsData.result.map(log => ({
+              address: log.address,
+              topics: log.topics,
+              data: log.data,
+              blockNumber: BigInt(log.blockNumber || '0'),
+              transactionHash: log.transactionHash,
+              blockHash: log.blockHash,
+              transactionIndex: parseInt(log.transactionIndex || '0'),
+              logIndex: parseInt(log.logIndex || '0'),
+              removed: false
+            }))
+            
+            allLogs.push(...pageLogs)
+            console.log(`✅ Page ${page} returned ${pageLogs.length} Approval events (total so far: ${allLogs.length})`)
+            
+            // Check if we have more pages (if result is exactly 1000, there might be more)
+            if (pageLogs.length < 1000) {
+              hasMore = false
+              console.log(`✅ Reached end of results at page ${page}`)
+            } else {
+              page++
+              console.log(`📄 Fetching next page (${page})...`)
+              // Rate limiting: Wait 350ms between requests (3 calls/sec for free tier)
+              await new Promise(resolve => setTimeout(resolve, 350))
+            }
+          } else if (logsData.status === '0') {
+            // API returned error status
+            const errorMsg = logsData.message || 'Unknown API error'
+            console.log(`⚠️ API returned error status on page ${page}: ${errorMsg}`)
+            
+            // Check if it's a "no records found" case
+            if (errorMsg.includes('No records found') || errorMsg.includes('No logs found') || errorMsg.includes('No transactions found')) {
+              console.log('ℹ️ No Approval events found for this wallet on this network')
+              hasMore = false
+            } else {
+              // For other errors, stop pagination and will try RPC fallback
+              console.warn(`⚠️ API error but will try RPC fallback: ${errorMsg}`)
+              hasMore = false
+            }
+          } else {
+            console.log(`⚠️ API returned unexpected status: ${logsData.status}, message: ${logsData.message || 'No message'}`)
+            hasMore = false
           }
-          
-          // For other errors, log but don't throw yet - will try RPC fallback
-          console.warn(`⚠️ API error but will try RPC fallback: ${errorMsg}`)
         } else {
-          console.log(`⚠️ API returned unexpected status: ${logsData.status}, message: ${logsData.message || 'No message'}`)
-          // Don't throw, will try RPC fallback
+          const errorText = await logsResponse.text().catch(() => 'Could not read error')
+          console.error(`❌ API HTTP error on page ${page}: ${logsResponse.status}`, errorText.substring(0, 500))
+          hasMore = false
         }
-      } else {
-        const errorText = await logsResponse.text().catch(() => 'Could not read error')
-        console.error(`❌ API HTTP error: ${logsResponse.status}`, errorText.substring(0, 500))
-        // Don't throw here, will try RPC fallback
       }
+      
+      logs = allLogs
+      console.log(`✅ Total Approval events collected: ${logs.length}`)
     } catch (apiError) {
       console.error(`❌ API failed:`, apiError.message)
       console.error(`❌ Full error:`, apiError)
