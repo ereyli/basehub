@@ -140,11 +140,39 @@ const ERC20_ABI = [
   }
 ]
 
+// Configure facilitator (same as wallet-analysis)
+let facilitatorConfig
+if (process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET) {
+  console.log('✅ CDP API keys loaded from environment')
+  facilitatorConfig = facilitator.facilitatorConfig({
+    keyId: process.env.CDP_API_KEY_ID,
+    keySecret: process.env.CDP_API_KEY_SECRET,
+    network: NETWORK,
+  })
+} else {
+  console.warn('⚠️ CDP API keys not found in environment, payment features may be limited')
+}
+
 // CORS middleware
 app.use('/*', cors({
   origin: '*',
   allowMethods: ['POST', 'GET', 'OPTIONS'],
-  allowHeaders: ['Content-Type'],
+  allowHeaders: ['Content-Type', 'x402-facilitator-url', 'x402-accept-network', 'x402-accept-currency', 'x402-accept-amount', 'x402-accept-receiving-address'],
+}))
+
+// x402 Payment middleware - 0.01 USDC on Base
+app.use('/*', paymentMiddleware({
+  network: NETWORK,
+  amount: PRICE,
+  receivingAddress: RECEIVING_ADDRESS,
+  currency: USDC_ADDRESS,
+  facilitatorUrl: facilitatorConfig?.url,
+  onPaymentSuccess: async (paymentDetails) => {
+    console.log('✅ Payment successful:', paymentDetails)
+  },
+  onPaymentError: (error) => {
+    console.error('❌ Payment error:', error)
+  }
 }))
 
 // Create network-specific public client
@@ -466,6 +494,22 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
 // ==========================================
 app.post('/', async (c) => {
   try {
+    // Check payment status from x402 middleware
+    const paymentStatus = c.get('paymentStatus')
+    if (paymentStatus === 'pending') {
+      console.log('⚠️ Payment required')
+      return c.json({ 
+        success: false, 
+        error: 'Payment required',
+        paymentRequired: true,
+        price: PRICE,
+        network: NETWORK,
+        currency: USDC_ADDRESS
+      }, 402)
+    }
+    
+    console.log('✅ Payment verified, proceeding with scan')
+    
     const { walletAddress, network } = await c.req.json()
     
     if (!walletAddress) {
