@@ -28,10 +28,26 @@ const PRICING = {
 // Supabase client
 // Support both VITE_ prefix (for frontend compatibility) and direct env vars
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
+const supabaseKey = supabaseServiceKey || supabaseAnonKey
+
+console.log('🔑 Supabase Configuration:', {
+  url: supabaseUrl ? '✅ Set' : '❌ Missing',
+  serviceKey: supabaseServiceKey ? '✅ Set (bypasses RLS)' : '❌ Missing',
+  anonKey: supabaseAnonKey ? '✅ Set (RLS enforced)' : '❌ Missing',
+  usingKey: supabaseServiceKey ? 'SERVICE_KEY (recommended)' : (supabaseAnonKey ? 'ANON_KEY (RLS enforced)' : 'NONE')
+})
 
 if (!supabaseUrl || !supabaseKey) {
-  console.warn('⚠️ Supabase credentials not found! Featured profiles will not work.')
+  console.error('❌ Supabase credentials not found! Featured profiles will not work.')
+  console.error('Please set SUPABASE_URL and SUPABASE_SERVICE_KEY in Vercel environment variables.')
+}
+
+if (!supabaseServiceKey && supabaseAnonKey) {
+  console.warn('⚠️ WARNING: Using ANON_KEY instead of SERVICE_KEY!')
+  console.warn('⚠️ This means RLS policies will be enforced and inserts may fail.')
+  console.warn('⚠️ Please set SUPABASE_SERVICE_KEY in Vercel to bypass RLS.')
 }
 
 const supabase = supabaseUrl && supabaseKey
@@ -206,6 +222,19 @@ async function handleProfileRegistration(c, subscriptionType, pricing) {
 
     if (error) {
       console.error('❌ Supabase error:', error)
+      
+      // Check if it's an RLS policy error
+      if (error.message && error.message.includes('row-level security policy')) {
+        console.error('🔒 RLS Policy Error detected!')
+        console.error('This means:')
+        console.error('1. You are using ANON_KEY instead of SERVICE_KEY, OR')
+        console.error('2. RLS policies need to be updated in Supabase')
+        console.error('')
+        console.error('Solution:')
+        console.error('- Set SUPABASE_SERVICE_KEY in Vercel (recommended), OR')
+        console.error('- Run the SQL in featured-profiles-rls-policies-fix.sql in Supabase SQL Editor')
+      }
+      
       throw error
     }
 
