@@ -66,15 +66,19 @@ export default function FeaturedProfiles() {
   }, [user])
 
   // Try to load user if not available (single check, no polling)
-  // According to Farcaster SDK docs: sdk.context.user (not getUser())
+  // sdk.context is a Promise, must await it
   useEffect(() => {
-    if (isInFarcaster && isReady && !currentUser && sdk?.context?.user) {
+    if (!isInFarcaster || !isReady || currentUser) return
+
+    const loadUser = async () => {
       setIsLoadingUser(true)
       try {
-        const userContext = sdk.context.user
-        if (userContext && userContext.fid) {
-          console.log('✅ User loaded from SDK:', userContext)
-          setCurrentUser(userContext)
+        const context = await sdk.context
+        if (context?.user && context.user.fid) {
+          console.log('✅ User loaded from SDK:', context.user)
+          setCurrentUser(context.user)
+        } else {
+          console.log('⚠️ User context not available')
         }
       } catch (err) {
         console.error('❌ Error loading user:', err)
@@ -82,6 +86,8 @@ export default function FeaturedProfiles() {
         setIsLoadingUser(false)
       }
     }
+
+    loadUser()
   }, [isInFarcaster, isReady, currentUser, sdk])
 
   useEffect(() => {

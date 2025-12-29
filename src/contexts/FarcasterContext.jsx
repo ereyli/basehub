@@ -71,15 +71,20 @@ export const FarcasterProvider = ({ children }) => {
   useEffect(() => {
     if (!isInFarcaster || !isInitialized || user) return
 
-    // Check once if user is already available
-    try {
-      if (sdk?.context?.user && sdk.context.user.fid) {
-        console.log('✅ User found in context:', sdk.context.user)
-        setUser(sdk.context.user)
+    // Check once if user is already available - sdk.context is a Promise
+    const checkUser = async () => {
+      try {
+        const context = await sdk.context
+        if (context?.user && context.user.fid) {
+          console.log('✅ User found in context:', context.user)
+          setUser(context.user)
+        }
+      } catch (err) {
+        console.error('❌ Error checking user:', err)
       }
-    } catch (err) {
-      // Ignore errors
     }
+    
+    checkUser()
   }, [isInFarcaster, isInitialized, user, sdk])
 
   // Handle ready() call when DOM is fully loaded
@@ -129,20 +134,24 @@ export const FarcasterProvider = ({ children }) => {
         console.log('✅ Farcaster Mini App is ready!')
         
         // Try to get user context after ready
-        // According to Farcaster SDK docs: sdk.context.user (not getUser())
-        // User is available immediately after ready() call
+        // sdk.context is a Promise, must await it
         try {
-          if (sdk.context && sdk.context.user) {
-            const userContext = sdk.context.user
-            console.log('✅ User context loaded:', userContext)
-            setUser(userContext)
+          const context = await sdk.context
+          if (context && context.user) {
+            console.log('✅ User context loaded:', context.user)
+            setUser(context.user)
           } else {
-            console.log('⚠️ User context not available in sdk.context')
+            console.log('⚠️ User context not available')
             // Single retry after a short delay
-            setTimeout(() => {
-              if (sdk.context?.user) {
-                console.log('✅ User context loaded on retry:', sdk.context.user)
-                setUser(sdk.context.user)
+            setTimeout(async () => {
+              try {
+                const retryContext = await sdk.context
+                if (retryContext?.user) {
+                  console.log('✅ User context loaded on retry:', retryContext.user)
+                  setUser(retryContext.user)
+                }
+              } catch (retryError) {
+                console.error('❌ Retry failed:', retryError)
               }
             }, 1000)
           }
@@ -152,10 +161,11 @@ export const FarcasterProvider = ({ children }) => {
 
         // Check if we're in a cast share context
         try {
-          if (sdk.context.location && sdk.context.location.type === 'cast_share') {
-            console.log('📤 Cast share context detected:', sdk.context.location.cast)
+          const context = await sdk.context
+          if (context.location && context.location.type === 'cast_share') {
+            console.log('📤 Cast share context detected:', context.location.cast)
             setIsShareContext(true)
-            setSharedCast(sdk.context.location.cast)
+            setSharedCast(context.location.cast)
           }
         } catch (shareError) {
           console.log('ℹ️ No cast share context:', shareError.message)
