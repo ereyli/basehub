@@ -114,10 +114,15 @@ export const FarcasterProvider = ({ children }) => {
         console.log('✅ Farcaster Mini App is ready!')
         
         // Try to get user context after ready
+        // According to Farcaster SDK docs: sdk.context.user (not getUser())
         try {
-          const userContext = await sdk.context.getUser()
-          setUser(userContext)
-          console.log('✅ User context loaded:', userContext)
+          if (sdk.context && sdk.context.user) {
+            const userContext = sdk.context.user
+            setUser(userContext)
+            console.log('✅ User context loaded:', userContext)
+          } else {
+            console.log('ℹ️ User context not available in sdk.context')
+          }
         } catch (userError) {
           console.log('ℹ️ User context not available:', userError.message)
         }

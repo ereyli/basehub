@@ -66,16 +66,20 @@ export default function FeaturedProfiles() {
   }, [user])
 
   // Try to load user if not available
+  // According to Farcaster SDK docs: sdk.context.user (not getUser())
   useEffect(() => {
-    const loadUser = async () => {
+    const loadUser = () => {
       if (isInFarcaster && isReady && !currentUser && sdk?.context) {
         setIsLoadingUser(true)
         try {
           console.log('🔄 Attempting to load user from Farcaster SDK...')
-          const userContext = await sdk.context.getUser()
-          if (userContext) {
+          // sdk.context.user is a property, not a function
+          const userContext = sdk.context.user
+          if (userContext && userContext.fid) {
             setCurrentUser(userContext)
             console.log('✅ User loaded:', userContext)
+          } else {
+            console.log('ℹ️ User context not available or missing fid')
           }
         } catch (err) {
           console.log('ℹ️ Could not load user:', err.message)
@@ -426,7 +430,7 @@ export default function FeaturedProfiles() {
                   border: '1px solid rgba(251, 191, 36, 0.2)'
                 }}>
                   <img 
-                    src={currentUser?.pfp?.url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser?.fid || 'default'}`} 
+                    src={currentUser?.pfpUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser?.fid || 'default'}`} 
                     alt={currentUser?.displayName || currentUser?.username || 'User'} 
                     onError={(e) => {
                       e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser?.fid || 'default'}`
@@ -455,14 +459,14 @@ export default function FeaturedProfiles() {
                     }}>
                       @{currentUser?.username || `fid-${currentUser?.fid || ''}`}
                     </p>
-                    {currentUser?.bio?.text && (
+                    {currentUser?.bio && (
                       <p style={{ 
                         margin: '8px 0 0 0', 
                         color: '#9ca3af', 
                         fontSize: '13px',
                         fontStyle: 'italic'
                       }}>
-                        {currentUser?.bio?.text}
+                        {currentUser.bio}
                       </p>
                     )}
                   </div>

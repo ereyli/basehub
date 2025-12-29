@@ -54,8 +54,8 @@ export const useFeaturedProfiles = () => {
           farcaster_fid: user.fid,
           username: user.username,
           display_name: user.displayName,
-          avatar_url: user.pfp?.url,
-          bio: user.bio?.text,
+          avatar_url: user.pfpUrl, // Farcaster SDK: pfpUrl (not pfp.url)
+          bio: user.bio, // Farcaster SDK: bio (not bio.text)
           description: profileData.description, // Kullanıcının yazdığı açıklama
           wallet_address: user.walletAddress || profileData.walletAddress,
         }),
