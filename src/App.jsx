@@ -81,123 +81,126 @@ function FarcasterAppContent() {
     }
   }, [isInitialized, isReady])
 
-  // Show loading while initializing
-  if (!isInitialized || !isReady) {
-    return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%)',
-        color: 'white',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        textAlign: 'center',
-        padding: '20px'
-      }}>
-        {/* Logo with animation */}
-        <div style={{
-          width: '100px',
-          height: '100px',
-          background: 'rgba(255, 255, 255, 0.1)',
-          borderRadius: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: '30px',
-          border: '2px solid rgba(255, 255, 255, 0.2)',
-          animation: 'pulse 2s infinite'
-        }}>
-          <div style={{
-            fontSize: '32px',
-            fontWeight: 'bold',
-            color: 'white'
-          }}>
-            🎮
-          </div>
-        </div>
-
-        {/* App Title */}
-        <h1 style={{ 
-          fontSize: '28px', 
-          marginBottom: '10px', 
-          fontWeight: '700',
-          textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-        }}>
-          BaseHub
-        </h1>
-
-        {/* Loading Text */}
-        <p style={{ 
-          fontSize: '16px', 
-          opacity: 0.9, 
-          margin: '0 0 30px 0',
-          fontWeight: '500'
-        }}>
-          {loadingText}
-        </p>
-
-        {/* Progress Bar Container */}
-        <div style={{
-          width: '280px',
-          height: '8px',
-          background: 'rgba(255, 255, 255, 0.2)',
-          borderRadius: '10px',
-          overflow: 'hidden',
-          marginBottom: '15px',
-          border: '1px solid rgba(255, 255, 255, 0.1)'
-        }}>
-          {/* Progress Bar Fill */}
-          <div style={{
-            width: `${loadingProgress}%`,
-            height: '100%',
-            background: 'linear-gradient(90deg, #ffffff 0%, #e0e7ff 100%)',
-            borderRadius: '10px',
-            transition: 'width 0.3s ease',
-            boxShadow: '0 0 10px rgba(255, 255, 255, 0.5)',
-            position: 'relative'
-          }}>
-            {/* Shimmer effect */}
-            <div style={{
-              position: 'absolute',
-              top: 0,
-              left: '-100%',
-              width: '100%',
-              height: '100%',
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
-              animation: 'shimmer 2s infinite'
-            }}></div>
-          </div>
-        </div>
-
-        {/* Progress Percentage */}
-        <p style={{ 
-          fontSize: '14px', 
-          opacity: 0.7, 
-          margin: 0,
-          fontWeight: '500'
-        }}>
-          {Math.round(loadingProgress)}%
-        </p>
-        <style>{`
-          @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
-          }
-          @keyframes shimmer {
-            0% { left: -100%; }
-            100% { left: 100%; }
-          }
-        `}</style>
-      </div>
-    )
-  }
-
-  // Farcaster app
+  // Farcaster app - Router'ı her zaman render et, loading overlay ile göster
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="App farcaster-app">
+        {/* Loading overlay - sadece göster, Router'ı engelleme */}
+        {(!isInitialized || !isReady) && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9999,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%)',
+            color: 'white',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            textAlign: 'center',
+            padding: '20px'
+          }}>
+            {/* Logo with animation */}
+            <div style={{
+              width: '100px',
+              height: '100px',
+              background: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '30px',
+              border: '2px solid rgba(255, 255, 255, 0.2)',
+              animation: 'pulse 2s infinite'
+            }}>
+              <div style={{
+                fontSize: '32px',
+                fontWeight: 'bold',
+                color: 'white'
+              }}>
+                🎮
+              </div>
+            </div>
+
+            {/* App Title */}
+            <h1 style={{ 
+              fontSize: '28px', 
+              marginBottom: '10px', 
+              fontWeight: '700',
+              textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+            }}>
+              BaseHub
+            </h1>
+
+            {/* Loading Text */}
+            <p style={{ 
+              fontSize: '16px', 
+              opacity: 0.9, 
+              margin: '0 0 30px 0',
+              fontWeight: '500'
+            }}>
+              {loadingText}
+            </p>
+
+            {/* Progress Bar Container */}
+            <div style={{
+              width: '280px',
+              height: '8px',
+              background: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '10px',
+              overflow: 'hidden',
+              marginBottom: '15px',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
+              {/* Progress Bar Fill */}
+              <div style={{
+                width: `${loadingProgress}%`,
+                height: '100%',
+                background: 'linear-gradient(90deg, #ffffff 0%, #e0e7ff 100%)',
+                borderRadius: '10px',
+                transition: 'width 0.3s ease',
+                boxShadow: '0 0 10px rgba(255, 255, 255, 0.5)',
+                position: 'relative'
+              }}>
+                {/* Shimmer effect */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: '-100%',
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+                  animation: 'shimmer 2s infinite'
+                }}></div>
+              </div>
+            </div>
+
+            {/* Progress Percentage */}
+            <p style={{ 
+              fontSize: '14px', 
+              opacity: 0.7, 
+              margin: 0,
+              fontWeight: '500'
+            }}>
+              {Math.round(loadingProgress)}%
+            </p>
+            <style>{`
+              @keyframes pulse {
+                0%, 100% { transform: scale(1); opacity: 1; }
+                50% { transform: scale(1.05); opacity: 0.8; }
+              }
+              @keyframes shimmer {
+                0% { left: -100%; }
+                100% { left: 100%; }
+              }
+            `}</style>
+          </div>
+        )}
+        
         <FarcasterXPDisplay />
         <main className="container farcaster-main" style={{ paddingBottom: '100px' }}>
           <Routes>
