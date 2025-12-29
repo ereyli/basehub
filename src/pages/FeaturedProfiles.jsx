@@ -150,43 +150,68 @@ export default function FeaturedProfiles() {
       return
     }
 
+    // Always open Warpcast first - this is the primary action
+    // Farcaster'da gerçek takip için Warpcast profil sayfasına yönlendir
+    const warpcastUrl = profileUsername 
+      ? `https://warpcast.com/${profileUsername}`
+      : `https://warpcast.com/~/profile/${profileFid}`
+    
+    // Open in new tab/window immediately
+    window.open(warpcastUrl, '_blank', 'noopener,noreferrer')
+
+    // Then try to update our database (non-blocking)
     try {
       const status = followStatuses[profileFid]
       
-      // First, save to our database
       if (status?.is_following) {
-        await unfollowUser(profileFid)
-        setFollowStatuses(prev => ({
-          ...prev,
-          [profileFid]: { is_following: false, is_mutual: false }
-        }))
+        // Already following - try to unfollow in our DB
+        try {
+          await unfollowUser(profileFid)
+          setFollowStatuses(prev => ({
+            ...prev,
+            [profileFid]: { is_following: false, is_mutual: false }
+          }))
+        } catch (unfollowErr) {
+          // Silently fail - user can still unfollow on Warpcast
+          console.log('Unfollow in DB failed (non-critical):', unfollowErr.message)
+        }
       } else {
-        const result = await followUser(profileFid)
-        setFollowStatuses(prev => ({
-          ...prev,
-          [profileFid]: { 
-            is_following: true, 
-            is_mutual: result.is_mutual || false 
+        // Not following - try to follow in our DB
+        try {
+          const result = await followUser(profileFid)
+          setFollowStatuses(prev => ({
+            ...prev,
+            [profileFid]: { 
+              is_following: true, 
+              is_mutual: result.is_mutual || false 
+            }
+          }))
+          
+          if (result.is_mutual) {
+            // Show success message but don't block
+            setTimeout(() => {
+              alert('🎉 Mutual follow! You are now following each other!')
+            }, 500)
           }
-        }))
-        
-        if (result.is_mutual) {
-          alert('🎉 Mutual follow! You are now following each other!')
+        } catch (followErr) {
+          // If "Already following" error, just update status silently
+          if (followErr.message && followErr.message.includes('Already following')) {
+            setFollowStatuses(prev => ({
+              ...prev,
+              [profileFid]: { is_following: true, is_mutual: false }
+            }))
+          } else {
+            // Other errors - silently fail, user can still follow on Warpcast
+            console.log('Follow in DB failed (non-critical):', followErr.message)
+          }
         }
       }
       
-      // Then, open Warpcast profile for actual Farcaster follow
-      // Farcaster'da gerçek takip için Warpcast profil sayfasına yönlendir
-      const warpcastUrl = profileUsername 
-        ? `https://warpcast.com/${profileUsername}`
-        : `https://warpcast.com/~/profile/${profileFid}`
-      
-      // Open in new tab/window
-      window.open(warpcastUrl, '_blank', 'noopener,noreferrer')
-      
-      loadProfiles() // Refresh to update counts
+      // Refresh profiles to update counts
+      loadProfiles()
     } catch (err) {
-      alert('Failed to follow: ' + err.message)
+      // Non-critical error - user can still follow on Warpcast
+      console.error('Database update failed (non-critical):', err)
     }
   }
 
