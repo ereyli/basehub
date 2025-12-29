@@ -2020,14 +2020,31 @@ body {
 /* Farcaster specific adjustments */
 .farcaster-app .games-grid {
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 10px;
   margin-top: 16px;
 }
 
 .farcaster-app .game-card {
-  padding: 12px;
-  min-height: 90px;
+  padding: 14px;
+  min-height: 110px;
   position: relative;
+}
+
+.farcaster-app .game-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 10px;
+  font-size: 20px;
+}
+
+.farcaster-app .game-card h3 {
+  font-size: 15px !important;
+  margin-bottom: 6px !important;
+}
+
+.farcaster-app .game-card p {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
 }
 
 .game-card {
@@ -2100,7 +2117,7 @@ body {
   
   .farcaster-app .games-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    gap: 10px;
   }
   
   .btn {
@@ -2113,8 +2130,14 @@ body {
   }
   
   .farcaster-app .game-card {
-    padding: 12px;
-    min-height: 100px;
+    padding: 14px;
+    min-height: 110px;
+  }
+  
+  .farcaster-app .game-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
   }
 }
 
