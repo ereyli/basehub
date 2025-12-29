@@ -111,24 +111,9 @@ export default function FeaturedProfiles() {
     const currentFid = currentUser?.fid || user?.fid
     
     if (!currentFid || profiles.length === 0) {
-      console.log('⏭️ Skipping follow status check:', { 
-        hasUser: !!user, 
-        hasCurrentUser: !!currentUser,
-        userFid: user?.fid,
-        currentUserFid: currentUser?.fid,
-        currentFid,
-        profilesCount: profiles.length 
-      })
-      return
+      return // Silent skip - no logging to avoid spam
     }
     
-    console.log('🔄 Checking follow statuses for all profiles...', {
-      currentFid,
-      userFid: user?.fid,
-      currentUserFid: currentUser?.fid,
-      profilesCount: profiles.length,
-      profileFids: profiles.map(p => p.farcaster_fid)
-    })
     const statuses = {}
     
     // Check all profiles in parallel for better performance
@@ -136,9 +121,9 @@ export default function FeaturedProfiles() {
       try {
         // Pass currentFid to checkFollowStatus to ensure we use the right user
         const status = await checkFollowStatus(profile.farcaster_fid, currentFid)
-        console.log(`✅ Status for ${profile.farcaster_fid}:`, status)
         return { fid: profile.farcaster_fid, status }
       } catch (err) {
+        // Only log errors, not every check
         console.error(`❌ Error checking status for ${profile.farcaster_fid}:`, err)
         return { fid: profile.farcaster_fid, status: { is_following: false, is_mutual: false } }
       }
@@ -149,42 +134,41 @@ export default function FeaturedProfiles() {
       statuses[fid] = status
     })
     
-    console.log('✅ Follow statuses updated:', statuses)
+    // Only update if statuses actually changed
     setFollowStatuses(prevStatuses => {
-      console.log('🔄 setFollowStatuses - prev:', prevStatuses, 'new:', statuses)
-      return statuses
+      const hasChanged = Object.keys(statuses).some(fid => {
+        const prev = prevStatuses[fid]
+        const curr = statuses[fid]
+        return !prev || prev.is_following !== curr.is_following || prev.is_mutual !== curr.is_mutual
+      })
+      
+      if (hasChanged) {
+        // Silent update - no logging to avoid spam
+        return statuses
+      }
+      
+      return prevStatuses // No change, return previous state
     })
-    console.log('✅ setFollowStatuses called with:', statuses)
-  }, [profiles, user?.fid, currentUser?.fid, checkFollowStatus])
+  }, [profiles.length, user?.fid, currentUser?.fid, checkFollowStatus])
 
   useEffect(() => {
     // Check follow statuses for all profiles
     if (profiles.length > 0 && (user?.fid || currentUser?.fid)) {
-      console.log('🚀 Triggering follow status check...', {
-        userFid: user?.fid,
-        currentUserFid: currentUser?.fid,
-        profilesCount: profiles.length
-      })
+      // Initial check
       checkAllFollowStatuses()
       
-      // Also check periodically to catch Farcaster-side follows
+      // Also check periodically to catch Farcaster-side follows (reduced frequency)
       const interval = setInterval(() => {
-        console.log('⏰ Periodic follow status check...')
         checkAllFollowStatuses()
-      }, 5000) // Check every 5 seconds
+      }, 30000) // Check every 30 seconds (reduced from 10 to avoid spam)
       
       return () => {
-        console.log('🧹 Cleaning up follow status check interval')
         clearInterval(interval)
       }
-    } else {
-      console.log('⏭️ Not checking follow status:', {
-        profilesCount: profiles.length,
-        userFid: user?.fid,
-        currentUserFid: currentUser?.fid
-      })
     }
-  }, [profiles, user?.fid, currentUser?.fid, checkAllFollowStatuses])
+    // Remove checkAllFollowStatuses from dependencies to prevent infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profiles.length, user?.fid, currentUser?.fid])
 
   const handleRegister = async () => {
     if (!isInFarcaster || !currentUser) {
@@ -1100,17 +1084,7 @@ export default function FeaturedProfiles() {
                 }
                 const daysRemaining = getDaysRemaining(profile.expires_at)
                 
-                // Debug: Log profile and status for all profiles
-                console.log(`🔍 Profile ${index + 1} debug:`, {
-                  profileFid: profile.farcaster_fid,
-                  profileUsername: profile.username,
-                  userFid: user?.fid,
-                  status,
-                  statusFromState: followStatuses[profile.farcaster_fid],
-                  hasUser: !!user,
-                  isInFarcaster,
-                  allFollowStatuses: followStatuses
-                })
+                // Debug logging removed to prevent spam
 
                 return (
                   <div
