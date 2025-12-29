@@ -183,15 +183,27 @@ export const useFeaturedProfiles = () => {
   }
 
   // Check if following a user
-  const checkFollowStatus = async (followingFid) => {
+  const checkFollowStatus = async (followingFid, userFidOverride = null) => {
     try {
-      if (!user?.fid) {
-        console.log('⚠️ No user FID available for follow status check')
+      // Use override if provided, otherwise use user?.fid
+      const currentUserFid = userFidOverride || user?.fid
+      
+      if (!currentUserFid) {
+        console.log('⚠️ No user FID available for follow status check', {
+          userFidOverride,
+          userFid: user?.fid
+        })
         return { is_following: false, is_mutual: false }
       }
 
-      const url = `/api/follow/check/${user.fid}/${followingFid}`
-      console.log('🔍 Checking follow status:', { userFid: user.fid, followingFid, url })
+      const url = `/api/follow/check/${currentUserFid}/${followingFid}`
+      console.log('🔍 Checking follow status:', { 
+        currentUserFid, 
+        followingFid, 
+        url,
+        userFidOverride: userFidOverride || 'none',
+        userFid: user?.fid || 'none'
+      })
       
       const response = await fetch(url)
       
@@ -212,7 +224,7 @@ export const useFeaturedProfiles = () => {
       }
       
       const data = await response.json()
-      console.log('📥 Follow status API response:', { userFid: user.fid, followingFid, data })
+      console.log('📥 Follow status API response:', { currentUserFid, followingFid, data })
       
       if (!data.success) {
         console.warn('⚠️ API returned success: false:', data)
@@ -223,7 +235,7 @@ export const useFeaturedProfiles = () => {
         is_following: data.is_following || false,
         is_mutual: data.is_mutual || false
       }
-      console.log('✅ Follow status result:', { userFid: user.fid, followingFid, result })
+      console.log('✅ Follow status result:', { currentUserFid, followingFid, result })
       return result
     } catch (err) {
       console.error('❌ Error checking follow status:', err)

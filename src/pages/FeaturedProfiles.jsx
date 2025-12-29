@@ -134,7 +134,8 @@ export default function FeaturedProfiles() {
     // Check all profiles in parallel for better performance
     const statusPromises = profiles.map(async (profile) => {
       try {
-        const status = await checkFollowStatus(profile.farcaster_fid)
+        // Pass currentFid to checkFollowStatus to ensure we use the right user
+        const status = await checkFollowStatus(profile.farcaster_fid, currentFid)
         console.log(`✅ Status for ${profile.farcaster_fid}:`, status)
         return { fid: profile.farcaster_fid, status }
       } catch (err) {
