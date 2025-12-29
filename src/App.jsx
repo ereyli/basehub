@@ -295,14 +295,16 @@ function App() {
   console.log('🔍 App Environment Check:', { isFarcaster, isWeb })
   
   if (isWeb) {
-    // Web users get RainbowKit
+    // Web users get RainbowKit + FarcasterProvider for Featured Profiles
     console.log('🌐 Using RainbowKit for web users')
     return (
       <HelmetProvider>
         <WagmiProvider config={rainbowkitConfig}>
           <QueryClientProvider client={queryClient}>
             <RainbowKitProvider>
+              <FarcasterProvider>
               <WebAppContent />
+              </FarcasterProvider>
             </RainbowKitProvider>
           </QueryClientProvider>
         </WagmiProvider>
