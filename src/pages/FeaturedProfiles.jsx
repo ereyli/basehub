@@ -11,7 +11,8 @@ import {
   XCircle,
   AlertCircle,
   Star,
-  ExternalLink
+  ExternalLink,
+  Edit
 } from 'lucide-react'
 import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
@@ -57,6 +58,10 @@ export default function FeaturedProfiles() {
   const [followStatuses, setFollowStatuses] = useState({}) // { fid: { is_following, is_mutual } }
   const [isLoadingUser, setIsLoadingUser] = useState(false)
   const [currentUser, setCurrentUser] = useState(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editDescription, setEditDescription] = useState('')
+  const [editSubscription, setEditSubscription] = useState('daily')
+  const [isUpdating, setIsUpdating] = useState(false)
 
   // Update currentUser when user changes
   useEffect(() => {
@@ -189,6 +194,35 @@ export default function FeaturedProfiles() {
       alert('Registration failed: ' + err.message)
     } finally {
       setIsRegistering(false)
+    }
+  }
+
+  const handleEditProfile = () => {
+    if (!currentUserProfile) return
+    setEditDescription(currentUserProfile.description || '')
+    setEditSubscription(currentUserProfile.subscription_type || 'daily')
+    setShowEditModal(true)
+  }
+
+  const handleUpdateProfile = async () => {
+    if (!isInFarcaster || !currentUser) {
+      alert('Please connect your Farcaster account')
+      return
+    }
+
+    setIsUpdating(true)
+    try {
+      await registerProfile(
+        { description: editDescription.trim() || '' },
+        editSubscription
+      )
+      alert('Profile updated successfully!')
+      setShowEditModal(false)
+      loadProfiles()
+    } catch (err) {
+      alert('Update failed: ' + err.message)
+    } finally {
+      setIsUpdating(false)
     }
   }
 
@@ -1210,17 +1244,46 @@ export default function FeaturedProfiles() {
                         </div>
 
                         {/* Follow Button - Always show if not own profile */}
-                        {user?.fid === profile.farcaster_fid ? (
-                          <div style={{
-                            padding: '8px 16px',
-                            background: 'rgba(251, 191, 36, 0.1)',
-                            borderRadius: '8px',
-                            color: '#fbbf24',
-                            fontSize: '14px',
-                            textAlign: 'center',
-                            border: '1px solid rgba(251, 191, 36, 0.3)'
-                          }}>
-                            Your Profile
+                        {(user?.fid === profile.farcaster_fid || currentUser?.fid === profile.farcaster_fid) ? (
+                          <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+                            <div style={{
+                              padding: '8px 16px',
+                              background: 'rgba(251, 191, 36, 0.1)',
+                              borderRadius: '8px',
+                              color: '#fbbf24',
+                              fontSize: '14px',
+                              textAlign: 'center',
+                              border: '1px solid rgba(251, 191, 36, 0.3)'
+                            }}>
+                              Your Profile
+                            </div>
+                            <button
+                              onClick={handleEditProfile}
+                              style={{
+                                background: 'rgba(59, 130, 246, 0.1)',
+                                color: '#3b82f6',
+                                border: '1px solid rgba(59, 130, 246, 0.3)',
+                                borderRadius: '8px',
+                                padding: '8px 16px',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(59, 130, 246, 0.2)'
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)'
+                              }}
+                            >
+                              <Edit size={16} />
+                              Edit Profile
+                            </button>
                           </div>
                         ) : (
                           <button
@@ -1277,6 +1340,183 @@ export default function FeaturedProfiles() {
             </div>
           )}
         </div>
+
+        {/* Edit Profile Modal */}
+        {showEditModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+              borderRadius: '16px',
+              padding: '32px',
+              maxWidth: '500px',
+              width: '100%',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                <Edit size={24} style={{ color: '#3b82f6' }} />
+                <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#e5e7eb' }}>
+                  Edit Profile
+                </h2>
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ 
+                  display: 'block', 
+                  color: '#e5e7eb', 
+                  marginBottom: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600'
+                }}>
+                  Description (Optional)
+                </label>
+                <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="Tell others why they should follow you back..."
+                  maxLength={200}
+                  style={{
+                    width: '100%',
+                    minHeight: '100px',
+                    padding: '12px',
+                    background: 'rgba(30, 41, 59, 0.6)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '8px',
+                    color: '#e5e7eb',
+                    fontSize: '14px',
+                    resize: 'vertical',
+                    fontFamily: 'inherit'
+                  }}
+                />
+                <p style={{ 
+                  color: '#9ca3af', 
+                  fontSize: '12px', 
+                  margin: '4px 0 0 0',
+                  textAlign: 'right'
+                }}>
+                  {editDescription.length}/200 characters
+                </p>
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ 
+                  display: 'block', 
+                  color: '#e5e7eb', 
+                  marginBottom: '12px',
+                  fontSize: '14px',
+                  fontWeight: '600'
+                }}>
+                  Extend Subscription
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {Object.entries(SUBSCRIPTION_OPTIONS).map(([key, option]) => (
+                    <label
+                      key={key}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '12px',
+                        background: editSubscription === key 
+                          ? 'rgba(59, 130, 246, 0.2)' 
+                          : 'rgba(30, 41, 59, 0.6)',
+                        border: editSubscription === key
+                          ? '2px solid #3b82f6'
+                          : '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="editSubscription"
+                        value={key}
+                        checked={editSubscription === key}
+                        onChange={(e) => setEditSubscription(e.target.value)}
+                        style={{ cursor: 'pointer' }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ 
+                          color: '#e5e7eb', 
+                          fontWeight: '600',
+                          marginBottom: '4px'
+                        }}>
+                          {option.label} - {option.price}
+                        </div>
+                        <div style={{ color: '#9ca3af', fontSize: '12px' }}>
+                          {option.description}
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  disabled={isUpdating}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    background: 'rgba(30, 41, 59, 0.6)',
+                    color: '#e5e7eb',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: isUpdating ? 'not-allowed' : 'pointer',
+                    opacity: isUpdating ? 0.5 : 1
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUpdateProfile}
+                  disabled={isUpdating}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    background: isUpdating 
+                      ? 'rgba(59, 130, 246, 0.5)'
+                      : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: isUpdating ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  {isUpdating ? (
+                    <>
+                      <Loader2 size={16} className="spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    'Update Profile'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <style>{`
           @keyframes spin {
