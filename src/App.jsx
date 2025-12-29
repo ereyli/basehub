@@ -48,6 +48,14 @@ function FarcasterAppContent() {
   // Network interceptor - checks network on every render
   useNetworkInterceptor()
 
+  // Log current URL path for debugging Universal Links
+  useEffect(() => {
+    console.log('🔗 Current URL:', window.location.href)
+    console.log('🔗 Current pathname:', window.location.pathname)
+    console.log('🔗 Current search:', window.location.search)
+    console.log('🔗 Current hash:', window.location.hash)
+  }, [])
+
   // Progress bar animation and ready() call
   useEffect(() => {
     if (!isInitialized || !isReady) {

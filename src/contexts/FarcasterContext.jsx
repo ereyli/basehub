@@ -102,23 +102,26 @@ export const FarcasterProvider = ({ children }) => {
           return
         }
         
-        // Wait for complete DOM load
+        // Wait for complete DOM load (with timeout)
         if (document.readyState !== 'complete') {
-          await new Promise(resolve => {
-            const handleLoad = () => {
-              console.log('📋 DOM loaded completely')
-              resolve()
-            }
-            if (document.readyState === 'complete') {
-              handleLoad()
-            } else {
-              window.addEventListener('load', handleLoad, { once: true })
-            }
-          })
+          await Promise.race([
+            new Promise(resolve => {
+              const handleLoad = () => {
+                console.log('📋 DOM loaded completely')
+                resolve()
+              }
+              if (document.readyState === 'complete') {
+                handleLoad()
+              } else {
+                window.addEventListener('load', handleLoad, { once: true })
+              }
+            }),
+            new Promise(resolve => setTimeout(resolve, 3000)) // 3 second timeout
+          ])
         }
 
-        // Wait for React hydration and SDK to be ready
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        // Wait for React hydration and SDK to be ready (reduced from 2000ms to 500ms)
+        await new Promise(resolve => setTimeout(resolve, 500))
         
         // Check if SDK is available before calling ready
         if (typeof sdk === 'undefined' || !sdk.actions) {
@@ -128,7 +131,19 @@ export const FarcasterProvider = ({ children }) => {
         }
         
         console.log('📞 Calling sdk.actions.ready()...')
-        await sdk.actions.ready()
+        // Add timeout to ready() call - don't wait forever
+        const readyPromise = sdk.actions.ready()
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('ready() timeout')), 5000)
+        )
+        
+        try {
+          await Promise.race([readyPromise, timeoutPromise])
+          console.log('✅ sdk.actions.ready() completed')
+        } catch (readyError) {
+          console.warn('⚠️ ready() call failed or timed out:', readyError.message)
+          // Continue anyway - don't block the app
+        }
         
         setIsReady(true)
         console.log('✅ Farcaster Mini App is ready!')
