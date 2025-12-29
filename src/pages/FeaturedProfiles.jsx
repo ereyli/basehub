@@ -121,15 +121,10 @@ export default function FeaturedProfiles() {
       return
     }
 
-    if (!description.trim()) {
-      alert('Please write a description about mutual follows')
-      return
-    }
-
     setIsRegistering(true)
     try {
       await registerProfile(
-        { description: description.trim() },
+        { description: description.trim() || '' },
         selectedSubscription
       )
       alert('Profile registered successfully! You are now at the top of the list!')
@@ -563,7 +558,7 @@ export default function FeaturedProfiles() {
                         marginBottom: '8px',
                         display: 'block'
                       }}>
-                        Description (About Mutual Follows) *
+                        Description (About Mutual Follows) <span style={{ color: '#6b7280', fontSize: '12px' }}>(Optional)</span>
                       </label>
                       <textarea
                         value={description}
@@ -588,17 +583,17 @@ export default function FeaturedProfiles() {
                         marginTop: '4px',
                         marginBottom: 0
                       }}>
-                        Example: "Mutual follows welcome! Let's connect and grow together."
+                        Example: "Mutual follows welcome! Let's connect and grow together." (Optional - leave blank if you prefer)
                       </p>
                     </div>
 
                     {/* Register Button */}
                     <button
                       onClick={handleRegister}
-                      disabled={isRegistering || isLoading || !description.trim()}
+                      disabled={isRegistering || isLoading}
                       style={{
                         width: '100%',
-                        background: isRegistering || isLoading || !description.trim()
+                        background: isRegistering || isLoading
                           ? 'rgba(251, 191, 36, 0.3)'
                           : 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
                         color: 'white',
@@ -607,13 +602,13 @@ export default function FeaturedProfiles() {
                         padding: '16px',
                         fontSize: '16px',
                         fontWeight: '600',
-                        cursor: isRegistering || isLoading || !description.trim() ? 'not-allowed' : 'pointer',
+                        cursor: isRegistering || isLoading ? 'not-allowed' : 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '8px',
                         transition: 'all 0.2s',
-                        boxShadow: isRegistering || isLoading || !description.trim()
+                        boxShadow: isRegistering || isLoading
                           ? 'none'
                           : '0 4px 12px rgba(251, 191, 36, 0.3)'
                       }}
@@ -672,247 +667,6 @@ export default function FeaturedProfiles() {
           </div>
         )}
 
-        {/* Featured Profiles List */}
-          <div style={{
-            background: 'rgba(30, 41, 59, 0.8)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '16px',
-            padding: '24px',
-            marginBottom: '32px'
-          }}>
-            {/* User Profile Preview */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              marginBottom: '20px',
-              padding: '16px',
-              background: 'rgba(15, 23, 42, 0.6)',
-              borderRadius: '12px',
-              border: '1px solid rgba(251, 191, 36, 0.2)'
-            }}>
-              <img 
-                src={user?.pfp?.url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.fid || 'default'}`} 
-                alt={user?.displayName || user?.username || 'User'} 
-                onError={(e) => {
-                  e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.fid || 'default'}`
-                }}
-                style={{ 
-                  width: '64px', 
-                  height: '64px', 
-                  borderRadius: '50%', 
-                  objectFit: 'cover',
-                  border: '2px solid #fbbf24'
-                }} 
-              />
-              <div style={{ flex: 1 }}>
-                <p style={{ 
-                  margin: 0, 
-                  color: '#e5e7eb', 
-                  fontWeight: 'bold', 
-                  fontSize: '18px' 
-                }}>
-                  {user?.displayName || user?.username || `User ${user?.fid || ''}`}
-                </p>
-                <p style={{ 
-                  margin: '4px 0 0 0', 
-                  color: '#9ca3af', 
-                  fontSize: '14px' 
-                }}>
-                  @{user?.username || `fid-${user?.fid || ''}`}
-                </p>
-                {user?.bio?.text && (
-                  <p style={{ 
-                    margin: '8px 0 0 0', 
-                    color: '#9ca3af', 
-                    fontSize: '13px',
-                    fontStyle: 'italic'
-                  }}>
-                    {user?.bio?.text}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {!showRegisterForm ? (
-              <button
-                onClick={() => setShowRegisterForm(true)}
-                style={{
-                  width: '100%',
-                  background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  transition: 'all 0.2s',
-                  boxShadow: '0 4px 12px rgba(251, 191, 36, 0.3)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)'
-                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(251, 191, 36, 0.4)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(251, 191, 36, 0.3)'
-                }}
-              >
-                <Star size={20} />
-                Register Your Profile
-              </button>
-            ) : (
-              <div>
-                <h3 style={{ color: '#e5e7eb', marginBottom: '20px' }}>
-                  Register Your Profile
-                </h3>
-
-                {/* Subscription Type Selection */}
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ 
-                    color: '#9ca3af', 
-                    fontSize: '14px', 
-                    marginBottom: '8px',
-                    display: 'block'
-                  }}>
-                    Select Duration
-                  </label>
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(3, 1fr)', 
-                    gap: '12px' 
-                  }}>
-                    {Object.entries(SUBSCRIPTION_OPTIONS).map(([key, option]) => (
-                      <button
-                        key={key}
-                        onClick={() => setSelectedSubscription(key)}
-                        style={{
-                          padding: '16px',
-                          borderRadius: '12px',
-                          border: selectedSubscription === key 
-                            ? '2px solid #fbbf24' 
-                            : '2px solid rgba(255, 255, 255, 0.1)',
-                          background: selectedSubscription === key
-                            ? 'rgba(251, 191, 36, 0.1)'
-                            : 'rgba(30, 41, 59, 0.6)',
-                          color: '#e5e7eb',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        <div style={{ fontWeight: '700', marginBottom: '4px' }}>
-                          {option.label}
-                        </div>
-                        <div style={{ fontSize: '18px', color: '#fbbf24', marginBottom: '4px' }}>
-                          {option.price}
-                        </div>
-                        <div style={{ fontSize: '12px', color: '#9ca3af' }}>
-                          {option.description}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Description Input */}
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ 
-                    color: '#9ca3af', 
-                    fontSize: '14px', 
-                    marginBottom: '8px',
-                    display: 'block'
-                  }}>
-                    Description (About Mutual Follows) *
-                  </label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Write a short description about why people should follow you and how mutual follows work..."
-                    style={{
-                      width: '100%',
-                      minHeight: '100px',
-                      padding: '12px',
-                      borderRadius: '8px',
-                      background: 'rgba(15, 23, 42, 0.8)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      color: '#e5e7eb',
-                      fontSize: '14px',
-                      fontFamily: 'inherit',
-                      resize: 'vertical'
-                    }}
-                  />
-                  <p style={{ 
-                    color: '#6b7280', 
-                    fontSize: '12px', 
-                    marginTop: '4px',
-                    margin: 0
-                  }}>
-                    This description will be shown on your profile. Explain how mutual follows work!
-                  </p>
-                </div>
-
-                {/* Action Buttons */}
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    onClick={handleRegister}
-                    disabled={isRegistering || !description.trim()}
-                    style={{
-                      flex: 1,
-                      background: isRegistering || !description.trim()
-                        ? 'rgba(251, 191, 36, 0.3)'
-                        : 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '12px',
-                      padding: '14px',
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      cursor: isRegistering || !description.trim() ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px'
-                    }}
-                  >
-                    {isRegistering ? (
-                      <>
-                        <Loader2 size={18} className="spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <Star size={18} />
-                        Register ({SUBSCRIPTION_OPTIONS[selectedSubscription].price})
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowRegisterForm(false)
-                      setDescription('')
-                    }}
-                    style={{
-                      padding: '14px 24px',
-                      background: 'rgba(30, 41, 59, 0.6)',
-                      color: '#9ca3af',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '12px',
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
         )}
 
         {/* Profiles List */}

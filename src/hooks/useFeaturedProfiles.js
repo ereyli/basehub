@@ -44,6 +44,7 @@ export const useFeaturedProfiles = () => {
 
       // Call appropriate endpoint based on subscription type
       const endpoint = `/api/x402-featured-profile/${subscriptionType}`
+      console.log('🔐 Initiating x402 payment for:', { endpoint, subscriptionType, maxPayment: selectedPricing.maxPayment })
       
       const response = await fetchWithPayment(endpoint, {
         method: 'POST',
@@ -77,6 +78,7 @@ export const useFeaturedProfiles = () => {
       }
 
       const result = await response.json()
+      console.log('✅ Profile registered successfully:', result)
       return result
     } catch (err) {
       setError(err.message)
