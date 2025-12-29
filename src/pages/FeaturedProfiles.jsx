@@ -56,7 +56,7 @@ export default function FeaturedProfiles() {
   const [showRegisterForm, setShowRegisterForm] = useState(false)
   const [followStatuses, setFollowStatuses] = useState({}) // { fid: { is_following, is_mutual } }
   const [isLoadingUser, setIsLoadingUser] = useState(false)
-  const [currentUser, setCurrentUser] = useState(user)
+  const [currentUser, setCurrentUser] = useState(null)
 
   // Update currentUser when user changes
   useEffect(() => {
@@ -412,7 +412,7 @@ export default function FeaturedProfiles() {
                 <Loader2 size={32} className="spin" style={{ marginBottom: '16px', color: '#fbbf24' }} />
                 <p style={{ margin: 0 }}>Loading your profile...</p>
               </div>
-            ) : currentUser ? (
+            ) : currentUser && currentUser.fid ? (
               <>
                 {/* User Profile Preview */}
                 <div style={{
@@ -428,6 +428,9 @@ export default function FeaturedProfiles() {
                   <img 
                     src={currentUser?.pfp?.url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser?.fid || 'default'}`} 
                     alt={currentUser?.displayName || currentUser?.username || 'User'} 
+                    onError={(e) => {
+                      e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser?.fid || 'default'}`
+                    }}
                     style={{ 
                       width: '64px', 
                       height: '64px', 
@@ -459,7 +462,7 @@ export default function FeaturedProfiles() {
                         fontSize: '13px',
                         fontStyle: 'italic'
                       }}>
-                        {currentUser.bio.text}
+                        {currentUser?.bio?.text}
                       </p>
                     )}
                   </div>
@@ -687,8 +690,11 @@ export default function FeaturedProfiles() {
               border: '1px solid rgba(251, 191, 36, 0.2)'
             }}>
               <img 
-                src={user.pfp?.url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.fid}`} 
-                alt={user.displayName || user.username} 
+                src={user?.pfp?.url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.fid || 'default'}`} 
+                alt={user?.displayName || user?.username || 'User'} 
+                onError={(e) => {
+                  e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.fid || 'default'}`
+                }}
                 style={{ 
                   width: '64px', 
                   height: '64px', 
@@ -704,23 +710,23 @@ export default function FeaturedProfiles() {
                   fontWeight: 'bold', 
                   fontSize: '18px' 
                 }}>
-                  {user.displayName || user.username || `User ${user.fid}`}
+                  {user?.displayName || user?.username || `User ${user?.fid || ''}`}
                 </p>
                 <p style={{ 
                   margin: '4px 0 0 0', 
                   color: '#9ca3af', 
                   fontSize: '14px' 
                 }}>
-                  @{user.username || `fid-${user.fid}`}
+                  @{user?.username || `fid-${user?.fid || ''}`}
                 </p>
-                {user.bio?.text && (
+                {user?.bio?.text && (
                   <p style={{ 
                     margin: '8px 0 0 0', 
                     color: '#9ca3af', 
                     fontSize: '13px',
                     fontStyle: 'italic'
                   }}>
-                    {user.bio.text}
+                    {user?.bio?.text}
                   </p>
                 )}
               </div>
