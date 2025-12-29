@@ -56,7 +56,7 @@ export default function FeaturedProfiles() {
   const [description, setDescription] = useState('')
   const [isRegistering, setIsRegistering] = useState(false)
   const [showRegisterForm, setShowRegisterForm] = useState(false)
-  const [followStatuses, setFollowStatuses] = useState({}) // { fid: { is_following, is_mutual } }
+  const [followStatuses, setFollowStatuses] = useState({}) // { fid: { is_following } }
   const [isLoadingUser, setIsLoadingUser] = useState(false)
   const [currentUser, setCurrentUser] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -143,7 +143,7 @@ export default function FeaturedProfiles() {
       const hasChanged = Object.keys(statuses).some(fid => {
         const prev = prevStatuses[fid]
         const curr = statuses[fid]
-        return !prev || prev.is_following !== curr.is_following || prev.is_mutual !== curr.is_mutual
+        return !prev || prev.is_following !== curr.is_following
       })
       
       if (hasChanged) {
@@ -569,7 +569,7 @@ export default function FeaturedProfiles() {
             </h1>
           </div>
           <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0 }}>
-            Register your profile to appear at the top of the list. Connect with others through mutual follows!
+            Register your profile to appear at the top of the list. Connect with others in the BaseHub community!
           </p>
         </div>
 
@@ -775,12 +775,12 @@ export default function FeaturedProfiles() {
                         marginBottom: '8px',
                         display: 'block'
                       }}>
-                        Description (About Mutual Follows) <span style={{ color: '#6b7280', fontSize: '12px' }}>(Optional)</span>
+                        Description <span style={{ color: '#6b7280', fontSize: '12px' }}>(Optional)</span>
                       </label>
                       <textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Write a short description about why people should follow you and how mutual follows work..."
+                        placeholder="Tell others why they should follow you back..."
                         style={{
                           width: '100%',
                           minHeight: '100px',
@@ -800,7 +800,7 @@ export default function FeaturedProfiles() {
                         marginTop: '4px',
                         marginBottom: 0
                       }}>
-                        Example: "Mutual follows welcome! Let's connect and grow together." (Optional - leave blank if you prefer)
+                        Example: "Active Base builder. Let's connect and grow together!" (Optional - leave blank if you prefer)
                       </p>
                     </div>
 
@@ -914,8 +914,7 @@ export default function FeaturedProfiles() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {profiles.map((profile, index) => {
                 const status = followStatuses[profile.farcaster_fid] || { 
-                  is_following: false, 
-                  is_mutual: false 
+                  is_following: false 
                 }
                 const daysRemaining = getDaysRemaining(profile.expires_at)
                 
@@ -980,23 +979,7 @@ export default function FeaturedProfiles() {
                           }}>
                             {profile.display_name || 'Unknown'}
                           </h3>
-                          {status.is_mutual && (
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              background: 'rgba(16, 185, 129, 0.2)',
-                              border: '1px solid rgba(16, 185, 129, 0.4)',
-                              borderRadius: '6px',
-                              padding: '2px 8px',
-                              fontSize: '11px',
-                              color: '#10b981',
-                              fontWeight: '600'
-                            }}>
-                              <CheckCircle size={12} />
-                              Mutual
-                            </div>
-                          )}
+                          
                         </div>
 
                         <p style={{ 
@@ -1029,12 +1012,6 @@ export default function FeaturedProfiles() {
                             <Users size={16} style={{ color: '#9ca3af' }} />
                             <span style={{ color: '#9ca3af', fontSize: '14px' }}>
                               {profile.followers_count} Followers
-                            </span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <TrendingUp size={16} style={{ color: '#10b981' }} />
-                            <span style={{ color: '#9ca3af', fontSize: '14px' }}>
-                              {profile.mutual_follows_count} Mutual
                             </span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
