@@ -165,16 +165,42 @@ async function handleProfileRegistration(c, subscriptionType, pricing) {
       }, 400)
     }
 
-    // Calculate expiration date
-    const expiresAt = new Date()
-    expiresAt.setDate(expiresAt.getDate() + pricing.days)
+    // Check for existing active profile
+    const { data: existingActive } = await supabase
+      .from('featured_profiles')
+      .select('*')
+      .eq('farcaster_fid', farcaster_fid)
+      .eq('is_active', true)
+      .gt('expires_at', new Date().toISOString())
+      .single()
 
-    // Check for existing profile
+    // If user has an active profile, prevent re-registration
+    if (existingActive) {
+      const expiresDate = new Date(existingActive.expires_at)
+      const now = new Date()
+      const daysRemaining = Math.ceil((expiresDate - now) / (1000 * 60 * 60 * 24))
+      
+      return c.json({ 
+        success: false, 
+        error: `You already have an active featured profile! It expires in ${daysRemaining} day(s). Please wait until it expires before registering again.`,
+        existing_profile: {
+          expires_at: existingActive.expires_at,
+          days_remaining: daysRemaining,
+          subscription_type: existingActive.subscription_type
+        }
+      }, 400)
+    }
+
+    // Check for any existing profile (even expired) for position tracking
     const { data: existing } = await supabase
       .from('featured_profiles')
       .select('*')
       .eq('farcaster_fid', farcaster_fid)
       .single()
+
+    // Calculate expiration date
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + pricing.days)
 
     // Get next position (new profiles go to top)
     const { data: maxPos } = await supabase

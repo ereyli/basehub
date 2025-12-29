@@ -101,6 +101,12 @@ export default function FeaturedProfiles() {
     }
   }, [profiles, user?.fid])
 
+  // Check if current user already has an active profile
+  const currentUserProfile = profiles.find(p => p.farcaster_fid === currentUser?.fid)
+  const hasActiveProfile = currentUserProfile && 
+    currentUserProfile.is_active && 
+    new Date(currentUserProfile.expires_at) > new Date()
+
   const loadProfiles = async () => {
     const data = await getFeaturedProfiles()
     setProfiles(data)
@@ -477,7 +483,29 @@ export default function FeaturedProfiles() {
                   </div>
                 </div>
 
-                {!showRegisterForm ? (
+                {hasActiveProfile ? (
+                  <div style={{
+                    width: '100%',
+                    background: 'rgba(16, 185, 129, 0.1)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <CheckCircle size={20} style={{ color: '#10b981' }} />
+                      <p style={{ margin: 0, color: '#10b981', fontWeight: '600', fontSize: '16px' }}>
+                        Profile Already Active!
+                      </p>
+                    </div>
+                    <p style={{ margin: 0, color: '#9ca3af', fontSize: '14px' }}>
+                      Your profile expires in {getDaysRemaining(currentUserProfile.expires_at)} day(s)
+                    </p>
+                    <p style={{ margin: '8px 0 0 0', color: '#6b7280', fontSize: '12px' }}>
+                      You can register again after it expires.
+                    </p>
+                  </div>
+                ) : !showRegisterForm ? (
                   <button
                     onClick={() => setShowRegisterForm(true)}
                     style={{
