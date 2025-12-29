@@ -42,8 +42,8 @@ export const useFeaturedProfiles = () => {
         selectedPricing.maxPayment
       )
 
-      // Call appropriate endpoint based on subscription type
-      const endpoint = `/api/x402-featured-profile/${subscriptionType}`
+      // Single endpoint for all subscription types
+      const endpoint = `/api/x402-featured-profile`
       console.log('🔐 Initiating x402 payment for:', { endpoint, subscriptionType, maxPayment: selectedPricing.maxPayment })
       
       const response = await fetchWithPayment(endpoint, {
@@ -52,6 +52,7 @@ export const useFeaturedProfiles = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          subscription_type: subscriptionType, // Include subscription type in body
           farcaster_fid: user.fid,
           username: user.username,
           display_name: user.displayName,

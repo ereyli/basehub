@@ -72,68 +72,53 @@ app.get('/', (c) => {
 })
 
 // ==========================================
-// Payment middleware for each subscription type
+// Payment middleware - Single endpoint with dynamic pricing
 // ==========================================
 
-// Daily subscription (0.2 USDC)
-app.post('/daily', 
+app.use(
   paymentMiddleware(
     RECEIVING_ADDRESS,
     {
-      'POST /daily': {
-        price: PRICING.daily.price,
+      'POST /': {
+        price: '$0.20', // Minimum price (daily)
         network: NETWORK,
         config: {
-          description: `BaseHub Featured Profile - Daily subscription (${PRICING.daily.price} USDC)`,
+          description: 'BaseHub Featured Profile Registration',
           mimeType: 'application/json',
           maxTimeoutSeconds: 600,
         },
       },
     },
     facilitatorConfig
-  ),
-  async (c) => await handleProfileRegistration(c, 'daily', PRICING.daily)
+  )
 )
 
-// Weekly subscription (1.0 USDC)
-app.post('/weekly',
-  paymentMiddleware(
-    RECEIVING_ADDRESS,
-    {
-      'POST /weekly': {
-        price: PRICING.weekly.price,
-        network: NETWORK,
-        config: {
-          description: `BaseHub Featured Profile - Weekly subscription (${PRICING.weekly.price} USDC)`,
-          mimeType: 'application/json',
-          maxTimeoutSeconds: 600,
-        },
-      },
-    },
-    facilitatorConfig
-  ),
-  async (c) => await handleProfileRegistration(c, 'weekly', PRICING.weekly)
-)
-
-// Monthly subscription (6.0 USDC)
-app.post('/monthly',
-  paymentMiddleware(
-    RECEIVING_ADDRESS,
-    {
-      'POST /monthly': {
-        price: PRICING.monthly.price,
-        network: NETWORK,
-        config: {
-          description: `BaseHub Featured Profile - Monthly subscription (${PRICING.monthly.price} USDC)`,
-          mimeType: 'application/json',
-          maxTimeoutSeconds: 600,
-        },
-      },
-    },
-    facilitatorConfig
-  ),
-  async (c) => await handleProfileRegistration(c, 'monthly', PRICING.monthly)
-)
+// Single POST endpoint that handles all subscription types
+app.post('/', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { subscription_type } = body
+    
+    // Validate subscription type
+    if (!subscription_type || !PRICING[subscription_type]) {
+      return c.json({ 
+        success: false, 
+        error: 'Invalid subscription type. Must be: daily, weekly, or monthly' 
+      }, 400)
+    }
+    
+    const pricing = PRICING[subscription_type]
+    console.log(`💰 Processing ${subscription_type} subscription: ${pricing.price}`)
+    
+    return await handleProfileRegistration(c, subscription_type, pricing)
+  } catch (err) {
+    console.error('❌ Request error:', err)
+    return c.json({ 
+      success: false, 
+      error: 'Invalid request body' 
+    }, 400)
+  }
+})
 
 // ==========================================
 // Profile Registration Handler
@@ -253,9 +238,8 @@ export default async function handler(req, res) {
     const queryString = urlParts[1] || ''
     
     // For Vercel API routes, the path should be relative to the function
-    // If the request is to /api/x402-featured-profile, the path in the function is '/'
-    // If the request is to /api/x402-featured-profile/daily, the path in the function is '/daily'
-    const normalizedPath = path.replace(/^\/api\/x402-featured-profile/, '') || '/'
+    // All requests to /api/x402-featured-profile should map to '/'
+    const normalizedPath = '/'
     
     const fullUrl = `${protocol}://${host}${normalizedPath}${queryString ? `?${queryString}` : ''}`
     
