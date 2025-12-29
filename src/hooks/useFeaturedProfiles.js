@@ -190,6 +190,21 @@ export const useFeaturedProfiles = () => {
       }
 
       const response = await fetch(`/api/follow/check/${user.fid}/${followingFid}`)
+      
+      // Check if response is ok
+      if (!response.ok) {
+        console.warn(`⚠️ Follow status check failed: ${response.status} ${response.statusText}`)
+        return { is_following: false, is_mutual: false }
+      }
+      
+      // Check content type
+      const contentType = response.headers.get('content-type') || ''
+      if (!contentType.includes('application/json')) {
+        const text = await response.text()
+        console.warn('⚠️ Expected JSON but got:', contentType, text.substring(0, 100))
+        return { is_following: false, is_mutual: false }
+      }
+      
       const data = await response.json()
       
       if (!data.success) {

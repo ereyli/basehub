@@ -715,6 +715,17 @@ export default function FeaturedProfiles() {
                   is_mutual: false 
                 }
                 const daysRemaining = getDaysRemaining(profile.expires_at)
+                
+                // Debug: Log profile and status
+                if (index === 0) {
+                  console.log('🔍 Profile debug:', {
+                    profileFid: profile.farcaster_fid,
+                    userFid: user?.fid,
+                    status,
+                    hasUser: !!user,
+                    isInFarcaster
+                  })
+                }
 
                 return (
                   <div
@@ -840,16 +851,28 @@ export default function FeaturedProfiles() {
                           </div>
                         </div>
 
-                        {/* Follow Button */}
-                        {user?.fid && user.fid !== profile.farcaster_fid ? (
+                        {/* Follow Button - Always show if not own profile */}
+                        {user?.fid === profile.farcaster_fid ? (
+                          <div style={{
+                            padding: '8px 16px',
+                            background: 'rgba(251, 191, 36, 0.1)',
+                            borderRadius: '8px',
+                            color: '#fbbf24',
+                            fontSize: '14px',
+                            textAlign: 'center',
+                            border: '1px solid rgba(251, 191, 36, 0.3)'
+                          }}>
+                            Your Profile
+                          </div>
+                        ) : (
                           <button
                             onClick={() => handleFollow(profile.farcaster_fid, profile.username)}
                             style={{
-                              background: status.is_following
+                              background: status?.is_following
                                 ? 'rgba(30, 41, 59, 0.6)'
                                 : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
                               color: 'white',
-                              border: status.is_following
+                              border: status?.is_following
                                 ? '1px solid rgba(255, 255, 255, 0.1)'
                                 : 'none',
                               borderRadius: '8px',
@@ -860,10 +883,12 @@ export default function FeaturedProfiles() {
                               display: 'flex',
                               alignItems: 'center',
                               gap: '6px',
-                              transition: 'all 0.2s'
+                              transition: 'all 0.2s',
+                              width: '100%',
+                              justifyContent: 'center'
                             }}
                             onMouseEnter={(e) => {
-                              if (!status.is_following) {
+                              if (!status?.is_following) {
                                 e.currentTarget.style.transform = 'translateY(-1px)'
                                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)'
                               }
@@ -873,7 +898,7 @@ export default function FeaturedProfiles() {
                               e.currentTarget.style.boxShadow = 'none'
                             }}
                           >
-                            {status.is_following ? (
+                            {status?.is_following ? (
                               <>
                                 <CheckCircle size={16} />
                                 Following
@@ -885,18 +910,7 @@ export default function FeaturedProfiles() {
                               </>
                             )}
                           </button>
-                        ) : !user?.fid ? (
-                          <div style={{
-                            padding: '8px 16px',
-                            background: 'rgba(30, 41, 59, 0.6)',
-                            borderRadius: '8px',
-                            color: '#9ca3af',
-                            fontSize: '14px',
-                            textAlign: 'center'
-                          }}>
-                            Connect to follow
-                          </div>
-                        ) : null}
+                        )}
                       </div>
                     </div>
                   </div>

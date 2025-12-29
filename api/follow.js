@@ -343,7 +343,19 @@ export default async function handler(req, res) {
     // For Vercel API routes, the path should be relative to the function
     // If the request is to /api/follow, the path in the function is '/'
     // If the request is to /api/follow/check/123/456, the path in the function is '/check/123/456'
-    const normalizedPath = path.replace(/^\/api\/follow/, '') || '/'
+    let normalizedPath = path.replace(/^\/api\/follow/, '')
+    
+    // Ensure path starts with /
+    if (!normalizedPath || normalizedPath === '') {
+      normalizedPath = '/'
+    }
+    
+    // Ensure path starts with / if it doesn't
+    if (!normalizedPath.startsWith('/')) {
+      normalizedPath = '/' + normalizedPath
+    }
+    
+    console.log('🔍 Follow API path normalization:', { original: path, normalized: normalizedPath })
     
     const fullUrl = `${protocol}://${host}${normalizedPath}${queryString ? `?${queryString}` : ''}`
     
@@ -360,19 +372,34 @@ export default async function handler(req, res) {
 
     const response = await app.fetch(request)
 
+    // Set status first
+    res.status(response.status)
+
+    // Copy headers
     response.headers.forEach((value, key) => {
       res.setHeader(key, value)
     })
 
-    const responseBody = await response.text()
-    res.status(response.status)
-
-    if (responseBody) {
+    // Clone response to avoid body stream already read error
+    const clonedResponse = response.clone()
+    
+    // Check if response has body
+    if (response.body) {
       const contentType = response.headers.get('content-type') || ''
+      
       if (contentType.includes('application/json')) {
-        res.json(JSON.parse(responseBody))
+        try {
+          const jsonData = await clonedResponse.json()
+          res.json(jsonData)
+        } catch (parseError) {
+          console.error('❌ JSON parse error:', parseError)
+          const textData = await response.text()
+          console.error('Response text:', textData.substring(0, 200))
+          res.status(500).json({ error: 'Failed to parse response', message: parseError.message })
+        }
       } else {
-        res.send(responseBody)
+        const textData = await clonedResponse.text()
+        res.send(textData)
       }
     } else {
       res.end()
