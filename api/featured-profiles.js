@@ -10,12 +10,32 @@ const app = new Hono()
 console.log('🚀 Featured Profiles List API loaded')
 
 // Supabase client
+// RLS is enabled, so we need SERVICE_KEY to bypass RLS
+// Priority: SERVICE_KEY > ANON_KEY (for RLS bypass)
 const supabaseUrl = process.env.SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_KEY
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY
+const supabaseKey = supabaseServiceKey || supabaseAnonKey
+
+// Log environment variable status (without exposing values)
+console.log('📋 Supabase Configuration:', {
+  url: supabaseUrl ? '✅ Set' : '❌ Missing',
+  serviceKey: supabaseServiceKey ? '✅ Set' : '❌ Missing',
+  anonKey: supabaseAnonKey ? '✅ Set' : '❌ Missing',
+  usingKey: supabaseServiceKey ? 'SERVICE_KEY' : (supabaseAnonKey ? 'ANON_KEY' : 'NONE')
+})
 
 const supabase = supabaseUrl && supabaseKey
   ? createClient(supabaseUrl, supabaseKey)
   : null
+
+if (!supabase) {
+  console.error('❌ Supabase client not initialized!')
+  console.error('Missing:', {
+    url: !supabaseUrl,
+    key: !supabaseKey
+  })
+}
 
 app.use('/*', cors())
 
@@ -24,9 +44,15 @@ app.get('/', async (c) => {
   try {
     if (!supabase) {
       console.error('❌ Supabase not configured')
+      console.error('Environment check:', {
+        SUPABASE_URL: process.env.SUPABASE_URL ? 'Set' : 'Missing',
+        SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY ? 'Set' : 'Missing',
+        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY ? 'Set' : 'Missing'
+      })
       return c.json({ 
         success: false, 
-        error: 'Database not configured. Please check SUPABASE_URL and SUPABASE_ANON_KEY environment variables.' 
+        error: 'Database not configured. Please check SUPABASE_URL and SUPABASE_SERVICE_KEY (or SUPABASE_ANON_KEY) environment variables in Vercel.',
+        hint: 'RLS is enabled, so SUPABASE_SERVICE_KEY is recommended to bypass RLS policies.'
       }, 500)
     }
 
@@ -45,6 +71,14 @@ app.get('/', async (c) => {
     // Get active profiles, sorted by position (lowest = top) then by creation date
     // Filter by is_active and expires_at in the query
     const now = new Date().toISOString()
+    
+    console.log('🔍 Querying featured_profiles table...', {
+      filters: {
+        is_active: true,
+        expires_at_gt: now
+      }
+    })
+    
     const { data, error } = await supabase
       .from('featured_profiles')
       .select('*')
@@ -136,6 +170,34 @@ export default async function handler(req, res) {
       url: req.url,
       path: req.url?.split('?')[0]
     })
+    
+    // Check environment variables at runtime (Vercel may not expose them at module load)
+    if (!supabase) {
+      // Re-check at runtime
+      const runtimeUrl = process.env.SUPABASE_URL
+      const runtimeServiceKey = process.env.SUPABASE_SERVICE_KEY
+      const runtimeAnonKey = process.env.SUPABASE_ANON_KEY
+      const runtimeKey = runtimeServiceKey || runtimeAnonKey
+      
+      console.log('🔄 Runtime environment check:', {
+        url: runtimeUrl ? '✅ Set' : '❌ Missing',
+        serviceKey: runtimeServiceKey ? '✅ Set' : '❌ Missing',
+        anonKey: runtimeAnonKey ? '✅ Set' : '❌ Missing'
+      })
+      
+      if (!runtimeUrl || !runtimeKey) {
+        return res.status(500).json({
+          success: false,
+          error: 'Database not configured',
+          details: {
+            SUPABASE_URL: runtimeUrl ? 'Set' : 'Missing',
+            SUPABASE_SERVICE_KEY: runtimeServiceKey ? 'Set' : 'Missing',
+            SUPABASE_ANON_KEY: runtimeAnonKey ? 'Set' : 'Missing'
+          },
+          hint: 'Please configure SUPABASE_URL and SUPABASE_SERVICE_KEY in Vercel Environment Variables. RLS is enabled, so SERVICE_KEY is required.'
+        })
+      }
+    }
 
     const protocol = req.headers['x-forwarded-proto'] || 'https'
     const host = req.headers.host || req.headers['x-forwarded-host']
