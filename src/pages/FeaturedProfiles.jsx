@@ -42,7 +42,8 @@ export default function FeaturedProfiles() {
   const { user, isInFarcaster, sdk, isReady } = useFarcaster()
   const { 
     registerProfile, 
-    getFeaturedProfiles, 
+    getFeaturedProfiles,
+    updateProfileDescription,
     followUser, 
     unfollowUser,
     checkFollowStatus,
@@ -60,7 +61,6 @@ export default function FeaturedProfiles() {
   const [currentUser, setCurrentUser] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editDescription, setEditDescription] = useState('')
-  const [editSubscription, setEditSubscription] = useState('daily')
   const [isUpdating, setIsUpdating] = useState(false)
 
   // Update currentUser when user changes
@@ -200,23 +200,19 @@ export default function FeaturedProfiles() {
   const handleEditProfile = () => {
     if (!currentUserProfile) return
     setEditDescription(currentUserProfile.description || '')
-    setEditSubscription(currentUserProfile.subscription_type || 'daily')
     setShowEditModal(true)
   }
 
   const handleUpdateProfile = async () => {
-    if (!isInFarcaster || !currentUser) {
+    if (!currentUser?.fid) {
       alert('Please connect your Farcaster account')
       return
     }
 
     setIsUpdating(true)
     try {
-      await registerProfile(
-        { description: editDescription.trim() || '' },
-        editSubscription
-      )
-      alert('Profile updated successfully!')
+      await updateProfileDescription(currentUser.fid, editDescription.trim() || '')
+      alert('Profile description updated successfully!')
       setShowEditModal(false)
       loadProfiles()
     } catch (err) {
@@ -1409,59 +1405,21 @@ export default function FeaturedProfiles() {
                 </p>
               </div>
 
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{ 
-                  display: 'block', 
-                  color: '#e5e7eb', 
-                  marginBottom: '12px',
-                  fontSize: '14px',
-                  fontWeight: '600'
+              <div style={{ 
+                background: 'rgba(59, 130, 246, 0.1)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                borderRadius: '8px',
+                padding: '12px',
+                marginBottom: '24px'
+              }}>
+                <p style={{ 
+                  color: '#9ca3af', 
+                  fontSize: '13px', 
+                  margin: 0,
+                  lineHeight: '1.5'
                 }}>
-                  Extend Subscription
-                </label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {Object.entries(SUBSCRIPTION_OPTIONS).map(([key, option]) => (
-                    <label
-                      key={key}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        padding: '12px',
-                        background: editSubscription === key 
-                          ? 'rgba(59, 130, 246, 0.2)' 
-                          : 'rgba(30, 41, 59, 0.6)',
-                        border: editSubscription === key
-                          ? '2px solid #3b82f6'
-                          : '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      <input
-                        type="radio"
-                        name="editSubscription"
-                        value={key}
-                        checked={editSubscription === key}
-                        onChange={(e) => setEditSubscription(e.target.value)}
-                        style={{ cursor: 'pointer' }}
-                      />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ 
-                          color: '#e5e7eb', 
-                          fontWeight: '600',
-                          marginBottom: '4px'
-                        }}>
-                          {option.label} - {option.price}
-                        </div>
-                        <div style={{ color: '#9ca3af', fontSize: '12px' }}>
-                          {option.description}
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
+                  💡 You can only edit your description here. To extend your subscription, please register again after your current subscription expires.
+                </p>
               </div>
 
               <div style={{ display: 'flex', gap: '12px' }}>

@@ -264,9 +264,39 @@ export const useFeaturedProfiles = () => {
     }
   }
 
+  // Update profile description (no payment required)
+  const updateProfileDescription = async (fid, description) => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/featured-profiles/${fid}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ description })
+      })
+
+      const data = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to update profile')
+      }
+
+      return data.profile
+    } catch (err) {
+      setError(err.message)
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return {
     registerProfile,
     getFeaturedProfiles,
+    updateProfileDescription,
     followUser,
     unfollowUser,
     checkFollowStatus,

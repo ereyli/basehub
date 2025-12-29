@@ -205,6 +205,53 @@ app.get('/:fid', async (c) => {
   }
 })
 
+// Update profile description (no payment required)
+app.patch('/:fid', async (c) => {
+  try {
+    if (!supabase) {
+      return c.json({ success: false, error: 'Database not configured' }, 500)
+    }
+
+    const fid = parseInt(c.req.param('fid'))
+    
+    if (isNaN(fid)) {
+      return c.json({ success: false, error: 'Invalid FID' }, 400)
+    }
+
+    const { description } = await c.req.json()
+
+    // Update only the description field
+    const { data, error } = await supabase
+      .from('featured_profiles')
+      .update({ 
+        description: description || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('farcaster_fid', fid)
+      .select()
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return c.json({ success: false, error: 'Profile not found' }, 404)
+      }
+      throw error
+    }
+
+    return c.json({ 
+      success: true, 
+      message: 'Profile description updated successfully',
+      profile: data 
+    })
+  } catch (err) {
+    console.error('❌ Update profile error:', err)
+    return c.json({ 
+      success: false, 
+      error: err.message || 'Failed to update profile' 
+    }, 500)
+  }
+})
+
 // Vercel handler
 export default async function handler(req, res) {
   try {
