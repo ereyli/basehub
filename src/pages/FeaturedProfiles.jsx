@@ -150,14 +150,27 @@ export default function FeaturedProfiles() {
       return
     }
 
-    // Always open Warpcast first - this is the primary action
-    // Farcaster'da gerçek takip için Warpcast profil sayfasına yönlendir
-    const warpcastUrl = profileUsername 
-      ? `https://warpcast.com/${profileUsername}`
-      : `https://warpcast.com/~/profile/${profileFid}`
-    
-    // Open in new tab/window immediately
-    window.open(warpcastUrl, '_blank', 'noopener,noreferrer')
+    // Try to use Farcaster native viewProfile action first (better UX)
+    try {
+      if (sdk?.actions?.viewProfile) {
+        console.log('📱 Opening profile with Farcaster viewProfile:', profileFid)
+        await sdk.actions.viewProfile({ fid: profileFid })
+      } else {
+        // Fallback to Warpcast URL if viewProfile not available
+        console.log('⚠️ viewProfile not available, using Warpcast URL fallback')
+        const warpcastUrl = profileUsername 
+          ? `https://warpcast.com/${profileUsername}`
+          : `https://warpcast.com/~/profile/${profileFid}`
+        window.open(warpcastUrl, '_blank', 'noopener,noreferrer')
+      }
+    } catch (err) {
+      // Fallback to Warpcast URL on error
+      console.error('❌ Error opening profile with viewProfile:', err)
+      const warpcastUrl = profileUsername 
+        ? `https://warpcast.com/${profileUsername}`
+        : `https://warpcast.com/~/profile/${profileFid}`
+      window.open(warpcastUrl, '_blank', 'noopener,noreferrer')
+    }
 
     // Then try to update our database (non-blocking)
     try {
