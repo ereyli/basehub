@@ -732,8 +732,6 @@ export default function FeaturedProfiles() {
           </div>
         )}
 
-        )}
-
         {/* Profiles List */}
         <div>
           <h2 style={{ 

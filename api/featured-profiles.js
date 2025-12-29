@@ -108,10 +108,44 @@ app.get('/', async (c) => {
       throw error
     }
 
+    // Calculate actual follow counts from follows table
+    const profilesWithCounts = await Promise.all((data || []).map(async (profile) => {
+      try {
+        // Get actual followers count
+        const { count: followersCount } = await supabase
+          .from('follows')
+          .select('*', { count: 'exact', head: true })
+          .eq('following_fid', profile.farcaster_fid)
+        
+        // Get actual mutual follows count
+        const { count: mutualCount } = await supabase
+          .from('follows')
+          .select('*', { count: 'exact', head: true })
+          .eq('following_fid', profile.farcaster_fid)
+          .eq('is_mutual', true)
+
+        return {
+          ...profile,
+          followers_count: followersCount || 0,
+          mutual_follows_count: mutualCount || 0
+        }
+      } catch (countError) {
+        console.error(`❌ Error calculating counts for FID ${profile.farcaster_fid}:`, countError)
+        // Return profile with existing counts if calculation fails
+        return profile
+      }
+    }))
+
+    console.log('✅ Profiles with counts:', profilesWithCounts.map(p => ({
+      fid: p.farcaster_fid,
+      followers: p.followers_count,
+      mutual: p.mutual_follows_count
+    })))
+
     return c.json({ 
       success: true, 
-      profiles: data || [],
-      count: data?.length || 0
+      profiles: profilesWithCounts || [],
+      count: profilesWithCounts?.length || 0
     })
   } catch (err) {
     console.error('❌ List error:', {
