@@ -555,68 +555,6 @@ export default function FeaturedProfiles() {
     return days > 0 ? days : 0
   }
 
-  // Web users can view profiles but cannot register (Guest mode)
-            <div style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '12px',
-              padding: '16px',
-              background: 'rgba(15, 23, 42, 0.6)',
-              borderRadius: '12px'
-            }}>
-              <CheckCircle size={20} style={{ color: '#10b981', flexShrink: 0, marginTop: '2px' }} />
-              <div>
-                <p style={{ color: '#e5e7eb', margin: 0, fontWeight: '600', marginBottom: '4px' }}>
-                  Profil Kaydı
-                </p>
-                <p style={{ color: '#9ca3af', margin: 0, fontSize: '14px' }}>
-                  Profilinizi kaydedin ve listenin en üstünde görünün
-                </p>
-              </div>
-            </div>
-            
-            <div style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '12px',
-              padding: '16px',
-              background: 'rgba(15, 23, 42, 0.6)',
-              borderRadius: '12px'
-            }}>
-              <CheckCircle size={20} style={{ color: '#10b981', flexShrink: 0, marginTop: '2px' }} />
-              <div>
-                <p style={{ color: '#e5e7eb', margin: 0, fontWeight: '600', marginBottom: '4px' }}>
-                  Karşılıklı Takip
-                </p>
-                <p style={{ color: '#9ca3af', margin: 0, fontSize: '14px' }}>
-                  Diğer kullanıcılarla karşılıklı takip yapın ve topluluk oluşturun
-                </p>
-              </div>
-            </div>
-            
-            <div style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '12px',
-              padding: '16px',
-              background: 'rgba(15, 23, 42, 0.6)',
-              borderRadius: '12px'
-            }}>
-              <CheckCircle size={20} style={{ color: '#10b981', flexShrink: 0, marginTop: '2px' }} />
-              <div>
-                <p style={{ color: '#e5e7eb', margin: 0, fontWeight: '600', marginBottom: '4px' }}>
-                  Esnek Fiyatlandırma
-                </p>
-                <p style={{ color: '#9ca3af', margin: 0, fontSize: '14px' }}>
-                  Günlük (0.2 USDC), Haftalık (1.0 USDC) veya Aylık (6.0 USDC) seçenekleri
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <NetworkGuard>
