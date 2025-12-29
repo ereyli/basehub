@@ -138,7 +138,7 @@ export default function FeaturedProfiles() {
     }
   }
 
-  const handleFollow = async (profileFid) => {
+  const handleFollow = async (profileFid, profileUsername) => {
     if (!user?.fid) {
       alert('Please connect your Farcaster account')
       return
@@ -146,6 +146,8 @@ export default function FeaturedProfiles() {
 
     try {
       const status = followStatuses[profileFid]
+      
+      // First, save to our database
       if (status?.is_following) {
         await unfollowUser(profileFid)
         setFollowStatuses(prev => ({
@@ -166,6 +168,16 @@ export default function FeaturedProfiles() {
           alert('🎉 Mutual follow! You are now following each other!')
         }
       }
+      
+      // Then, open Warpcast profile for actual Farcaster follow
+      // Farcaster'da gerçek takip için Warpcast profil sayfasına yönlendir
+      const warpcastUrl = profileUsername 
+        ? `https://warpcast.com/${profileUsername}`
+        : `https://warpcast.com/~/profile/${profileFid}`
+      
+      // Open in new tab/window
+      window.open(warpcastUrl, '_blank', 'noopener,noreferrer')
+      
       loadProfiles() // Refresh to update counts
     } catch (err) {
       alert('Failed to follow: ' + err.message)
@@ -829,9 +841,9 @@ export default function FeaturedProfiles() {
                         </div>
 
                         {/* Follow Button */}
-                        {user?.fid && user.fid !== profile.farcaster_fid && (
+                        {user?.fid && user.fid !== profile.farcaster_fid ? (
                           <button
-                            onClick={() => handleFollow(profile.farcaster_fid)}
+                            onClick={() => handleFollow(profile.farcaster_fid, profile.username)}
                             style={{
                               background: status.is_following
                                 ? 'rgba(30, 41, 59, 0.6)'
@@ -847,7 +859,18 @@ export default function FeaturedProfiles() {
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '6px'
+                              gap: '6px',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!status.is_following) {
+                                e.currentTarget.style.transform = 'translateY(-1px)'
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)'
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0)'
+                              e.currentTarget.style.boxShadow = 'none'
                             }}
                           >
                             {status.is_following ? (
@@ -858,11 +881,22 @@ export default function FeaturedProfiles() {
                             ) : (
                               <>
                                 <UserPlus size={16} />
-                                Follow
+                                Follow on Farcaster
                               </>
                             )}
                           </button>
-                        )}
+                        ) : !user?.fid ? (
+                          <div style={{
+                            padding: '8px 16px',
+                            background: 'rgba(30, 41, 59, 0.6)',
+                            borderRadius: '8px',
+                            color: '#9ca3af',
+                            fontSize: '14px',
+                            textAlign: 'center'
+                          }}>
+                            Connect to follow
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </div>
