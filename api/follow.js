@@ -103,24 +103,37 @@ app.post('/', async (c) => {
     }
 
     // Increment followers count for the followed user
-    await supabase.rpc('increment_followers', { 
+    const { error: incFollowersError } = await supabase.rpc('increment_followers', { 
       profile_fid: following_fid 
-    }).catch(err => console.error('Error incrementing followers:', err))
+    })
+    if (incFollowersError) {
+      console.error('Error incrementing followers:', incFollowersError)
+    }
 
     // Increment following count for the follower (using RPC function)
-    await supabase.rpc('increment_following', { 
+    const { error: incFollowingError } = await supabase.rpc('increment_following', { 
       profile_fid: follower_fid 
-    }).catch(() => {}) // Ignore if not a featured profile
+    })
+    if (incFollowingError) {
+      // Ignore if not a featured profile
+      console.log('Note: increment_following error (may not be a featured profile):', incFollowingError.message)
+    }
 
     // If mutual, increment mutual follows count for both
     if (isMutual) {
-      await supabase.rpc('increment_mutual_follows', { 
+      const { error: incMutual1Error } = await supabase.rpc('increment_mutual_follows', { 
         profile_fid: follower_fid 
-      }).catch(() => {})
+      })
+      if (incMutual1Error) {
+        console.error('Error incrementing mutual follows (follower):', incMutual1Error)
+      }
       
-      await supabase.rpc('increment_mutual_follows', { 
+      const { error: incMutual2Error } = await supabase.rpc('increment_mutual_follows', { 
         profile_fid: following_fid 
-      }).catch(() => {})
+      })
+      if (incMutual2Error) {
+        console.error('Error incrementing mutual follows (following):', incMutual2Error)
+      }
     }
 
     console.log(`✅ Follow created: ${follower_fid} → ${following_fid} (mutual: ${isMutual})`)
@@ -189,32 +202,47 @@ app.delete('/', async (c) => {
 
     // Update reverse follow if it was mutual (remove mutual flag)
     if (wasMutual) {
-      await supabase
+      const { error: updateReverseError } = await supabase
         .from('follows')
         .update({ is_mutual: false })
         .eq('follower_fid', following_fid)
         .eq('following_fid', follower_fid)
-        .catch(err => console.error('Error updating reverse follow:', err))
+      
+      if (updateReverseError) {
+        console.error('Error updating reverse follow:', updateReverseError)
+      }
 
       // Decrement mutual follows count for both
-      await supabase.rpc('decrement_mutual_follows', { 
+      const { error: decMutual1Error } = await supabase.rpc('decrement_mutual_follows', { 
         profile_fid: follower_fid 
-      }).catch(() => {})
+      })
+      if (decMutual1Error) {
+        console.error('Error decrementing mutual follows (follower):', decMutual1Error)
+      }
       
-      await supabase.rpc('decrement_mutual_follows', { 
+      const { error: decMutual2Error } = await supabase.rpc('decrement_mutual_follows', { 
         profile_fid: following_fid 
-      }).catch(() => {})
+      })
+      if (decMutual2Error) {
+        console.error('Error decrementing mutual follows (following):', decMutual2Error)
+      }
     }
 
     // Decrement followers count
-    await supabase.rpc('decrement_followers', { 
+    const { error: decFollowersError } = await supabase.rpc('decrement_followers', { 
       profile_fid: following_fid 
-    }).catch(() => {})
+    })
+    if (decFollowersError) {
+      console.error('Error decrementing followers:', decFollowersError)
+    }
 
     // Decrement following count (using RPC function)
-    await supabase.rpc('decrement_following', { 
+    const { error: decFollowingError } = await supabase.rpc('decrement_following', { 
       profile_fid: follower_fid 
-    }).catch(() => {})
+    })
+    if (decFollowingError) {
+      console.log('Note: decrement_following error (may not be a featured profile):', decFollowingError.message)
+    }
 
     console.log(`✅ Unfollow successful: ${follower_fid} → ${following_fid}`)
 

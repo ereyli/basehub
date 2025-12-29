@@ -153,26 +153,91 @@ export default function FeaturedProfiles() {
     const currentStatus = followStatuses[profileFid]
     const wasFollowing = currentStatus?.is_following || false
 
-    // Optimistic update: Assume user will follow, update UI immediately
-    if (!wasFollowing) {
-      setFollowStatuses(prev => ({
-        ...prev,
-        [profileFid]: { is_following: true, is_mutual: false }
-      }))
+    // If already following, unfollow instead
+    if (wasFollowing) {
+      try {
+        // Optimistic update
+        setFollowStatuses(prev => ({
+          ...prev,
+          [profileFid]: { is_following: false, is_mutual: false }
+        }))
+        
+        await unfollowUser(profileFid)
+        setFollowStatuses(prev => ({
+          ...prev,
+          [profileFid]: { is_following: false, is_mutual: false }
+        }))
+        
+        // Refresh profiles to update counts
+        loadProfiles()
+      } catch (err) {
+        // Revert optimistic update on error
+        setFollowStatuses(prev => ({
+          ...prev,
+          [profileFid]: currentStatus
+        }))
+        console.error('Unfollow error:', err)
+        alert('Failed to unfollow. Please try again.')
+      }
+      return
     }
+
+    // Optimistic update: Assume user will follow, update UI immediately
+    setFollowStatuses(prev => ({
+      ...prev,
+      [profileFid]: { is_following: true, is_mutual: false }
+    }))
 
     // Try to use Farcaster native viewProfile action first (better UX)
     try {
       if (sdk?.actions?.viewProfile) {
         console.log('📱 Opening profile with Farcaster viewProfile:', profileFid)
+        
+        // Immediately try to sync with DB (optimistic)
+        followUser(profileFid).then(result => {
+          console.log('✅ Follow synced to DB:', result)
+          setFollowStatuses(prev => ({
+            ...prev,
+            [profileFid]: { 
+              is_following: true, 
+              is_mutual: result.is_mutual || false 
+            }
+          }))
+          
+          if (result.is_mutual) {
+            setTimeout(() => {
+              alert('🎉 Mutual follow! You are now following each other!')
+            }, 500)
+          }
+          
+          // Refresh profiles to update counts
+          loadProfiles()
+        }).catch(syncErr => {
+          // If already following, that's fine - just update status
+          if (syncErr.message && syncErr.message.includes('Already following')) {
+            console.log('Already following in DB, updating status')
+            setFollowStatuses(prev => ({
+              ...prev,
+              [profileFid]: { is_following: true, is_mutual: false }
+            }))
+          } else {
+            console.log('Initial sync error (will retry):', syncErr.message)
+          }
+        })
+        
+        // Open profile
         await sdk.actions.viewProfile({ fid: profileFid })
         
         // After viewProfile closes, check follow status multiple times
         // This handles the case where user follows in Farcaster but our DB doesn't know
+        let checkCount = 0
+        const maxChecks = 20 // Check for 10 seconds (20 * 500ms)
+        
         const checkInterval = setInterval(async () => {
+          checkCount++
           try {
             const newStatus = await checkFollowStatus(profileFid)
-            console.log('🔄 Follow status check:', { profileFid, newStatus, wasFollowing })
+            console.log('🔄 Follow status check:', { profileFid, newStatus, checkCount })
             
             // If user is now following (either in our DB or just followed in Farcaster)
             if (newStatus.is_following) {
@@ -214,17 +279,18 @@ export default function FeaturedProfiles() {
               
               // Refresh profiles to update counts
               loadProfiles()
+            } else if (checkCount >= maxChecks) {
+              // Stop checking after max attempts
+              clearInterval(checkInterval)
+              console.log('⏱️ Stopped checking follow status after max attempts')
             }
           } catch (checkErr) {
             console.error('Error checking follow status:', checkErr)
+            if (checkCount >= maxChecks) {
+              clearInterval(checkInterval)
+            }
           }
-        }, 1500) // Check every 1.5 seconds
-        
-        // Stop checking after 30 seconds
-        setTimeout(() => {
-          clearInterval(checkInterval)
-          console.log('⏱️ Stopped checking follow status after 30 seconds')
-        }, 30000)
+        }, 500) // Check every 500ms (faster)
       } else {
         // Fallback to Warpcast URL if viewProfile not available
         console.log('⚠️ viewProfile not available, using Warpcast URL fallback')
@@ -294,21 +360,12 @@ export default function FeaturedProfiles() {
   // Helper function to sync follow status with database
   const syncFollowStatus = async (profileFid, wasFollowing) => {
     try {
-      const status = followStatuses[profileFid]
+      const currentStatus = followStatuses[profileFid]
+      const isCurrentlyFollowing = currentStatus?.is_following || false
       
-      if (status?.is_following) {
-        // Already following - try to unfollow in our DB
-        try {
-          await unfollowUser(profileFid)
-          setFollowStatuses(prev => ({
-            ...prev,
-            [profileFid]: { is_following: false, is_mutual: false }
-          }))
-        } catch (unfollowErr) {
-          console.log('Unfollow in DB failed (non-critical):', unfollowErr.message)
-        }
-      } else {
-        // Not following - try to follow in our DB
+      // If status changed, sync with DB
+      if (isCurrentlyFollowing && !wasFollowing) {
+        // User started following - sync to DB
         try {
           const result = await followUser(profileFid)
           setFollowStatuses(prev => ({
@@ -334,6 +391,17 @@ export default function FeaturedProfiles() {
           } else {
             console.log('Follow in DB failed (non-critical):', followErr.message)
           }
+        }
+      } else if (!isCurrentlyFollowing && wasFollowing) {
+        // User stopped following - sync to DB
+        try {
+          await unfollowUser(profileFid)
+          setFollowStatuses(prev => ({
+            ...prev,
+            [profileFid]: { is_following: false, is_mutual: false }
+          }))
+        } catch (unfollowErr) {
+          console.log('Unfollow in DB failed (non-critical):', unfollowErr.message)
         }
       }
       
