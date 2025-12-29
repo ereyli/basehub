@@ -174,12 +174,6 @@ export default async function handler(req, res) {
     
     // Check environment variables at runtime (Vercel may not expose them at module load)
     if (!supabase) {
-      // Re-check at runtime
-      const runtimeUrl = process.env.SUPABASE_URL
-      const runtimeServiceKey = process.env.SUPABASE_SERVICE_KEY
-      const runtimeAnonKey = process.env.SUPABASE_ANON_KEY
-      const runtimeKey = runtimeServiceKey || runtimeAnonKey
-      
       // Check both VITE_ and direct env vars at runtime
       const runtimeUrlDirect = process.env.SUPABASE_URL
       const runtimeUrlVite = process.env.VITE_SUPABASE_URL
