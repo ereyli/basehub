@@ -4,12 +4,80 @@
 
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { paymentMiddleware } from 'x402-hono'
+import { facilitator } from '@coinbase/x402'
 import { createPublicClient, http, formatUnits } from 'viem'
 import { base, mainnet, polygon, arbitrum, optimism, bsc, avalanche } from 'viem/chains'
 
 const app = new Hono()
 
 console.log('🚀 Allowance Cleaner API loaded')
+
+// ==========================================
+// x402 Payment Configuration
+// ==========================================
+const NETWORK = 'base' // Payment network (Base mainnet)
+const RECEIVING_ADDRESS = '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
+const PRICE = '$0.10' // 0.10 USDC
+
+// Configure facilitator
+let facilitatorConfig
+if (process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET) {
+  facilitatorConfig = facilitator
+  console.log('✅ Using CDP facilitator for Base mainnet')
+} else {
+  facilitatorConfig = { url: 'https://x402.org/facilitator' }
+  console.log('⚠️  WARNING: No CDP API keys found!')
+}
+
+// ==========================================
+// CORS middleware
+// ==========================================
+app.use('/*', cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization', 'X-PAYMENT'],
+  exposeHeaders: ['X-PAYMENT-RESPONSE'],
+  maxAge: 86400,
+}))
+
+// ==========================================
+// Health check endpoint
+// ==========================================
+app.get('/', (c) => {
+  return c.json({
+    status: 'ok',
+    service: 'Allowance Cleaner',
+    price: PRICE,
+    paymentNetwork: NETWORK,
+    supportedNetworks: ['base', 'ethereum', 'polygon', 'arbitrum', 'optimism', 'bsc', 'avalanche'],
+  })
+})
+
+// ==========================================
+// Apply x402 payment middleware (Base network)
+// ==========================================
+app.use(
+  paymentMiddleware(
+    RECEIVING_ADDRESS,
+    {
+      'POST /': {
+        price: PRICE,
+        network: NETWORK,
+        config: {
+          description: 'BaseHub Allowance Cleaner - Pay 0.10 USDC on Base',
+          mimeType: 'application/json',
+          maxTimeoutSeconds: 600,
+        },
+      },
+    },
+    facilitatorConfig
+  )
+)
+
+// ==========================================
+// API Configuration
+// ==========================================
 
 // Configuration - Etherscan API V2 (one key for all chains!)
 // Reference: https://docs.etherscan.io/v2-migration
