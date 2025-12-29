@@ -90,6 +90,19 @@ export const useFeaturedProfiles = () => {
   const getFeaturedProfiles = async () => {
     try {
       const response = await fetch('/api/featured-profiles')
+      
+      // Check if response is ok
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      // Check content type
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text()
+        throw new Error(`Expected JSON but got: ${contentType}. Response: ${text.substring(0, 100)}`)
+      }
+      
       const data = await response.json()
       
       if (!data.success) {
@@ -98,6 +111,7 @@ export const useFeaturedProfiles = () => {
 
       return data.profiles || []
     } catch (err) {
+      console.error('Error fetching featured profiles:', err)
       setError(err.message)
       return []
     }

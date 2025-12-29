@@ -10,7 +10,8 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Star
+  Star,
+  ExternalLink
 } from 'lucide-react'
 import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
@@ -157,6 +158,178 @@ export default function FeaturedProfiles() {
     const diff = expires - now
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
     return days > 0 ? days : 0
+  }
+
+  // Farcaster-only guard for web users
+  if (!isInFarcaster) {
+    return (
+      <div className="card" style={{ maxWidth: '1000px', margin: '0 auto' }}>
+        <BackButton />
+        
+        <div style={{
+          background: 'rgba(30, 41, 59, 0.95)',
+          borderRadius: '20px',
+          padding: '48px',
+          textAlign: 'center',
+          border: '2px solid rgba(251, 191, 36, 0.2)',
+          marginTop: '32px'
+        }}>
+          <div style={{
+            width: '80px',
+            height: '80px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 24px',
+            boxShadow: '0 8px 24px rgba(251, 191, 36, 0.3)'
+          }}>
+            <Star size={40} style={{ color: 'white' }} />
+          </div>
+          
+          <h1 style={{ 
+            fontSize: '32px', 
+            fontWeight: 'bold', 
+            color: '#e5e7eb', 
+            marginBottom: '16px' 
+          }}>
+            Featured Profiles
+          </h1>
+          
+          <p style={{ 
+            color: '#9ca3af', 
+            fontSize: '18px', 
+            marginBottom: '32px',
+            lineHeight: '1.6'
+          }}>
+            Bu özellik sadece <strong style={{ color: '#fbbf24' }}>Farcaster</strong> veya <strong style={{ color: '#fbbf24' }}>BaseApp</strong> içinde mevcuttur.
+          </p>
+          
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.8)',
+            borderRadius: '16px',
+            padding: '24px',
+            marginBottom: '32px',
+            border: '1px solid rgba(251, 191, 36, 0.2)'
+          }}>
+            <p style={{ 
+              color: '#e5e7eb', 
+              fontSize: '16px', 
+              marginBottom: '20px',
+              fontWeight: '600'
+            }}>
+              Farcaster Mini App'e erişmek için:
+            </p>
+            <a
+              href="https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '12px',
+                background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                color: 'white',
+                padding: '16px 32px',
+                borderRadius: '12px',
+                fontSize: '18px',
+                fontWeight: '600',
+                textDecoration: 'none',
+                transition: 'all 0.3s',
+                boxShadow: '0 4px 12px rgba(251, 191, 36, 0.3)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(251, 191, 36, 0.4)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(251, 191, 36, 0.3)'
+              }}
+            >
+              <ExternalLink size={20} />
+              Farcaster Mini App'i Aç
+            </a>
+            <p style={{ 
+              color: '#9ca3af', 
+              fontSize: '14px', 
+              marginTop: '16px',
+              marginBottom: 0
+            }}>
+              veya Warpcast, Farcord gibi Farcaster istemcilerinde BaseHub'ı açın
+            </p>
+          </div>
+          
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            marginTop: '32px',
+            textAlign: 'left',
+            maxWidth: '600px',
+            margin: '32px auto 0'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '12px',
+              padding: '16px',
+              background: 'rgba(15, 23, 42, 0.6)',
+              borderRadius: '12px'
+            }}>
+              <CheckCircle size={20} style={{ color: '#10b981', flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <p style={{ color: '#e5e7eb', margin: 0, fontWeight: '600', marginBottom: '4px' }}>
+                  Profil Kaydı
+                </p>
+                <p style={{ color: '#9ca3af', margin: 0, fontSize: '14px' }}>
+                  Profilinizi kaydedin ve listenin en üstünde görünün
+                </p>
+              </div>
+            </div>
+            
+            <div style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '12px',
+              padding: '16px',
+              background: 'rgba(15, 23, 42, 0.6)',
+              borderRadius: '12px'
+            }}>
+              <CheckCircle size={20} style={{ color: '#10b981', flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <p style={{ color: '#e5e7eb', margin: 0, fontWeight: '600', marginBottom: '4px' }}>
+                  Karşılıklı Takip
+                </p>
+                <p style={{ color: '#9ca3af', margin: 0, fontSize: '14px' }}>
+                  Diğer kullanıcılarla karşılıklı takip yapın ve topluluk oluşturun
+                </p>
+              </div>
+            </div>
+            
+            <div style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '12px',
+              padding: '16px',
+              background: 'rgba(15, 23, 42, 0.6)',
+              borderRadius: '12px'
+            }}>
+              <CheckCircle size={20} style={{ color: '#10b981', flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <p style={{ color: '#e5e7eb', margin: 0, fontWeight: '600', marginBottom: '4px' }}>
+                  Esnek Fiyatlandırma
+                </p>
+                <p style={{ color: '#9ca3af', margin: 0, fontSize: '14px' }}>
+                  Günlük (0.2 USDC), Haftalık (1.0 USDC) veya Aylık (6.0 USDC) seçenekleri
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
