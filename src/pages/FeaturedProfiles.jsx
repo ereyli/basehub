@@ -555,139 +555,7 @@ export default function FeaturedProfiles() {
     return days > 0 ? days : 0
   }
 
-  // Farcaster-only guard for web users
-  if (!isInFarcaster) {
-    return (
-      <div className="card" style={{ maxWidth: '1000px', margin: '0 auto' }}>
-        <BackButton />
-        
-        <div style={{
-          background: 'rgba(30, 41, 59, 0.95)',
-          borderRadius: '20px',
-          padding: '48px',
-          textAlign: 'center',
-          border: '2px solid rgba(251, 191, 36, 0.2)',
-          marginTop: '32px'
-        }}>
-          <div style={{
-            width: '80px',
-            height: '80px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 24px',
-            boxShadow: '0 8px 24px rgba(251, 191, 36, 0.3)'
-          }}>
-            <Star size={40} style={{ color: 'white' }} />
-          </div>
-          
-          <h1 style={{ 
-            fontSize: '32px', 
-            fontWeight: 'bold', 
-            color: '#e5e7eb', 
-            marginBottom: '16px' 
-          }}>
-            Featured Profiles
-          </h1>
-          
-          <div style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '2px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: '16px',
-            padding: '24px',
-            marginBottom: '32px'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              marginBottom: '12px'
-            }}>
-              <AlertCircle size={24} style={{ color: '#ef4444', flexShrink: 0 }} />
-              <h2 style={{ 
-                color: '#ef4444', 
-                fontSize: '20px', 
-                fontWeight: 'bold',
-                margin: 0
-              }}>
-                Bu Özellik Sadece Farcaster Mini App İçin Yapılmıştır
-              </h2>
-            </div>
-            <p style={{ 
-              color: '#9ca3af', 
-              fontSize: '16px', 
-              marginBottom: '24px',
-              lineHeight: '1.6',
-              marginTop: '8px'
-            }}>
-              Featured Profiles özelliğini kullanmak için lütfen Farcaster Mini App'i açın. Bu özellik Warpcast, Farcord gibi Farcaster istemcilerinde çalışmaktadır.
-            </p>
-            
-            <a
-              href="https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '12px',
-                background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-                color: 'white',
-                padding: '18px 36px',
-                borderRadius: '12px',
-                fontSize: '20px',
-                fontWeight: '700',
-                textDecoration: 'none',
-                transition: 'all 0.3s',
-                boxShadow: '0 4px 12px rgba(251, 191, 36, 0.3)',
-                width: '100%',
-                justifyContent: 'center',
-                marginBottom: '16px'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)'
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(251, 191, 36, 0.4)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(251, 191, 36, 0.3)'
-              }}
-            >
-              <ExternalLink size={24} />
-              Farcaster Mini App'i Aç
-            </a>
-            
-            <div style={{
-              background: 'rgba(15, 23, 42, 0.6)',
-              borderRadius: '12px',
-              padding: '16px',
-              marginTop: '16px'
-            }}>
-              <p style={{ 
-                color: '#9ca3af', 
-                fontSize: '14px', 
-                margin: 0,
-                textAlign: 'center'
-              }}>
-                <strong style={{ color: '#e5e7eb' }}>Nasıl Açılır?</strong><br />
-                Warpcast, Farcord veya diğer Farcaster istemcilerinde BaseHub uygulamasını açın, 
-                ardından <strong style={{ color: '#fbbf24' }}>SOCIAL</strong> kategorisinden 
-                <strong style={{ color: '#fbbf24' }}> Featured Profiles</strong> özelliğine erişebilirsiniz.
-              </p>
-            </div>
-          </div>
-          
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-            marginTop: '32px',
-            textAlign: 'left',
-            maxWidth: '600px',
-            margin: '32px auto 0'
-          }}>
+  // Web users can view profiles but cannot register (Guest mode)
             <div style={{
               display: 'flex',
               alignItems: 'flex-start',
@@ -754,6 +622,38 @@ export default function FeaturedProfiles() {
     <NetworkGuard>
       <div className="card" style={{ maxWidth: '1000px', margin: '0 auto' }}>
         <BackButton />
+        
+        {/* Web User Banner */}
+        {!isInFarcaster && (
+          <div style={{
+            background: 'rgba(59, 130, 246, 0.1)',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            borderRadius: '12px',
+            padding: '16px',
+            marginBottom: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <AlertCircle size={20} style={{ color: '#3b82f6', flexShrink: 0 }} />
+            <div>
+              <p style={{ color: '#e5e7eb', margin: 0, fontSize: '14px', fontWeight: '600' }}>
+                Viewing as Guest
+              </p>
+              <p style={{ color: '#9ca3af', margin: '4px 0 0 0', fontSize: '13px' }}>
+                To register your profile or follow others, please open this page in{' '}
+                <a 
+                  href="https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub/featured-profiles"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: '#3b82f6', textDecoration: 'underline' }}
+                >
+                  Farcaster Mini App
+                </a>
+              </p>
+            </div>
+          </div>
+        )}
         
         <div style={{ marginBottom: '32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
