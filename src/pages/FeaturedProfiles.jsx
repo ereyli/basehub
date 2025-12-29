@@ -120,18 +120,30 @@ export default function FeaturedProfiles() {
   }
 
   const checkAllFollowStatuses = async () => {
-    if (!user?.fid || profiles.length === 0) return
+    if (!user?.fid || profiles.length === 0) {
+      console.log('⏭️ Skipping follow status check:', { 
+        hasUser: !!user, 
+        userFid: user?.fid, 
+        profilesCount: profiles.length 
+      })
+      return
+    }
     
-    console.log('🔄 Checking follow statuses for all profiles...')
+    console.log('🔄 Checking follow statuses for all profiles...', {
+      userFid: user.fid,
+      profilesCount: profiles.length,
+      profileFids: profiles.map(p => p.farcaster_fid)
+    })
     const statuses = {}
     
     // Check all profiles in parallel for better performance
     const statusPromises = profiles.map(async (profile) => {
       try {
         const status = await checkFollowStatus(profile.farcaster_fid)
+        console.log(`✅ Status for ${profile.farcaster_fid}:`, status)
         return { fid: profile.farcaster_fid, status }
       } catch (err) {
-        console.error(`Error checking status for ${profile.farcaster_fid}:`, err)
+        console.error(`❌ Error checking status for ${profile.farcaster_fid}:`, err)
         return { fid: profile.farcaster_fid, status: { is_following: false, is_mutual: false } }
       }
     })
@@ -142,7 +154,9 @@ export default function FeaturedProfiles() {
     })
     
     console.log('✅ Follow statuses updated:', statuses)
+    console.log('📊 Current followStatuses state before update:', followStatuses)
     setFollowStatuses(statuses)
+    console.log('✅ setFollowStatuses called with:', statuses)
   }
 
   const handleRegister = async () => {
@@ -1059,16 +1073,17 @@ export default function FeaturedProfiles() {
                 }
                 const daysRemaining = getDaysRemaining(profile.expires_at)
                 
-                // Debug: Log profile and status
-                if (index === 0) {
-                  console.log('🔍 Profile debug:', {
-                    profileFid: profile.farcaster_fid,
-                    userFid: user?.fid,
-                    status,
-                    hasUser: !!user,
-                    isInFarcaster
-                  })
-                }
+                // Debug: Log profile and status for all profiles
+                console.log(`🔍 Profile ${index + 1} debug:`, {
+                  profileFid: profile.farcaster_fid,
+                  profileUsername: profile.username,
+                  userFid: user?.fid,
+                  status,
+                  statusFromState: followStatuses[profile.farcaster_fid],
+                  hasUser: !!user,
+                  isInFarcaster,
+                  allFollowStatuses: followStatuses
+                })
 
                 return (
                   <div

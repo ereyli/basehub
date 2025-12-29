@@ -186,14 +186,20 @@ export const useFeaturedProfiles = () => {
   const checkFollowStatus = async (followingFid) => {
     try {
       if (!user?.fid) {
+        console.log('⚠️ No user FID available for follow status check')
         return { is_following: false, is_mutual: false }
       }
 
-      const response = await fetch(`/api/follow/check/${user.fid}/${followingFid}`)
+      const url = `/api/follow/check/${user.fid}/${followingFid}`
+      console.log('🔍 Checking follow status:', { userFid: user.fid, followingFid, url })
+      
+      const response = await fetch(url)
       
       // Check if response is ok
       if (!response.ok) {
         console.warn(`⚠️ Follow status check failed: ${response.status} ${response.statusText}`)
+        const errorText = await response.text().catch(() => '')
+        console.warn('Error response:', errorText)
         return { is_following: false, is_mutual: false }
       }
       
@@ -206,17 +212,21 @@ export const useFeaturedProfiles = () => {
       }
       
       const data = await response.json()
+      console.log('📥 Follow status API response:', { userFid: user.fid, followingFid, data })
       
       if (!data.success) {
+        console.warn('⚠️ API returned success: false:', data)
         return { is_following: false, is_mutual: false }
       }
 
-      return {
+      const result = {
         is_following: data.is_following || false,
         is_mutual: data.is_mutual || false
       }
+      console.log('✅ Follow status result:', { userFid: user.fid, followingFid, result })
+      return result
     } catch (err) {
-      console.error('Error checking follow status:', err)
+      console.error('❌ Error checking follow status:', err)
       return { is_following: false, is_mutual: false }
     }
   }
