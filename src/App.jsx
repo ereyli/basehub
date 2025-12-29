@@ -32,6 +32,7 @@ import SharePage from './pages/SharePage'
 import WalletAnalysis from './pages/WalletAnalysis'
 import ContractSecurity from './pages/ContractSecurity'
 import AllowanceCleaner from './pages/AllowanceCleaner'
+import FeaturedProfiles from './pages/FeaturedProfiles'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
 import './styles/index.css'
@@ -217,6 +218,7 @@ function FarcasterAppContent() {
             <Route path="/wallet-analysis" element={<WalletAnalysis />} />
             <Route path="/contract-security" element={<ContractSecurity />} />
             <Route path="/allowance-cleaner" element={<AllowanceCleaner />} />
+            <Route path="/featured-profiles" element={<FeaturedProfiles />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
           </Routes>
@@ -256,6 +258,7 @@ function WebAppContent() {
             <Route path="/wallet-analysis" element={<WalletAnalysis />} />
             <Route path="/contract-security" element={<ContractSecurity />} />
             <Route path="/allowance-cleaner" element={<AllowanceCleaner />} />
+            <Route path="/featured-profiles" element={<FeaturedProfiles />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
           </Routes>
