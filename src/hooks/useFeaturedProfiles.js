@@ -270,7 +270,8 @@ export const useFeaturedProfiles = () => {
     setError(null)
 
     try {
-      const response = await fetch(`/api/featured-profiles/${fid}`, {
+      // Use query params instead of path params to avoid Vercel routing issues
+      const response = await fetch(`/api/featured-profiles?fid=${fid}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
