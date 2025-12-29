@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useFeaturedProfiles } from '../hooks/useFeaturedProfiles'
 import { 
@@ -94,20 +94,6 @@ export default function FeaturedProfiles() {
     loadProfiles()
   }, [])
 
-  useEffect(() => {
-    // Check follow statuses for all profiles
-    if (profiles.length > 0 && user?.fid) {
-      checkAllFollowStatuses()
-      
-      // Also check periodically to catch Farcaster-side follows
-      const interval = setInterval(() => {
-        checkAllFollowStatuses()
-      }, 5000) // Check every 5 seconds
-      
-      return () => clearInterval(interval)
-    }
-  }, [profiles, user?.fid])
-
   // Check if current user already has an active profile
   const currentUserProfile = profiles.find(p => p.farcaster_fid === currentUser?.fid)
   const hasActiveProfile = currentUserProfile && 
@@ -119,18 +105,27 @@ export default function FeaturedProfiles() {
     setProfiles(data)
   }
 
-  const checkAllFollowStatuses = async () => {
-    if (!user?.fid || profiles.length === 0) {
+  // Memoize checkAllFollowStatuses to avoid closure issues
+  const checkAllFollowStatuses = useCallback(async () => {
+    // Use currentUser?.fid or user?.fid - whichever is available
+    const currentFid = currentUser?.fid || user?.fid
+    
+    if (!currentFid || profiles.length === 0) {
       console.log('⏭️ Skipping follow status check:', { 
         hasUser: !!user, 
-        userFid: user?.fid, 
+        hasCurrentUser: !!currentUser,
+        userFid: user?.fid,
+        currentUserFid: currentUser?.fid,
+        currentFid,
         profilesCount: profiles.length 
       })
       return
     }
     
     console.log('🔄 Checking follow statuses for all profiles...', {
-      userFid: user.fid,
+      currentFid,
+      userFid: user?.fid,
+      currentUserFid: currentUser?.fid,
       profilesCount: profiles.length,
       profileFids: profiles.map(p => p.farcaster_fid)
     })
@@ -154,10 +149,41 @@ export default function FeaturedProfiles() {
     })
     
     console.log('✅ Follow statuses updated:', statuses)
-    console.log('📊 Current followStatuses state before update:', followStatuses)
-    setFollowStatuses(statuses)
+    setFollowStatuses(prevStatuses => {
+      console.log('🔄 setFollowStatuses - prev:', prevStatuses, 'new:', statuses)
+      return statuses
+    })
     console.log('✅ setFollowStatuses called with:', statuses)
-  }
+  }, [profiles, user?.fid, currentUser?.fid, checkFollowStatus])
+
+  useEffect(() => {
+    // Check follow statuses for all profiles
+    if (profiles.length > 0 && (user?.fid || currentUser?.fid)) {
+      console.log('🚀 Triggering follow status check...', {
+        userFid: user?.fid,
+        currentUserFid: currentUser?.fid,
+        profilesCount: profiles.length
+      })
+      checkAllFollowStatuses()
+      
+      // Also check periodically to catch Farcaster-side follows
+      const interval = setInterval(() => {
+        console.log('⏰ Periodic follow status check...')
+        checkAllFollowStatuses()
+      }, 5000) // Check every 5 seconds
+      
+      return () => {
+        console.log('🧹 Cleaning up follow status check interval')
+        clearInterval(interval)
+      }
+    } else {
+      console.log('⏭️ Not checking follow status:', {
+        profilesCount: profiles.length,
+        userFid: user?.fid,
+        currentUserFid: currentUser?.fid
+      })
+    }
+  }, [profiles, user?.fid, currentUser?.fid, checkAllFollowStatuses])
 
   const handleRegister = async () => {
     if (!isInFarcaster || !currentUser) {
