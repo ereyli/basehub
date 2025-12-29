@@ -60,7 +60,9 @@ export default function FeaturedProfiles() {
 
   // Update currentUser when user changes
   useEffect(() => {
-    setCurrentUser(user)
+    if (user) {
+      setCurrentUser(user)
+    }
   }, [user])
 
   // Try to load user if not available
@@ -424,8 +426,8 @@ export default function FeaturedProfiles() {
                   border: '1px solid rgba(251, 191, 36, 0.2)'
                 }}>
                   <img 
-                    src={currentUser.pfp?.url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.fid}`} 
-                    alt={currentUser.displayName || currentUser.username} 
+                    src={currentUser?.pfp?.url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser?.fid || 'default'}`} 
+                    alt={currentUser?.displayName || currentUser?.username || 'User'} 
                     style={{ 
                       width: '64px', 
                       height: '64px', 
@@ -441,16 +443,16 @@ export default function FeaturedProfiles() {
                       fontWeight: 'bold', 
                       fontSize: '18px' 
                     }}>
-                      {currentUser.displayName || currentUser.username || `User ${currentUser.fid}`}
+                      {currentUser?.displayName || currentUser?.username || `User ${currentUser?.fid || ''}`}
                     </p>
                     <p style={{ 
                       margin: '4px 0 0 0', 
                       color: '#9ca3af', 
                       fontSize: '14px' 
                     }}>
-                      @{currentUser.username || `fid-${currentUser.fid}`}
+                      @{currentUser?.username || `fid-${currentUser?.fid || ''}`}
                     </p>
-                    {currentUser.bio?.text && (
+                    {currentUser?.bio?.text && (
                       <p style={{ 
                         margin: '8px 0 0 0', 
                         color: '#9ca3af', 
