@@ -150,11 +150,64 @@ export default function FeaturedProfiles() {
       return
     }
 
+    const currentStatus = followStatuses[profileFid]
+    const wasFollowing = currentStatus?.is_following || false
+
     // Try to use Farcaster native viewProfile action first (better UX)
     try {
       if (sdk?.actions?.viewProfile) {
         console.log('📱 Opening profile with Farcaster viewProfile:', profileFid)
         await sdk.actions.viewProfile({ fid: profileFid })
+        
+        // After viewProfile closes, wait a bit and check follow status
+        // This handles the case where user follows in Farcaster but our DB doesn't know
+        setTimeout(async () => {
+          try {
+            const newStatus = await checkFollowStatus(profileFid)
+            console.log('🔄 Follow status after viewProfile:', newStatus)
+            
+            // If status changed, update our state
+            if (newStatus.is_following !== wasFollowing) {
+              setFollowStatuses(prev => ({
+                ...prev,
+                [profileFid]: newStatus
+              }))
+              
+              // If user followed, try to sync with our DB
+              if (newStatus.is_following && !wasFollowing) {
+                try {
+                  const result = await followUser(profileFid)
+                  setFollowStatuses(prev => ({
+                    ...prev,
+                    [profileFid]: { 
+                      is_following: true, 
+                      is_mutual: result.is_mutual || false 
+                    }
+                  }))
+                  
+                  if (result.is_mutual) {
+                    setTimeout(() => {
+                      alert('🎉 Mutual follow! You are now following each other!')
+                    }, 500)
+                  }
+                } catch (syncErr) {
+                  // If already following, just update status
+                  if (syncErr.message && syncErr.message.includes('Already following')) {
+                    setFollowStatuses(prev => ({
+                      ...prev,
+                      [profileFid]: { is_following: true, is_mutual: false }
+                    }))
+                  }
+                }
+              }
+              
+              // Refresh profiles to update counts
+              loadProfiles()
+            }
+          } catch (checkErr) {
+            console.error('Error checking follow status after viewProfile:', checkErr)
+          }
+        }, 2000) // Wait 2 seconds after viewProfile closes
       } else {
         // Fallback to Warpcast URL if viewProfile not available
         console.log('⚠️ viewProfile not available, using Warpcast URL fallback')
@@ -162,6 +215,11 @@ export default function FeaturedProfiles() {
           ? `https://warpcast.com/${profileUsername}`
           : `https://warpcast.com/~/profile/${profileFid}`
         window.open(warpcastUrl, '_blank', 'noopener,noreferrer')
+        
+        // For Warpcast URL, also try to update DB (existing logic)
+        setTimeout(async () => {
+          await syncFollowStatus(profileFid, wasFollowing)
+        }, 3000) // Wait 3 seconds for user to follow on Warpcast
       }
     } catch (err) {
       // Fallback to Warpcast URL on error
@@ -170,9 +228,19 @@ export default function FeaturedProfiles() {
         ? `https://warpcast.com/${profileUsername}`
         : `https://warpcast.com/~/profile/${profileFid}`
       window.open(warpcastUrl, '_blank', 'noopener,noreferrer')
+      
+      // For fallback, also try to update DB
+      setTimeout(async () => {
+        await syncFollowStatus(profileFid, wasFollowing)
+      }, 3000)
     }
 
-    // Then try to update our database (non-blocking)
+    // Also try to update our database immediately (optimistic update)
+    await syncFollowStatus(profileFid, wasFollowing)
+  }
+
+  // Helper function to sync follow status with database
+  const syncFollowStatus = async (profileFid, wasFollowing) => {
     try {
       const status = followStatuses[profileFid]
       
@@ -185,7 +253,6 @@ export default function FeaturedProfiles() {
             [profileFid]: { is_following: false, is_mutual: false }
           }))
         } catch (unfollowErr) {
-          // Silently fail - user can still unfollow on Warpcast
           console.log('Unfollow in DB failed (non-critical):', unfollowErr.message)
         }
       } else {
@@ -201,7 +268,6 @@ export default function FeaturedProfiles() {
           }))
           
           if (result.is_mutual) {
-            // Show success message but don't block
             setTimeout(() => {
               alert('🎉 Mutual follow! You are now following each other!')
             }, 500)
@@ -214,7 +280,6 @@ export default function FeaturedProfiles() {
               [profileFid]: { is_following: true, is_mutual: false }
             }))
           } else {
-            // Other errors - silently fail, user can still follow on Warpcast
             console.log('Follow in DB failed (non-critical):', followErr.message)
           }
         }
@@ -223,8 +288,7 @@ export default function FeaturedProfiles() {
       // Refresh profiles to update counts
       loadProfiles()
     } catch (err) {
-      // Non-critical error - user can still follow on Warpcast
-      console.error('Database update failed (non-critical):', err)
+      console.error('Database sync failed (non-critical):', err)
     }
   }
 
