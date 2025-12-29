@@ -189,7 +189,7 @@ export const useFeaturedProfiles = () => {
       const currentUserFid = userFidOverride || user?.fid
       
       if (!currentUserFid) {
-        return { is_following: false, is_mutual: false }
+        return { is_following: false }
       }
 
       // Use query params instead of path params to avoid 404 on nested routes
@@ -202,31 +202,31 @@ export const useFeaturedProfiles = () => {
         if (response.status === 404) {
           console.error(`❌ Follow API endpoint not found: ${url}`)
         }
-        return { is_following: false, is_mutual: false }
+        return { is_following: false }
       }
       
       // Check content type
       const contentType = response.headers.get('content-type') || ''
       if (!contentType.includes('application/json')) {
-        return { is_following: false, is_mutual: false }
+        return { is_following: false }
       }
       
       const data = await response.json()
       
       if (!data.success) {
-        return { is_following: false, is_mutual: false }
+        return { is_following: false }
       }
 
       return {
         is_following: data.is_following || false,
-        is_mutual: data.is_mutual || false
+        // is_mutual removed - not reliable without Farcaster API
       }
     } catch (err) {
       // Only log network errors
       if (err.name === 'TypeError' && err.message.includes('fetch')) {
         console.error('❌ Network error checking follow status:', err.message)
       }
-      return { is_following: false, is_mutual: false }
+      return { is_following: false }
     }
   }
 

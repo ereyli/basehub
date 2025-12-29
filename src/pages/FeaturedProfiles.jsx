@@ -129,7 +129,7 @@ export default function FeaturedProfiles() {
         return { fid: profile.farcaster_fid, status }
       } catch (err) {
         // Silent error handling - no logging to prevent spam
-        return { fid: profile.farcaster_fid, status: { is_following: false, is_mutual: false } }
+        return { fid: profile.farcaster_fid, status: { is_following: false } }
       }
     })
     
@@ -237,13 +237,13 @@ export default function FeaturedProfiles() {
         // Optimistic update
         setFollowStatuses(prev => ({
           ...prev,
-          [profileFid]: { is_following: false, is_mutual: false }
+          [profileFid]: { is_following: false }
         }))
         
         await unfollowUser(profileFid)
         setFollowStatuses(prev => ({
           ...prev,
-          [profileFid]: { is_following: false, is_mutual: false }
+          [profileFid]: { is_following: false }
         }))
         
         // Refresh profiles to update counts
@@ -263,7 +263,7 @@ export default function FeaturedProfiles() {
     // Optimistic update: Assume user will follow, update UI immediately
     setFollowStatuses(prev => ({
       ...prev,
-      [profileFid]: { is_following: true, is_mutual: false }
+      [profileFid]: { is_following: true }
     }))
 
     // Try to use Farcaster native viewProfile action first (better UX)
@@ -277,16 +277,8 @@ export default function FeaturedProfiles() {
           setFollowStatuses(prev => ({
             ...prev,
             [profileFid]: { 
-              is_following: true, 
-              is_mutual: result.is_mutual || false 
-            }
+              is_following: true}
           }))
-          
-          if (result.is_mutual) {
-            setTimeout(() => {
-              alert('🎉 Mutual follow! You are now following each other!')
-            }, 500)
-          }
           
           // Refresh profiles to update counts
           loadProfiles()
@@ -296,7 +288,7 @@ export default function FeaturedProfiles() {
             console.log('Already following in DB, updating status')
             setFollowStatuses(prev => ({
               ...prev,
-              [profileFid]: { is_following: true, is_mutual: false }
+              [profileFid]: { is_following: true }
             }))
           } else {
             console.log('Initial sync error (will retry):', syncErr.message)
@@ -330,23 +322,15 @@ export default function FeaturedProfiles() {
               setFollowStatuses(prev => ({
                 ...prev,
                 [profileFid]: { 
-                  is_following: true, 
-                  is_mutual: result.is_mutual || false 
-                }
+                  is_following: true}
               }))
-              
-              if (result.is_mutual) {
-                setTimeout(() => {
-                  alert('🎉 Mutual follow! You are now following each other!')
-                }, 500)
-              }
             } catch (syncErr) {
               // If already following, that's fine - just update status
               if (syncErr.message && syncErr.message.includes('Already following')) {
                 console.log('Already following in DB, updating status')
                 setFollowStatuses(prev => ({
                   ...prev,
-                  [profileFid]: { is_following: true, is_mutual: false }
+                  [profileFid]: { is_following: true }
                 }))
               } else {
                 console.log('Sync error (non-critical):', syncErr.message)
@@ -381,21 +365,13 @@ export default function FeaturedProfiles() {
                     setFollowStatuses(prev => ({
                       ...prev,
                       [profileFid]: { 
-                        is_following: true, 
-                        is_mutual: result.is_mutual || false 
-                      }
+                        is_following: true}
                     }))
-                    
-                    if (result.is_mutual) {
-                      setTimeout(() => {
-                        alert('🎉 Mutual follow! You are now following each other!')
-                      }, 500)
-                    }
                   } catch (syncErr) {
                     if (syncErr.message && syncErr.message.includes('Already following')) {
                       setFollowStatuses(prev => ({
                         ...prev,
-                        [profileFid]: { is_following: true, is_mutual: false }
+                        [profileFid]: { is_following: true }
                       }))
                     }
                   }
@@ -497,22 +473,14 @@ export default function FeaturedProfiles() {
           setFollowStatuses(prev => ({
             ...prev,
             [profileFid]: { 
-              is_following: true, 
-              is_mutual: result.is_mutual || false 
-            }
+              is_following: true}
           }))
-          
-          if (result.is_mutual) {
-            setTimeout(() => {
-              alert('🎉 Mutual follow! You are now following each other!')
-            }, 500)
-          }
         } catch (followErr) {
           // If "Already following" error, just update status silently
           if (followErr.message && followErr.message.includes('Already following')) {
             setFollowStatuses(prev => ({
               ...prev,
-              [profileFid]: { is_following: true, is_mutual: false }
+              [profileFid]: { is_following: true }
             }))
           } else {
             console.log('Follow in DB failed (non-critical):', followErr.message)
@@ -524,7 +492,7 @@ export default function FeaturedProfiles() {
           await unfollowUser(profileFid)
           setFollowStatuses(prev => ({
             ...prev,
-            [profileFid]: { is_following: false, is_mutual: false }
+            [profileFid]: { is_following: false }
           }))
         } catch (unfollowErr) {
           console.log('Unfollow in DB failed (non-critical):', unfollowErr.message)
