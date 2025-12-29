@@ -20,6 +20,52 @@ const supabase = supabaseUrl && supabaseKey
 
 app.use('/*', cors())
 
+// Check follow status via query params (alternative to nested route)
+app.get('/', async (c) => {
+  try {
+    const action = c.req.query('action')
+    
+    // If action=check, handle follow status check
+    if (action === 'check') {
+      if (!supabase) {
+        return c.json({ success: false, error: 'Database not configured' }, 500)
+      }
+
+      const followerFid = parseInt(c.req.query('follower_fid'))
+      const followingFid = parseInt(c.req.query('following_fid'))
+      
+      if (isNaN(followerFid) || isNaN(followingFid)) {
+        return c.json({ success: false, error: 'Invalid FIDs' }, 400)
+      }
+
+      const { data, error } = await supabase
+        .from('follows')
+        .select('*')
+        .eq('follower_fid', followerFid)
+        .eq('following_fid', followingFid)
+        .single()
+
+      if (error && error.code !== 'PGRST116') {
+        throw error
+      }
+
+      return c.json({ 
+        success: true, 
+        is_following: !!data,
+        is_mutual: data?.is_mutual || false
+      })
+    }
+    
+    // Default GET response
+    return c.json({ success: false, error: 'Invalid action' }, 400)
+  } catch (err) {
+    return c.json({ 
+      success: false, 
+      error: err.message || 'Failed to check follow status' 
+    }, 500)
+  }
+})
+
 // Follow a user
 app.post('/', async (c) => {
   try {

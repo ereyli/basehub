@@ -192,7 +192,8 @@ export const useFeaturedProfiles = () => {
         return { is_following: false, is_mutual: false }
       }
 
-      const url = `/api/follow/check/${currentUserFid}/${followingFid}`
+      // Use query params instead of path params to avoid 404 on nested routes
+      const url = `/api/follow?action=check&follower_fid=${currentUserFid}&following_fid=${followingFid}`
       const response = await fetch(url)
       
       // Check if response is ok
