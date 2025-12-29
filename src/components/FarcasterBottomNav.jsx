@@ -2,13 +2,13 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAccount } from 'wagmi'
 import { useTransactions } from '../hooks/useTransactions'
-import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, Trash2 } from 'lucide-react'
+import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, Trash2, Star, Users } from 'lucide-react'
 
 const FarcasterBottomNav = () => {
   const navigate = useNavigate()
   const { isConnected, address } = useAccount()
   const { sendGMTransaction, sendGNTransaction, isLoading: transactionLoading } = useTransactions()
-  const [activeTab, setActiveTab] = useState(null) // null = hidden, 'gmgn' | 'gaming' | 'nft' | 'analysis' | 'deploy'
+  const [activeTab, setActiveTab] = useState(null) // null = hidden, 'gmgn' | 'gaming' | 'nft' | 'analysis' | 'deploy' | 'social'
   const [isLoadingGM, setIsLoadingGM] = useState(false)
   const [isLoadingGN, setIsLoadingGN] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
@@ -91,6 +91,10 @@ const FarcasterBottomNav = () => {
     { id: 'erc721', title: 'ERC721', icon: <Package size={20} />, path: '/deploy-erc721', color: '#06b6d4' },
     { id: 'erc1155', title: 'ERC1155', icon: <Factory size={20} />, path: '/deploy-erc1155', color: '#f97316' },
     { id: 'ai-nft', title: 'AI NFT', icon: <Layers size={20} />, path: '/ai-nft', color: '#ec4899' },
+  ]
+
+  const socialTools = [
+    { id: 'featured-profiles', title: 'Featured Profiles', icon: <Star size={20} />, path: '/featured-profiles', color: '#fbbf24' },
   ]
 
   return (
@@ -268,6 +272,37 @@ const FarcasterBottomNav = () => {
         >
           <Rocket size={18} />
           <span>DEPLOY</span>
+        </button>
+
+        {/* SOCIAL Tab */}
+        <button
+          onClick={() => handleTabClick('social')}
+          style={{
+            flex: 1,
+            padding: '12px 8px',
+            border: 'none',
+            borderRadius: '12px',
+            background: activeTab === 'social' 
+              ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' 
+              : 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)',
+            color: activeTab === 'social' ? 'white' : '#fbbf24',
+            fontSize: '12px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '6px',
+            transition: 'all 0.2s ease',
+            minHeight: '64px',
+            justifyContent: 'center',
+            boxShadow: activeTab === 'social' 
+              ? '0 4px 12px rgba(251, 191, 36, 0.3)' 
+              : '0 2px 4px rgba(251, 191, 36, 0.1)'
+          }}
+        >
+          <Users size={18} />
+          <span>SOCIAL</span>
         </button>
       </div>
 
@@ -543,6 +578,52 @@ const FarcasterBottomNav = () => {
                   gap: '12px' 
                 }}>
                   {deployTools.map((tool) => (
+                    <button
+                      key={tool.id}
+                      onClick={() => {
+                        navigate(tool.path)
+                        setActiveTab(null)
+                      }}
+                      style={{
+                        padding: '16px',
+                        border: 'none',
+                        borderRadius: '12px',
+                        background: `linear-gradient(135deg, ${tool.color} 0%, ${tool.color}dd 100%)`,
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '8px',
+                        boxShadow: `0 4px 12px ${tool.color}40`
+                      }}
+                    >
+                      {tool.icon}
+                      <span>{tool.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* SOCIAL Content */}
+            {activeTab === 'social' && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#e5e7eb' }}>
+                  Social Tools
+                </h3>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(2, 1fr)', 
+                  gap: '12px' 
+                }}>
+                  {socialTools.map((tool) => (
                     <button
                       key={tool.id}
                       onClick={() => {
