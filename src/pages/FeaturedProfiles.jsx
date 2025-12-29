@@ -38,7 +38,7 @@ const SUBSCRIPTION_OPTIONS = {
 }
 
 export default function FeaturedProfiles() {
-  const { user, isInFarcaster } = useFarcaster()
+  const { user, isInFarcaster, sdk, isReady } = useFarcaster()
   const { 
     registerProfile, 
     getFeaturedProfiles, 
@@ -55,6 +55,36 @@ export default function FeaturedProfiles() {
   const [isRegistering, setIsRegistering] = useState(false)
   const [showRegisterForm, setShowRegisterForm] = useState(false)
   const [followStatuses, setFollowStatuses] = useState({}) // { fid: { is_following, is_mutual } }
+  const [isLoadingUser, setIsLoadingUser] = useState(false)
+  const [currentUser, setCurrentUser] = useState(user)
+
+  // Update currentUser when user changes
+  useEffect(() => {
+    setCurrentUser(user)
+  }, [user])
+
+  // Try to load user if not available
+  useEffect(() => {
+    const loadUser = async () => {
+      if (isInFarcaster && isReady && !currentUser && sdk?.context) {
+        setIsLoadingUser(true)
+        try {
+          console.log('🔄 Attempting to load user from Farcaster SDK...')
+          const userContext = await sdk.context.getUser()
+          if (userContext) {
+            setCurrentUser(userContext)
+            console.log('✅ User loaded:', userContext)
+          }
+        } catch (err) {
+          console.log('ℹ️ Could not load user:', err.message)
+        } finally {
+          setIsLoadingUser(false)
+        }
+      }
+    }
+
+    loadUser()
+  }, [isInFarcaster, isReady, currentUser, sdk])
 
   useEffect(() => {
     loadProfiles()
@@ -82,7 +112,7 @@ export default function FeaturedProfiles() {
   }
 
   const handleRegister = async () => {
-    if (!isInFarcaster || !user) {
+    if (!isInFarcaster || !currentUser) {
       alert('Please connect your Farcaster account')
       return
     }
@@ -363,7 +393,279 @@ export default function FeaturedProfiles() {
         )}
 
         {/* Register Profile Section */}
-        {isInFarcaster && user && (
+        {isInFarcaster && (
+          <div style={{
+            background: 'rgba(30, 41, 59, 0.8)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '16px',
+            padding: '24px',
+            marginBottom: '32px'
+          }}>
+            {isLoadingUser ? (
+              <div style={{
+                textAlign: 'center',
+                padding: '40px',
+                color: '#9ca3af'
+              }}>
+                <Loader2 size={32} className="spin" style={{ marginBottom: '16px', color: '#fbbf24' }} />
+                <p style={{ margin: 0 }}>Loading your profile...</p>
+              </div>
+            ) : currentUser ? (
+              <>
+                {/* User Profile Preview */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                  marginBottom: '20px',
+                  padding: '16px',
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(251, 191, 36, 0.2)'
+                }}>
+                  <img 
+                    src={currentUser.pfp?.url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.fid}`} 
+                    alt={currentUser.displayName || currentUser.username} 
+                    style={{ 
+                      width: '64px', 
+                      height: '64px', 
+                      borderRadius: '50%', 
+                      objectFit: 'cover',
+                      border: '2px solid #fbbf24'
+                    }} 
+                  />
+                  <div style={{ flex: 1 }}>
+                    <p style={{ 
+                      margin: 0, 
+                      color: '#e5e7eb', 
+                      fontWeight: 'bold', 
+                      fontSize: '18px' 
+                    }}>
+                      {currentUser.displayName || currentUser.username || `User ${currentUser.fid}`}
+                    </p>
+                    <p style={{ 
+                      margin: '4px 0 0 0', 
+                      color: '#9ca3af', 
+                      fontSize: '14px' 
+                    }}>
+                      @{currentUser.username || `fid-${currentUser.fid}`}
+                    </p>
+                    {currentUser.bio?.text && (
+                      <p style={{ 
+                        margin: '8px 0 0 0', 
+                        color: '#9ca3af', 
+                        fontSize: '13px',
+                        fontStyle: 'italic'
+                      }}>
+                        {currentUser.bio.text}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {!showRegisterForm ? (
+                  <button
+                    onClick={() => setShowRegisterForm(true)}
+                    style={{
+                      width: '100%',
+                      background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s',
+                      boxShadow: '0 4px 12px rgba(251, 191, 36, 0.3)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)'
+                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(251, 191, 36, 0.4)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)'
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(251, 191, 36, 0.3)'
+                    }}
+                  >
+                    <Star size={20} />
+                    Register Your Profile
+                  </button>
+                ) : (
+                  <div>
+                    <h3 style={{ color: '#e5e7eb', marginBottom: '20px' }}>
+                      Register Your Profile
+                    </h3>
+
+                    {/* Subscription Type Selection */}
+                    <div style={{ marginBottom: '20px' }}>
+                      <label style={{ 
+                        color: '#9ca3af', 
+                        fontSize: '14px', 
+                        marginBottom: '8px',
+                        display: 'block'
+                      }}>
+                        Select Duration
+                      </label>
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(3, 1fr)', 
+                        gap: '12px' 
+                      }}>
+                        {Object.entries(SUBSCRIPTION_OPTIONS).map(([key, option]) => (
+                          <button
+                            key={key}
+                            onClick={() => setSelectedSubscription(key)}
+                            style={{
+                              padding: '16px',
+                              borderRadius: '12px',
+                              border: selectedSubscription === key 
+                                ? '2px solid #fbbf24' 
+                                : '2px solid rgba(255, 255, 255, 0.1)',
+                              background: selectedSubscription === key
+                                ? 'rgba(251, 191, 36, 0.1)'
+                                : 'rgba(30, 41, 59, 0.6)',
+                              color: '#e5e7eb',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            <div style={{ fontWeight: '700', marginBottom: '4px' }}>
+                              {option.label}
+                            </div>
+                            <div style={{ fontSize: '18px', color: '#fbbf24', marginBottom: '4px' }}>
+                              {option.price}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#9ca3af' }}>
+                              {option.description}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Description Input */}
+                    <div style={{ marginBottom: '20px' }}>
+                      <label style={{ 
+                        color: '#9ca3af', 
+                        fontSize: '14px', 
+                        marginBottom: '8px',
+                        display: 'block'
+                      }}>
+                        Description (About Mutual Follows) *
+                      </label>
+                      <textarea
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Write a short description about why people should follow you and how mutual follows work..."
+                        style={{
+                          width: '100%',
+                          minHeight: '100px',
+                          padding: '12px',
+                          borderRadius: '8px',
+                          background: 'rgba(15, 23, 42, 0.8)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          color: '#e5e7eb',
+                          fontSize: '14px',
+                          fontFamily: 'inherit',
+                          resize: 'vertical'
+                        }}
+                      />
+                      <p style={{ 
+                        color: '#6b7280', 
+                        fontSize: '12px', 
+                        marginTop: '4px',
+                        marginBottom: 0
+                      }}>
+                        Example: "Mutual follows welcome! Let's connect and grow together."
+                      </p>
+                    </div>
+
+                    {/* Register Button */}
+                    <button
+                      onClick={handleRegister}
+                      disabled={isRegistering || isLoading || !description.trim()}
+                      style={{
+                        width: '100%',
+                        background: isRegistering || isLoading || !description.trim()
+                          ? 'rgba(251, 191, 36, 0.3)'
+                          : 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '12px',
+                        padding: '16px',
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        cursor: isRegistering || isLoading || !description.trim() ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        transition: 'all 0.2s',
+                        boxShadow: isRegistering || isLoading || !description.trim()
+                          ? 'none'
+                          : '0 4px 12px rgba(251, 191, 36, 0.3)'
+                      }}
+                    >
+                      {isRegistering || isLoading ? (
+                        <>
+                          <Loader2 size={20} className="spin" />
+                          Registering...
+                        </>
+                      ) : (
+                        <>
+                          <Star size={20} />
+                          Register for {SUBSCRIPTION_OPTIONS[selectedSubscription].price}
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setShowRegisterForm(false)
+                        setDescription('')
+                      }}
+                      style={{
+                        width: '100%',
+                        marginTop: '12px',
+                        background: 'transparent',
+                        color: '#9ca3af',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '12px',
+                        padding: '12px',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{
+                textAlign: 'center',
+                padding: '40px',
+                color: '#9ca3af'
+              }}>
+                <AlertCircle size={32} style={{ marginBottom: '16px', color: '#f59e0b' }} />
+                <p style={{ margin: 0, marginBottom: '12px', fontWeight: '600' }}>
+                  Could not load your profile
+                </p>
+                <p style={{ margin: 0, fontSize: '14px' }}>
+                  Please make sure you're logged into Farcaster and try refreshing the page.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Featured Profiles List */}
           <div style={{
             background: 'rgba(30, 41, 59, 0.8)',
             border: '1px solid rgba(255, 255, 255, 0.1)',
