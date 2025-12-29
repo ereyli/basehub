@@ -67,30 +67,19 @@ export const FarcasterProvider = ({ children }) => {
     initializeFarcaster()
   }, [])
 
-  // Poll for user context - sometimes it's available before ready()
+  // Check user context once after initialization (no polling)
   useEffect(() => {
-    if (!isInFarcaster || !isInitialized) return
+    if (!isInFarcaster || !isInitialized || user) return
 
-    const checkUser = () => {
-      try {
-        if (sdk?.context?.user && sdk.context.user.fid) {
-          if (!user || user.fid !== sdk.context.user.fid) {
-            console.log('✅ User found via polling:', sdk.context.user)
-            setUser(sdk.context.user)
-          }
-        }
-      } catch (err) {
-        // Ignore errors during polling
+    // Check once if user is already available
+    try {
+      if (sdk?.context?.user && sdk.context.user.fid) {
+        console.log('✅ User found in context:', sdk.context.user)
+        setUser(sdk.context.user)
       }
+    } catch (err) {
+      // Ignore errors
     }
-
-    // Check immediately
-    checkUser()
-    
-    // Poll every 500ms until user is found or ready is called
-    const interval = setInterval(checkUser, 500)
-    
-    return () => clearInterval(interval)
   }, [isInFarcaster, isInitialized, user, sdk])
 
   // Handle ready() call when DOM is fully loaded
@@ -143,32 +132,22 @@ export const FarcasterProvider = ({ children }) => {
         // According to Farcaster SDK docs: sdk.context.user (not getUser())
         // User is available immediately after ready() call
         try {
-          console.log('🔍 Checking sdk.context:', {
-            hasContext: !!sdk.context,
-            hasUser: !!sdk.context?.user,
-            contextKeys: sdk.context ? Object.keys(sdk.context) : []
-          })
-          
           if (sdk.context && sdk.context.user) {
             const userContext = sdk.context.user
-            console.log('✅ User context found:', userContext)
+            console.log('✅ User context loaded:', userContext)
             setUser(userContext)
           } else {
-            console.log('⚠️ User context not available yet, will retry...')
-            // Retry after a short delay - sometimes context needs a moment
+            console.log('⚠️ User context not available in sdk.context')
+            // Single retry after a short delay
             setTimeout(() => {
               if (sdk.context?.user) {
                 console.log('✅ User context loaded on retry:', sdk.context.user)
                 setUser(sdk.context.user)
-              } else {
-                console.log('❌ User context still not available after retry')
-                console.log('Full sdk.context:', sdk.context)
               }
-            }, 500)
+            }, 1000)
           }
         } catch (userError) {
           console.error('❌ Error accessing user context:', userError)
-          console.log('Full sdk object:', sdk)
         }
 
         // Check if we're in a cast share context

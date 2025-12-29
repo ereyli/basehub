@@ -65,56 +65,23 @@ export default function FeaturedProfiles() {
     }
   }, [user])
 
-  // Try to load user if not available
+  // Try to load user if not available (single check, no polling)
   // According to Farcaster SDK docs: sdk.context.user (not getUser())
-  // User is a property that's available after ready() call
   useEffect(() => {
-    const loadUser = () => {
-      if (isInFarcaster && isReady && !currentUser) {
-        setIsLoadingUser(true)
-        try {
-          console.log('🔄 Attempting to load user from Farcaster SDK...')
-          console.log('SDK state:', {
-            hasSDK: !!sdk,
-            hasContext: !!sdk?.context,
-            hasUser: !!sdk?.context?.user,
-            contextKeys: sdk?.context ? Object.keys(sdk.context) : []
-          })
-          
-          // sdk.context.user is a property, not a function
-          if (sdk?.context?.user) {
-            const userContext = sdk.context.user
-            if (userContext && userContext.fid) {
-              console.log('✅ User loaded from SDK:', userContext)
-              setCurrentUser(userContext)
-            } else {
-              console.log('⚠️ User context exists but missing fid:', userContext)
-            }
-          } else {
-            console.log('⚠️ User context not available in sdk.context')
-            console.log('Full sdk.context:', sdk?.context)
-            
-            // Retry after a short delay
-            setTimeout(() => {
-              if (sdk?.context?.user && sdk.context.user.fid) {
-                console.log('✅ User loaded on retry:', sdk.context.user)
-                setCurrentUser(sdk.context.user)
-              } else {
-                console.log('❌ User still not available after retry')
-              }
-              setIsLoadingUser(false)
-            }, 1000)
-            return // Don't set loading to false yet, wait for retry
-          }
-        } catch (err) {
-          console.error('❌ Error loading user:', err)
-        } finally {
-          setIsLoadingUser(false)
+    if (isInFarcaster && isReady && !currentUser && sdk?.context?.user) {
+      setIsLoadingUser(true)
+      try {
+        const userContext = sdk.context.user
+        if (userContext && userContext.fid) {
+          console.log('✅ User loaded from SDK:', userContext)
+          setCurrentUser(userContext)
         }
+      } catch (err) {
+        console.error('❌ Error loading user:', err)
+      } finally {
+        setIsLoadingUser(false)
       }
     }
-
-    loadUser()
   }, [isInFarcaster, isReady, currentUser, sdk])
 
   useEffect(() => {
