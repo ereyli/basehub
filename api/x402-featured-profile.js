@@ -272,19 +272,27 @@ export default async function handler(req, res) {
 
     const response = await app.fetch(request)
 
+    // Set status first
+    res.status(response.status)
+
+    // Copy headers
     response.headers.forEach((value, key) => {
       res.setHeader(key, value)
     })
 
-    const responseBody = await response.text()
-    res.status(response.status)
-
-    if (responseBody) {
+    // Clone response to avoid body stream already read error
+    const clonedResponse = response.clone()
+    
+    // Check if response has body
+    if (response.body) {
       const contentType = response.headers.get('content-type') || ''
+      
       if (contentType.includes('application/json')) {
-        res.json(JSON.parse(responseBody))
+        const jsonData = await clonedResponse.json()
+        res.json(jsonData)
       } else {
-        res.send(responseBody)
+        const textData = await clonedResponse.text()
+        res.send(textData)
       }
     } else {
       res.end()
