@@ -216,14 +216,15 @@ export const useFeaturedProfiles = () => {
         return { is_following: false, is_mutual: false }
       }
 
-      const result = {
+      return {
         is_following: data.is_following || false,
         is_mutual: data.is_mutual || false
       }
-      console.log('✅ Follow status result:', { currentUserFid, followingFid, result })
-      return result
     } catch (err) {
-      console.error('❌ Error checking follow status:', err)
+      // Only log network errors
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        console.error('❌ Network error checking follow status:', err.message)
+      }
       return { is_following: false, is_mutual: false }
     }
   }
