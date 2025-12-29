@@ -12,9 +12,10 @@ console.log('🚀 Featured Profiles List API loaded')
 // Supabase client
 // RLS is enabled, so we need SERVICE_KEY to bypass RLS
 // Priority: SERVICE_KEY > ANON_KEY (for RLS bypass)
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY
+// Support both VITE_ prefix (for frontend compatibility) and direct env vars
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
 const supabaseKey = supabaseServiceKey || supabaseAnonKey
 
 // Log environment variable status (without exposing values)
@@ -179,11 +180,32 @@ export default async function handler(req, res) {
       const runtimeAnonKey = process.env.SUPABASE_ANON_KEY
       const runtimeKey = runtimeServiceKey || runtimeAnonKey
       
+      // Check both VITE_ and direct env vars at runtime
+      const runtimeUrlDirect = process.env.SUPABASE_URL
+      const runtimeUrlVite = process.env.VITE_SUPABASE_URL
+      const runtimeServiceKeyDirect = process.env.SUPABASE_SERVICE_KEY
+      const runtimeServiceKeyVite = process.env.VITE_SUPABASE_SERVICE_KEY
+      const runtimeAnonKeyDirect = process.env.SUPABASE_ANON_KEY
+      const runtimeAnonKeyVite = process.env.VITE_SUPABASE_ANON_KEY
+      
+      const finalRuntimeUrl = runtimeUrlDirect || runtimeUrlVite
+      const finalRuntimeServiceKey = runtimeServiceKeyDirect || runtimeServiceKeyVite
+      const finalRuntimeAnonKey = runtimeAnonKeyDirect || runtimeAnonKeyVite
+      const finalRuntimeKey = finalRuntimeServiceKey || finalRuntimeAnonKey
+      
       console.log('🔄 Runtime environment check:', {
-        url: runtimeUrl ? '✅ Set' : '❌ Missing',
-        serviceKey: runtimeServiceKey ? '✅ Set' : '❌ Missing',
-        anonKey: runtimeAnonKey ? '✅ Set' : '❌ Missing'
+        url: finalRuntimeUrl ? '✅ Set' : '❌ Missing',
+        serviceKey: finalRuntimeServiceKey ? '✅ Set' : '❌ Missing',
+        anonKey: finalRuntimeAnonKey ? '✅ Set' : '❌ Missing',
+        sources: {
+          url: runtimeUrlDirect ? 'SUPABASE_URL' : (runtimeUrlVite ? 'VITE_SUPABASE_URL' : 'none'),
+          serviceKey: runtimeServiceKeyDirect ? 'SUPABASE_SERVICE_KEY' : (runtimeServiceKeyVite ? 'VITE_SUPABASE_SERVICE_KEY' : 'none'),
+          anonKey: runtimeAnonKeyDirect ? 'SUPABASE_ANON_KEY' : (runtimeAnonKeyVite ? 'VITE_SUPABASE_ANON_KEY' : 'none')
+        }
       })
+      
+      const runtimeUrl = finalRuntimeUrl
+      const runtimeKey = finalRuntimeKey
       
       if (!runtimeUrl || !runtimeKey) {
         return res.status(500).json({
@@ -191,10 +213,13 @@ export default async function handler(req, res) {
           error: 'Database not configured',
           details: {
             SUPABASE_URL: runtimeUrl ? 'Set' : 'Missing',
-            SUPABASE_SERVICE_KEY: runtimeServiceKey ? 'Set' : 'Missing',
-            SUPABASE_ANON_KEY: runtimeAnonKey ? 'Set' : 'Missing'
+            VITE_SUPABASE_URL: runtimeUrlVite ? 'Set' : 'Missing',
+            SUPABASE_SERVICE_KEY: finalRuntimeServiceKey ? 'Set' : 'Missing',
+            VITE_SUPABASE_SERVICE_KEY: runtimeServiceKeyVite ? 'Set' : 'Missing',
+            SUPABASE_ANON_KEY: finalRuntimeAnonKey ? 'Set' : 'Missing',
+            VITE_SUPABASE_ANON_KEY: runtimeAnonKeyVite ? 'Set' : 'Missing'
           },
-          hint: 'Please configure SUPABASE_URL and SUPABASE_SERVICE_KEY in Vercel Environment Variables. RLS is enabled, so SERVICE_KEY is required.'
+          hint: 'Please configure SUPABASE_URL (or VITE_SUPABASE_URL) and SUPABASE_SERVICE_KEY (or VITE_SUPABASE_SERVICE_KEY) in Vercel Environment Variables. RLS is enabled, so SERVICE_KEY is recommended to bypass RLS.'
         })
       }
     }
