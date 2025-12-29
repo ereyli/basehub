@@ -581,7 +581,7 @@ export default function FeaturedProfiles() {
               <p style={{ color: '#9ca3af', margin: '4px 0 0 0', fontSize: '13px' }}>
                 To register your profile or follow others, please open this page in{' '}
                 <a 
-                  href="https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub/featured-profiles"
+                  href="https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ color: '#3b82f6', textDecoration: 'underline' }}
