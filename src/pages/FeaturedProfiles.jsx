@@ -371,6 +371,57 @@ export default function FeaturedProfiles() {
             padding: '24px',
             marginBottom: '32px'
           }}>
+            {/* User Profile Preview */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              marginBottom: '20px',
+              padding: '16px',
+              background: 'rgba(15, 23, 42, 0.6)',
+              borderRadius: '12px',
+              border: '1px solid rgba(251, 191, 36, 0.2)'
+            }}>
+              <img 
+                src={user.pfp?.url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.fid}`} 
+                alt={user.displayName || user.username} 
+                style={{ 
+                  width: '64px', 
+                  height: '64px', 
+                  borderRadius: '50%', 
+                  objectFit: 'cover',
+                  border: '2px solid #fbbf24'
+                }} 
+              />
+              <div style={{ flex: 1 }}>
+                <p style={{ 
+                  margin: 0, 
+                  color: '#e5e7eb', 
+                  fontWeight: 'bold', 
+                  fontSize: '18px' 
+                }}>
+                  {user.displayName || user.username || `User ${user.fid}`}
+                </p>
+                <p style={{ 
+                  margin: '4px 0 0 0', 
+                  color: '#9ca3af', 
+                  fontSize: '14px' 
+                }}>
+                  @{user.username || `fid-${user.fid}`}
+                </p>
+                {user.bio?.text && (
+                  <p style={{ 
+                    margin: '8px 0 0 0', 
+                    color: '#9ca3af', 
+                    fontSize: '13px',
+                    fontStyle: 'italic'
+                  }}>
+                    {user.bio.text}
+                  </p>
+                )}
+              </div>
+            </div>
+
             {!showRegisterForm ? (
               <button
                 onClick={() => setShowRegisterForm(true)}
@@ -387,7 +438,17 @@ export default function FeaturedProfiles() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px'
+                  gap: '8px',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 4px 12px rgba(251, 191, 36, 0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(251, 191, 36, 0.4)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(251, 191, 36, 0.3)'
                 }}
               >
                 <Star size={20} />
