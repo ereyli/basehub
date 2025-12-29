@@ -59,12 +59,16 @@ app.post('/', async (c) => {
     }
 
     // Check for reverse follow (mutual follow detection)
-    const { data: reverseFollow } = await supabase
+    const { data: reverseFollow, error: reverseError } = await supabase
       .from('follows')
       .select('*')
       .eq('follower_fid', following_fid)
       .eq('following_fid', follower_fid)
-      .single()
+      .maybeSingle()
+
+    if (reverseError && reverseError.code !== 'PGRST116') {
+      console.error('❌ Error checking reverse follow:', reverseError)
+    }
 
     const isMutual = !!reverseFollow
 
@@ -86,11 +90,16 @@ app.post('/', async (c) => {
 
     // Update reverse follow if it exists (mark as mutual)
     if (isMutual && reverseFollow) {
-      await supabase
+      const { error: updateError } = await supabase
         .from('follows')
         .update({ is_mutual: true })
         .eq('id', reverseFollow.id)
-        .catch(err => console.error('Error updating reverse follow:', err))
+      
+      if (updateError) {
+        console.error('❌ Error updating reverse follow:', updateError)
+      } else {
+        console.log(`✅ Marked reverse follow as mutual: ${following_fid} → ${follower_fid}`)
+      }
     }
 
     // Increment followers count for the followed user
