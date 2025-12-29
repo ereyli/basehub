@@ -392,7 +392,10 @@ export default async function handler(req, res) {
       normalizedPath = '/' + normalizedPath
     }
     
-    console.log('🔍 Follow API path normalization:', { original: path, normalized: normalizedPath })
+    // Only log if path is not root (reduce spam)
+    if (normalizedPath !== '/' && normalizedPath !== path) {
+      console.log('🔍 Follow API path normalization:', { original: path, normalized: normalizedPath })
+    }
     
     const fullUrl = `${protocol}://${host}${normalizedPath}${queryString ? `?${queryString}` : ''}`
     

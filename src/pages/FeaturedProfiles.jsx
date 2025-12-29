@@ -123,8 +123,7 @@ export default function FeaturedProfiles() {
         const status = await checkFollowStatus(profile.farcaster_fid, currentFid)
         return { fid: profile.farcaster_fid, status }
       } catch (err) {
-        // Only log errors, not every check
-        console.error(`❌ Error checking status for ${profile.farcaster_fid}:`, err)
+        // Silent error handling - no logging to prevent spam
         return { fid: profile.farcaster_fid, status: { is_following: false, is_mutual: false } }
       }
     })

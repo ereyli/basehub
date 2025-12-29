@@ -189,45 +189,30 @@ export const useFeaturedProfiles = () => {
       const currentUserFid = userFidOverride || user?.fid
       
       if (!currentUserFid) {
-        console.log('⚠️ No user FID available for follow status check', {
-          userFidOverride,
-          userFid: user?.fid
-        })
         return { is_following: false, is_mutual: false }
       }
 
       const url = `/api/follow/check/${currentUserFid}/${followingFid}`
-      console.log('🔍 Checking follow status:', { 
-        currentUserFid, 
-        followingFid, 
-        url,
-        userFidOverride: userFidOverride || 'none',
-        userFid: user?.fid || 'none'
-      })
-      
       const response = await fetch(url)
       
       // Check if response is ok
       if (!response.ok) {
-        console.warn(`⚠️ Follow status check failed: ${response.status} ${response.statusText}`)
-        const errorText = await response.text().catch(() => '')
-        console.warn('Error response:', errorText)
+        // Only log 404 errors (real problem)
+        if (response.status === 404) {
+          console.error(`❌ Follow API endpoint not found: ${url}`)
+        }
         return { is_following: false, is_mutual: false }
       }
       
       // Check content type
       const contentType = response.headers.get('content-type') || ''
       if (!contentType.includes('application/json')) {
-        const text = await response.text()
-        console.warn('⚠️ Expected JSON but got:', contentType, text.substring(0, 100))
         return { is_following: false, is_mutual: false }
       }
       
       const data = await response.json()
-      console.log('📥 Follow status API response:', { currentUserFid, followingFid, data })
       
       if (!data.success) {
-        console.warn('⚠️ API returned success: false:', data)
         return { is_following: false, is_mutual: false }
       }
 
