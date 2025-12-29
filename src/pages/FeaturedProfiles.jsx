@@ -80,21 +80,6 @@ export default function FeaturedProfiles() {
     setFollowStatuses(statuses)
   }
 
-  const checkFollowStatus = async (fid) => {
-    if (!user?.fid) return { is_following: false, is_mutual: false }
-    
-    try {
-      const response = await fetch(`/api/follow/check/${user.fid}/${fid}`)
-      const data = await response.json()
-      return {
-        is_following: data.is_following || false,
-        is_mutual: data.is_mutual || false
-      }
-    } catch (err) {
-      return { is_following: false, is_mutual: false }
-    }
-  }
-
   const handleRegister = async () => {
     if (!isInFarcaster || !user) {
       alert('Please connect your Farcaster account')
