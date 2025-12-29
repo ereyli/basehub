@@ -346,30 +346,39 @@ export default function FeaturedProfiles() {
             Featured Profiles
           </h1>
           
-          <p style={{ 
-            color: '#9ca3af', 
-            fontSize: '18px', 
-            marginBottom: '32px',
-            lineHeight: '1.6'
-          }}>
-            Bu özellik sadece <strong style={{ color: '#fbbf24' }}>Farcaster</strong> veya <strong style={{ color: '#fbbf24' }}>BaseApp</strong> içinde mevcuttur.
-          </p>
-          
           <div style={{
-            background: 'rgba(15, 23, 42, 0.8)',
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '2px solid rgba(239, 68, 68, 0.3)',
             borderRadius: '16px',
             padding: '24px',
-            marginBottom: '32px',
-            border: '1px solid rgba(251, 191, 36, 0.2)'
+            marginBottom: '32px'
           }}>
-            <p style={{ 
-              color: '#e5e7eb', 
-              fontSize: '16px', 
-              marginBottom: '20px',
-              fontWeight: '600'
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '12px'
             }}>
-              Farcaster Mini App'e erişmek için:
+              <AlertCircle size={24} style={{ color: '#ef4444', flexShrink: 0 }} />
+              <h2 style={{ 
+                color: '#ef4444', 
+                fontSize: '20px', 
+                fontWeight: 'bold',
+                margin: 0
+              }}>
+                Bu Özellik Sadece Farcaster Mini App İçin Yapılmıştır
+              </h2>
+            </div>
+            <p style={{ 
+              color: '#9ca3af', 
+              fontSize: '16px', 
+              marginBottom: '24px',
+              lineHeight: '1.6',
+              marginTop: '8px'
+            }}>
+              Featured Profiles özelliğini kullanmak için lütfen Farcaster Mini App'i açın. Bu özellik Warpcast, Farcord gibi Farcaster istemcilerinde çalışmaktadır.
             </p>
+            
             <a
               href="https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub"
               target="_blank"
@@ -380,13 +389,16 @@ export default function FeaturedProfiles() {
                 gap: '12px',
                 background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
                 color: 'white',
-                padding: '16px 32px',
+                padding: '18px 36px',
                 borderRadius: '12px',
-                fontSize: '18px',
-                fontWeight: '600',
+                fontSize: '20px',
+                fontWeight: '700',
                 textDecoration: 'none',
                 transition: 'all 0.3s',
-                boxShadow: '0 4px 12px rgba(251, 191, 36, 0.3)'
+                boxShadow: '0 4px 12px rgba(251, 191, 36, 0.3)',
+                width: '100%',
+                justifyContent: 'center',
+                marginBottom: '16px'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-2px)'
@@ -397,17 +409,28 @@ export default function FeaturedProfiles() {
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(251, 191, 36, 0.3)'
               }}
             >
-              <ExternalLink size={20} />
+              <ExternalLink size={24} />
               Farcaster Mini App'i Aç
             </a>
-            <p style={{ 
-              color: '#9ca3af', 
-              fontSize: '14px', 
-              marginTop: '16px',
-              marginBottom: 0
+            
+            <div style={{
+              background: 'rgba(15, 23, 42, 0.6)',
+              borderRadius: '12px',
+              padding: '16px',
+              marginTop: '16px'
             }}>
-              veya Warpcast, Farcord gibi Farcaster istemcilerinde BaseHub'ı açın
-            </p>
+              <p style={{ 
+                color: '#9ca3af', 
+                fontSize: '14px', 
+                margin: 0,
+                textAlign: 'center'
+              }}>
+                <strong style={{ color: '#e5e7eb' }}>Nasıl Açılır?</strong><br />
+                Warpcast, Farcord veya diğer Farcaster istemcilerinde BaseHub uygulamasını açın, 
+                ardından <strong style={{ color: '#fbbf24' }}>SOCIAL</strong> kategorisinden 
+                <strong style={{ color: '#fbbf24' }}> Featured Profiles</strong> özelliğine erişebilirsiniz.
+              </p>
+            </div>
           </div>
           
           <div style={{
