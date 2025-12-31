@@ -9,7 +9,7 @@ import TwitterShareButton from '../components/TwitterShareButton'
 import DailyQuestSystem from '../components/DailyQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
-import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users } from 'lucide-react'
+import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight } from 'lucide-react'
 
 const Home = () => {
   const { isConnected } = useAccount()
@@ -316,6 +316,16 @@ const Home = () => {
       color: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
       xpReward: '60 XP',
       bonusXP: '+2000 XP (Combo)'
+    },
+    {
+      id: 'swap',
+      title: 'SwapHub',
+      description: 'DEX Aggregator - Swap tokens on Base',
+      icon: <ArrowLeftRight size={35} style={{ color: 'white' }} />,
+      path: '/swap',
+      color: 'linear-gradient(135deg, #ff1cf7 0%, #00d4ff 100%)',
+      xpReward: null,
+      bonusXP: null
     },
   ]
 
