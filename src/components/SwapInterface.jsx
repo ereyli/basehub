@@ -48,7 +48,7 @@ function calculateUsdValue(
     }
     
     // If we can calculate swap USD value, derive current token's USD value
-    // The swap ratio tells us: amountNum of token = swapUsdValue in USD
+    // The swap ratio tells us = swapUsdValue in USD
     if (swapUsdValue > 0 && amountNum > 0) {
       // Simply use the swap USD value directly
       // Example: 28000 SKITTEN = 0.0086 ETH = $25.37
@@ -340,6 +340,7 @@ function TokenListItem({ token, onClick, isDisabled }) {
         cursor: isDisabled ? 'not-allowed' : 'pointer'
       }}
     >
+      <div style={tokenListItemStyles.left}>
         {token.logoURI ? (
           <img 
             src={token.logoURI} 
@@ -2076,10 +2077,10 @@ export default function SwapInterface() {
                     }}
                     style={{
                       ...styles.slippagePresetBtn,
-                      backgroundColor: slippage === value ? 'transparent' : 'rgba(255,255,255,0.05)',
-                      background: slippage === value ? 'linear-gradient(135deg, #ff1cf7, #00d4ff)' : 'none',
-                      color: slippage === value ? '#fff' : '#888',
-                      border: slippage === value ? '1px solid transparent' : '1px solid rgba(255,255,255,0.1)'
+                      backgroundColor === value ? 'transparent' : 'rgba(255,255,255,0.05)',
+                      background === value ? 'linear-gradient(135deg, #ff1cf7, #00d4ff)' : 'none',
+                      color === value ? '#fff' : '#888',
+                      border === value ? '1px solid transparent' : '1px solid rgba(255,255,255,0.1)'
                     }}
                   >
                     {value}%
