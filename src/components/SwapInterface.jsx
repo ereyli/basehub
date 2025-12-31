@@ -1267,7 +1267,7 @@ export default function SwapInterface() {
     const amountInNormalized = parseScientificNotation(amountIn, tokenIn.decimals);
     const amountOutNormalized = parseScientificNotation(amountOut, tokenOut.decimals);
 
-    let amountInWei: bigint;
+    let amountInWei;
     try {
       amountInWei = parseUnits(amountInNormalized, tokenIn.decimals);
       // Check if amount is too small (less than 1 wei)
@@ -1337,7 +1337,7 @@ export default function SwapInterface() {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     try {
-      let amountOutWei: bigint;
+      let amountOutWei;
       try {
         amountOutWei = parseUnits(amountOutNormalized, tokenOut.decimals);
         // Check if output amount is too small
