@@ -33,7 +33,7 @@ const AGGREGATOR_ABI = [
 const ETH_PRICE_USD = 2950;
 
 // Smart number formatting - reduces unnecessary decimals
-function formatNumber(value: number, maxDecimals = 4): string {
+function formatNumber(value, maxDecimals = 4) {
   if (value === 0) return '0';
   if (value < 0.0001) return value.toExponential(2);
   
@@ -164,7 +164,7 @@ export default function StatsPanel({ isMobile = false }) {
   };
 
   // Generate SVG path for line chart
-  const generateLinePath = (data: number[], width: number, height, color) => {
+  const generateLinePath = (data[], width, height, color) => {
     if (data.length === 0) return '';
     
     const stepX = width / (data.length - 1);

@@ -15,8 +15,8 @@ const ETH_PRICE_USD = 2950;
 function calculateUsdValue(
   amount, 
   token, 
-  swapAmount?, 
-  swapToken?
+  swapAmount = undefined, 
+  swapToken = undefined
 ) {
   if (!amount || parseFloat(amount) === 0) return '$0';
   
@@ -171,7 +171,7 @@ async function fetchTokenLogo(address, symbol) {
     const response = await fetch(uniswapListUrl);
     if (response.ok) {
       const data = await response.json();
-      const token = data.tokens?.find((t: any) => 
+      const token = data.tokens?.find((t) => 
         t.address?.toLowerCase() === normalizedAddress && 
         (t.chainId === 8453 || t.chainId === '8453')
       );
@@ -200,11 +200,6 @@ function CustomTokenItemWithRemove({
   isOtherToken, 
   onSelect, 
   onRemove 
-}: { 
-  token; 
-  isOtherToken; 
-  onSelect: () => void; 
-  onRemove: (e: React.MouseEvent) => void;
 }) {
   const { address: userAddress } = useAccount();
   const { data: balance } = useBalance({
@@ -247,7 +242,7 @@ function CustomTokenItemWithRemove({
             alt={token.symbol} 
             style={tokenListItemStyles.logo}
             onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
+              (e.target).style.display = 'none';
             }}
           />
         ) : (
@@ -306,7 +301,7 @@ function CustomTokenItemWithRemove({
   );
 }
 
-function TokenListItem({ token, onClick, isDisabled }: TokenListItemProps) {
+function TokenListItem({ token, onClick, isDisabled }) {
   const { address } = useAccount();
   const { data: balance } = useBalance({
     address: address,
@@ -345,16 +340,6 @@ function TokenListItem({ token, onClick, isDisabled }: TokenListItemProps) {
         cursor: isDisabled ? 'not-allowed' : 'pointer'
       }}
     >
-      <div style={tokenListItemStyles.left}>
-        {token.logoURI ? (
-          <img 
-            src={token.logoURI} 
-            alt={token.symbol} 
-            style={tokenListItemStyles.logo}
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
-          />
         ) : (
           <div style={tokenListItemStyles.logoPlaceholder}>
             {token.symbol.charAt(0)}
@@ -377,7 +362,7 @@ function TokenListItem({ token, onClick, isDisabled }: TokenListItemProps) {
   );
 }
 
-const tokenListItemStyles: Record<string, React.CSSProperties> = {
+const tokenListItemStyles = {
   container: {
     display: 'flex',
     alignItems: 'center',
@@ -521,7 +506,6 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 
 // Protocol type for swap routing
-type SwapProtocol = 'v3' | 'v2';
 
 const QUOTER_ABI = [
   {
@@ -678,11 +662,11 @@ export default function SwapInterface() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const [tokenIn, setTokenIn] = useState<AppToken>(DEFAULT_TOKENS.ETH);
-  const [tokenOut, setTokenOut] = useState<AppToken>(DEFAULT_TOKENS.USDC);
+  const [tokenIn, setTokenIn] = useState(DEFAULT_TOKENS.ETH);
+  const [tokenOut, setTokenOut] = useState(DEFAULT_TOKENS.USDC);
   const [amountIn, setAmountIn] = useState('');
   const [amountOut, setAmountOut] = useState('0');
-  const [showTokenSelect, setShowTokenSelect] = useState<'in' | 'out' | null>(null);
+  const [showTokenSelect, setShowTokenSelect] = useState(null);
   const [tokenSearchQuery, setTokenSearchQuery] = useState('');
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
   // Load slippage from localStorage, default to 0.5%
@@ -696,20 +680,20 @@ export default function SwapInterface() {
   const [showSlippageSettings, setShowSlippageSettings] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
   const [selectedFeeTier, setSelectedFeeTier] = useState(FEE_TIERS.LOW); // Default 0.3% - more common pools
-  const [priceImpact, setPriceImpact] = useState<string>('0');
-  const [customTokens, setCustomTokens] = useState<Record<string, AppToken>>({});
+  const [priceImpact, setPriceImpact] = useState('0');
+  const [customTokens, setCustomTokens] = useState>({});
   const [isLoadingCustomToken, setIsLoadingCustomToken] = useState(false);
-  const [customTokenError, setCustomTokenError] = useState<string | null>(null);
-  const [foundToken, setFoundToken] = useState<AppToken | null>(null);
+  const [customTokenError, setCustomTokenError] = useState(null);
+  const [foundToken, setFoundToken] = useState(null);
   const [showImportWarning, setShowImportWarning] = useState(false);
-  const [selectedProtocol, setSelectedProtocol] = useState<SwapProtocol>('v3');
+  const [selectedProtocol, setSelectedProtocol] = useState('v3');
   const [v2Available, setV2Available] = useState(false);
   const [v3Available, setV3Available] = useState(false);
   const [noLiquidityError, setNoLiquidityError] = useState(false);
   const [dontShowWarning, setDontShowWarning] = useState(false);
   const [needsApproval, setNeedsApproval] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [transactionStep, setTransactionStep] = useState<'idle' | 'approving' | 'approved' | 'swapping' | 'success'>('idle');
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [transactionStep, setTransactionStep] = useState('idle');
   const [approvalSuccess, setApprovalSuccess] = useState(false);
 
 
@@ -853,7 +837,7 @@ export default function SwapInterface() {
       const sdkToken = new Token(BASE_CHAIN_ID, contractAddress, Number(decimals), String(symbol), String(name));
       
       // Try to fetch logo from multiple sources
-      let logoURI | null = null;
+      let logoURI = null;
       try {
         console.log('🔍 Fetching logo for token:', String(symbol), contractAddress);
         logoURI = await fetchTokenLogo(contractAddress, String(symbol));
@@ -984,9 +968,9 @@ export default function SwapInterface() {
         return;
       }
 
-      // Special case: Wrap/Unwrap (1:1 conversion, no swap needed)
+      // Special case: Wrap/Unwrap (1)
       if (isWrapOperation) {
-        console.log('🔄 Wrap/Unwrap operation detected (1:1 rate)');
+        console.log('🔄 Wrap/Unwrap operation detected (1)');
         setAmountOut(amountIn); // 1:1 conversion
         setPriceImpact('0');
         setNoLiquidityError(false);
@@ -1012,10 +996,10 @@ export default function SwapInterface() {
       const tokenInAddr = tokenIn.isNative ? WETH_ADDRESS : tokenIn.address;
       const tokenOutAddr = tokenOut.isNative ? WETH_ADDRESS : tokenOut.address;
       
-      let v3Quote: bigint | null = null;
-      let v2Quote: bigint | null = null;
-      let bestProtocol: SwapProtocol = 'v3';
-      let bestQuote: bigint = BigInt(0);
+      let v3Quote = null;
+      let v2Quote = null;
+      let bestProtocol = 'v3';
+      let bestQuote = BigInt(0);
       
       // Try V3 quote
       try {
@@ -1032,7 +1016,7 @@ export default function SwapInterface() {
             sqrtPriceLimitX96: BigInt(0)
           }]
         });
-        v3Quote = result[0] as bigint;
+        v3Quote = result[0];
         console.log('✅ V3 Quote:', formatUnits(v3Quote, tokenOut.decimals), tokenOut.symbol);
         setV3Available(true);
       } catch (error) {
@@ -1061,7 +1045,7 @@ export default function SwapInterface() {
             args: [amountInWei, [tokenInAddr, tokenOutAddr]]
           });
           
-          v2Quote = (amounts as bigint[])[1];
+          v2Quote = (amounts)[1];
           console.log('✅ V2 Quote:', formatUnits(v2Quote, tokenOut.decimals), tokenOut.symbol);
           setV2Available(true);
         } else {
@@ -1172,7 +1156,7 @@ export default function SwapInterface() {
   };
 
   // Handle token selection with proper state reset
-  const handleTokenSelect = (token, side: 'in' | 'out') => {
+  const handleTokenSelect = (token, side) => {
     if (side === 'in') {
       if (token.symbol === tokenOut.symbol) {
         switchTokens();
@@ -1210,7 +1194,7 @@ export default function SwapInterface() {
         args: [SWAP_AGGREGATOR, maxUint256], // Unlimited approval
         chainId: base.id
       });
-    } catch (error: any) {
+    } catch (error) {
       setTransactionStep('idle');
       if (error.code === 4001) {
         setErrorMessage('Transaction rejected');
@@ -1282,7 +1266,7 @@ export default function SwapInterface() {
         setTransactionStep('idle');
         return;
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('❌ Failed to parse amountIn:', error);
       setErrorMessage(`Invalid input amount: ${error.message || 'Number format error'}`);
       setTransactionStep('idle');
@@ -1323,7 +1307,7 @@ export default function SwapInterface() {
         }
         console.log('✅ Wrap/Unwrap request sent to wallet!');
         return;
-      } catch (error: any) {
+      } catch (error) {
         console.error('❌ Wrap/Unwrap error:', error);
         setTransactionStep('idle');
         if (error.message?.includes('decimal') || error.message?.includes('Number')) {
@@ -1352,7 +1336,7 @@ export default function SwapInterface() {
           setTransactionStep('idle');
           return;
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error('❌ Failed to parse amountOut:', error);
         setErrorMessage(`Invalid output amount: ${error.message || 'Number format error'}`);
         setTransactionStep('idle');
@@ -1376,7 +1360,7 @@ export default function SwapInterface() {
       // Ensure minimum output is reasonable
       // minAmountOut should never be less than the slippage-adjusted amount
       // If minAmountOut is somehow less than slippage tolerance allows, use minAmountOut directly
-      // (This should not happen with correct slippage calculation, but acts as a safety check)
+      // (This should not happen with correct slippage calculation, but acts)
       // For very small amounts, ensure at least 1 wei minimum
       const minUnit = BigInt(1);
       const finalMinAmountOut = minAmountOut > minUnit ? minAmountOut : minUnit;
@@ -1461,7 +1445,7 @@ export default function SwapInterface() {
 
       console.log('📤 Sending swap via Aggregator V2...');
       console.log('   Function:', txConfig.functionName);
-      console.log('   Args:', txConfig.args.map((a: any) => a.toString()));
+      console.log('   Args) => a.toString()));
       console.log('   Value:', txConfig.value?.toString() || '0');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
@@ -1477,7 +1461,7 @@ export default function SwapInterface() {
       
       console.log('✅ Aggregator swap request sent to wallet!');
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.error('❌ TRANSACTION ERROR:');
       console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -1627,7 +1611,7 @@ export default function SwapInterface() {
   }, [errorMessage]);
 
   // Mobile responsive styles helper
-  const getStyle = (desktopStyle: React.CSSProperties, mobileStyle?: React.CSSProperties) => {
+  const getStyle = (desktopStyle, mobileStyle?) => {
     return isMobile && mobileStyle ? { ...desktopStyle, ...mobileStyle } : desktopStyle;
   };
 
@@ -2272,7 +2256,7 @@ export default function SwapInterface() {
                         alt={foundToken.symbol}
                         style={styles.foundTokenLogo}
                         onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
+                          (e.target).style.display = 'none';
                         }}
                       />
                     ) : (
@@ -2313,7 +2297,7 @@ export default function SwapInterface() {
                         alt={foundToken.symbol}
                         style={styles.warningTokenLogo}
                         onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
+                          (e.target).style.display = 'none';
                         }}
                       />
                     )}
@@ -2366,7 +2350,7 @@ export default function SwapInterface() {
 
                       if (isCurrentToken) return null;
 
-                      const handleRemove = (e: React.MouseEvent) => {
+                      const handleRemove = (e) => {
                         e.stopPropagation(); // Prevent token selection when clicking remove
                         removeCustomToken(token.symbol);
                         setCustomTokens(prev => {
@@ -2440,7 +2424,7 @@ export default function SwapInterface() {
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const styles = {
   pageContainer: {
     display: 'flex',
     flexDirection: 'column',
