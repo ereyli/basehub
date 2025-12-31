@@ -340,6 +340,15 @@ function TokenListItem({ token, onClick, isDisabled }) {
         cursor: isDisabled ? 'not-allowed' : 'pointer'
       }}
     >
+        {token.logoURI ? (
+          <img 
+            src={token.logoURI} 
+            alt={token.symbol} 
+            style={tokenListItemStyles.logo}
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
         ) : (
           <div style={tokenListItemStyles.logoPlaceholder}>
             {token.symbol.charAt(0)}
