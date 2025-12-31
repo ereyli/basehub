@@ -1408,7 +1408,7 @@ export default function SwapInterface() {
       // ALL SWAPS GO THROUGH AGGREGATOR V2 (Including Native ETH!)
       // ═══════════════════════════════════════════════════════════════
       
-      let txConfig: any;
+      let txConfig;
 
       if (selectedProtocol === 'v2') {
         // V2 Swap via Aggregator
