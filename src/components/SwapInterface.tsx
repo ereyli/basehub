@@ -7,6 +7,7 @@ import { Token } from '@uniswap/sdk-core';
 import StatsPanel from './StatsPanel';
 import swaphubLogo from '../assets/swaphub-logo.png';
 import { addXP } from '../utils/xpUtils';
+import XPShareButton from './XPShareButton';
 
 // ETH price state - will be fetched from CoinGecko API
 let cachedEthPrice = 2950; // Default fallback price
@@ -714,14 +715,6 @@ export default function SwapInterface() {
   const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
   const { isLoading: isConfirming, isSuccess, error: txError } = useWaitForTransactionReceipt({ hash });
   const publicClient = usePublicClient();
-
-  // Build cast text for sharing
-  const buildCastText = () => {
-    if (hash && tokenIn && tokenOut && amountIn) {
-      return `🔄 Just swapped ${amountIn} ${tokenIn.symbol} → ${tokenOut.symbol} on SwapHub DEX!\n\n💰 Best rates across Uniswap V2 & V3\n🎉 Earned 100 XP\n⚡️ Powered by BaseHub\n\nhttps://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub`;
-    }
-    return `🔄 Swap tokens on SwapHub DEX!\n\n💰 Best rates across Uniswap V2 & V3\n🎉 Earn 100 XP per swap\n⚡️ Powered by BaseHub\n\nhttps://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub`;
-  };
 
   // ETH price state - updated from CoinGecko API
   const [ethPriceUsd, setEthPriceUsd] = useState<number>(2950);
@@ -2028,43 +2021,22 @@ export default function SwapInterface() {
         <div style={{
           marginTop: '24px',
           paddingTop: '20px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+          display: 'flex',
+          justifyContent: 'center'
         }}>
-          <a 
-            href={`https://warpcast.com/~/compose?text=${encodeURIComponent(buildCastText())}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              width: '100%',
-              padding: '14px 24px',
-              background: 'linear-gradient(135deg, #8a63d2 0%, #6b46c1 100%)',
-              color: 'white',
-              textDecoration: 'none',
-              borderRadius: '16px',
-              fontWeight: '700',
-              fontSize: '15px',
-              textAlign: 'center' as const,
-              boxShadow: '0 6px 18px rgba(138, 99, 210, 0.35)',
-              transition: 'all 0.2s ease',
-              border: 'none',
-              cursor: 'pointer'
+          <XPShareButton 
+            gameType="swap"
+            xpEarned={100}
+            totalXP={0}
+            transactionHash={hash || ''}
+            gameResult={{
+              tokenIn: tokenIn.symbol,
+              tokenOut: tokenOut.symbol,
+              amountIn: amountIn
             }}
-            onMouseEnter={(e) => {
-              (e.target as HTMLElement).style.transform = 'translateY(-2px)';
-              (e.target as HTMLElement).style.boxShadow = '0 8px 24px rgba(138, 99, 210, 0.45)';
-            }}
-            onMouseLeave={(e) => {
-              (e.target as HTMLElement).style.transform = 'translateY(0)';
-              (e.target as HTMLElement).style.boxShadow = '0 6px 18px rgba(138, 99, 210, 0.35)';
-            }}
-          >
-            <span style={{ fontSize: '18px' }}>📣</span>
-            <span>Share on Farcaster</span>
-          </a>
+            style={{ width: '100%' }}
+          />
         </div>
 
         {(isPending || isConfirming) && (

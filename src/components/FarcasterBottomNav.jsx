@@ -2,13 +2,13 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAccount } from 'wagmi'
 import { useTransactions } from '../hooks/useTransactions'
-import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, Trash2, Star, Users } from 'lucide-react'
+import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, Trash2, Star, Users, Repeat } from 'lucide-react'
 
 const FarcasterBottomNav = () => {
   const navigate = useNavigate()
   const { isConnected, address } = useAccount()
   const { sendGMTransaction, sendGNTransaction, isLoading: transactionLoading } = useTransactions()
-  const [activeTab, setActiveTab] = useState(null) // null = hidden, 'gmgn' | 'gaming' | 'nft' | 'analysis' | 'deploy' | 'social'
+  const [activeTab, setActiveTab] = useState(null) // null = hidden, 'gmgn' | 'gaming' | 'nft' | 'analysis' | 'deploy' | 'social' | 'dex'
   const [isLoadingGM, setIsLoadingGM] = useState(false)
   const [isLoadingGN, setIsLoadingGN] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
@@ -95,6 +95,10 @@ const FarcasterBottomNav = () => {
 
   const socialTools = [
     { id: 'featured-profiles', title: 'Featured Profiles', icon: <Star size={20} />, path: '/featured-profiles', color: '#fbbf24' },
+  ]
+
+  const dexTools = [
+    { id: 'swap', title: 'SwapHub', icon: <Repeat size={20} />, path: '/swap', color: '#667eea' },
   ]
 
   return (
@@ -303,6 +307,37 @@ const FarcasterBottomNav = () => {
         >
           <Users size={18} />
           <span>SOCIAL</span>
+        </button>
+
+        {/* DEX Tab */}
+        <button
+          onClick={() => handleTabClick('dex')}
+          style={{
+            flex: 1,
+            padding: '12px 8px',
+            border: 'none',
+            borderRadius: '12px',
+            background: activeTab === 'dex' 
+              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+              : 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)',
+            color: activeTab === 'dex' ? 'white' : '#667eea',
+            fontSize: '12px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '6px',
+            transition: 'all 0.2s ease',
+            minHeight: '64px',
+            justifyContent: 'center',
+            boxShadow: activeTab === 'dex' 
+              ? '0 4px 12px rgba(102, 126, 234, 0.3)' 
+              : '0 2px 4px rgba(102, 126, 234, 0.1)'
+          }}
+        >
+          <Repeat size={18} />
+          <span>DEX</span>
         </button>
       </div>
 
@@ -624,6 +659,52 @@ const FarcasterBottomNav = () => {
                   gap: '12px' 
                 }}>
                   {socialTools.map((tool) => (
+                    <button
+                      key={tool.id}
+                      onClick={() => {
+                        navigate(tool.path)
+                        setActiveTab(null)
+                      }}
+                      style={{
+                        padding: '16px',
+                        border: 'none',
+                        borderRadius: '12px',
+                        background: `linear-gradient(135deg, ${tool.color} 0%, ${tool.color}dd 100%)`,
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '8px',
+                        boxShadow: `0 4px 12px ${tool.color}40`
+                      }}
+                    >
+                      {tool.icon}
+                      <span>{tool.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* DEX Content */}
+            {activeTab === 'dex' && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#e5e7eb' }}>
+                  DEX Aggregator
+                </h3>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(2, 1fr)', 
+                  gap: '12px' 
+                }}>
+                  {dexTools.map((tool) => (
                     <button
                       key={tool.id}
                       onClick={() => {

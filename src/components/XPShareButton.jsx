@@ -33,7 +33,8 @@ const XPShareButton = ({
       'flip': '🪙',
       'lucky': '🍀',
       'dice': '🎲',
-      'deploy': '🚀'
+      'deploy': '🚀',
+      'swap': '🔄'
     }
 
     const gameNames = {
@@ -42,7 +43,8 @@ const XPShareButton = ({
       'flip': 'Flip Game',
       'lucky': 'Lucky Number',
       'dice': 'Dice Roll',
-      'deploy': 'Deploy'
+      'deploy': 'Deploy',
+      'swap': 'SwapHub DEX'
     }
 
     const emoji = gameEmojis[gameType] || '🎮'
@@ -57,10 +59,16 @@ const XPShareButton = ({
         shareText += ` ${gameResult.won ? '🎯 Lucky number hit!' : '🎲 Close, but no luck!'}`
       } else if (gameType === 'dice') {
         shareText += ` 🎲 Rolled ${gameResult.dice1} & ${gameResult.dice2}`
+      } else if (gameType === 'swap' && gameResult.amountIn) {
+        shareText = `${emoji} Just swapped ${gameResult.amountIn} ${gameResult.tokenIn} → ${gameResult.tokenOut} on SwapHub DEX!\n\n💰 Best rates across Uniswap V2 & V3\n🎉 Earned ${xpEarned} XP`
       }
     }
     
-    shareText += `\n\nTotal XP: ${totalXP} (${Math.floor(totalXP / 50)} BHUP tokens)\n\nPlay on BaseHub and earn XP on Base network! 🚀`
+    if (gameType !== 'swap') {
+      shareText += `\n\nTotal XP: ${totalXP} (${Math.floor(totalXP / 50)} BHUP tokens)\n\nPlay on BaseHub and earn XP on Base network! 🚀`
+    } else {
+      shareText += `\n\n⚡️ Powered by BaseHub`
+    }
     
     return shareText
   }
@@ -72,7 +80,7 @@ const XPShareButton = ({
     } else {
       // Use regular URL for web users
       const baseUrl = window.location.origin
-      const gamePath = gameType === 'deploy' ? '/deploy' : `/${gameType}`
+      const gamePath = gameType === 'deploy' ? '/deploy' : gameType === 'swap' ? '/swap' : `/${gameType}`
       return `${baseUrl}${gamePath}`
     }
   }
