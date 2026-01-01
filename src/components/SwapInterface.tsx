@@ -733,9 +733,14 @@ export default function SwapInterface() {
   // Fetch ETH price on mount and periodically update
   useEffect(() => {
     const updateEthPrice = async () => {
-      const price = await fetchEthPrice();
-      setEthPriceUsd(price);
-      console.log('🔄 ETH price updated in component:', `$${price.toFixed(2)}`);
+      try {
+        const price = await fetchEthPrice();
+        setEthPriceUsd(price);
+        console.log('🔄 ETH price updated in component:', `$${price.toFixed(2)}`);
+      } catch (error) {
+        console.error('❌ Error updating ETH price:', error);
+        // Keep using cached/default price
+      }
     };
     
     // Fetch immediately on mount
@@ -750,53 +755,57 @@ export default function SwapInterface() {
   // Award XP on successful swap
   useEffect(() => {
     if (isSuccess && address && hash && amountIn && tokenIn) {
-      // Calculate swap amount in USD
-      let swapAmountUSD = 0;
-      const amountInNum = parseFloat(amountIn);
-      
-      if (!isNaN(amountInNum) && amountInNum > 0) {
-        if (tokenIn.isNative || tokenIn.symbol === 'ETH' || tokenIn.symbol === 'WETH') {
-          // ETH/WETH: amount * ETH price
-          swapAmountUSD = amountInNum * ethPriceUsd;
-        } else if (tokenIn.symbol === 'USDC' || tokenIn.symbol === 'USDT' || tokenIn.symbol === 'USDbC' || tokenIn.symbol === 'DAI') {
-          // Stablecoins: amount is already in USD (for 18 decimals, divide by 1e12 for USDC/USDT with 6 decimals)
-          if (tokenIn.decimals === 6) {
-            swapAmountUSD = amountInNum;
-          } else {
-            swapAmountUSD = amountInNum;
-          }
-        } else {
-          // Other tokens: use amountOut in USD if available (USDC/USDT), otherwise estimate with ETH price
-          const amountOutNum = parseFloat(amountOut);
-          if (!isNaN(amountOutNum) && amountOutNum > 0 && (tokenOut.symbol === 'USDC' || tokenOut.symbol === 'USDT' || tokenOut.symbol === 'USDbC')) {
-            swapAmountUSD = amountOutNum;
-          } else {
-            // Fallback: estimate with ETH price (assume similar value to ETH)
+      try {
+        // Calculate swap amount in USD
+        let swapAmountUSD = 0;
+        const amountInNum = parseFloat(amountIn);
+        
+        if (!isNaN(amountInNum) && amountInNum > 0) {
+          if (tokenIn.isNative || tokenIn.symbol === 'ETH' || tokenIn.symbol === 'WETH') {
+            // ETH/WETH: amount * ETH price
             swapAmountUSD = amountInNum * ethPriceUsd;
+          } else if (tokenIn.symbol === 'USDC' || tokenIn.symbol === 'USDT' || tokenIn.symbol === 'USDbC' || tokenIn.symbol === 'DAI') {
+            // Stablecoins: amount is already in USD (for 18 decimals, divide by 1e12 for USDC/USDT with 6 decimals)
+            if (tokenIn.decimals === 6) {
+              swapAmountUSD = amountInNum;
+            } else {
+              swapAmountUSD = amountInNum;
+            }
+          } else {
+            // Other tokens: use amountOut in USD if available (USDC/USDT), otherwise estimate with ETH price
+            const amountOutNum = parseFloat(amountOut);
+            if (!isNaN(amountOutNum) && amountOutNum > 0 && (tokenOut.symbol === 'USDC' || tokenOut.symbol === 'USDT' || tokenOut.symbol === 'USDbC')) {
+              swapAmountUSD = amountOutNum;
+            } else {
+              // Fallback: estimate with ETH price (assume similar value to ETH)
+              swapAmountUSD = amountInNum * ethPriceUsd;
+            }
           }
         }
-      }
 
-      console.log('🎉 Swap successful! Awarding 250 XP...');
-      console.log('💵 Swap amount USD:', swapAmountUSD.toFixed(2));
-      
-      // Award base XP
-      addXP(address, 250, 'SWAP')
-        .then(() => {
-          console.log('✅ XP awarded successfully for swap');
-          
-          // Record swap transaction with volume tracking
-          recordSwapTransaction(address, swapAmountUSD, hash, 250)
-            .then(() => {
-              console.log('✅ Swap transaction recorded with volume tracking');
-            })
-            .catch(error => {
-              console.error('❌ Error recording swap transaction:', error);
-            });
-        })
-        .catch(error => {
-          console.error('❌ Error awarding XP:', error);
-        });
+        console.log('🎉 Swap successful! Awarding 250 XP...');
+        console.log('💵 Swap amount USD:', swapAmountUSD.toFixed(2));
+        
+        // Award base XP
+        addXP(address, 250, 'SWAP')
+          .then(() => {
+            console.log('✅ XP awarded successfully for swap');
+            
+            // Record swap transaction with volume tracking
+            recordSwapTransaction(address, swapAmountUSD, hash, 250)
+              .then(() => {
+                console.log('✅ Swap transaction recorded with volume tracking');
+              })
+              .catch(error => {
+                console.error('❌ Error recording swap transaction:', error);
+              });
+          })
+          .catch(error => {
+            console.error('❌ Error awarding XP:', error);
+          });
+      } catch (error) {
+        console.error('❌ Error in swap success handler:', error);
+      }
     }
   }, [isSuccess, address, hash, amountIn, tokenIn, amountOut, tokenOut, ethPriceUsd]);
 
@@ -882,44 +891,56 @@ export default function SwapInterface() {
 
     // Refresh logos for custom tokens that don't have one or have invalid logo
     const refreshLogos = async () => {
-      for (const [key, token] of Object.entries(customOnly)) {
-        // If no logo or logo might be invalid, try to fetch
-        if (!token.logoURI) {
-          console.log('🔄 Refreshing logo for token:', token.symbol);
+      try {
+        for (const [key, token] of Object.entries(customOnly)) {
           try {
-            const logoURI = await fetchTokenLogo(token.address, token.symbol);
-            if (logoURI) {
-              // Update token with new logo
-              const updatedToken = { ...token, logoURI };
-              customOnly[key] = updatedToken;
-              // Save to localStorage
-              saveCustomToken(updatedToken);
-              // Update state
-              setCustomTokens(prev => ({ ...prev, [key]: updatedToken }));
-              console.log('✅ Logo refreshed for:', token.symbol, logoURI);
+            // If no logo or logo might be invalid, try to fetch
+            if (!token.logoURI) {
+              console.log('🔄 Refreshing logo for token:', token.symbol);
+              try {
+                const logoURI = await fetchTokenLogo(token.address, token.symbol);
+                if (logoURI) {
+                  // Update token with new logo
+                  const updatedToken = { ...token, logoURI };
+                  customOnly[key] = updatedToken;
+                  // Save to localStorage
+                  saveCustomToken(updatedToken);
+                  // Update state
+                  setCustomTokens(prev => ({ ...prev, [key]: updatedToken }));
+                  console.log('✅ Logo refreshed for:', token.symbol, logoURI);
+                }
+              } catch (e) {
+                console.warn('Failed to refresh logo for', token.symbol, e);
+              }
+            } else {
+              // Verify existing logo is still valid
+              try {
+                const isValid = await checkImageUrl(token.logoURI);
+                if (!isValid) {
+                  console.log('🔄 Logo invalid, refreshing for token:', token.symbol);
+                  try {
+                    const logoURI = await fetchTokenLogo(token.address, token.symbol);
+                    if (logoURI) {
+                      const updatedToken = { ...token, logoURI };
+                      customOnly[key] = updatedToken;
+                      saveCustomToken(updatedToken);
+                      setCustomTokens(prev => ({ ...prev, [key]: updatedToken }));
+                      console.log('✅ Logo refreshed for:', token.symbol, logoURI);
+                    }
+                  } catch (e) {
+                    console.warn('Failed to refresh logo for', token.symbol, e);
+                  }
+                }
+              } catch (e) {
+                console.warn('Failed to check logo validity for', token.symbol, e);
+              }
             }
           } catch (e) {
-            console.warn('Failed to refresh logo for', token.symbol, e);
-          }
-        } else {
-          // Verify existing logo is still valid
-          const isValid = await checkImageUrl(token.logoURI);
-          if (!isValid) {
-            console.log('🔄 Logo invalid, refreshing for token:', token.symbol);
-            try {
-              const logoURI = await fetchTokenLogo(token.address, token.symbol);
-              if (logoURI) {
-                const updatedToken = { ...token, logoURI };
-                customOnly[key] = updatedToken;
-                saveCustomToken(updatedToken);
-                setCustomTokens(prev => ({ ...prev, [key]: updatedToken }));
-                console.log('✅ Logo refreshed for:', token.symbol, logoURI);
-              }
-            } catch (e) {
-              console.warn('Failed to refresh logo for', token.symbol, e);
-            }
+            console.warn('Error processing token', token.symbol, e);
           }
         }
+      } catch (error) {
+        console.error('❌ Error in refreshLogos:', error);
       }
     };
 
