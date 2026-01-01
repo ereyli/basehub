@@ -721,6 +721,13 @@ export default function SwapInterface() {
 
   // Mobile responsive hook
   const [isMobile, setIsMobile] = useState(false);
+
+  // Token and amount states - must be defined before useEffect hooks that use them
+  const [tokenIn, setTokenIn] = useState<AppToken>(DEFAULT_TOKENS.ETH);
+  const [tokenOut, setTokenOut] = useState<AppToken>(DEFAULT_TOKENS.USDC);
+  const [amountIn, setAmountIn] = useState('');
+  const [amountOut, setAmountOut] = useState('0');
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -808,11 +815,6 @@ export default function SwapInterface() {
       }
     }
   }, [isSuccess, address, hash, amountIn, tokenIn, amountOut, tokenOut, ethPriceUsd]);
-
-  const [tokenIn, setTokenIn] = useState<AppToken>(DEFAULT_TOKENS.ETH);
-  const [tokenOut, setTokenOut] = useState<AppToken>(DEFAULT_TOKENS.USDC);
-  const [amountIn, setAmountIn] = useState('');
-  const [amountOut, setAmountOut] = useState('0');
   const [showTokenSelect, setShowTokenSelect] = useState<'in' | 'out' | null>(null);
   const [tokenSearchQuery, setTokenSearchQuery] = useState('');
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
