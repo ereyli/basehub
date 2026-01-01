@@ -23,53 +23,54 @@ export default function SwapHub() {
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%)',
       paddingTop: isMobile ? '60px' : '0',
-      paddingBottom: isMobile ? '80px' : '20px'
+      paddingBottom: isMobile ? '100px' : '20px'
     },
     content: {
       maxWidth: '1400px',
       margin: '0 auto',
-      padding: isMobile ? '20px 16px' : '40px 20px'
+      padding: isMobile ? '16px 12px' : '40px 20px'
     },
     header: {
-      marginBottom: '32px',
+      marginBottom: isMobile ? '20px' : '32px',
       textAlign: 'center'
     },
     title: {
-      fontSize: isMobile ? '28px' : '36px',
+      fontSize: isMobile ? '24px' : '36px',
       fontWeight: '700',
       color: '#ffffff',
-      marginBottom: '12px',
+      marginBottom: '8px',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       WebkitBackgroundClip: 'text',
       WebkitTextFillColor: 'transparent',
       backgroundClip: 'text'
     },
     subtitle: {
-      fontSize: isMobile ? '14px' : '16px',
+      fontSize: isMobile ? '13px' : '16px',
       color: 'rgba(255, 255, 255, 0.6)',
       lineHeight: '1.6'
     },
     mainGrid: {
       display: 'grid',
       gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-      gap: '24px',
+      gap: isMobile ? '16px' : '24px',
       marginBottom: '24px'
     },
     swapCard: {
       backgroundColor: 'rgba(255, 255, 255, 0.03)',
       borderRadius: '20px',
-      padding: isMobile ? '20px' : '24px',
+      padding: isMobile ? '16px' : '24px',
       border: '1px solid rgba(255, 255, 255, 0.08)',
       backdropFilter: 'blur(10px)'
     },
     statsCard: {
       backgroundColor: 'rgba(255, 255, 255, 0.03)',
       borderRadius: '20px',
-      padding: isMobile ? '20px' : '24px',
+      padding: isMobile ? '16px' : '24px',
       border: '1px solid rgba(255, 255, 255, 0.08)',
       backdropFilter: 'blur(10px)',
       display: 'flex',
-      flexDirection: 'column'
+      flexDirection: 'column',
+      minHeight: isMobile ? '400px' : 'auto'
     }
   };
 
