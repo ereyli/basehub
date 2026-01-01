@@ -6,7 +6,6 @@ import { useSupabase } from '../hooks/useSupabase'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
-import XPShareButton from '../components/XPShareButton'
 import NetworkGuard from '../components/NetworkGuard'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { Moon, Send, Star, CheckCircle, ExternalLink, Coins } from 'lucide-react'
@@ -157,18 +156,6 @@ const GNGame = () => {
           </div>
           
           {/* XP Share Button */}
-          <div style={{ 
-            marginTop: '12px',
-            display: 'flex',
-            justifyContent: 'center'
-          }}>
-            <XPShareButton 
-              gameType="gn"
-              xpEarned={10}
-              totalXP={totalXP}
-              transactionHash={lastTransaction.hash || lastTransaction.transactionHash}
-            />
-          </div>
         </div>
       )}
 

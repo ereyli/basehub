@@ -6,7 +6,6 @@ import { useSupabase } from '../hooks/useSupabase'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
-import XPShareButton from '../components/XPShareButton'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { Dice6, Send, Star, CheckCircle, ExternalLink, Coins, TrendingUp, TrendingDown } from 'lucide-react'
 import Dice3D from '../components/Dice3D'
@@ -307,25 +306,6 @@ const DiceRollGame = () => {
             {lastTransaction.hash || lastTransaction.transactionHash}
           </div>
           
-          {/* XP Share Button */}
-          <div style={{ 
-            marginTop: '12px',
-            display: 'flex',
-            justifyContent: 'center'
-          }}>
-            <XPShareButton 
-              gameType="dice"
-              xpEarned={lastTransaction.xpEarned || 10}
-              totalXP={totalXP}
-              transactionHash={lastTransaction.hash || lastTransaction.transactionHash}
-              gameResult={{
-                won: lastTransaction.isWin,
-                selectedNumber: lastTransaction.selectedNumber,
-                dice1: lastTransaction.dice1,
-                dice2: lastTransaction.dice2
-              }}
-            />
-          </div>
         </div>
       )}
 

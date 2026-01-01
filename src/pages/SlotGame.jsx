@@ -5,7 +5,6 @@ import { useSupabase } from '../hooks/useSupabase'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
-import XPShareButton from '../components/XPShareButton'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { Coins, Play, Star, CheckCircle, ExternalLink, TrendingUp, Zap, Gift } from 'lucide-react'
 
@@ -670,23 +669,6 @@ const SlotGame = () => {
             {lastTransaction.hash || lastTransaction.transactionHash}
           </div>
           
-          {/* XP Share Button */}
-          <div style={{ 
-            marginTop: '12px',
-            display: 'flex',
-            justifyContent: 'center'
-          }}>
-            <XPShareButton 
-              gameType="slot"
-              xpEarned={lastTransaction.xpEarned || 5}
-              totalXP={totalXP}
-              transactionHash={lastTransaction.hash || lastTransaction.transactionHash}
-              gameResult={{
-                won: lastResult?.won,
-                symbols: lastResult?.symbols
-              }}
-            />
-          </div>
         </div>
       )}
 

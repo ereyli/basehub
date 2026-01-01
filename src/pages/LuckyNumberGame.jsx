@@ -7,7 +7,6 @@ import { useSupabase } from '../hooks/useSupabase'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
-import XPShareButton from '../components/XPShareButton'
 import NetworkGuard from '../components/NetworkGuard'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { Target, Send, Star, CheckCircle, ExternalLink, Coins, TrendingUp, TrendingDown } from 'lucide-react'
@@ -364,24 +363,6 @@ const LuckyNumberGame = () => {
             {lastTransaction.hash || lastTransaction.transactionHash}
           </div>
           
-          {/* XP Share Button */}
-          <div style={{ 
-            marginTop: '12px',
-            display: 'flex',
-            justifyContent: 'center'
-          }}>
-            <XPShareButton 
-              gameType="lucky"
-              xpEarned={lastTransaction.xpEarned || 10}
-              totalXP={totalXP}
-              transactionHash={lastTransaction.hash || lastTransaction.transactionHash}
-              gameResult={{
-                won: lastTransaction.isWin,
-                selectedNumber: lastTransaction.selectedNumber,
-                result: lastTransaction.result
-              }}
-            />
-          </div>
         </div>
       )}
 
