@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useBalance, usePublicClient } from 'wagmi';
 import { parseUnits, formatUnits, maxUint256 } from 'viem';
 import { base } from 'wagmi/chains';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { DEFAULT_TOKENS, POPULAR_TOKENS, FEE_TIERS, searchTokens, getAllTokens, saveCustomToken, removeCustomToken, getTokenByAddress, BASE_CHAIN_ID, type AppToken } from '../config/tokens';
 import { Token } from '@uniswap/sdk-core';
 import StatsPanel from './StatsPanel';
@@ -1815,11 +1814,6 @@ export default function SwapInterface() {
               </button>
             </nav>
           )}
-          {isMobile && (
-            <div style={getStyle(styles.headerRight, mobileOverrides.headerRight)}>
-              <ConnectButton />
-            </div>
-          )}
         </div>
         {isMobile && (
           <nav style={getStyle(styles.nav, mobileOverrides.nav)}>
@@ -1842,7 +1836,6 @@ export default function SwapInterface() {
                 style={getStyle(styles.searchInput, mobileOverrides.searchInput)}
               />
             </div>
-            <ConnectButton />
           </div>
         )}
       </header>
