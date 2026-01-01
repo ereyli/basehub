@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Component } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Gift, Trophy, TrendingUp } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import SwapInterface from '../components/SwapInterface.tsx';
 import StatsPanel from '../components/StatsPanel.tsx';
 import BackButton from '../components/BackButton';
@@ -166,12 +166,14 @@ export default function SwapHub() {
       width: isMobile ? '40px' : '48px',
       height: isMobile ? '40px' : '48px',
       borderRadius: '12px',
-      background: 'linear-gradient(135deg, #9333ea 0%, #3b82f6 100%)',
+      background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)',
+      border: '1px solid rgba(251, 191, 36, 0.3)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0,
-      boxShadow: '0 4px 12px rgba(147, 51, 234, 0.4)'
+      boxShadow: '0 4px 16px rgba(251, 191, 36, 0.25)',
+      backdropFilter: 'blur(8px)'
     },
     xpBannerText: {
       display: 'flex',
@@ -233,25 +235,63 @@ export default function SwapHub() {
           <div style={styles.xpBannerContent}>
             <div style={styles.xpBannerLeft}>
               <div style={styles.xpIcon}>
-                <Gift size={isMobile ? 24 : 28} color="#ffffff" strokeWidth={2.5} />
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: isMobile ? '24px' : '28px',
+                  fontWeight: 'bold',
+                  background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}>
+                  ⭐
+                </div>
               </div>
               <div style={styles.xpBannerText}>
                 <div style={styles.xpBannerTitle}>
-                  🎉 XP Etkinliği Aktif!
+                  XP Rewards Active!
                 </div>
                 <div style={styles.xpBannerSubtitle}>
-                  Her swap'ta XP kazan, milestone'lara ulaş ve bonus XP'leri kap!
+                  Earn XP on every swap, reach milestones and unlock bonus rewards!
                 </div>
               </div>
             </div>
             <div style={styles.xpRewards}>
               <div style={styles.xpRewardItem}>
-                <Trophy size={16} color="#fbbf24" />
-                <span>Her Swap: <span style={styles.xpBadge}>250 XP</span></span>
+                <div style={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '4px',
+                  background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(251, 191, 36, 0.4)'
+                }}>
+                  <div style={{ fontSize: '12px' }}>⚡</div>
+                </div>
+                <span>Per Swap: <span style={styles.xpBadge}>250 XP</span></span>
               </div>
               <div style={styles.xpRewardItem}>
-                <TrendingUp size={16} color="#3b82f6" />
-                <span>Her $500: <span style={styles.xpBadge}>5000 XP</span></span>
+                <div style={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '4px',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(59, 130, 246, 0.4)'
+                }}>
+                  <div style={{ fontSize: '12px' }}>🎯</div>
+                </div>
+                <span>Per $500: <span style={styles.xpBadge}>5000 XP</span></span>
               </div>
             </div>
           </div>
