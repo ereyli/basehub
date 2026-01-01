@@ -172,7 +172,6 @@ export default function AllowanceCleaner() {
                 style={{
                   padding: '12px 16px',
                   borderRadius: '12px',
-                  border: 'none',
                   cursor: isScanning ? 'not-allowed' : 'pointer',
                   background: selectedNetwork === key 
                     ? `linear-gradient(135deg, ${network.color}22 0%, ${network.color}44 100%)`

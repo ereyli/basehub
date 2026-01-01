@@ -9,7 +9,7 @@ import TwitterShareButton from '../components/TwitterShareButton'
 import DailyQuestSystem from '../components/DailyQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
-import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users } from 'lucide-react'
+import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat } from 'lucide-react'
 
 const Home = () => {
   const { isConnected } = useAccount()
@@ -318,6 +318,15 @@ const Home = () => {
       bonusXP: '+2000 XP (Combo)'
     },
     {
+      id: 'swap',
+      title: 'SwapHub',
+      description: 'DEX Aggregator - Swap tokens on Base',
+      icon: <ArrowLeftRight size={35} style={{ color: 'white' }} />,
+      path: '/swap',
+      color: 'linear-gradient(135deg, #ff1cf7 0%, #00d4ff 100%)',
+      xpReward: null,
+      bonusXP: null
+    },
   ]
 
   return (
@@ -697,6 +706,66 @@ const Home = () => {
                           )}
                         </div>
                         <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0, lineHeight: '1.4' }}>
+                          {game.description}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* DEX Aggregator Category */}
+              <div style={{
+                background: 'rgba(30, 41, 59, 0.95)',
+                borderRadius: '20px',
+                padding: '32px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                border: '2px solid rgba(102, 126, 234, 0.2)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white'
+                  }}>
+                    <Repeat size={24} />
+                  </div>
+                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
+                    DEX AGGREGATOR
+                  </h2>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                  {games.filter(g => g.id === 'swap').map((game) => (
+                    <Link
+                      key={game.id}
+                      to={game.path}
+                      className="game-card"
+                      style={{ 
+                        textDecoration: 'none',
+                        position: 'relative',
+                        display: 'block'
+                      }}
+                    >
+                      <div style={{
+                        background: game.color,
+                        padding: '24px',
+                        borderRadius: '16px',
+                        color: 'white',
+                        transition: 'all 0.3s ease',
+                        height: '100%'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
+                          {game.icon}
+                          <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
+                            {game.title}
+                          </h3>
+                        </div>
+                        <p style={{ margin: '12px 0', fontSize: '14px', color: 'rgba(255, 255, 255, 0.9)', lineHeight: '1.4' }}>
                           {game.description}
                         </p>
                       </div>

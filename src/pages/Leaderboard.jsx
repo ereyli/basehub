@@ -376,7 +376,6 @@ const Leaderboard = () => {
                     padding: '12px 24px',
                     background: 'rgba(30, 41, 59, 0.8)',
                     color: '#e5e7eb',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
                     border: 'none',
                     borderRadius: '8px',
                     fontSize: '14px',
