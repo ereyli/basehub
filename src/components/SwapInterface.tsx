@@ -1991,6 +1991,40 @@ export default function SwapInterface() {
           }
         </button>
 
+        {/* Share on Farcaster Button */}
+        <a 
+          href={`https://warpcast.com/~/compose?text=${encodeURIComponent(`🔄 Just swapped on SwapHub DEX!\n\n💰 Best rates across Uniswap V2 & V3\n🎉 Earn 100 XP per swap\n⚡️ Powered by BaseHub\n\nhttps://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub`)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'block',
+            width: '100%',
+            marginTop: '12px',
+            padding: '12px 24px',
+            background: 'linear-gradient(135deg, #8a63d2 0%, #6b46c1 100%)',
+            color: 'white',
+            textDecoration: 'none',
+            borderRadius: '16px',
+            fontWeight: '600',
+            fontSize: '15px',
+            textAlign: 'center' as const,
+            boxShadow: '0 4px 12px rgba(138, 99, 210, 0.3)',
+            transition: 'all 0.2s ease',
+            border: 'none',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={(e) => {
+            (e.target as HTMLElement).style.transform = 'translateY(-2px)';
+            (e.target as HTMLElement).style.boxShadow = '0 6px 16px rgba(138, 99, 210, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            (e.target as HTMLElement).style.transform = 'translateY(0)';
+            (e.target as HTMLElement).style.boxShadow = '0 4px 12px rgba(138, 99, 210, 0.3)';
+          }}
+        >
+          📣 Share on Farcaster
+        </a>
+
         {/* No Liquidity Warning */}
         {noLiquidityError && (
           <div style={styles.noLiquidityWarning}>
@@ -2099,18 +2133,6 @@ export default function SwapInterface() {
                 style={styles.toastLink}
               >
                 View on Basescan ↗
-              </a>
-              <a 
-                href={`https://warpcast.com/~/compose?text=${encodeURIComponent(`🔄 Just swapped ${amountIn} ${tokenIn.symbol} → ${tokenOut.symbol} on SwapHub DEX!\n\n💰 Best rates across Uniswap V2 & V3\n🎉 Earned 100 XP\n⚡️ Powered by BaseHub\n\nhttps://basehub.vercel.app/swap`)}&embeds[]=${encodeURIComponent(`https://basescan.org/tx/${hash}`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  ...styles.toastLink,
-                  background: 'linear-gradient(135deg, #8a63d2 0%, #6b46c1 100%)',
-                  marginTop: '8px'
-                }}
-              >
-                📣 Share on Farcaster
               </a>
             </div>
           </div>
