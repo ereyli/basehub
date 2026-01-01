@@ -324,8 +324,8 @@ const Home = () => {
       icon: <ArrowLeftRight size={35} style={{ color: 'white' }} />,
       path: '/swap',
       color: 'linear-gradient(135deg, #ff1cf7 0%, #00d4ff 100%)',
-      xpReward: null,
-      bonusXP: null
+      xpReward: '100 XP',
+      bonusXP: 'Per Swap'
     },
   ]
 

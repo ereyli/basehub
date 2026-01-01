@@ -6,6 +6,7 @@ import { DEFAULT_TOKENS, POPULAR_TOKENS, FEE_TIERS, searchTokens, getAllTokens, 
 import { Token } from '@uniswap/sdk-core';
 import StatsPanel from './StatsPanel';
 import swaphubLogo from '../assets/swaphub-logo.png';
+import { addXP } from '../utils/xpUtils';
 
 // ETH price state - will be fetched from CoinGecko API
 let cachedEthPrice = 2950; // Default fallback price
@@ -745,21 +746,19 @@ export default function SwapInterface() {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch ETH price on mount and periodically update
+  // Award XP on successful swap
   useEffect(() => {
-    const updateEthPrice = async () => {
-      const price = await fetchEthPrice();
-      setEthPriceUsd(price);
-    };
-    
-    // Fetch immediately on mount
-    updateEthPrice();
-    
-    // Update every 2 minutes
-    const interval = setInterval(updateEthPrice, 120000);
-    
-    return () => clearInterval(interval);
-  }, []);
+    if (isSuccess && address && hash) {
+      console.log('🎉 Swap successful! Awarding 100 XP...');
+      addXP(address, 100, 'SWAP')
+        .then(() => {
+          console.log('✅ XP awarded successfully for swap');
+        })
+        .catch(error => {
+          console.error('❌ Error awarding XP:', error);
+        });
+    }
+  }, [isSuccess, address, hash]);
 
   const [tokenIn, setTokenIn] = useState<AppToken>(DEFAULT_TOKENS.ETH);
   const [tokenOut, setTokenOut] = useState<AppToken>(DEFAULT_TOKENS.USDC);
@@ -2080,6 +2079,18 @@ export default function SwapInterface() {
               <div style={styles.toastTitle}>Swap Complete!</div>
               <div style={styles.toastText}>
                 {amountIn} {tokenIn.symbol} → {tokenOut.symbol}
+              </div>
+              <div style={{ 
+                marginTop: '12px',
+                padding: '8px 16px',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                color: 'white',
+                textAlign: 'center' as const
+              }}>
+                🎉 +100 XP Earned!
               </div>
               <a 
                 href={`https://basescan.org/tx/${hash}`}
