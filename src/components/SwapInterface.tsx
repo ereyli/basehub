@@ -6,7 +6,7 @@ import { DEFAULT_TOKENS, POPULAR_TOKENS, FEE_TIERS, searchTokens, getAllTokens, 
 import { Token } from '@uniswap/sdk-core';
 import StatsPanel from './StatsPanel';
 import swaphubLogo from '../assets/swaphub-logo.png';
-import { addXP } from '../utils/xpUtils';
+import { addXP, recordSwapTransaction } from '../utils/xpUtils';
 import XPShareButton from './XPShareButton';
 
 // ETH price state - will be fetched from CoinGecko API
@@ -749,17 +749,56 @@ export default function SwapInterface() {
 
   // Award XP on successful swap
   useEffect(() => {
-    if (isSuccess && address && hash) {
+    if (isSuccess && address && hash && amountIn && tokenIn) {
+      // Calculate swap amount in USD
+      let swapAmountUSD = 0;
+      const amountInNum = parseFloat(amountIn);
+      
+      if (!isNaN(amountInNum) && amountInNum > 0) {
+        if (tokenIn.isNative || tokenIn.symbol === 'ETH' || tokenIn.symbol === 'WETH') {
+          // ETH/WETH: amount * ETH price
+          swapAmountUSD = amountInNum * ethPriceUsd;
+        } else if (tokenIn.symbol === 'USDC' || tokenIn.symbol === 'USDT' || tokenIn.symbol === 'USDbC' || tokenIn.symbol === 'DAI') {
+          // Stablecoins: amount is already in USD (for 18 decimals, divide by 1e12 for USDC/USDT with 6 decimals)
+          if (tokenIn.decimals === 6) {
+            swapAmountUSD = amountInNum;
+          } else {
+            swapAmountUSD = amountInNum;
+          }
+        } else {
+          // Other tokens: use amountOut in USD if available (USDC/USDT), otherwise estimate with ETH price
+          const amountOutNum = parseFloat(amountOut);
+          if (!isNaN(amountOutNum) && amountOutNum > 0 && (tokenOut.symbol === 'USDC' || tokenOut.symbol === 'USDT' || tokenOut.symbol === 'USDbC')) {
+            swapAmountUSD = amountOutNum;
+          } else {
+            // Fallback: estimate with ETH price (assume similar value to ETH)
+            swapAmountUSD = amountInNum * ethPriceUsd;
+          }
+        }
+      }
+
       console.log('🎉 Swap successful! Awarding 250 XP...');
+      console.log('💵 Swap amount USD:', swapAmountUSD.toFixed(2));
+      
+      // Award base XP
       addXP(address, 250, 'SWAP')
         .then(() => {
           console.log('✅ XP awarded successfully for swap');
+          
+          // Record swap transaction with volume tracking
+          recordSwapTransaction(address, swapAmountUSD, hash, 250)
+            .then(() => {
+              console.log('✅ Swap transaction recorded with volume tracking');
+            })
+            .catch(error => {
+              console.error('❌ Error recording swap transaction:', error);
+            });
         })
         .catch(error => {
           console.error('❌ Error awarding XP:', error);
         });
     }
-  }, [isSuccess, address, hash]);
+  }, [isSuccess, address, hash, amountIn, tokenIn, amountOut, tokenOut, ethPriceUsd]);
 
   const [tokenIn, setTokenIn] = useState<AppToken>(DEFAULT_TOKENS.ETH);
   const [tokenOut, setTokenOut] = useState<AppToken>(DEFAULT_TOKENS.USDC);

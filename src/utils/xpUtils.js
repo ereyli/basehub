@@ -349,3 +349,116 @@ export const claimTokens = async (walletAddress, xpAmount) => {
   // This function is disabled for now - minting is not enabled
   throw new Error('Claim feature is coming soon! Minting is not enabled yet.')
 }
+
+// Record swap transaction with volume tracking
+export const recordSwapTransaction = async (walletAddress, swapAmountUSD, transactionHash, xpEarned = 250) => {
+  if (!walletAddress || !swapAmountUSD) {
+    console.log('❌ Missing walletAddress or swapAmountUSD:', { walletAddress, swapAmountUSD })
+    return
+  }
+
+  try {
+    // Check if Supabase is available
+    if (!supabase || !supabase.from) {
+      console.log('⚠️ Supabase not available, storing swap transaction locally')
+      const localTransactions = JSON.parse(localStorage.getItem('basehub_transactions') || '[]')
+      localTransactions.push({
+        wallet_address: walletAddress,
+        game_type: 'SWAP_VOLUME',
+        swap_amount_usd: swapAmountUSD,
+        transaction_hash: transactionHash,
+        created_at: new Date().toISOString()
+      })
+      localStorage.setItem('basehub_transactions', JSON.stringify(localTransactions))
+      console.log('✅ Swap transaction stored locally')
+      return
+    }
+
+    console.log('📝 Recording swap volume:', { walletAddress, swapAmountUSD, transactionHash })
+    
+    // Record the swap volume (separate from XP transaction)
+    await recordTransaction({
+      wallet_address: walletAddress,
+      game_type: 'SWAP_VOLUME',
+      xp_earned: 0, // Volume tracking only, XP already awarded
+      swap_amount_usd: swapAmountUSD,
+      transaction_hash: transactionHash
+    })
+
+    // Check and award milestone bonus
+    await checkSwapMilestone(walletAddress)
+  } catch (error) {
+    console.error('❌ Error in recordSwapTransaction:', error)
+  }
+}
+
+// Check if user reached $500 swap milestone and award bonus
+export const checkSwapMilestone = async (walletAddress) => {
+  if (!walletAddress) return
+
+  try {
+    // Check if Supabase is available
+    if (!supabase || !supabase.from) {
+      console.log('⚠️ Supabase not available, skipping milestone check')
+      return
+    }
+
+    // Check if milestone bonus already awarded
+    const { data: existingMilestone, error: milestoneError } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('wallet_address', walletAddress)
+      .eq('game_type', 'SWAP_MILESTONE_500')
+      .single()
+
+    if (milestoneError && milestoneError.code !== 'PGRST116') {
+      console.error('❌ Error checking milestone:', milestoneError)
+      return
+    }
+
+    if (existingMilestone) {
+      console.log('✅ $500 milestone bonus already awarded')
+      return
+    }
+
+    // Calculate total swap volume from SWAP_VOLUME transactions
+    const { data: swapTransactions, error: swapError } = await supabase
+      .from('transactions')
+      .select('swap_amount_usd')
+      .eq('wallet_address', walletAddress)
+      .eq('game_type', 'SWAP_VOLUME')
+      .not('swap_amount_usd', 'is', null)
+
+    if (swapError) {
+      console.error('❌ Error fetching swap transactions:', swapError)
+      return
+    }
+
+    const totalVolume = (swapTransactions || []).reduce((sum, tx) => {
+      return sum + (parseFloat(tx.swap_amount_usd) || 0)
+    }, 0)
+
+    console.log(`📊 Total swap volume: $${totalVolume.toFixed(2)}`)
+
+    // Check if milestone reached
+    if (totalVolume >= 500) {
+      console.log('🎉 $500 milestone reached! Awarding 5000 XP bonus...')
+      
+      // Award milestone bonus XP
+      await addXP(walletAddress, 5000, 'SWAP_MILESTONE_500')
+
+      // Record milestone transaction
+      await recordTransaction({
+        wallet_address: walletAddress,
+        game_type: 'SWAP_MILESTONE_500',
+        xp_earned: 5000,
+        swap_amount_usd: totalVolume,
+        transaction_hash: null
+      })
+
+      console.log('✅ $500 milestone bonus awarded: 5000 XP')
+    }
+  } catch (error) {
+    console.error('❌ Error in checkSwapMilestone:', error)
+  }
+}
