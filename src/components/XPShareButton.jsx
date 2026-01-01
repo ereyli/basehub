@@ -178,15 +178,35 @@ const XPShareButton = ({
     return null
   }
 
+  // Blue gradient for swap, green for other games
+  const getButtonStyle = () => {
+    const isSwap = gameType === 'swap'
+    if (isInFarcaster) {
+      return {
+        background: isSwap
+          ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'
+          : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+        boxShadow: isSwap
+          ? '0 4px 12px rgba(59, 130, 246, 0.3)'
+          : '0 4px 12px rgba(16, 185, 129, 0.3)'
+      }
+    } else {
+      return {
+        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+        boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
+      }
+    }
+  }
+
+  const buttonStyle = getButtonStyle()
+
   return (
     <div className="xp-share-container" style={{ position: 'relative', ...style }}>
       <button
         onClick={handleXPShare}
         className="xp-share-button"
         style={{
-          background: isInFarcaster 
-            ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-            : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+          background: buttonStyle.background,
           color: 'white',
           border: 'none',
           borderRadius: '12px',
@@ -198,27 +218,26 @@ const XPShareButton = ({
           fontSize: '14px',
           fontWeight: '600',
           transition: 'all 0.3s ease',
-          boxShadow: isInFarcaster 
-            ? '0 4px 12px rgba(16, 185, 129, 0.3)'
-            : '0 4px 12px rgba(245, 158, 11, 0.3)',
+          boxShadow: buttonStyle.boxShadow,
           minWidth: '140px',
           justifyContent: 'center'
         }}
         onMouseEnter={(e) => {
           e.target.style.transform = 'translateY(-2px)'
+          const isSwap = gameType === 'swap'
           if (isInFarcaster) {
-            e.target.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)'
+            if (isSwap) {
+              e.target.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)'
+            } else {
+              e.target.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)'
+            }
           } else {
             e.target.style.boxShadow = '0 6px 16px rgba(245, 158, 11, 0.4)'
           }
         }}
         onMouseLeave={(e) => {
           e.target.style.transform = 'translateY(0)'
-          if (isInFarcaster) {
-            e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)'
-          } else {
-            e.target.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.3)'
-          }
+          e.target.style.boxShadow = buttonStyle.boxShadow
         }}
       >
         {isCopied ? (
