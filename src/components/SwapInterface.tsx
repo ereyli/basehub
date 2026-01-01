@@ -1185,11 +1185,12 @@ export default function SwapInterface() {
         setV3Available(false);
       }
 
-      // Try V2 quote
+      // Try V2 quote (V2 doesn't have fee tiers, just one pool per pair)
+      // Also try multi-hop routes via USDC for better liquidity
       try {
-        console.log('🔶 Trying Uniswap V2...');
+        console.log('🔶 Checking Uniswap V2...');
         
-        // First check if V2 pair exists
+        // First check if V2 pair exists (direct route)
         const pairAddress = await publicClient.readContract({
           address: UNISWAP_V2_FACTORY as `0x${string}`,
           abi: V2_FACTORY_ABI,
@@ -1198,7 +1199,7 @@ export default function SwapInterface() {
         });
 
         if (pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000') {
-          // Get V2 quote
+          // Get V2 quote (direct route)
           const amounts = await publicClient.readContract({
             address: UNISWAP_V2_ROUTER as `0x${string}`,
             abi: V2_ROUTER_ABI,
@@ -1207,10 +1208,64 @@ export default function SwapInterface() {
           });
           
           v2Quote = (amounts as bigint[])[1];
-          console.log('✅ V2 Quote:', formatUnits(v2Quote, tokenOut.decimals), tokenOut.symbol);
+          console.log('✅ V2 Quote (direct):', formatUnits(v2Quote, tokenOut.decimals), tokenOut.symbol);
           setV2Available(true);
         } else {
-          console.log('❌ V2 pair does not exist');
+          console.log('❌ V2 direct pair does not exist');
+        }
+        
+        // Try multi-hop route via USDC ONLY if direct route doesn't exist
+        // NOTE: Aggregator only supports direct routes, so multi-hop is only for quote comparison
+        // CRITICAL: For ETH/USDC swaps, NEVER use multi-hop - always use direct route
+        const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
+        
+        // Check if this is ETH/USDC swap (both directions)
+        const isETHUSDC_V2 = (
+          (tokenIn.symbol === 'ETH' || tokenIn.symbol === 'WETH' || tokenIn.isNative) &&
+          (tokenOut.symbol === 'USDC' || tokenOut.symbol === 'USDT')
+        ) || (
+          (tokenIn.symbol === 'USDC' || tokenIn.symbol === 'USDT') &&
+          (tokenOut.symbol === 'ETH' || tokenOut.symbol === 'WETH' || tokenOut.isNative)
+        );
+        
+        // Check if this is stablecoin-to-stablecoin swap
+        const isStablecoinToStablecoin_V2 = (
+          (tokenIn.symbol === 'USDC' || tokenIn.symbol === 'USDT' || tokenIn.symbol === 'DAI') &&
+          (tokenOut.symbol === 'USDC' || tokenOut.symbol === 'USDT' || tokenOut.symbol === 'DAI')
+        );
+        
+        // NEVER try multi-hop for ETH/USDC or stablecoin swaps
+        // Only try multi-hop if direct route doesn't exist AND it's not ETH/USDC/stablecoin swap
+        if (v2Quote === null && 
+            !isETHUSDC_V2 && 
+            !isStablecoinToStablecoin_V2 &&
+            tokenInAddr.toLowerCase() !== USDC_ADDRESS.toLowerCase() && 
+            tokenOutAddr.toLowerCase() !== USDC_ADDRESS.toLowerCase()) {
+          try {
+            console.log('🔄 Trying V2 multi-hop via USDC (direct route not available)...');
+            const multiHopAmounts = await publicClient.readContract({
+              address: UNISWAP_V2_ROUTER as `0x${string}`,
+              abi: V2_ROUTER_ABI,
+              functionName: 'getAmountsOut',
+              args: [amountInWei, [
+                tokenInAddr as `0x${string}`, 
+                USDC_ADDRESS as `0x${string}`,
+                tokenOutAddr as `0x${string}`
+              ]]
+            });
+            
+            const multiHopQuote = (multiHopAmounts as bigint[])[2];
+            console.log('✅ V2 Quote (via USDC):', formatUnits(multiHopQuote, tokenOut.decimals), tokenOut.symbol);
+            console.log('⚠️ Note: Aggregator only supports direct routes, multi-hop quote shown for reference only');
+            // Don't use multi-hop quote - aggregator can't execute it
+            // Keep v2Quote as null so V3 will be used instead
+            setV2Available(false);
+          } catch (error) {
+            console.log('❌ V2 multi-hop route not available');
+          }
+        }
+        
+        if (v2Quote === null) {
           setV2Available(false);
         }
       } catch (error) {

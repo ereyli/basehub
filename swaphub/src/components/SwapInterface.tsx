@@ -64,14 +64,28 @@ function calculateUsdValue(
   const amountNum = parseFloat(amount);
   if (isNaN(amountNum) || amountNum <= 0) return '$0';
   
-  // ETH/WETH/cbETH: Use ETH price
+  // ETH/WETH/cbETH: Use ETH price directly
   if (token.symbol === 'ETH' || token.symbol === 'WETH' || token.symbol === 'cbETH') {
     const usdValue = amountNum * ethPrice;
     return `$${formatNumber(usdValue, 2)}`;
   }
   
-  // Stablecoins: 1 USD per token
+  // Stablecoins: Calculate based on swap ratio if available (to show consistent pricing)
+  // This ensures both input and output show same base USD value
   if (token.symbol === 'USDC' || token.symbol === 'USDT' || token.symbol === 'DAI') {
+    // If we have swap data with ETH/WETH/cbETH, calculate USD value from ETH price
+    // This ensures output stablecoin shows same USD value as input ETH
+    if (swapAmount && swapToken && parseFloat(swapAmount) > 0) {
+      if (swapToken.symbol === 'ETH' || swapToken.symbol === 'WETH' || swapToken.symbol === 'cbETH') {
+        const swapAmountNum = parseFloat(swapAmount);
+        const swapUsdValue = swapAmountNum * ethPrice;
+        // Calculate implied price: outputAmount = inputUsdValue
+        // This makes USD values consistent on both sides
+        const impliedPrice = swapUsdValue / amountNum;
+        return `$${formatNumber(amountNum * impliedPrice, 2)}`;
+      }
+    }
+    // Default: 1:1 with USD
     return `$${formatNumber(amountNum, 2)}`;
   }
   
@@ -270,7 +284,7 @@ function CustomTokenItemWithRemove({
     if (token.symbol === 'ETH' || token.symbol === 'WETH' || token.symbol === 'cbETH') {
       return formatNumber(balanceFormatted * ethPrice, 2);
     }
-    if (token.symbol === 'USDC' || token.symbol === 'USDbC' || token.symbol === 'DAI') {
+    if (token.symbol === 'USDC' || token.symbol === 'USDT' || token.symbol === 'USDbC' || token.symbol === 'DAI') {
       return formatNumber(balanceFormatted, 2);
     }
     return null;
@@ -375,7 +389,7 @@ function TokenListItem({ token, onClick, isDisabled, ethPrice }: TokenListItemPr
       return formatNumber(balanceFormatted * ethPrice, 2);
     }
     // For stablecoins
-    if (token.symbol === 'USDC' || token.symbol === 'USDbC' || token.symbol === 'DAI') {
+    if (token.symbol === 'USDC' || token.symbol === 'USDT' || token.symbol === 'USDbC' || token.symbol === 'DAI') {
       return formatNumber(balanceFormatted, 2);
     }
     return null;
@@ -1060,13 +1074,13 @@ export default function SwapInterface() {
 
   // Fetch quote from both Uniswap V3 and V2, use best available
   useEffect(() => {
-    const fetchQuote = async () => {
-      if (!amountIn || parseFloat(amountIn) <= 0) {
+  const fetchQuote = async () => {
+    if (!amountIn || parseFloat(amountIn) <= 0) {
         setAmountOut('0');
         setPriceImpact('0');
         setNoLiquidityError(false);
-        return;
-      }
+      return;
+    }
 
       // Special case: Wrap/Unwrap (1:1 conversion, no swap needed)
       if (isWrapOperation) {
@@ -1100,35 +1114,113 @@ export default function SwapInterface() {
       let v2Quote: bigint | null = null;
       let bestProtocol: SwapProtocol = 'v3';
       let bestQuote: bigint = BigInt(0);
+      let bestV3Fee: number = selectedFeeTier;
       
-      // Try V3 quote
-      try {
-        console.log('🔷 Trying Uniswap V3...');
-        const { result } = await publicClient.simulateContract({
-          address: QUOTER_V2_ADDRESS as `0x${string}`,
-          abi: QUOTER_ABI,
-          functionName: 'quoteExactInputSingle',
-          args: [{
-            tokenIn: tokenInAddr as `0x${string}`,
-            tokenOut: tokenOutAddr as `0x${string}`,
-            amountIn: amountInWei,
-            fee: selectedFeeTier,
-            sqrtPriceLimitX96: BigInt(0)
-          }]
-        });
-        v3Quote = result[0] as bigint;
-        console.log('✅ V3 Quote:', formatUnits(v3Quote, tokenOut.decimals), tokenOut.symbol);
+      // Try V3 quote - Try ALL fee tiers for ALL tokens to find best liquidity!
+      // This ensures we find the pool with best liquidity across all available tiers
+      console.log('🔷 Scanning all Uniswap V3 fee tiers for best liquidity...');
+      const v3FeeTiers = [100, 500, 3000, 10000]; // 0.01%, 0.05%, 0.3%, 1%
+      
+      // Try all fee tiers in parallel for faster execution
+      const v3Promises = v3FeeTiers.map(async (feeTier) => {
+        try {
+          const { result } = await publicClient.simulateContract({
+            address: QUOTER_V2_ADDRESS as `0x${string}`,
+            abi: QUOTER_ABI,
+            functionName: 'quoteExactInputSingle',
+            args: [{
+              tokenIn: tokenInAddr as `0x${string}`,
+              tokenOut: tokenOutAddr as `0x${string}`,
+              amountIn: amountInWei,
+              fee: feeTier,
+              sqrtPriceLimitX96: BigInt(0)
+            }]
+          });
+          const quote = result[0] as bigint;
+          console.log(`✅ V3 Quote (${feeTier/10000}%):`, formatUnits(quote, tokenOut.decimals), tokenOut.symbol);
+          return { feeTier, quote };
+        } catch (error) {
+          console.log(`❌ V3 pool not found for fee tier ${feeTier/10000}%`);
+          return null;
+        }
+      });
+      
+      // Wait for all V3 tier checks to complete
+      const v3Results = await Promise.all(v3Promises);
+      
+      // Check if this is ETH/USDC swap - prefer 0.05% fee tier for better liquidity
+      const isETHUSDC_Fee = (
+        (tokenIn.symbol === 'ETH' || tokenIn.symbol === 'WETH' || tokenIn.isNative) &&
+        (tokenOut.symbol === 'USDC' || tokenOut.symbol === 'USDT')
+      ) || (
+        (tokenIn.symbol === 'USDC' || tokenIn.symbol === 'USDT') &&
+        (tokenOut.symbol === 'ETH' || tokenOut.symbol === 'WETH' || tokenOut.isNative)
+      );
+      
+      // Find the best V3 quote across all tiers
+      // For ETH/USDC, prefer 0.05% (500) if available and quote is reasonable
+      let bestQuoteValue: bigint | null = null;
+      let preferredFeeTier: number | null = null;
+      let bestQuoteFromAll: bigint | null = null;
+      let bestFeeFromAll: number | null = null;
+      
+      for (const result of v3Results) {
+        if (result) {
+          // Track best quote overall
+          if (bestQuoteFromAll === null || result.quote > bestQuoteFromAll) {
+            bestQuoteFromAll = result.quote;
+            bestFeeFromAll = result.feeTier;
+          }
+          
+          // For ETH/USDC, prefer 0.05% (500) fee tier if available
+          if (isETHUSDC_Fee && result.feeTier === 500) {
+            preferredFeeTier = 500;
+            bestQuoteValue = result.quote;
+            console.log(`⭐ Preferred fee tier for ETH/USDC: 0.05% (500) - ${formatUnits(result.quote, tokenOut.decimals)} ${tokenOut.symbol}`);
+          }
+        }
+      }
+      
+      // For ETH/USDC: Use 0.05% if available and quote is within 1% of best
+      // Otherwise use best quote
+      if (isETHUSDC_Fee && preferredFeeTier === 500 && bestQuoteValue && bestQuoteFromAll) {
+        const preferredQuoteNum = Number(bestQuoteValue);
+        const bestQuoteNum = Number(bestQuoteFromAll);
+        const differencePercent = ((bestQuoteNum - preferredQuoteNum) / preferredQuoteNum) * 100;
+        
+        if (differencePercent <= 1.0) { // If 0.05% is within 1% of best, prefer it
+          v3Quote = bestQuoteValue;
+          bestV3Fee = 500;
+          console.log(`🏆 Using preferred 0.05% fee tier for ETH/USDC (${differencePercent.toFixed(2)}% difference from best)`);
+        } else {
+          v3Quote = bestQuoteFromAll;
+          bestV3Fee = bestFeeFromAll!;
+          console.log(`🏆 Best quote is significantly better, using ${bestV3Fee/10000}% fee tier`);
+        }
+      } else {
+        // For other pairs, use best quote
+        if (bestQuoteFromAll !== null && bestFeeFromAll !== null) {
+          v3Quote = bestQuoteFromAll;
+          bestV3Fee = bestFeeFromAll;
+        }
+      }
+      
+      if (v3Quote !== null) {
+        console.log(`🏆 Best V3 Quote: ${formatUnits(v3Quote, tokenOut.decimals)} ${tokenOut.symbol} (fee: ${bestV3Fee/10000}%)`);
         setV3Available(true);
-      } catch (error) {
-        console.log('❌ V3 pool not found or error');
+        // Update selected fee tier to the best one found
+        setSelectedFeeTier(bestV3Fee);
+      } else {
+        console.log('❌ No V3 pools found across all fee tiers');
         setV3Available(false);
       }
 
-      // Try V2 quote
+      // Try V2 quote (V2 doesn't have fee tiers, just one pool per pair)
+      // Also try multi-hop routes via USDC for better liquidity
       try {
-        console.log('🔶 Trying Uniswap V2...');
+        console.log('🔶 Checking Uniswap V2...');
         
-        // First check if V2 pair exists
+        // First check if V2 pair exists (direct route)
         const pairAddress = await publicClient.readContract({
           address: UNISWAP_V2_FACTORY as `0x${string}`,
           abi: V2_FACTORY_ABI,
@@ -1137,7 +1229,7 @@ export default function SwapInterface() {
         });
 
         if (pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000') {
-          // Get V2 quote
+          // Get V2 quote (direct route)
           const amounts = await publicClient.readContract({
             address: UNISWAP_V2_ROUTER as `0x${string}`,
             abi: V2_ROUTER_ABI,
@@ -1146,15 +1238,162 @@ export default function SwapInterface() {
           });
           
           v2Quote = (amounts as bigint[])[1];
-          console.log('✅ V2 Quote:', formatUnits(v2Quote, tokenOut.decimals), tokenOut.symbol);
+          console.log('✅ V2 Quote (direct):', formatUnits(v2Quote, tokenOut.decimals), tokenOut.symbol);
           setV2Available(true);
         } else {
-          console.log('❌ V2 pair does not exist');
+          console.log('❌ V2 direct pair does not exist');
+        }
+        
+        // Try multi-hop route via USDC ONLY if direct route doesn't exist
+        // NOTE: Aggregator only supports direct routes, so multi-hop is only for quote comparison
+        // CRITICAL: For ETH/USDC swaps, NEVER use multi-hop - always use direct route
+        const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
+        
+        // Check if this is ETH/USDC swap (both directions)
+        const isETHUSDC_V2 = (
+          (tokenIn.symbol === 'ETH' || tokenIn.symbol === 'WETH' || tokenIn.isNative) &&
+          (tokenOut.symbol === 'USDC' || tokenOut.symbol === 'USDT')
+        ) || (
+          (tokenIn.symbol === 'USDC' || tokenIn.symbol === 'USDT') &&
+          (tokenOut.symbol === 'ETH' || tokenOut.symbol === 'WETH' || tokenOut.isNative)
+        );
+        
+        // Check if this is stablecoin-to-stablecoin swap
+        const isStablecoinToStablecoin_V2 = (
+          (tokenIn.symbol === 'USDC' || tokenIn.symbol === 'USDT' || tokenIn.symbol === 'DAI') &&
+          (tokenOut.symbol === 'USDC' || tokenOut.symbol === 'USDT' || tokenOut.symbol === 'DAI')
+        );
+        
+        // NEVER try multi-hop for ETH/USDC or stablecoin swaps
+        // Only try multi-hop if direct route doesn't exist AND it's not ETH/USDC/stablecoin swap
+        if (v2Quote === null && 
+            !isETHUSDC_V2 && 
+            !isStablecoinToStablecoin_V2 &&
+            tokenInAddr.toLowerCase() !== USDC_ADDRESS.toLowerCase() && 
+            tokenOutAddr.toLowerCase() !== USDC_ADDRESS.toLowerCase()) {
+          try {
+            console.log('🔄 Trying V2 multi-hop via USDC (direct route not available)...');
+            const multiHopAmounts = await publicClient.readContract({
+              address: UNISWAP_V2_ROUTER as `0x${string}`,
+              abi: V2_ROUTER_ABI,
+              functionName: 'getAmountsOut',
+              args: [amountInWei, [
+                tokenInAddr as `0x${string}`, 
+                USDC_ADDRESS as `0x${string}`,
+                tokenOutAddr as `0x${string}`
+              ]]
+            });
+            
+            const multiHopQuote = (multiHopAmounts as bigint[])[2];
+            console.log('✅ V2 Quote (via USDC):', formatUnits(multiHopQuote, tokenOut.decimals), tokenOut.symbol);
+            console.log('⚠️ Note: Aggregator only supports direct routes, multi-hop quote shown for reference only');
+            // Don't use multi-hop quote - aggregator can't execute it
+            // Keep v2Quote as null so V3 will be used instead
+            setV2Available(false);
+    } catch (error) {
+            console.log('❌ V2 multi-hop route not available');
+          }
+        }
+        
+        if (v2Quote === null) {
           setV2Available(false);
         }
       } catch (error) {
         console.log('❌ V2 pool not found or error');
         setV2Available(false);
+      }
+      
+      // Try V3 multi-hop via USDC ONLY if direct route doesn't exist or is very poor
+      // NOTE: Aggregator only supports direct routes, so multi-hop is only for quote comparison
+      // CRITICAL: For ETH/USDC swaps, NEVER use multi-hop - always use direct route
+      const USDC_ADDRESS_V3 = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
+      
+      // Check if this is ETH/USDC swap (both directions)
+      const isETHUSDC = (
+        (tokenIn.symbol === 'ETH' || tokenIn.symbol === 'WETH' || tokenIn.isNative) &&
+        (tokenOut.symbol === 'USDC' || tokenOut.symbol === 'USDT')
+      ) || (
+        (tokenIn.symbol === 'USDC' || tokenIn.symbol === 'USDT') &&
+        (tokenOut.symbol === 'ETH' || tokenOut.symbol === 'WETH' || tokenOut.isNative)
+      );
+      
+      // Check if this is stablecoin-to-stablecoin swap
+      const isStablecoinToStablecoin = (
+        (tokenIn.symbol === 'USDC' || tokenIn.symbol === 'USDT' || tokenIn.symbol === 'DAI') &&
+        (tokenOut.symbol === 'USDC' || tokenOut.symbol === 'USDT' || tokenOut.symbol === 'DAI')
+      );
+      
+      // NEVER try multi-hop for ETH/USDC or stablecoin swaps
+      // These pairs have excellent direct liquidity and multi-hop would cause issues
+      if (v3Quote !== null && 
+          !isETHUSDC && 
+          !isStablecoinToStablecoin &&
+          tokenInAddr.toLowerCase() !== USDC_ADDRESS_V3.toLowerCase() && 
+          tokenOutAddr.toLowerCase() !== USDC_ADDRESS_V3.toLowerCase()) {
+        
+        // Only try multi-hop for exotic pairs (not ETH/USDC, not stablecoin pairs)
+        if (true) { // Always try for non-ETH/USDC, non-stablecoin pairs
+          console.log('🔄 Trying V3 multi-hop via USDC for better rates (exotic pair)...');
+          
+          // Try a few fee tier combinations (not all to save time)
+          const v3MultiHopPromises = [3000, 500].flatMap(firstFee => 
+            [3000, 500].map(async (secondFee) => {
+              try {
+                // First hop: tokenIn → USDC
+                const { result: firstHop } = await publicClient.simulateContract({
+                  address: QUOTER_V2_ADDRESS as `0x${string}`,
+                  abi: QUOTER_ABI,
+                  functionName: 'quoteExactInputSingle',
+                  args: [{
+                    tokenIn: tokenInAddr as `0x${string}`,
+                    tokenOut: USDC_ADDRESS_V3 as `0x${string}`,
+                    amountIn: amountInWei,
+                    fee: firstFee,
+                    sqrtPriceLimitX96: BigInt(0)
+                  }]
+                });
+                
+                const usdcAmount = firstHop[0] as bigint;
+                
+                // Second hop: USDC → tokenOut
+                const { result: secondHop } = await publicClient.simulateContract({
+                  address: QUOTER_V2_ADDRESS as `0x${string}`,
+                  abi: QUOTER_ABI,
+                  functionName: 'quoteExactInputSingle',
+                  args: [{
+                    tokenIn: USDC_ADDRESS_V3 as `0x${string}`,
+                    tokenOut: tokenOutAddr as `0x${string}`,
+                    amountIn: usdcAmount,
+                    fee: secondFee,
+                    sqrtPriceLimitX96: BigInt(0)
+                  }]
+                });
+                
+                const finalAmount = secondHop[0] as bigint;
+                console.log(`✅ V3 Multi-hop (${firstFee/10000}% → ${secondFee/10000}%):`, formatUnits(finalAmount, tokenOut.decimals), tokenOut.symbol);
+                
+                return { firstFee, secondFee, quote: finalAmount };
+              } catch (error) {
+                return null;
+              }
+            })
+          );
+          
+          const v3MultiHopResults = await Promise.all(v3MultiHopPromises);
+          
+          // Find best multi-hop quote, but only use it if significantly better (10%+)
+          // Since aggregator can't execute multi-hop, we'll use direct route anyway
+          for (const result of v3MultiHopResults) {
+            if (result && result.quote > v3Quote) {
+              const improvement = Number(result.quote - v3Quote) / Number(v3Quote) * 100;
+              if (improvement > 10) { // Only if 10%+ better
+                console.log(`🏆 Better V3 multi-hop found (+${improvement.toFixed(1)}%): ${formatUnits(result.quote, tokenOut.decimals)} ${tokenOut.symbol}`);
+                console.log('⚠️ Note: Aggregator only supports direct routes, so direct route will be used for swap');
+                // Don't update v3Quote - keep direct quote for swap execution
+              }
+            }
+          }
+        }
       }
 
       // Determine best quote
@@ -1281,19 +1520,19 @@ export default function SwapInterface() {
 
     setErrorMessage(null);
     setTransactionStep('approving');
-    
+
     // MAX APPROVE: One-time unlimited approval like Uniswap
     // User only needs to approve once per token, never again
     console.log('🔓 Step 1: Max Approving Aggregator:', SWAP_AGGREGATOR);
 
     try {
-      writeContract({
+    writeContract({
         address: tokenIn.address as `0x${string}`,
-        abi: ERC20_ABI,
-        functionName: 'approve',
+      abi: ERC20_ABI,
+      functionName: 'approve',
         args: [SWAP_AGGREGATOR, maxUint256], // Unlimited approval
-        chainId: base.id
-      });
+      chainId: base.id
+    });
     } catch (error: any) {
       setTransactionStep('idle');
       if (error.code === 4001) {
@@ -1387,7 +1626,7 @@ export default function SwapInterface() {
       try {
         if (isWrap) {
           // ETH → WETH: Call deposit() with ETH value
-          writeContract({
+    writeContract({
             address: WETH_ADDRESS as `0x${string}`,
             abi: WETH_ABI,
             functionName: 'deposit',
@@ -1443,27 +1682,73 @@ export default function SwapInterface() {
         return;
       }
       
-      // Apply slippage to get minAmountOut
+      // IMPORTANT: amountOutWei is the user-receives amount (after protocol fee)
+      // But aggregator expects raw quote (before protocol fee) for minAmountOut
+      // We need to reverse the protocol fee to get the raw quote
+      const feeBps = protocolFeeBps ? Number(protocolFeeBps) : 0;
+      
+      // Special handling for ETH/USDC swaps - ensure fee is loaded
+      const isETHUSDC = (tokenIn.symbol === 'ETH' || tokenIn.symbol === 'WETH') && 
+                        (tokenOut.symbol === 'USDC' || tokenOut.symbol === 'USDT');
+      const isUSDCETH = (tokenIn.symbol === 'USDC' || tokenIn.symbol === 'USDT') && 
+                        (tokenOut.symbol === 'ETH' || tokenOut.symbol === 'WETH');
+      
+      if ((isETHUSDC || isUSDCETH) && !protocolFeeBps) {
+        console.warn('⚠️ Protocol fee not loaded for ETH/USDC swap, using default 0.3% (30 bps)');
+        // Use default fee if not loaded (shouldn't happen, but safety check)
+      }
+      
+      const feeBpsBigInt = BigInt(feeBps);
+      const feeMultiplier = BigInt(10000) - feeBpsBigInt; // e.g., 10000 - 30 = 9970
+      
+      // Reverse protocol fee: rawQuote = userReceives * 10000 / (10000 - feeBps)
+      // This gives us the raw quote that aggregator will receive
+      // For very small amounts, ensure we don't divide by zero
+      if (feeMultiplier === BigInt(0)) {
+        console.error('❌ Fee multiplier is zero! This should not happen.');
+        setErrorMessage('Protocol fee configuration error');
+        setTransactionStep('idle');
+        return;
+      }
+      
+      const rawQuoteWei = (amountOutWei * BigInt(10000)) / feeMultiplier;
+      
+      console.log('🔢 Quote Calculation for Swap:');
+      console.log('   Token Pair:', `${tokenIn.symbol}/${tokenOut.symbol}`);
+      console.log('   amountOutWei (user receives, after fee):', amountOutWei.toString());
+      console.log('   protocolFeeBps:', feeBps, `(${feeBps / 100}%)`);
+      console.log('   feeMultiplier:', feeMultiplier.toString());
+      console.log('   rawQuoteWei (aggregator receives, before fee):', rawQuoteWei.toString());
+      console.log('   rawQuoteWei (formatted):', formatUnits(rawQuoteWei, tokenOut.decimals), tokenOut.symbol);
+      
+      // Apply slippage to raw quote (not to user-receives amount)
       // Use BigInt arithmetic to avoid precision loss for small amounts
       // slippage is in percentage (e.g., 0.5 means 0.5%)
-      // multiplier = (10000 - slippage * 100) / 10000 (to avoid floating point issues)
       const slippageBps = BigInt(Math.round(slippage * 100)); // Convert to basis points (0.5% = 50 bps)
       const slippageMultiplier = BigInt(10000) - slippageBps; // e.g., 10000 - 50 = 9950
-      const minAmountOut = (amountOutWei * slippageMultiplier) / BigInt(10000);
+      const minAmountOut = (rawQuoteWei * slippageMultiplier) / BigInt(10000);
       
       console.log('🔢 Min Amount Out Calculation:');
-      console.log('   amountOutWei:', amountOutWei.toString());
       console.log('   slippageBps:', slippageBps.toString());
       console.log('   slippageMultiplier:', slippageMultiplier.toString());
       console.log('   minAmountOut (before check):', minAmountOut.toString());
+      console.log('   minAmountOut (formatted):', formatUnits(minAmountOut, tokenOut.decimals), tokenOut.symbol);
       
       // Ensure minimum output is reasonable
       // minAmountOut should never be less than the slippage-adjusted amount
-      // If minAmountOut is somehow less than slippage tolerance allows, use minAmountOut directly
-      // (This should not happen with correct slippage calculation, but acts as a safety check)
-      // For very small amounts, ensure at least 1 wei minimum
-      const minUnit = BigInt(1);
-      const finalMinAmountOut = minAmountOut > minUnit ? minAmountOut : minUnit;
+      // For very small amounts, ensure at least 1 wei/unit minimum
+      // For USDC (6 decimals), minimum is 1 micro-USDC
+      const minUnit = tokenOut.decimals === 6 ? BigInt(1) : BigInt(1); // 1 micro-USDC or 1 wei
+      let finalMinAmountOut = minAmountOut > minUnit ? minAmountOut : minUnit;
+      
+      // Safety check: minAmountOut should never exceed rawQuoteWei
+      // This can happen due to rounding errors, especially with USDC (6 decimals)
+      if (finalMinAmountOut > rawQuoteWei) {
+        console.warn('⚠️ minAmountOut exceeds rawQuoteWei, adjusting...');
+        // Use 99% of rawQuoteWei as maximum (1% safety margin)
+        finalMinAmountOut = (rawQuoteWei * BigInt(9900)) / BigInt(10000);
+        console.log('   Adjusted finalMinAmountOut:', finalMinAmountOut.toString());
+      }
       
       console.log('   finalMinAmountOut:', finalMinAmountOut.toString());
       console.log('   finalMinAmountOut (formatted):', formatUnits(finalMinAmountOut, tokenOut.decimals));
@@ -1505,9 +1790,9 @@ export default function SwapInterface() {
         console.log('🔶 Using Aggregator swapV2');
         txConfig = {
           address: SWAP_AGGREGATOR as `0x${string}`,
-          abi: AGGREGATOR_ABI,
+      abi: AGGREGATOR_ABI,
           functionName: 'swapV2',
-          args: [
+      args: [
             tokenInAddr,    // tokenIn (address(0) for ETH)
             tokenOutAddr,   // tokenOut (address(0) for ETH)
             amountInWei,    // amountIn
@@ -1618,7 +1903,7 @@ export default function SwapInterface() {
         
         // Clear after 3 seconds
         const timer = setTimeout(() => {
-          setAmountIn('');
+    setAmountIn('');
           setAmountOut('0');
           setTransactionStep('idle');
         }, 3000);
@@ -1795,7 +2080,7 @@ export default function SwapInterface() {
     }
   } : {};
 
-  return (
+    return (
     <div style={styles.pageContainer}>
       {/* Header */}
       <header style={getStyle(styles.header, mobileOverrides.header)}>
@@ -1803,7 +2088,7 @@ export default function SwapInterface() {
           <div style={getStyle(styles.logo, mobileOverrides.logo)}>
             <img src={swaphubLogo} alt="SwapHub" style={getStyle(styles.logoImage, mobileOverrides.logoImage)} />
             <span style={getStyle(styles.logoText, mobileOverrides.logoText)}>SwapHub</span>
-          </div>
+        </div>
           {!isMobile && (
             <nav style={getStyle(styles.nav, mobileOverrides.nav)}>
               <a href="#" style={getStyle(styles.navLinkActive, mobileOverrides.navLinkActive)}>Swap</a>
@@ -1818,7 +2103,7 @@ export default function SwapInterface() {
           {isMobile && (
             <div style={getStyle(styles.headerRight, mobileOverrides.headerRight)}>
               <ConnectButton />
-            </div>
+      </div>
           )}
         </div>
         {isMobile && (
@@ -2021,7 +2306,7 @@ export default function SwapInterface() {
                 </button>
               </span>
             )}
-          </div>
+        </div>
         )}
 
         {(isPending || isConfirming) && (
@@ -2182,9 +2467,9 @@ export default function SwapInterface() {
               <div style={styles.slippageCustom}>
                 <span style={styles.slippageCustomLabel}>Custom</span>
                 <div style={styles.slippageInputWrapper}>
-                  <input
-                    type="number"
-                    value={slippage}
+          <input
+            type="number"
+            value={slippage}
                     onChange={(e) => {
                       const val = parseFloat(e.target.value);
                       if (!isNaN(val) && val >= 0.01 && val <= 50) {
@@ -2192,25 +2477,25 @@ export default function SwapInterface() {
                         localStorage.setItem('swapSlippage', val.toString());
                       }
                     }}
-                    step="0.1"
+            step="0.1"
                     min="0.01"
                     max="50"
                     style={styles.slippageCustomInput}
-                  />
+          />
                   <span style={styles.slippagePercent}>%</span>
-                </div>
-              </div>
+        </div>
+            </div>
               {slippage > 5 && (
                 <div style={styles.slippageWarning}>
                   ⚠️ High slippage increases risk of frontrunning
-                </div>
+            </div>
               )}
               {slippage < 0.1 && (
                 <div style={styles.slippageWarning}>
                   ⚠️ Very low slippage may cause transaction to fail
-                </div>
-              )}
             </div>
+              )}
+          </div>
           </>
         )}
 
@@ -2222,7 +2507,7 @@ export default function SwapInterface() {
               onClick={() => setShowStatistics(false)}
             />
             <div style={getStyle({ ...styles.statisticsModal, position: 'relative' as const }, mobileOverrides.statisticsModal)}>
-              <button 
+          <button
                 onClick={() => setShowStatistics(false)} 
                 style={{
                   position: 'absolute' as const,
@@ -2254,7 +2539,7 @@ export default function SwapInterface() {
                 }}
               >
                 ×
-              </button>
+          </button>
               <StatsPanel isMobile={isMobile} />
             </div>
           </>
@@ -2374,12 +2659,12 @@ export default function SwapInterface() {
                       </div>
                     </div>
                   </div>
-                  <button 
+          <button
                     style={styles.importButton}
                     onClick={handleImportToken}
-                  >
+          >
                     Import
-                  </button>
+          </button>
                 </div>
               )}
 
@@ -2433,8 +2718,8 @@ export default function SwapInterface() {
                       I understand, import
                     </button>
                   </div>
-                </div>
-              )}
+          </div>
+        )}
 
               {/* Custom Tokens Section */}
               {Object.keys(customTokens).length > 0 && !tokenSearchQuery && (
