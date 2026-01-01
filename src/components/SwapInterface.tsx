@@ -2100,6 +2100,18 @@ export default function SwapInterface() {
               >
                 View on Basescan ↗
               </a>
+              <a 
+                href={`https://warpcast.com/~/compose?text=${encodeURIComponent(`🔄 Just swapped ${amountIn} ${tokenIn.symbol} → ${tokenOut.symbol} on SwapHub DEX!\n\n💰 Best rates across Uniswap V2 & V3\n🎉 Earned 100 XP\n⚡️ Powered by BaseHub\n\nhttps://basehub.vercel.app/swap`)}&embeds[]=${encodeURIComponent(`https://basescan.org/tx/${hash}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  ...styles.toastLink,
+                  background: 'linear-gradient(135deg, #8a63d2 0%, #6b46c1 100%)',
+                  marginTop: '8px'
+                }}
+              >
+                📣 Share on Farcaster
+              </a>
             </div>
           </div>
         )}
