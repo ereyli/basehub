@@ -403,24 +403,6 @@ export const checkSwapMilestone = async (walletAddress) => {
       return
     }
 
-    // Check if milestone bonus already awarded
-    const { data: existingMilestone, error: milestoneError } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('wallet_address', walletAddress)
-      .eq('game_type', 'SWAP_MILESTONE_500')
-      .single()
-
-    if (milestoneError && milestoneError.code !== 'PGRST116') {
-      console.error('❌ Error checking milestone:', milestoneError)
-      return
-    }
-
-    if (existingMilestone) {
-      console.log('✅ $500 milestone bonus already awarded')
-      return
-    }
-
     // Calculate total swap volume from SWAP_VOLUME transactions
     const { data: swapTransactions, error: swapError } = await supabase
       .from('transactions')
@@ -440,23 +422,59 @@ export const checkSwapMilestone = async (walletAddress) => {
 
     console.log(`📊 Total swap volume: $${totalVolume.toFixed(2)}`)
 
-    // Check if milestone reached
-    if (totalVolume >= 500) {
-      console.log('🎉 $500 milestone reached! Awarding 5000 XP bonus...')
+    // Calculate how many $500 milestones have been reached
+    const milestonesReached = Math.floor(totalVolume / 500)
+    console.log(`🎯 Milestones reached: ${milestonesReached}`)
+
+    if (milestonesReached === 0) {
+      console.log('📊 No milestones reached yet')
+      return
+    }
+
+    // Get already awarded milestones
+    const { data: awardedMilestones, error: milestoneError } = await supabase
+      .from('transactions')
+      .select('swap_amount_usd')
+      .eq('wallet_address', walletAddress)
+      .eq('game_type', 'SWAP_MILESTONE_500')
+      .not('swap_amount_usd', 'is', null)
+
+    if (milestoneError && milestoneError.code !== 'PGRST116') {
+      console.error('❌ Error checking awarded milestones:', milestoneError)
+      return
+    }
+
+    const alreadyAwardedCount = awardedMilestones ? awardedMilestones.length : 0
+    console.log(`✅ Already awarded milestones: ${alreadyAwardedCount}`)
+
+    // Award bonuses for new milestones
+    const newMilestonesCount = milestonesReached - alreadyAwardedCount
+
+    if (newMilestonesCount > 0) {
+      console.log(`🎉 ${newMilestonesCount} new milestone(s) reached! Awarding ${newMilestonesCount * 5000} XP...`)
+      
+      const totalBonusXP = newMilestonesCount * 5000
       
       // Award milestone bonus XP
-      await addXP(walletAddress, 5000, 'SWAP_MILESTONE_500')
+      await addXP(walletAddress, totalBonusXP, 'SWAP_MILESTONE_500')
 
-      // Record milestone transaction
-      await recordTransaction({
-        wallet_address: walletAddress,
-        game_type: 'SWAP_MILESTONE_500',
-        xp_earned: 5000,
-        swap_amount_usd: totalVolume,
-        transaction_hash: null
-      })
+      // Record milestone transactions for each new milestone
+      for (let i = 0; i < newMilestonesCount; i++) {
+        const milestoneNumber = alreadyAwardedCount + i + 1
+        const milestoneVolume = milestoneNumber * 500
+        
+        await recordTransaction({
+          wallet_address: walletAddress,
+          game_type: 'SWAP_MILESTONE_500',
+          xp_earned: 5000,
+          swap_amount_usd: milestoneVolume,
+          transaction_hash: null
+        })
+      }
 
-      console.log('✅ $500 milestone bonus awarded: 5000 XP')
+      console.log(`✅ ${newMilestonesCount} milestone bonus(es) awarded: ${totalBonusXP} XP total`)
+    } else {
+      console.log('✅ All milestones already awarded')
     }
   } catch (error) {
     console.error('❌ Error in checkSwapMilestone:', error)

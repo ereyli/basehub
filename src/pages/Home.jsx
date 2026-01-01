@@ -325,7 +325,7 @@ const Home = () => {
       path: '/swap',
       color: 'linear-gradient(135deg, #ff1cf7 0%, #00d4ff 100%)',
       xpReward: '250 XP',
-      bonusXP: '5000 XP ($500 Total)'
+      bonusXP: '5000 XP (Every $500)'
     },
   ]
 
