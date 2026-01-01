@@ -327,33 +327,17 @@ const FarcasterBottomNav = () => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '4px',
+            gap: '6px',
             transition: 'all 0.2s ease',
             minHeight: '64px',
             justifyContent: 'center',
             boxShadow: activeTab === 'dex' 
               ? '0 4px 12px rgba(102, 126, 234, 0.3)' 
-              : '0 2px 4px rgba(102, 126, 234, 0.1)',
-            position: 'relative'
+              : '0 2px 4px rgba(102, 126, 234, 0.1)'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Repeat size={18} />
-          </div>
+          <Repeat size={18} />
           <span>DEX</span>
-          <span style={{
-            fontSize: '9px',
-            fontWeight: '600',
-            background: activeTab === 'dex' 
-              ? 'rgba(255, 255, 255, 0.2)' 
-              : 'rgba(102, 126, 234, 0.2)',
-            color: activeTab === 'dex' ? 'white' : '#667eea',
-            padding: '2px 6px',
-            borderRadius: '4px',
-            lineHeight: '1.2'
-          }}>
-            5000 XP
-          </span>
         </button>
       </div>
 

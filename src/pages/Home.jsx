@@ -324,8 +324,8 @@ const Home = () => {
       icon: <ArrowLeftRight size={35} style={{ color: 'white' }} />,
       path: '/swap',
       color: 'linear-gradient(135deg, #ff1cf7 0%, #00d4ff 100%)',
-      xpReward: '100 XP',
-      bonusXP: 'Per Swap'
+      xpReward: '5000 XP',
+      bonusXP: 'Min $500 Swap'
     },
   ]
 
@@ -764,6 +764,34 @@ const Home = () => {
                           <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
                             {game.title}
                           </h3>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                          <div style={{
+                            background: 'rgba(30, 41, 59, 0.95)',
+                            borderRadius: '12px',
+                            padding: '2px 8px',
+                            fontSize: '9px',
+                            fontWeight: 'bold',
+                            color: '#059669',
+                            whiteSpace: 'nowrap',
+                            lineHeight: '1.2'
+                          }}>
+                            {game.xpReward}
+                          </div>
+                          {game.bonusXP && (
+                            <div style={{
+                              background: 'rgba(255, 215, 0, 0.95)',
+                              borderRadius: '12px',
+                              padding: '2px 8px',
+                              fontSize: '9px',
+                              fontWeight: 'bold',
+                              color: '#92400e',
+                              whiteSpace: 'nowrap',
+                              lineHeight: '1.2'
+                            }}>
+                              {game.bonusXP}
+                            </div>
+                          )}
                         </div>
                         <p style={{ margin: '12px 0', fontSize: '14px', color: 'rgba(255, 255, 255, 0.9)', lineHeight: '1.4' }}>
                           {game.description}
