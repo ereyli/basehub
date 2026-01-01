@@ -7,7 +7,6 @@ import { Token } from '@uniswap/sdk-core';
 import StatsPanel from './StatsPanel';
 import swaphubLogo from '../assets/swaphub-logo.png';
 import { addXP, recordSwapTransaction } from '../utils/xpUtils';
-import XPShareButton from './XPShareButton';
 
 // ETH price state - will be fetched from CoinGecko API
 let cachedEthPrice = 2950; // Default fallback price
@@ -2186,26 +2185,6 @@ export default function SwapInterface() {
         )}
 
         {/* Share on Farcaster Button - After protocol badge */}
-        <div style={{
-          marginTop: '24px',
-          paddingTop: '20px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          display: 'flex',
-          justifyContent: 'center'
-        }}>
-          <XPShareButton 
-            gameType="swap"
-            xpEarned={250}
-            totalXP={0}
-            transactionHash={hash || ''}
-            gameResult={{
-              tokenIn: tokenIn.symbol,
-              tokenOut: tokenOut.symbol,
-              amountIn: amountIn
-            }}
-            style={{ width: '100%' }}
-          />
-        </div>
 
         {(isPending || isConfirming) && (
           <div style={styles.pendingMessage}>
