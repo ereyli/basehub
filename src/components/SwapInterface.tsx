@@ -750,8 +750,8 @@ export default function SwapInterface() {
   // Award XP on successful swap
   useEffect(() => {
     if (isSuccess && address && hash) {
-      console.log('🎉 Swap successful! Awarding 100 XP...');
-      addXP(address, 100, 'SWAP')
+      console.log('🎉 Swap successful! Awarding 250 XP...');
+      addXP(address, 250, 'SWAP')
         .then(() => {
           console.log('✅ XP awarded successfully for swap');
         })
@@ -2027,7 +2027,7 @@ export default function SwapInterface() {
         }}>
           <XPShareButton 
             gameType="swap"
-            xpEarned={100}
+            xpEarned={250}
             totalXP={0}
             transactionHash={hash || ''}
             gameResult={{
@@ -2113,7 +2113,7 @@ export default function SwapInterface() {
                 color: 'white',
                 textAlign: 'center' as const
               }}>
-                🎉 +100 XP Earned!
+                🎉 +250 XP Earned!
               </div>
               <a 
                 href={`https://basescan.org/tx/${hash}`}
