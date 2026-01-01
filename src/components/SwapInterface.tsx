@@ -1119,6 +1119,28 @@ export default function SwapInterface() {
   const isWrap = tokenIn.isNative && tokenOut.address.toLowerCase() === WETH_ADDRESS.toLowerCase(); // ETH→WETH
   const isUnwrap = tokenIn.address.toLowerCase() === WETH_ADDRESS.toLowerCase() && tokenOut.isNative; // WETH→ETH
 
+  // Helper function for retry logic with exponential backoff
+  const retryWithBackoff = async <T,>(
+    fn: () => Promise<T>,
+    maxRetries: number = 2,
+    delay: number = 300
+  ): Promise<T | null> => {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        if (attempt === maxRetries) {
+          console.warn(`⚠️ Failed after ${maxRetries + 1} attempts:`, error);
+          return null;
+        }
+        // Wait before retry with exponential backoff
+        await new Promise(resolve => setTimeout(resolve, delay * (attempt + 1)));
+        console.log(`🔄 Retry attempt ${attempt + 1}/${maxRetries}...`);
+      }
+    }
+    return null;
+  };
+
   // Fetch quote from both Uniswap V3 and V2, use best available
   useEffect(() => {
     const fetchQuote = async () => {
@@ -1162,26 +1184,49 @@ export default function SwapInterface() {
       let bestProtocol: SwapProtocol = 'v3';
       let bestQuote: bigint = BigInt(0);
       
-      // Try V3 quote
+      // Try V3 quote with retry and all fee tiers
       try {
         console.log('🔷 Trying Uniswap V3...');
-        const { result } = await publicClient.simulateContract({
-          address: QUOTER_V2_ADDRESS as `0x${string}`,
-          abi: QUOTER_ABI,
-          functionName: 'quoteExactInputSingle',
-          args: [{
-            tokenIn: tokenInAddr as `0x${string}`,
-            tokenOut: tokenOutAddr as `0x${string}`,
-            amountIn: amountInWei,
-            fee: selectedFeeTier,
-            sqrtPriceLimitX96: BigInt(0)
-          }]
-        });
-        v3Quote = result[0] as bigint;
-        console.log('✅ V3 Quote:', formatUnits(v3Quote, tokenOut.decimals), tokenOut.symbol);
-        setV3Available(true);
+        
+        // Try all fee tiers, not just selectedFeeTier
+        const feeTiersToTry = [FEE_TIERS.LOW, FEE_TIERS.MEDIUM, FEE_TIERS.HIGH];
+        let bestV3Quote: bigint | null = null;
+        let bestV3Fee = selectedFeeTier;
+        
+        for (const feeTier of feeTiersToTry) {
+          const quote = await retryWithBackoff(async () => {
+            const { result } = await publicClient.simulateContract({
+              address: QUOTER_V2_ADDRESS as `0x${string}`,
+              abi: QUOTER_ABI,
+              functionName: 'quoteExactInputSingle',
+              args: [{
+                tokenIn: tokenInAddr as `0x${string}`,
+                tokenOut: tokenOutAddr as `0x${string}`,
+                amountIn: amountInWei,
+                fee: feeTier,
+                sqrtPriceLimitX96: BigInt(0)
+              }]
+            });
+            return result[0] as bigint;
+          });
+          
+          if (quote && (!bestV3Quote || quote > bestV3Quote)) {
+            bestV3Quote = quote;
+            bestV3Fee = feeTier;
+          }
+        }
+        
+        if (bestV3Quote) {
+          v3Quote = bestV3Quote;
+          console.log('✅ V3 Quote:', formatUnits(v3Quote, tokenOut.decimals), tokenOut.symbol, `(${bestV3Fee/10000}% fee)`);
+          setV3Available(true);
+          setSelectedFeeTier(bestV3Fee);
+        } else {
+          console.log('❌ V3 pool not found across all fee tiers');
+          setV3Available(false);
+        }
       } catch (error) {
-        console.log('❌ V3 pool not found or error');
+        console.log('❌ V3 pool not found or error:', error);
         setV3Available(false);
       }
 
@@ -1190,26 +1235,32 @@ export default function SwapInterface() {
       try {
         console.log('🔶 Checking Uniswap V2...');
         
-        // First check if V2 pair exists (direct route)
-        const pairAddress = await publicClient.readContract({
-          address: UNISWAP_V2_FACTORY as `0x${string}`,
-          abi: V2_FACTORY_ABI,
-          functionName: 'getPair',
-          args: [tokenInAddr as `0x${string}`, tokenOutAddr as `0x${string}`]
+        // First check if V2 pair exists (direct route) with retry
+        const pairAddress = await retryWithBackoff(async () => {
+          return await publicClient.readContract({
+            address: UNISWAP_V2_FACTORY as `0x${string}`,
+            abi: V2_FACTORY_ABI,
+            functionName: 'getPair',
+            args: [tokenInAddr as `0x${string}`, tokenOutAddr as `0x${string}`]
+          });
         });
 
         if (pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000') {
-          // Get V2 quote (direct route)
-          const amounts = await publicClient.readContract({
-            address: UNISWAP_V2_ROUTER as `0x${string}`,
-            abi: V2_ROUTER_ABI,
-            functionName: 'getAmountsOut',
-            args: [amountInWei, [tokenInAddr as `0x${string}`, tokenOutAddr as `0x${string}`]]
+          // Get V2 quote (direct route) with retry
+          const amounts = await retryWithBackoff(async () => {
+            return await publicClient.readContract({
+              address: UNISWAP_V2_ROUTER as `0x${string}`,
+              abi: V2_ROUTER_ABI,
+              functionName: 'getAmountsOut',
+              args: [amountInWei, [tokenInAddr as `0x${string}`, tokenOutAddr as `0x${string}`]]
+            });
           });
           
-          v2Quote = (amounts as bigint[])[1];
-          console.log('✅ V2 Quote (direct):', formatUnits(v2Quote, tokenOut.decimals), tokenOut.symbol);
-          setV2Available(true);
+          if (amounts) {
+            v2Quote = (amounts as bigint[])[1];
+            console.log('✅ V2 Quote (direct):', formatUnits(v2Quote, tokenOut.decimals), tokenOut.symbol);
+            setV2Available(true);
+          }
         } else {
           console.log('❌ V2 direct pair does not exist');
         }
