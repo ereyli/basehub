@@ -28,12 +28,12 @@ export const TOKEN_ADDRESSES = {
   JESSE: '0x50F88fe97f72CD3E75b9Eb4f747F59BcEBA80d59', // Jesse Token
   VIRTUAL: '0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b', // Virtual Token
   // Meme Tokens
-  TOSHI: '0xac1bd2486aaf3b5c0fc3fd868558b082a531b2b4', // Toshi Token
-  MOCHI: '0x4e5d9b093986d864331d88e0a13a616ed0f7e828', // Mochi Token (placeholder - need real address)
-  DOGINME: '0x4e5d9b093986d864331d88e0a13a616ed0f7e828', // Doginme Token (placeholder - need real address)
-  KEYCAT: '0x9a26f5433671751c3276a065f57e5a02d2817973', // Keyboard Cat Token
+  TOSHI: '0xAC1Bd2486aAf3B5C0fc3Fd868558b082a531B2B4', // Toshi Token
+  MOCHI: '0xF6e932Ca12afa26665dC4dDE7e27be02A7c02e50', // Mochi Token
+  DOGINME: '0x6921B130D297cc43754afba22e5EAc0FBf8Db75b', // Doginme Token
+  KEYCAT: '0x9a26F5433671751C3276a065f57e5a02D2817973', // Keyboard Cat Token
   NORMIE: '0x4e5d9b093986d864331d88e0a13a616ed0f7e828', // Normie Token (placeholder - need real address)
-  MIGGLES: '0x4e5d9b093986d864331d88e0a13a616ed0f7e828', // Miggles Token (placeholder - need real address)
+  MIGGLES: '0xB1a03EdA10342529bBF8EB700a06C60441fEf25d', // Miggles Token
   BENJI: '0x4e5d9b093986d864331d88e0a13a616ed0f7e828', // Benji Token (placeholder - need real address)
   TYBG: '0x4e5d9b093986d864331d88e0a13a616ed0f7e828', // TYBG Token (placeholder - need real address)
   BOMET: '0x4e5d9b093986d864331d88e0a13a616ed0f7e828', // Bomet Token (placeholder - need real address)
@@ -51,7 +51,7 @@ const BRETT_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.BRETT, 18, 'BRETT',
 const BHUB_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.BHUB, 18, 'BHUB', 'BaseHub Token');
 const JESSE_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.JESSE, 18, 'JESSE', 'Jesse');
 const VIRTUAL_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.VIRTUAL, 18, 'VIRTUAL', 'Virtual');
-// Meme Token instances
+// Meme Token instances (addresses updated)
 const TOSHI_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.TOSHI, 18, 'TOSHI', 'Toshi');
 const MOCHI_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.MOCHI, 18, 'MOCHI', 'Mochi');
 const DOGINME_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.DOGINME, 18, 'DOGINME', 'Doge In Me');
@@ -248,7 +248,7 @@ export const DEFAULT_TOKENS: Record<string, AppToken> = {
 };
 
 // Popular token pairs for quick access
-export const POPULAR_TOKENS = ['ETH', 'USDC', 'JESSE', 'VIRTUAL'];
+export const POPULAR_TOKENS = ['ETH', 'USDC', 'JESSE', 'VIRTUAL', 'BHUB'];
 
 // Meme tokens category
 export const MEME_TOKENS = ['TOSHI', 'MOCHI', 'DOGINME', 'KEYCAT', 'NORMIE', 'MIGGLES', 'BENJI', 'TYBG', 'BOMET'];
