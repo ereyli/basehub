@@ -25,6 +25,7 @@ export const TOKEN_ADDRESSES = {
   AERO: '0x940181a94A35A4569E4529A3CDfB74e38FD98631', // Aerodrome
   BRETT: '0x532f27101965dd16442E59d40670FaF5eBB142E4', // Brett (Based)
   BHUB: '0x0000000000000000000000000000000000000000', // BaseHub Token (Not deployed yet)
+  JESSE: '0x50F88fe97f72CD3E75b9Eb4f747F59BcEBA80d59', // Jesse Token
 };
 
 // SDK Token instances
@@ -37,6 +38,7 @@ const cbETH_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.cbETH, 18, 'cbETH',
 const AERO_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.AERO, 18, 'AERO', 'Aerodrome');
 const BRETT_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.BRETT, 18, 'BRETT', 'Brett');
 const BHUB_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.BHUB, 18, 'BHUB', 'BaseHub Token');
+const JESSE_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.JESSE, 18, 'JESSE', 'Jesse');
 
 // Default token list
 export const DEFAULT_TOKENS: Record<string, AppToken> = {
@@ -120,11 +122,20 @@ export const DEFAULT_TOKENS: Record<string, AppToken> = {
     logoURI: '/icon.png',
     isNative: false,
     sdkToken: BHUB_TOKEN
+  },
+  JESSE: {
+    address: TOKEN_ADDRESSES.JESSE,
+    symbol: 'JESSE',
+    name: 'Jesse',
+    decimals: 18,
+    logoURI: 'https://assets.coingecko.com/coins/images/40869/small/jesse.png',
+    isNative: false,
+    sdkToken: JESSE_TOKEN
   }
 };
 
 // Popular token pairs for quick access
-export const POPULAR_TOKENS = ['ETH', 'USDC', 'DAI', 'cbETH', 'AERO', 'BHUB'];
+export const POPULAR_TOKENS = ['ETH', 'USDC', 'DAI', 'cbETH', 'AERO', 'BHUB', 'JESSE'];
 
 // Fee tiers for Uniswap V3 pools
 export const FEE_TIERS = {
