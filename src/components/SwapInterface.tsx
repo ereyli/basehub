@@ -2805,7 +2805,9 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: 'transparent',
     background: 'none',
     mixBlendMode: 'normal',
-    filter: 'none'
+    // Blue theme filter to match site colors
+    filter: 'brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(200deg) brightness(98%) contrast(96%)',
+    transition: 'filter 0.3s ease'
   },
   logoText: {
     fontSize: '20px',
