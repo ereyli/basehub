@@ -35,17 +35,18 @@ class SwapErrorBoundary extends Component {
           <p style={{ marginBottom: '16px', opacity: 0.8 }}>
             An error occurred while loading the swap interface. Please refresh the page.
           </p>
-          <button
+            <button
             onClick={() => window.location.reload()}
             style={{
               padding: '12px 24px',
-              backgroundColor: '#667eea',
+              background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%)',
               color: '#fff',
               border: 'none',
               borderRadius: '8px',
               cursor: 'pointer',
               fontSize: '16px',
-              fontWeight: '600'
+              fontWeight: '600',
+              boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
             }}
           >
             Refresh Page
@@ -88,7 +89,7 @@ export default function SwapHub() {
   const styles = {
     container: {
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%)',
+      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1e3a8a 100%)',
       paddingTop: isMobile ? '60px' : '0',
       paddingBottom: isMobile ? '120px' : '20px'
     },
@@ -106,14 +107,14 @@ export default function SwapHub() {
       fontWeight: '700',
       color: '#ffffff',
       marginBottom: '6px',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%)',
       WebkitBackgroundClip: 'text',
       WebkitTextFillColor: 'transparent',
       backgroundClip: 'text'
     },
     subtitle: {
       fontSize: isMobile ? '12px' : '16px',
-      color: 'rgba(255, 255, 255, 0.6)',
+      color: '#9ca3af',
       lineHeight: '1.4'
     },
     mainGrid: {
@@ -123,31 +124,31 @@ export default function SwapHub() {
       marginBottom: '24px'
     },
     swapCard: {
-      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+      backgroundColor: 'rgba(30, 41, 59, 0.6)',
       borderRadius: '20px',
       padding: isMobile ? '14px' : '24px',
-      border: '1px solid rgba(255, 255, 255, 0.08)',
+      border: '1px solid rgba(59, 130, 246, 0.2)',
       backdropFilter: 'blur(10px)'
     },
     statsCard: {
-      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+      backgroundColor: 'rgba(30, 41, 59, 0.6)',
       borderRadius: '20px',
       padding: isMobile ? '14px' : '24px',
-      border: '1px solid rgba(255, 255, 255, 0.08)',
+      border: '1px solid rgba(59, 130, 246, 0.2)',
       backdropFilter: 'blur(10px)',
       display: 'flex',
       flexDirection: 'column',
       minHeight: isMobile ? '350px' : 'auto'
     },
     xpBanner: {
-      backgroundColor: 'rgba(255, 255, 255, 0.04)',
+      backgroundColor: 'rgba(30, 41, 59, 0.6)',
       borderRadius: '16px',
       padding: isMobile ? '16px' : '20px 24px',
-      border: '1px solid rgba(147, 51, 234, 0.3)',
+      border: '1px solid rgba(59, 130, 246, 0.3)',
       backdropFilter: 'blur(10px)',
       marginBottom: isMobile ? '16px' : '24px',
-      background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%)',
-      boxShadow: '0 4px 20px rgba(147, 51, 234, 0.2)'
+      background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%)',
+      boxShadow: '0 4px 20px rgba(59, 130, 246, 0.2)'
     },
     xpBannerContent: {
       display: 'flex',
@@ -166,13 +167,13 @@ export default function SwapHub() {
       width: isMobile ? '40px' : '48px',
       height: isMobile ? '40px' : '48px',
       borderRadius: '12px',
-      background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)',
-      border: '1px solid rgba(251, 191, 36, 0.3)',
+      background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.2) 100%)',
+      border: '1px solid rgba(59, 130, 246, 0.3)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0,
-      boxShadow: '0 4px 16px rgba(251, 191, 36, 0.25)',
+      boxShadow: '0 4px 16px rgba(59, 130, 246, 0.25)',
       backdropFilter: 'blur(8px)'
     },
     xpBannerText: {
@@ -189,7 +190,7 @@ export default function SwapHub() {
     },
     xpBannerSubtitle: {
       fontSize: isMobile ? '12px' : '14px',
-      color: 'rgba(255, 255, 255, 0.7)',
+      color: '#9ca3af',
       lineHeight: '1.4'
     },
     xpRewards: {
@@ -210,11 +211,11 @@ export default function SwapHub() {
     xpBadge: {
       padding: '4px 10px',
       borderRadius: '8px',
-      background: 'rgba(255, 255, 255, 0.15)',
-      border: '1px solid rgba(255, 255, 255, 0.2)',
+      background: 'rgba(59, 130, 246, 0.15)',
+      border: '1px solid rgba(59, 130, 246, 0.3)',
       fontSize: isMobile ? '12px' : '13px',
       fontWeight: '700',
-      color: '#fbbf24'
+      color: '#60a5fa'
     }
   };
 
