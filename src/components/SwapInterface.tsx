@@ -844,7 +844,7 @@ export default function SwapInterface() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [transactionStep, setTransactionStep] = useState<'idle' | 'approving' | 'approved' | 'swapping' | 'success'>('idle');
   const [approvalSuccess, setApprovalSuccess] = useState(false);
-  const [showMemeTokens, setShowMemeTokens] = useState(false);
+  const [showMemeTokens, setShowMemeTokens] = useState(true); // Default to open
 
 
   // Get balance for tokenIn (native ETH or ERC20 token)
@@ -1963,8 +1963,8 @@ export default function SwapInterface() {
       padding: '12px'
     },
     tokenLogo: {
-      width: '28px',
-      height: '28px'
+      width: '20px',
+      height: '20px'
     },
     tokenSymbol: {
       fontSize: '14px'
@@ -3451,13 +3451,13 @@ const styles: Record<string, React.CSSProperties> = {
   popularToken: {
     display: 'flex',
     alignItems: 'center',
-    gap: '6px',
-    padding: '6px 10px',
+    gap: '4px',
+    padding: '4px 8px',
     backgroundColor: 'rgba(59, 130, 246, 0.15)',
     border: '1px solid rgba(59, 130, 246, 0.3)',
-    borderRadius: '16px',
+    borderRadius: '12px',
     color: '#ffffff',
-    fontSize: '13px',
+    fontSize: '12px',
     fontWeight: '500',
     cursor: 'pointer',
     transition: 'all 0.2s'
@@ -3490,8 +3490,8 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: 0
   },
   tokenLogo: {
-    width: '36px',
-    height: '36px',
+    width: '20px',
+    height: '20px',
     borderRadius: '50%',
     flexShrink: 0
   },
