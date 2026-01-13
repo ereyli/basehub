@@ -26,6 +26,7 @@ export const TOKEN_ADDRESSES = {
   BRETT: '0x532f27101965dd16442E59d40670FaF5eBB142E4', // Brett (Based)
   BHUB: '0x0000000000000000000000000000000000000000', // BaseHub Token (Not deployed yet)
   JESSE: '0x50F88fe97f72CD3E75b9Eb4f747F59BcEBA80d59', // Jesse Token
+  VIRTUAL: '0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b', // Virtual Token
 };
 
 // SDK Token instances
@@ -39,6 +40,7 @@ const AERO_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.AERO, 18, 'AERO', 'A
 const BRETT_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.BRETT, 18, 'BRETT', 'Brett');
 const BHUB_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.BHUB, 18, 'BHUB', 'BaseHub Token');
 const JESSE_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.JESSE, 18, 'JESSE', 'Jesse');
+const VIRTUAL_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.VIRTUAL, 18, 'VIRTUAL', 'Virtual');
 
 // Default token list
 export const DEFAULT_TOKENS: Record<string, AppToken> = {
@@ -131,11 +133,20 @@ export const DEFAULT_TOKENS: Record<string, AppToken> = {
     logoURI: undefined, // Will be fetched automatically from CoinGecko/TrustWallet
     isNative: false,
     sdkToken: JESSE_TOKEN
+  },
+  VIRTUAL: {
+    address: TOKEN_ADDRESSES.VIRTUAL,
+    symbol: 'VIRTUAL',
+    name: 'Virtual',
+    decimals: 18,
+    logoURI: undefined, // Will be fetched automatically from CoinGecko/TrustWallet
+    isNative: false,
+    sdkToken: VIRTUAL_TOKEN
   }
 };
 
 // Popular token pairs for quick access
-export const POPULAR_TOKENS = ['ETH', 'USDC', 'DAI', 'cbETH', 'AERO', 'BHUB', 'JESSE'];
+export const POPULAR_TOKENS = ['ETH', 'USDC', 'JESSE', 'VIRTUAL'];
 
 // Fee tiers for Uniswap V3 pools
 export const FEE_TIERS = {

@@ -2642,22 +2642,29 @@ export default function SwapInterface() {
                 </div>
               )}
 
-              {/* Custom Tokens Section */}
-              {Object.keys(customTokens).length > 0 && !tokenSearchQuery && (
-                <>
-                  <div style={getStyle(styles.sectionTitle, mobileOverrides.sectionTitle)}>Custom tokens</div>
-                  <div style={{ ...styles.tokenList, maxHeight: '400px' }}>
-                    {Object.values(customTokens).map((token) => {
-                      const isCurrentToken = showTokenSelect === 'in' 
-                        ? token.symbol === tokenIn.symbol 
-                        : token.symbol === tokenOut.symbol;
-                      
-                      const isOtherToken = showTokenSelect === 'in'
-                        ? token.symbol === tokenOut.symbol
-                        : token.symbol === tokenIn.symbol;
+              {/* Combined Token List (Popular + Custom) */}
+              {!tokenSearchQuery && (
+                <div style={getStyle(styles.sectionTitle, mobileOverrides.sectionTitle)}>Tokens</div>
+              )}
+              
+              {/* Token List */}
+              <div style={styles.tokenList}>
+                {(tokenSearchQuery ? searchTokens(tokenSearchQuery) : getAllTokens())
+                  .map((token) => {
+                    const isCurrentToken = showTokenSelect === 'in' 
+                      ? token.symbol === tokenIn.symbol 
+                      : token.symbol === tokenOut.symbol;
+                    
+                    const isOtherToken = showTokenSelect === 'in'
+                      ? token.symbol === tokenOut.symbol
+                      : token.symbol === tokenIn.symbol;
 
-                      if (isCurrentToken) return null;
+                    if (isCurrentToken) return null;
 
+                    // Check if it's a custom token (not in DEFAULT_TOKENS)
+                    const isCustomToken = !DEFAULT_TOKENS[token.symbol];
+                    
+                    if (isCustomToken) {
                       const handleRemove = (e: React.MouseEvent) => {
                         e.stopPropagation(); // Prevent token selection when clicking remove
                         removeCustomToken(token.symbol);
@@ -2678,27 +2685,7 @@ export default function SwapInterface() {
                           ethPrice={ethPriceUsd}
                         />
                       );
-                    })}
-                  </div>
-                </>
-              )}
-
-              {/* Your Tokens Header */}
-              <div style={getStyle(styles.sectionTitle, mobileOverrides.sectionTitle)}>Popular tokens</div>
-              
-              {/* Token List */}
-              <div style={styles.tokenList}>
-                {(tokenSearchQuery ? searchTokens(tokenSearchQuery) : Object.values(DEFAULT_TOKENS))
-                  .map((token) => {
-                    const isCurrentToken = showTokenSelect === 'in' 
-                      ? token.symbol === tokenIn.symbol 
-                      : token.symbol === tokenOut.symbol;
-                    
-                    const isOtherToken = showTokenSelect === 'in'
-                      ? token.symbol === tokenOut.symbol
-                      : token.symbol === tokenIn.symbol;
-
-                    if (isCurrentToken) return null;
+                    }
 
                     return (
                       <TokenListItem
