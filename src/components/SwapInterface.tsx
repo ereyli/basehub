@@ -2695,7 +2695,7 @@ export default function SwapInterface() {
               )}
               
               {/* Token List */}
-              <div style={styles.tokenList}>
+              <div style={styles.tokenList} className="token-list-scrollbar">
                 {(tokenSearchQuery ? searchTokens(tokenSearchQuery) : Object.values(getAllTokens()))
                   .map((token) => {
                     const isCurrentToken = showTokenSelect === 'in' 
@@ -3463,7 +3463,10 @@ const styles: Record<string, React.CSSProperties> = {
     overflowX: 'hidden',
     flex: 1,
     minHeight: 0,
-    paddingRight: '4px'
+    paddingRight: '8px',
+    // Custom scrollbar styles
+    scrollbarWidth: 'thin' as const,
+    scrollbarColor: 'rgba(59, 130, 246, 0.3) rgba(30, 41, 59, 0.1)'
   },
   sectionTitle: {
     fontSize: '12px',

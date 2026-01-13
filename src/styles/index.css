@@ -1138,6 +1138,26 @@ body {
   }
 }
 
+/* Custom Scrollbar Styles for Token List */
+.token-list-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.token-list-scrollbar::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.1);
+  border-radius: 10px;
+}
+
+.token-list-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.token-list-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.5);
+}
+
 /* Web App Styles */
 .web-app {
   min-height: 100vh;
