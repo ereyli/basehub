@@ -2894,6 +2894,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '12px',
     width: '100%',
     maxWidth: '420px',
+    minHeight: '650px',
     boxShadow: '0 4px 24px rgba(59, 130, 246, 0.2)',
     border: '1px solid rgba(59, 130, 246, 0.2)'
   },
@@ -3382,7 +3383,8 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '16px',
     width: '420px',
     maxWidth: '95%',
-    maxHeight: '85vh',
+    maxHeight: '90vh',
+    height: '600px',
     display: 'flex',
     flexDirection: 'column',
     border: '1px solid rgba(59, 130, 246, 0.2)',
@@ -3464,7 +3466,8 @@ const styles: Record<string, React.CSSProperties> = {
     overflowY: 'auto',
     overflowX: 'hidden',
     flex: 1,
-    minHeight: 0,
+    minHeight: '400px',
+    maxHeight: '450px',
     paddingRight: '8px',
     // Custom scrollbar styles
     scrollbarWidth: 'thin' as const,
