@@ -178,7 +178,7 @@ export const DEFAULT_TOKENS: Record<string, AppToken> = {
     symbol: 'MOCHI',
     name: 'Mochi',
     decimals: 18,
-    logoURI: undefined, // Will be fetched automatically from CoinGecko/TrustWallet
+    logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/base/assets/0xF6e932Ca12afa26665dC4dDE7e27be02A7c02e50/logo.png',
     isNative: false,
     sdkToken: MOCHI_TOKEN
   },
@@ -187,7 +187,7 @@ export const DEFAULT_TOKENS: Record<string, AppToken> = {
     symbol: 'DOGINME',
     name: 'Doge In Me',
     decimals: 18,
-    logoURI: undefined, // Will be fetched automatically from CoinGecko/TrustWallet
+    logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/base/assets/0x6921B130D297cc43754afba22e5EAc0FBf8Db75b/logo.png',
     isNative: false,
     sdkToken: DOGINME_TOKEN
   },
@@ -214,7 +214,7 @@ export const DEFAULT_TOKENS: Record<string, AppToken> = {
     symbol: 'MIGGLES',
     name: 'Miggles',
     decimals: 18,
-    logoURI: undefined, // Will be fetched automatically from CoinGecko/TrustWallet
+    logoURI: 'https://coin-images.coingecko.com/coins/images/39251/small/New_LOGO.png',
     isNative: false,
     sdkToken: MIGGLES_TOKEN
   },
