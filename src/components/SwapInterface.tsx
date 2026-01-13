@@ -2774,15 +2774,15 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     minHeight: '100vh',
-    backgroundColor: '#000000'
+    backgroundColor: '#0f172a'
   },
   header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '12px 24px',
-    backgroundColor: '#000000',
-    borderBottom: '1px solid #1a1a1a',
+    backgroundColor: 'rgba(30, 41, 59, 0.95)',
+    borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
     position: 'sticky' as const,
     top: 0,
     zIndex: 100
@@ -2810,7 +2810,7 @@ const styles: Record<string, React.CSSProperties> = {
   logoText: {
     fontSize: '20px',
     fontWeight: 'bold',
-    background: 'linear-gradient(135deg, #ff1cf7, #00d4ff)',
+    background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%)',
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
     backgroundClip: 'text',
@@ -2822,7 +2822,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   navLink: {
     padding: '8px 16px',
-    color: '#888888',
+    color: '#9ca3af',
     textDecoration: 'none',
     fontSize: '16px',
     fontWeight: '500',
@@ -2836,7 +2836,7 @@ const styles: Record<string, React.CSSProperties> = {
   navLinkActive: {
     padding: '8px 16px',
     color: '#ffffff',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
     textDecoration: 'none',
     fontSize: '16px',
     fontWeight: '500',
@@ -2853,9 +2853,9 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '8px',
     padding: '10px 16px',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: 'rgba(30, 41, 59, 0.8)',
     borderRadius: '12px',
-    border: '1px solid #333'
+    border: '1px solid rgba(59, 130, 246, 0.2)'
   },
   searchIcon: {
     fontSize: '14px',
@@ -2884,16 +2884,16 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     minHeight: '100vh',
     padding: '20px',
-    backgroundColor: '#000000'
+    backgroundColor: '#0f172a'
   },
   card: {
-    backgroundColor: '#131313',
+    backgroundColor: 'rgba(30, 41, 59, 0.95)',
     borderRadius: '20px',
     padding: '12px',
     width: '100%',
     maxWidth: '420px',
-    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.3)',
-    border: '1px solid #1f1f1f'
+    boxShadow: '0 4px 24px rgba(59, 130, 246, 0.2)',
+    border: '1px solid rgba(59, 130, 246, 0.2)'
   },
   headerRow: {
     display: 'flex',
@@ -2901,10 +2901,11 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '8px'
   },
   tokenSection: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
     borderRadius: '16px',
     padding: '16px',
-    marginBottom: '4px'
+    marginBottom: '4px',
+    border: '1px solid rgba(59, 130, 246, 0.1)'
   },
   sectionHeader: {
     display: 'flex',
@@ -2914,7 +2915,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   tokenLabel: {
     fontSize: '13px',
-    color: '#888888'
+    color: '#9ca3af'
   },
   amountInput: {
     width: '100%',
@@ -2937,8 +2938,8 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '6px',
     padding: '8px 12px',
-    backgroundColor: '#2a2a2a',
-    border: 'none',
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    border: '1px solid rgba(59, 130, 246, 0.3)',
     borderRadius: '20px',
     color: '#ffffff',
     fontSize: '16px',
@@ -2956,7 +2957,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '6px',
     padding: '8px 16px',
-    background: 'linear-gradient(135deg, #ff1cf7, #00d4ff)',
+    background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%)',
     border: 'none',
     borderRadius: '20px',
     color: '#ffffff',
@@ -2964,7 +2965,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: '600',
     cursor: 'pointer',
     transition: 'all 0.2s',
-    boxShadow: '0 2px 8px rgba(255, 28, 247, 0.3)'
+    boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
   },
   tokenIcon: {
     fontSize: '24px'
@@ -2975,11 +2976,11 @@ const styles: Record<string, React.CSSProperties> = {
   },
   usdValue: {
     fontSize: '14px',
-    color: '#888888'
+    color: '#9ca3af'
   },
   balanceText: {
     fontSize: '14px',
-    color: '#888888'
+    color: '#9ca3af'
   },
   percentageButtons: {
     display: 'flex',
@@ -2988,10 +2989,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
   percentButton: {
     padding: '4px 10px',
-    backgroundColor: '#2a2a2a',
-    border: 'none',
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    border: '1px solid rgba(59, 130, 246, 0.2)',
     borderRadius: '6px',
-    color: '#888',
+    color: '#9ca3af',
     fontSize: '11px',
     fontWeight: '500',
     cursor: 'pointer',
@@ -3009,10 +3010,10 @@ const styles: Record<string, React.CSSProperties> = {
     height: '24px',
     border: '3px solid rgba(255, 255, 255, 0.1)',
     borderTop: '3px solid',
-    borderTopColor: '#ff1cf7',
+    borderTopColor: '#3b82f6',
     borderRadius: '50%',
     animation: 'spin 1s linear infinite',
-    background: 'linear-gradient(135deg, rgba(255, 28, 247, 0.1), rgba(0, 212, 255, 0.1))'
+    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.1))'
   },
   switchContainer: {
     display: 'flex',
@@ -3025,9 +3026,9 @@ const styles: Record<string, React.CSSProperties> = {
     width: '36px',
     height: '36px',
     borderRadius: '10px',
-    border: '3px solid #131313',
-    backgroundColor: '#1a1a1a',
-    color: '#888888',
+    border: '3px solid rgba(30, 41, 59, 0.95)',
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    color: '#60a5fa',
     fontSize: '18px',
     cursor: 'pointer',
     display: 'flex',
@@ -3042,26 +3043,26 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: '600',
     borderRadius: '16px',
     border: 'none',
-    background: 'linear-gradient(135deg, #ff1cf7, #00d4ff)',
+    background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%)',
     color: '#ffffff',
     cursor: 'pointer',
     marginTop: '8px',
     transition: 'all 0.2s',
-    boxShadow: '0 2px 8px rgba(255, 28, 247, 0.3)'
+    boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
   },
   infoBox: {
     marginTop: '8px',
     padding: '12px',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
     borderRadius: '12px',
-    border: 'none'
+    border: '1px solid rgba(59, 130, 246, 0.1)'
   },
   infoRow: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     fontSize: '14px',
-    color: '#888888',
+    color: '#9ca3af',
     marginBottom: '8px'
   },
   slippageControl: {
@@ -3092,11 +3093,11 @@ const styles: Record<string, React.CSSProperties> = {
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    backgroundColor: '#0f0f0f',
+    backgroundColor: 'rgba(30, 41, 59, 0.98)',
     borderRadius: '20px',
     padding: '24px',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6)',
+    border: '1px solid rgba(59, 130, 246, 0.2)',
+    boxShadow: '0 20px 40px rgba(59, 130, 246, 0.3)',
     zIndex: 1000,
     maxWidth: '500px',
     width: '90%'
@@ -3106,11 +3107,11 @@ const styles: Record<string, React.CSSProperties> = {
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: 'rgba(30, 41, 59, 0.98)',
     borderRadius: '24px',
     padding: '24px',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(59, 130, 246, 0.2)',
+    boxShadow: '0 8px 32px rgba(59, 130, 246, 0.3), 0 0 0 1px rgba(59, 130, 246, 0.1)',
     zIndex: 1000,
     maxWidth: '1200px',
     width: '95%',
@@ -3136,7 +3137,7 @@ const styles: Record<string, React.CSSProperties> = {
   slippageCloseBtn: {
     background: 'transparent',
     border: 'none',
-    color: '#666',
+    color: '#9ca3af',
     fontSize: '28px',
     cursor: 'pointer',
     padding: 0,
@@ -3145,7 +3146,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   slippageDescription: {
     fontSize: '13px',
-    color: '#666',
+    color: '#9ca3af',
     marginBottom: '20px',
     lineHeight: 1.5
   },
@@ -3171,7 +3172,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   slippageCustomLabel: {
     fontSize: '14px',
-    color: '#888'
+    color: '#9ca3af'
   },
   slippageInputWrapper: {
     display: 'flex',
@@ -3192,7 +3193,7 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'right' as const
   },
   slippagePercent: {
-    color: '#666',
+    color: '#9ca3af',
     fontSize: '14px',
     marginLeft: '4px'
   },
@@ -3309,7 +3310,7 @@ const styles: Record<string, React.CSSProperties> = {
     right: '12px',
     background: 'transparent',
     border: 'none',
-    color: '#666',
+    color: '#9ca3af',
     fontSize: '24px',
     cursor: 'pointer',
     padding: '4px 8px',
@@ -3352,7 +3353,7 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'center'
   },
   txLink: {
-    background: 'linear-gradient(135deg, #ff1cf7, #00d4ff)',
+    background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%)',
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
     backgroundClip: 'text',
@@ -3374,7 +3375,7 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 1000
   },
   modalContent: {
-    backgroundColor: '#131313',
+    backgroundColor: 'rgba(30, 41, 59, 0.98)',
     borderRadius: '20px',
     padding: '16px',
     width: '420px',
@@ -3382,7 +3383,7 @@ const styles: Record<string, React.CSSProperties> = {
     maxHeight: '85vh',
     display: 'flex',
     flexDirection: 'column',
-    border: '1px solid #1f1f1f',
+    border: '1px solid rgba(59, 130, 246, 0.2)',
     overflow: 'hidden'
   },
   modalHeader: {
@@ -3401,7 +3402,7 @@ const styles: Record<string, React.CSSProperties> = {
   closeButton: {
     background: 'transparent',
     border: 'none',
-    color: '#888888',
+    color: '#9ca3af',
     fontSize: '28px',
     fontWeight: '300',
     cursor: 'pointer',
@@ -3418,8 +3419,8 @@ const styles: Record<string, React.CSSProperties> = {
   modalSearchInput: {
     width: '100%',
     padding: '12px 14px',
-    backgroundColor: '#1a1a1a',
-    border: '1px solid #2a2a2a',
+    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    border: '1px solid rgba(59, 130, 246, 0.2)',
     borderRadius: '12px',
     color: '#ffffff',
     fontSize: '14px',
@@ -3433,7 +3434,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   popularLabel: {
     fontSize: '11px',
-    color: '#666666',
+    color: '#9ca3af',
     marginBottom: '8px',
     textTransform: 'uppercase',
     letterSpacing: '0.5px'
@@ -3448,8 +3449,8 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '6px',
     padding: '6px 10px',
-    backgroundColor: '#1a1a1a',
-    border: '1px solid #2a2a2a',
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    border: '1px solid rgba(59, 130, 246, 0.3)',
     borderRadius: '16px',
     color: '#ffffff',
     fontSize: '13px',
@@ -3467,7 +3468,7 @@ const styles: Record<string, React.CSSProperties> = {
   sectionTitle: {
     fontSize: '12px',
     fontWeight: '500',
-    color: '#666666',
+    color: '#9ca3af',
     padding: '8px 8px 4px',
     display: 'flex',
     alignItems: 'center',
@@ -3499,7 +3500,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   tokenName: {
     fontSize: '12px',
-    color: '#666666',
+    color: '#9ca3af',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -3532,7 +3533,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   tokenBalanceUsd: {
     fontSize: '12px',
-    color: '#666666'
+    color: '#9ca3af'
   },
   customTokenLoading: {
     display: 'flex',
@@ -3540,7 +3541,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     gap: '10px',
     padding: '16px',
-    color: '#888888',
+    color: '#9ca3af',
     fontSize: '14px'
   },
   customTokenError: {
@@ -3558,7 +3559,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: '20px',
-    color: '#888888',
+    color: '#9ca3af',
     fontSize: '14px'
   },
   noResults: {
@@ -3566,7 +3567,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: '20px',
-    color: '#666666',
+    color: '#9ca3af',
     fontSize: '14px',
     textAlign: 'center' as const
   },
@@ -3577,9 +3578,9 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
     padding: '12px',
     margin: '8px',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
     borderRadius: '12px',
-    border: '1px solid #2a2a2a'
+    border: '1px solid rgba(59, 130, 246, 0.2)'
   },
   foundTokenInfo: {
     display: 'flex',
@@ -3590,17 +3591,17 @@ const styles: Record<string, React.CSSProperties> = {
     width: '40px',
     height: '40px',
     borderRadius: '50%',
-    backgroundColor: '#2a2a2a'
+    backgroundColor: 'rgba(59, 130, 246, 0.15)'
   },
   foundTokenLogoPlaceholder: {
     width: '40px',
     height: '40px',
     borderRadius: '50%',
-    backgroundColor: '#333',
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#888',
+    color: '#9ca3af',
     fontSize: '16px',
     fontWeight: 'bold'
   },
@@ -3616,16 +3617,16 @@ const styles: Record<string, React.CSSProperties> = {
   },
   foundTokenName: {
     fontSize: '13px',
-    color: '#888888'
+    color: '#9ca3af'
   },
   foundTokenAddress: {
     fontSize: '11px',
-    color: '#666666',
+    color: '#9ca3af',
     fontFamily: 'monospace'
   },
   importButton: {
     padding: '10px 20px',
-    background: 'linear-gradient(135deg, #ff1cf7, #00d4ff)',
+    background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%)',
     border: 'none',
     borderRadius: '12px',
     color: '#ffffff',
@@ -3633,15 +3634,15 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: '600',
     cursor: 'pointer',
     transition: 'all 0.2s',
-    boxShadow: '0 2px 8px rgba(255, 28, 247, 0.3)'
+    boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
   },
   // Import Warning styles
   importWarning: {
     padding: '20px',
     margin: '8px',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
     borderRadius: '16px',
-    border: '1px solid #2a2a2a',
+    border: '1px solid rgba(59, 130, 246, 0.2)',
     textAlign: 'center' as const
   },
   warningIcon: {
@@ -3656,7 +3657,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   warningText: {
     fontSize: '14px',
-    color: '#888888',
+    color: '#9ca3af',
     lineHeight: 1.5,
     marginBottom: '16px'
   },
@@ -3682,7 +3683,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   warningTokenAddress: {
     fontSize: '11px',
-    color: '#666666',
+    color: '#9ca3af',
     fontFamily: 'monospace',
     wordBreak: 'break-all' as const
   },
@@ -3693,7 +3694,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
     marginBottom: '16px',
     fontSize: '13px',
-    color: '#888888',
+    color: '#9ca3af',
     cursor: 'pointer'
   },
   checkbox: {
@@ -3708,8 +3709,8 @@ const styles: Record<string, React.CSSProperties> = {
   cancelButton: {
     flex: 1,
     padding: '14px',
-    backgroundColor: '#2a2a2a',
-    border: 'none',
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    border: '1px solid rgba(59, 130, 246, 0.3)',
     borderRadius: '12px',
     color: '#ffffff',
     fontSize: '14px',
@@ -3720,14 +3721,15 @@ const styles: Record<string, React.CSSProperties> = {
   continueButton: {
     flex: 1,
     padding: '14px',
-    backgroundColor: '#ffffff',
+    background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%)',
     border: 'none',
     borderRadius: '12px',
-    color: '#000000',
+    color: '#ffffff',
     fontSize: '14px',
     fontWeight: '600',
     cursor: 'pointer',
-    transition: 'all 0.2s'
+    transition: 'all 0.2s',
+    boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
   },
   // No Liquidity Warning
   noLiquidityWarning: {
@@ -3745,9 +3747,9 @@ const styles: Record<string, React.CSSProperties> = {
   protocolBadge: {
     marginTop: '12px',
     padding: '8px 12px',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
     borderRadius: '10px',
-    color: '#888888',
+    color: '#9ca3af',
     fontSize: '13px',
     textAlign: 'center' as const,
     display: 'flex',
@@ -3756,12 +3758,12 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '4px'
   },
   protocolOptions: {
-    color: '#666666'
+    color: '#9ca3af'
   },
   switchProtocolBtn: {
     background: 'none',
     border: 'none',
-    backgroundImage: 'linear-gradient(135deg, #ff1cf7, #00d4ff)',
+    backgroundImage: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%)',
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
     backgroundClip: 'text',
