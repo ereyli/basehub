@@ -89,7 +89,7 @@ const Header = () => {
             {/* Social Links */}
             <div className="social-links">
               <a 
-                href="https://x.com/BaseHUBB" 
+                href="https://x.com/Basehub__fun" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="social-link twitter"

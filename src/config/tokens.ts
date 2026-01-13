@@ -24,6 +24,7 @@ export const TOKEN_ADDRESSES = {
   // WBTC: '0x0555E30da8f98308EdbB23e1bB6c4fE6Cee5b76b', // Invalid address - commented out
   AERO: '0x940181a94A35A4569E4529A3CDfB74e38FD98631', // Aerodrome
   BRETT: '0x532f27101965dd16442E59d40670FaF5eBB142E4', // Brett (Based)
+  BHUB: '0x0000000000000000000000000000000000000000', // BaseHub Token (Not deployed yet)
 };
 
 // SDK Token instances
@@ -35,6 +36,7 @@ const cbETH_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.cbETH, 18, 'cbETH',
 // const WBTC_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.WBTC, 8, 'WBTC', 'Wrapped BTC'); // Invalid address
 const AERO_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.AERO, 18, 'AERO', 'Aerodrome');
 const BRETT_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.BRETT, 18, 'BRETT', 'Brett');
+const BHUB_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.BHUB, 18, 'BHUB', 'BaseHub Token');
 
 // Default token list
 export const DEFAULT_TOKENS: Record<string, AppToken> = {
@@ -109,11 +111,20 @@ export const DEFAULT_TOKENS: Record<string, AppToken> = {
     logoURI: 'https://assets.coingecko.com/coins/images/35529/small/1000050750.png',
     isNative: false,
     sdkToken: BRETT_TOKEN
+  },
+  BHUB: {
+    address: TOKEN_ADDRESSES.BHUB,
+    symbol: 'BHUB',
+    name: 'BaseHub Token',
+    decimals: 18,
+    logoURI: '/icon.png',
+    isNative: false,
+    sdkToken: BHUB_TOKEN
   }
 };
 
 // Popular token pairs for quick access
-export const POPULAR_TOKENS = ['ETH', 'USDC', 'DAI', 'cbETH', 'AERO'];
+export const POPULAR_TOKENS = ['ETH', 'USDC', 'DAI', 'cbETH', 'AERO', 'BHUB'];
 
 // Fee tiers for Uniswap V3 pools
 export const FEE_TIERS = {

@@ -1423,6 +1423,14 @@ export default function SwapInterface() {
 
   // Handle token selection with proper state reset
   const handleTokenSelect = (token: AppToken, side: 'in' | 'out') => {
+    // Check if BHUB is selected (not deployed yet)
+    if (token.symbol === 'BHUB') {
+      alert('Soon\n\nBHUB token is coming soon! We haven\'t deployed it yet and liquidity hasn\'t been added.');
+      setShowTokenSelect(null);
+      setTokenSearchQuery('');
+      return;
+    }
+    
     if (side === 'in') {
       if (token.symbol === tokenOut.symbol) {
         switchTokens();

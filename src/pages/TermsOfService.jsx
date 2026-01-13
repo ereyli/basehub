@@ -233,7 +233,7 @@ const TermsOfService = () => {
           </p>
           <ul style={{ color: '#9ca3af', marginLeft: '24px' }}>
             <li>Website: <a href="https://basehub.fun" target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6' }}>basehub.fun</a></li>
-            <li>X (Twitter): <a href="https://x.com/BaseHUBB" target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6' }}>@BaseHUBB</a></li>
+            <li>X (Twitter): <a href="https://x.com/Basehub__fun" target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6' }}>@Basehub__fun</a></li>
             <li>Farcaster: BaseHub</li>
           </ul>
         </section>
