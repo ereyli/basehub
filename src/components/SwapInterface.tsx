@@ -2649,7 +2649,7 @@ export default function SwapInterface() {
               
               {/* Token List */}
               <div style={styles.tokenList}>
-                {(tokenSearchQuery ? searchTokens(tokenSearchQuery) : getAllTokens())
+                {(tokenSearchQuery ? searchTokens(tokenSearchQuery) : Object.values(getAllTokens()))
                   .map((token) => {
                     const isCurrentToken = showTokenSelect === 'in' 
                       ? token.symbol === tokenIn.symbol 
