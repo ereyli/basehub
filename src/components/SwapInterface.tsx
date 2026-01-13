@@ -289,9 +289,9 @@ function CustomTokenItemWithRemove({
       onClick={() => !isOtherToken && onSelect()}
     >
       <div style={tokenListItemStyles.left}>
-        {token.logoURI ? (
+        {(token.logoURI || tokenLogos?.[token.symbol]) ? (
           <img 
-            src={token.logoURI} 
+            src={token.logoURI || tokenLogos?.[token.symbol]} 
             alt={token.symbol} 
             style={tokenListItemStyles.logo}
             onError={(e) => {
@@ -354,7 +354,7 @@ function CustomTokenItemWithRemove({
   );
 }
 
-function TokenListItem({ token, onClick, isDisabled, ethPrice }: TokenListItemProps) {
+function TokenListItem({ token, onClick, isDisabled, ethPrice, tokenLogos }: TokenListItemProps & { tokenLogos?: Record<string, string> }) {
   const { address } = useAccount();
   const { data: balance } = useBalance({
     address: address,
@@ -394,9 +394,9 @@ function TokenListItem({ token, onClick, isDisabled, ethPrice }: TokenListItemPr
       }}
     >
       <div style={tokenListItemStyles.left}>
-        {token.logoURI ? (
+        {(token.logoURI || tokenLogos?.[token.symbol]) ? (
           <img 
-            src={token.logoURI} 
+            src={token.logoURI || tokenLogos?.[token.symbol]} 
             alt={token.symbol} 
             style={tokenListItemStyles.logo}
             onError={(e) => {
@@ -830,6 +830,7 @@ export default function SwapInterface() {
   const [selectedFeeTier, setSelectedFeeTier] = useState(FEE_TIERS.LOW); // Default 0.3% - more common pools
   const [priceImpact, setPriceImpact] = useState<string>('0');
   const [customTokens, setCustomTokens] = useState<Record<string, AppToken>>({});
+  const [tokenLogos, setTokenLogos] = useState<Record<string, string>>({}); // Cache for fetched logos
   const [isLoadingCustomToken, setIsLoadingCustomToken] = useState(false);
   const [customTokenError, setCustomTokenError] = useState<string | null>(null);
   const [foundToken, setFoundToken] = useState<AppToken | null>(null);
@@ -890,9 +891,31 @@ export default function SwapInterface() {
     }
     setCustomTokens(customOnly);
 
-    // Refresh logos for custom tokens that don't have one or have invalid logo
+    // Refresh logos for tokens that don't have one or have invalid logo
     const refreshLogos = async () => {
       try {
+        // First, refresh logos for DEFAULT_TOKENS that don't have logoURI
+        const logoUpdates: Record<string, string> = {};
+        for (const [key, token] of Object.entries(DEFAULT_TOKENS)) {
+          if (!token.logoURI) {
+            console.log('🔄 Fetching logo for default token:', token.symbol);
+            try {
+              const logoURI = await fetchTokenLogo(token.address, token.symbol);
+              if (logoURI) {
+                logoUpdates[key] = logoURI;
+                console.log('✅ Logo fetched for default token:', token.symbol, logoURI);
+              }
+            } catch (e) {
+              console.warn('Failed to fetch logo for default token', token.symbol, e);
+            }
+          }
+        }
+        // Update state with fetched logos
+        if (Object.keys(logoUpdates).length > 0) {
+          setTokenLogos(prev => ({ ...prev, ...logoUpdates }));
+        }
+        
+        // Then, refresh logos for custom tokens
         for (const [key, token] of Object.entries(customOnly)) {
           try {
             // If no logo or logo might be invalid, try to fetch
@@ -2498,14 +2521,15 @@ export default function SwapInterface() {
                   <div style={styles.popularList}>
                     {POPULAR_TOKENS.map(symbol => {
                       const token = DEFAULT_TOKENS[symbol];
+                      const logoURI = token.logoURI || tokenLogos[symbol];
                       return (
                         <button
                           key={symbol}
                           onClick={() => handleTokenSelect(token, showTokenSelect!)}
                           style={getStyle(styles.popularToken, mobileOverrides.popularToken)}
                         >
-                          {token.logoURI && (
-                            <img src={token.logoURI} alt={token.symbol} style={getStyle(styles.tokenLogo, mobileOverrides.tokenLogo)} />
+                          {logoURI && (
+                            <img src={logoURI} alt={token.symbol} style={getStyle(styles.tokenLogo, mobileOverrides.tokenLogo)} />
                           )}
                           {token.symbol}
                         </button>
@@ -2683,6 +2707,7 @@ export default function SwapInterface() {
                         isDisabled={isOtherToken}
                         onClick={() => handleTokenSelect(token, showTokenSelect!)}
                         ethPrice={ethPriceUsd}
+                        tokenLogos={tokenLogos}
                       />
                     );
                   })}

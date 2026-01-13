@@ -128,7 +128,7 @@ export const DEFAULT_TOKENS: Record<string, AppToken> = {
     symbol: 'JESSE',
     name: 'Jesse',
     decimals: 18,
-    logoURI: 'https://assets.coingecko.com/coins/images/40869/small/jesse.png',
+    logoURI: undefined, // Will be fetched automatically from CoinGecko/TrustWallet
     isNative: false,
     sdkToken: JESSE_TOKEN
   }
