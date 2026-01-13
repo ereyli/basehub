@@ -34,7 +34,7 @@ export const TOKEN_ADDRESSES = {
   KEYCAT: '0x9a26F5433671751C3276a065f57e5a02D2817973', // Keyboard Cat Token
   NORMIE: '0x47b464eDB8Dc9BC67b5CD4C9310BB87b773845bD', // Normie Token
   MIGGLES: '0xB1a03EdA10342529bBF8EB700a06C60441fEf25d', // Miggles Token
-  BENJI: '0x4e5d9b093986d864331d88e0a13a616ed0f7e828', // Benji Token (placeholder - need real address)
+  BENJI: '0xbc45647ea894030a4e9801ec03479739fa2485f0', // Basenji (BENJI) Token
   TYBG: '0x0d97f261b1e88845184f678e2d1e7a98d9fd38de', // Base God (TYBG) Token
   BOMET: '0x33e7F871Ce502ec77A0D96fDcd02C9219f95E944', // Bomet Token
 };
@@ -221,9 +221,9 @@ export const DEFAULT_TOKENS: Record<string, AppToken> = {
   BENJI: {
     address: TOKEN_ADDRESSES.BENJI,
     symbol: 'BENJI',
-    name: 'Benji',
+    name: 'Basenji',
     decimals: 18,
-    logoURI: undefined, // Will be fetched automatically from CoinGecko/TrustWallet
+    logoURI: 'https://coin-images.coingecko.com/coins/images/36416/small/photo_2025-12-04_22.13.35.png',
     isNative: false,
     sdkToken: BENJI_TOKEN
   },
