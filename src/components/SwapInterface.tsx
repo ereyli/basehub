@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useBalance, usePublicClient } from 'wagmi';
 import { parseUnits, formatUnits, maxUint256 } from 'viem';
 import { base } from 'wagmi/chains';
-import { DEFAULT_TOKENS, POPULAR_TOKENS, FEE_TIERS, searchTokens, getAllTokens, saveCustomToken, removeCustomToken, getTokenByAddress, BASE_CHAIN_ID, type AppToken } from '../config/tokens';
+import { DEFAULT_TOKENS, POPULAR_TOKENS, MEME_TOKENS, FEE_TIERS, searchTokens, getAllTokens, saveCustomToken, removeCustomToken, getTokenByAddress, BASE_CHAIN_ID, type AppToken } from '../config/tokens';
 import { Token } from '@uniswap/sdk-core';
 import StatsPanel from './StatsPanel';
 import swaphubLogo from '../assets/swaphub-logo.png';
@@ -844,6 +844,7 @@ export default function SwapInterface() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [transactionStep, setTransactionStep] = useState<'idle' | 'approving' | 'approved' | 'swapping' | 'success'>('idle');
   const [approvalSuccess, setApprovalSuccess] = useState(false);
+  const [showMemeTokens, setShowMemeTokens] = useState(false);
 
 
   // Get balance for tokenIn (native ETH or ERC20 token)
@@ -2513,6 +2514,52 @@ export default function SwapInterface() {
                 style={styles.modalSearchInput}
                 autoFocus
               />
+
+              {/* Meme Tokens Category */}
+              {!tokenSearchQuery && (
+                <div style={styles.popularTokens}>
+                  <button
+                    onClick={() => setShowMemeTokens(!showMemeTokens)}
+                    style={{
+                      ...styles.popularLabel,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 0',
+                      marginBottom: '8px',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#666666',
+                      width: '100%'
+                    }}
+                  >
+                    <span>Meme Tokens</span>
+                    <span style={{ fontSize: '12px' }}>{showMemeTokens ? '▼' : '▶'}</span>
+                  </button>
+                  {showMemeTokens && (
+                    <div style={styles.popularList}>
+                      {MEME_TOKENS.map(symbol => {
+                        const token = DEFAULT_TOKENS[symbol];
+                        if (!token) return null;
+                        const logoURI = token.logoURI || tokenLogos[symbol];
+                        return (
+                          <button
+                            key={symbol}
+                            onClick={() => handleTokenSelect(token, showTokenSelect!)}
+                            style={getStyle(styles.popularToken, mobileOverrides.popularToken)}
+                          >
+                            {logoURI && (
+                              <img src={logoURI} alt={token.symbol} style={getStyle(styles.tokenLogo, mobileOverrides.tokenLogo)} />
+                            )}
+                            {token.symbol}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Popular Tokens */}
               {!tokenSearchQuery && (

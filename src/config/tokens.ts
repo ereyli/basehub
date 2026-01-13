@@ -27,6 +27,16 @@ export const TOKEN_ADDRESSES = {
   BHUB: '0x0000000000000000000000000000000000000000', // BaseHub Token (Not deployed yet)
   JESSE: '0x50F88fe97f72CD3E75b9Eb4f747F59BcEBA80d59', // Jesse Token
   VIRTUAL: '0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b', // Virtual Token
+  // Meme Tokens
+  TOSHI: '0xac1bd2486aaf3b5c0fc3fd868558b082a531b2b4', // Toshi Token
+  MOCHI: '0x4e5d9b093986d864331d88e0a13a616ed0f7e828', // Mochi Token (placeholder - need real address)
+  DOGINME: '0x4e5d9b093986d864331d88e0a13a616ed0f7e828', // Doginme Token (placeholder - need real address)
+  KEYCAT: '0x9a26f5433671751c3276a065f57e5a02d2817973', // Keyboard Cat Token
+  NORMIE: '0x4e5d9b093986d864331d88e0a13a616ed0f7e828', // Normie Token (placeholder - need real address)
+  MIGGLES: '0x4e5d9b093986d864331d88e0a13a616ed0f7e828', // Miggles Token (placeholder - need real address)
+  BENJI: '0x4e5d9b093986d864331d88e0a13a616ed0f7e828', // Benji Token (placeholder - need real address)
+  TYBG: '0x4e5d9b093986d864331d88e0a13a616ed0f7e828', // TYBG Token (placeholder - need real address)
+  BOMET: '0x4e5d9b093986d864331d88e0a13a616ed0f7e828', // Bomet Token (placeholder - need real address)
 };
 
 // SDK Token instances
@@ -41,6 +51,16 @@ const BRETT_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.BRETT, 18, 'BRETT',
 const BHUB_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.BHUB, 18, 'BHUB', 'BaseHub Token');
 const JESSE_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.JESSE, 18, 'JESSE', 'Jesse');
 const VIRTUAL_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.VIRTUAL, 18, 'VIRTUAL', 'Virtual');
+// Meme Token instances
+const TOSHI_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.TOSHI, 18, 'TOSHI', 'Toshi');
+const MOCHI_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.MOCHI, 18, 'MOCHI', 'Mochi');
+const DOGINME_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.DOGINME, 18, 'DOGINME', 'Doge In Me');
+const KEYCAT_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.KEYCAT, 18, 'KEYCAT', 'Keyboard Cat');
+const NORMIE_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.NORMIE, 18, 'NORMIE', 'Normie');
+const MIGGLES_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.MIGGLES, 18, 'MIGGLES', 'Miggles');
+const BENJI_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.BENJI, 18, 'BENJI', 'Benji');
+const TYBG_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.TYBG, 18, 'TYBG', 'TYBG');
+const BOMET_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.BOMET, 18, 'BOMET', 'Bomet');
 
 // Default token list
 export const DEFAULT_TOKENS: Record<string, AppToken> = {
@@ -142,11 +162,96 @@ export const DEFAULT_TOKENS: Record<string, AppToken> = {
     logoURI: undefined, // Will be fetched automatically from CoinGecko/TrustWallet
     isNative: false,
     sdkToken: VIRTUAL_TOKEN
+  },
+  // Meme Tokens
+  TOSHI: {
+    address: TOKEN_ADDRESSES.TOSHI,
+    symbol: 'TOSHI',
+    name: 'Toshi',
+    decimals: 18,
+    logoURI: 'https://coin-images.coingecko.com/coins/images/31126/small/Toshi_Logo_-_Circular.png',
+    isNative: false,
+    sdkToken: TOSHI_TOKEN
+  },
+  MOCHI: {
+    address: TOKEN_ADDRESSES.MOCHI,
+    symbol: 'MOCHI',
+    name: 'Mochi',
+    decimals: 18,
+    logoURI: undefined, // Will be fetched automatically from CoinGecko/TrustWallet
+    isNative: false,
+    sdkToken: MOCHI_TOKEN
+  },
+  DOGINME: {
+    address: TOKEN_ADDRESSES.DOGINME,
+    symbol: 'DOGINME',
+    name: 'Doge In Me',
+    decimals: 18,
+    logoURI: undefined, // Will be fetched automatically from CoinGecko/TrustWallet
+    isNative: false,
+    sdkToken: DOGINME_TOKEN
+  },
+  KEYCAT: {
+    address: TOKEN_ADDRESSES.KEYCAT,
+    symbol: 'KEYCAT',
+    name: 'Keyboard Cat',
+    decimals: 18,
+    logoURI: 'https://coin-images.coingecko.com/coins/images/36608/small/IMG_9500.jpeg',
+    isNative: false,
+    sdkToken: KEYCAT_TOKEN
+  },
+  NORMIE: {
+    address: TOKEN_ADDRESSES.NORMIE,
+    symbol: 'NORMIE',
+    name: 'Normie',
+    decimals: 18,
+    logoURI: undefined, // Will be fetched automatically from CoinGecko/TrustWallet
+    isNative: false,
+    sdkToken: NORMIE_TOKEN
+  },
+  MIGGLES: {
+    address: TOKEN_ADDRESSES.MIGGLES,
+    symbol: 'MIGGLES',
+    name: 'Miggles',
+    decimals: 18,
+    logoURI: undefined, // Will be fetched automatically from CoinGecko/TrustWallet
+    isNative: false,
+    sdkToken: MIGGLES_TOKEN
+  },
+  BENJI: {
+    address: TOKEN_ADDRESSES.BENJI,
+    symbol: 'BENJI',
+    name: 'Benji',
+    decimals: 18,
+    logoURI: undefined, // Will be fetched automatically from CoinGecko/TrustWallet
+    isNative: false,
+    sdkToken: BENJI_TOKEN
+  },
+  TYBG: {
+    address: TOKEN_ADDRESSES.TYBG,
+    symbol: 'TYBG',
+    name: 'TYBG',
+    decimals: 18,
+    logoURI: undefined, // Will be fetched automatically from CoinGecko/TrustWallet
+    isNative: false,
+    sdkToken: TYBG_TOKEN
+  },
+  BOMET: {
+    address: TOKEN_ADDRESSES.BOMET,
+    symbol: 'BOMET',
+    name: 'Bomet',
+    decimals: 18,
+    logoURI: undefined, // Will be fetched automatically from CoinGecko/TrustWallet
+    isNative: false,
+    sdkToken: BOMET_TOKEN
   }
 };
 
 // Popular token pairs for quick access
 export const POPULAR_TOKENS = ['ETH', 'USDC', 'JESSE', 'VIRTUAL'];
+
+// Meme tokens category
+export const MEME_TOKENS = ['TOSHI', 'MOCHI', 'DOGINME', 'KEYCAT', 'NORMIE', 'MIGGLES', 'BENJI', 'TYBG', 'BOMET'];
 
 // Fee tiers for Uniswap V3 pools
 export const FEE_TIERS = {
