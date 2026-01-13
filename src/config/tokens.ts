@@ -36,7 +36,7 @@ export const TOKEN_ADDRESSES = {
   MIGGLES: '0xB1a03EdA10342529bBF8EB700a06C60441fEf25d', // Miggles Token
   BENJI: '0x4e5d9b093986d864331d88e0a13a616ed0f7e828', // Benji Token (placeholder - need real address)
   TYBG: '0x0d97f261b1e88845184f678e2d1e7a98d9fd38de', // Base God (TYBG) Token
-  BOMET: '0x4e5d9b093986d864331d88e0a13a616ed0f7e828', // Bomet Token (placeholder - need real address)
+  BOMET: '0x33e7F871Ce502ec77A0D96fDcd02C9219f95E944', // Bomet Token
 };
 
 // SDK Token instances
@@ -241,7 +241,7 @@ export const DEFAULT_TOKENS: Record<string, AppToken> = {
     symbol: 'BOMET',
     name: 'Bomet',
     decimals: 18,
-    logoURI: undefined, // Will be fetched automatically from CoinGecko/TrustWallet
+    logoURI: 'https://coin-images.coingecko.com/coins/images/68659/small/logo-128.png',
     isNative: false,
     sdkToken: BOMET_TOKEN
   }
