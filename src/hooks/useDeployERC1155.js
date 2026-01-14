@@ -488,16 +488,34 @@ export const useDeployERC1155 = () => {
 
       console.log('💰 Sending fee to wallet:', feeWallet)
       
-      // Use a simple ETH transfer instead of sendTransaction
-      const feeTxHash = await window.ethereum.request({
-        method: 'eth_sendTransaction',
-        params: [{
-          from: address,
-          to: feeWallet,
-          value: '0x' + parseEther('0.00007').toString(16),
-          gas: '0x5208', // 21000 gas for simple transfer
-        }]
-      })
+      // Use Farcaster provider if available, otherwise use window.ethereum
+      let feeTxHash
+      if (isInFarcaster && farcasterProvider) {
+        // Use Farcaster SDK's Ethereum provider
+        feeTxHash = await farcasterProvider.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from: address,
+            to: feeWallet,
+            value: '0x' + parseEther('0.00007').toString(16),
+            gas: '0x5208', // 21000 gas for simple transfer
+          }]
+        })
+      } else {
+        // Use window.ethereum for web environment
+        if (typeof window === 'undefined' || !window.ethereum) {
+          throw new Error('Wallet not available. Please connect your wallet.')
+        }
+        feeTxHash = await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from: address,
+            to: feeWallet,
+            value: '0x' + parseEther('0.00007').toString(16),
+            gas: '0x5208', // 21000 gas for simple transfer
+          }]
+        })
+      }
 
       console.log('✅ Fee transaction sent:', feeTxHash)
 

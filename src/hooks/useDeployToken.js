@@ -352,13 +352,17 @@ export const useDeployToken = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   
-  // Check if we're in Farcaster environment
+  // Get Farcaster context for SDK access
   let isInFarcaster = false
+  let farcasterProvider = null
   if (!shouldUseRainbowKit()) {
     try {
-      const { useFarcaster } = require('../contexts/FarcasterContext')
       const farcasterContext = useFarcaster()
       isInFarcaster = farcasterContext?.isInFarcaster || false
+      if (isInFarcaster && farcasterContext?.sdk) {
+        // Get Farcaster Ethereum provider
+        farcasterProvider = farcasterContext.sdk.wallet.getEthereumProvider()
+      }
     } catch (error) {
       // If FarcasterProvider is not available, continue without it
       isInFarcaster = false
