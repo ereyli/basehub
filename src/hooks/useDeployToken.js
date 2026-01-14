@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useAccount, useWriteContract, useWalletClient } from 'wagmi'
-import { waitForTransactionReceipt, sendTransaction } from 'wagmi/actions'
+import { useAccount, useWriteContract } from 'wagmi'
+import { waitForTransactionReceipt } from 'wagmi/actions'
 import { parseEther, encodeAbiParameters, parseAbiParameters } from 'viem'
 import { config } from '../config/wagmi'
 import { addXP, recordTransaction } from '../utils/xpUtils'
@@ -346,7 +346,6 @@ const ERC20_BYTECODE = "0x608060405234801561000f575f5ffd5b5060405161174138038061
 
 export const useDeployToken = () => {
   const { address } = useAccount()
-  const { data: walletClient } = useWalletClient() // Get wallet client (works with Farcaster connector)
   const { writeContractAsync } = useWriteContract()
   const { isCorrectNetwork, networkName, baseNetworkName, switchToBaseNetwork } = useNetworkCheck()
   const { updateQuestProgress } = useQuestSystem()
@@ -401,30 +400,21 @@ export const useDeployToken = () => {
       
       console.log('💰 Sending fee to wallet:', feeWallet)
       
-      // Use walletClient for Farcaster (automatically uses Farcaster connector) or window.ethereum for web
-      let feeTxHash
-      if (isInFarcaster && walletClient) {
-        // Use walletClient for Farcaster (automatically uses Farcaster connector)
-        const result = await walletClient.sendTransaction({
-          to: feeWallet,
-          value: parseEther('0.00005'),
-        })
-        feeTxHash = result
-      } else {
-        // Use window.ethereum for web environment
-        if (typeof window === 'undefined' || !window.ethereum) {
-          throw new Error('Wallet not available. Please connect your wallet.')
-        }
-        feeTxHash = await window.ethereum.request({
-          method: 'eth_sendTransaction',
-          params: [{
-            from: address,
-            to: feeWallet,
-            value: '0x' + parseEther('0.00005').toString(16),
-            gas: '0x5208', // 21000 gas for simple transfer
-          }]
-        })
+      // Use window.ethereum for both Farcaster and web
+      // Farcaster SDK proxies window.ethereum to use Farcaster wallet
+      if (typeof window === 'undefined' || !window.ethereum) {
+        throw new Error('Wallet not available. Please connect your wallet.')
       }
+      
+      const feeTxHash = await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          from: address,
+          to: feeWallet,
+          value: '0x' + parseEther('0.00005').toString(16),
+          gas: '0x5208', // 21000 gas for simple transfer
+        }]
+      })
       
       console.log('✅ Fee transaction sent:', feeTxHash)
       
@@ -453,29 +443,20 @@ export const useDeployToken = () => {
       
       const deployData = ERC20_BYTECODE + constructorData.slice(2)
       
-      // Use walletClient for Farcaster (automatically uses Farcaster connector) or window.ethereum for web
-      let deployTxHash
-      if (isInFarcaster && walletClient) {
-        // Use walletClient for Farcaster (automatically uses Farcaster connector)
-        const result = await walletClient.sendTransaction({
-          data: deployData,
-          gas: 2000000n, // 2M gas for contract deployment
-        })
-        deployTxHash = result
-      } else {
-        // Use window.ethereum for web environment
-        if (typeof window === 'undefined' || !window.ethereum) {
-          throw new Error('Wallet not available. Please connect your wallet.')
-        }
-        deployTxHash = await window.ethereum.request({
-          method: 'eth_sendTransaction',
-          params: [{
-            from: address,
-            data: deployData,
-            gas: '0x1e8480', // 2M gas for contract deployment
-          }]
-        })
+      // Use window.ethereum for both Farcaster and web
+      // Farcaster SDK proxies window.ethereum to use Farcaster wallet
+      if (typeof window === 'undefined' || !window.ethereum) {
+        throw new Error('Wallet not available. Please connect your wallet.')
       }
+      
+      const deployTxHash = await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          from: address,
+          data: deployData,
+          gas: '0x1e8480', // 2M gas for contract deployment
+        }]
+      })
       
       console.log('✅ Deploy transaction sent:', deployTxHash)
       
