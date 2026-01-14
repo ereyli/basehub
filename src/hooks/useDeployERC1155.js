@@ -6,7 +6,6 @@ import { config } from '../config/wagmi'
 import { addXP, recordTransaction } from '../utils/xpUtils'
 import { useNetworkCheck } from './useNetworkCheck'
 import { useQuestSystem } from './useQuestSystem'
-import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { useFarcaster } from '../contexts/FarcasterContext'
 // ERC1155 doesn't need IPFS uploads - uses URI system instead
 
@@ -440,18 +439,12 @@ export const useDeployERC1155 = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   
-  // Check if we're in Farcaster environment
-  let isInFarcaster = false
-  if (!shouldUseRainbowKit()) {
-    try {
-      const { useFarcaster } = require('../contexts/FarcasterContext')
-      const farcasterContext = useFarcaster()
-      isInFarcaster = farcasterContext?.isInFarcaster || false
-    } catch (error) {
-      // If FarcasterProvider is not available, continue without it
-      isInFarcaster = false
-    }
-  }
+  // Get Farcaster context for SDK access
+  const farcasterContext = useFarcaster()
+  const isInFarcaster = farcasterContext?.isInFarcaster || false
+  const farcasterProvider = isInFarcaster && farcasterContext?.sdk 
+    ? farcasterContext.sdk.wallet.getEthereumProvider()
+    : null
 
   // Network validation and auto-switch function
   const validateAndSwitchNetwork = async () => {

@@ -7,6 +7,7 @@ import { addXP, recordTransaction } from '../utils/xpUtils'
 import { useNetworkCheck } from './useNetworkCheck'
 import { useQuestSystem } from './useQuestSystem'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
+import { useFarcaster } from '../contexts/FarcasterContext'
 
 // ERC20 ABI with constructor for writeContractAsync
 const ERC20_ABI = [
@@ -353,21 +354,11 @@ export const useDeployToken = () => {
   const [error, setError] = useState(null)
   
   // Get Farcaster context for SDK access
-  let isInFarcaster = false
-  let farcasterProvider = null
-  if (!shouldUseRainbowKit()) {
-    try {
-      const farcasterContext = useFarcaster()
-      isInFarcaster = farcasterContext?.isInFarcaster || false
-      if (isInFarcaster && farcasterContext?.sdk) {
-        // Get Farcaster Ethereum provider
-        farcasterProvider = farcasterContext.sdk.wallet.getEthereumProvider()
-      }
-    } catch (error) {
-      // If FarcasterProvider is not available, continue without it
-      isInFarcaster = false
-    }
-  }
+  const farcasterContext = useFarcaster()
+  const isInFarcaster = farcasterContext?.isInFarcaster || false
+  const farcasterProvider = isInFarcaster && farcasterContext?.sdk 
+    ? farcasterContext.sdk.wallet.getEthereumProvider()
+    : null
 
   // Network validation and auto-switch function
   const validateAndSwitchNetwork = async () => {
