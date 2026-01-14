@@ -52,23 +52,30 @@ const Profile = () => {
 
         // Load player data from Supabase
         if (supabase) {
+          console.log('🔍 Loading profile data for:', address)
+          
           const { data: player, error: playerError } = await supabase
             .from('players')
             .select('*')
             .eq('wallet_address', address.toLowerCase())
             .single()
 
+          console.log('👤 Player data:', { player, playerError })
+
           if (!playerError && player) {
             setLevel(player.level || calculateLevel(xp))
             // Use total_transactions from players table (most accurate)
+            console.log('📊 Total transactions from player:', player.total_transactions)
             setTxCount(player.total_transactions || 0)
           } else {
+            console.log('⚠️ Player not found, trying transactions count')
             // If player doesn't exist, try to count from transactions table
             const { count: txCountResult, error: txCountError } = await supabase
               .from('transactions')
               .select('*', { count: 'exact', head: true })
               .eq('wallet_address', address.toLowerCase())
 
+            console.log('📊 Transaction count result:', { txCountResult, txCountError })
             if (!txCountError && txCountResult !== null) {
               setTxCount(txCountResult || 0)
             }
@@ -81,15 +88,24 @@ const Profile = () => {
             .eq('wallet_address', address.toLowerCase())
             .order('created_at', { ascending: false })
 
-          if (!allTxError && allTransactions) {
+          console.log('📋 All transactions:', { 
+            count: allTransactions?.length || 0, 
+            error: allTxError,
+            sample: allTransactions?.slice(0, 3) 
+          })
+
+          if (!allTxError && allTransactions && allTransactions.length > 0) {
             // Set recent transactions (first 10)
             setRecentTransactions(allTransactions.slice(0, 10) || [])
             
             // Calculate stats from ALL transactions
             const gameTypes = allTransactions.map(tx => tx.game_type)
+            console.log('🎮 Game types found:', gameTypes)
+            console.log('🎮 Unique game types:', [...new Set(gameTypes)])
+            
             const newStats = {
               gamesPlayed: gameTypes.filter(t => ['GM_GAME', 'GN_GAME', 'FLIP_GAME', 'DICE_ROLL', 'LUCKY_NUMBER', 'SLOT_GAME'].includes(t)).length,
-              swapsCompleted: gameTypes.filter(t => t === 'SWAP').length,
+              swapsCompleted: gameTypes.filter(t => t === 'SWAP' || t === 'SWAP_VOLUME').length,
               nftsMinted: gameTypes.filter(t => t === 'NFT_MINT').length,
               gmUsed: gameTypes.filter(t => t === 'GM_GAME').length,
               gnUsed: gameTypes.filter(t => t === 'GN_GAME').length,
@@ -97,15 +113,19 @@ const Profile = () => {
                 .filter(tx => tx.swap_amount_usd)
                 .reduce((sum, tx) => sum + (parseFloat(tx.swap_amount_usd) || 0), 0)
             }
+            console.log('📈 Calculated stats:', newStats)
             setStats(newStats)
             
             // If player doesn't exist but we have transactions, update tx count
             if (playerError && allTransactions.length > 0) {
               setTxCount(allTransactions.length)
             }
-          } else if (!playerError && player) {
-            // If transactions query fails but player exists, use player's total_transactions
-            setTxCount(player.total_transactions || 0)
+          } else {
+            console.log('⚠️ No transactions found or error:', { allTxError, count: allTransactions?.length || 0 })
+            if (!playerError && player) {
+              // If transactions query fails but player exists, use player's total_transactions
+              setTxCount(player.total_transactions || 0)
+            }
           }
 
           // Quest progress is loaded automatically by useQuestSystem hook
