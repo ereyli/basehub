@@ -7,6 +7,7 @@ import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { getCurrentConfig } from '../config/base'
 import { useProofOfUsage } from '../hooks/useProofOfUsage'
 import WalletConnect from './WalletConnect'
+import UserProfile from './UserProfile'
 
 const Header = () => {
   const location = useLocation()
@@ -156,6 +157,9 @@ const Header = () => {
                 </button>
               )}
             </div>
+            
+            {/* User Profile */}
+            {isConnected && <UserProfile />}
             
             {/* Wallet Section */}
             <WalletConnect />

@@ -7,6 +7,7 @@ import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { getCurrentConfig } from '../config/base'
 import { useProofOfUsage } from '../hooks/useProofOfUsage'
 import { getXP } from '../utils/xpUtils'
+import UserProfile from './UserProfile'
 
 const WebHeader = () => {
   const location = useLocation()
@@ -111,6 +112,9 @@ const WebHeader = () => {
                 )}
               </div>
             )}
+
+            {/* User Profile */}
+            {isConnected && <UserProfile />}
             
             {/* RainbowKit Connect Button */}
             <ConnectButton />

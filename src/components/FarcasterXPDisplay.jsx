@@ -6,6 +6,7 @@ import { getXP } from '../utils/xpUtils'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { useProofOfUsage } from '../hooks/useProofOfUsage'
+import UserProfile from './UserProfile'
 
 const FarcasterXPDisplay = () => {
   const { isConnected, address } = useAccount()
@@ -129,27 +130,8 @@ const FarcasterXPDisplay = () => {
             </div>
           </div>
           
-          {/* Hamburger Menu Button */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            style={{
-              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '4px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 4px rgba(245, 158, 11, 0.3)',
-              transition: 'all 0.2s ease',
-              minWidth: '28px',
-              minHeight: '28px',
-              marginLeft: '8px'
-            }}
-          >
-            {isMenuOpen ? <X size={16} style={{ color: 'white' }} /> : <Menu size={16} style={{ color: 'white' }} />}
-          </button>
+          {/* User Profile Button - replaces hamburger menu */}
+          <UserProfile />
         </div>
         
         {/* Side Menu */}
@@ -337,27 +319,8 @@ const FarcasterXPDisplay = () => {
           <span>{totalXP}</span>
         </div>
         
-        {/* Hamburger Menu Button */}
-        <button
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          style={{
-            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-            border: 'none',
-            borderRadius: '6px',
-            padding: '4px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 4px rgba(245, 158, 11, 0.3)',
-            transition: 'all 0.2s ease',
-            minWidth: '28px',
-            minHeight: '28px',
-            marginLeft: '4px'
-          }}
-        >
-          {isMenuOpen ? <X size={16} style={{ color: 'white' }} /> : <Menu size={16} style={{ color: 'white' }} />}
-        </button>
+        {/* User Profile Button - replaces hamburger menu */}
+        <UserProfile />
       </div>
       
       {/* Side Menu */}
