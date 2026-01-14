@@ -196,6 +196,37 @@ const WebBottomNav = () => {
           <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>GM/GN</span>
         </button>
 
+        {/* DEX Tab */}
+        <button
+          onClick={() => handleTabClick('dex')}
+          style={{
+            width: '100%',
+            padding: '12px 8px',
+            border: 'none',
+            borderRadius: '12px',
+            background: activeTab === 'dex' 
+              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+              : 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)',
+            color: activeTab === 'dex' ? 'white' : '#667eea',
+            fontSize: '10px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '4px',
+            transition: 'all 0.2s ease',
+            minHeight: '70px',
+            justifyContent: 'center',
+            boxShadow: activeTab === 'dex' 
+              ? '0 4px 12px rgba(102, 126, 234, 0.3)' 
+              : '0 2px 4px rgba(102, 126, 234, 0.1)'
+          }}
+        >
+          <Repeat size={20} />
+          <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>DEX</span>
+        </button>
+
         {/* GAMING Tab */}
         <button
           onClick={() => handleTabClick('gaming')}
@@ -349,37 +380,6 @@ const WebBottomNav = () => {
         >
           <Users size={20} />
           <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>SOCIAL</span>
-        </button>
-
-        {/* DEX Tab */}
-        <button
-          onClick={() => handleTabClick('dex')}
-          style={{
-            width: '100%',
-            padding: '12px 8px',
-            border: 'none',
-            borderRadius: '12px',
-            background: activeTab === 'dex' 
-              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-              : 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)',
-            color: activeTab === 'dex' ? 'white' : '#667eea',
-            fontSize: '10px',
-            fontWeight: '700',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '4px',
-            transition: 'all 0.2s ease',
-            minHeight: '70px',
-            justifyContent: 'center',
-            boxShadow: activeTab === 'dex' 
-              ? '0 4px 12px rgba(102, 126, 234, 0.3)' 
-              : '0 2px 4px rgba(102, 126, 234, 0.1)'
-          }}
-        >
-          <Repeat size={20} />
-          <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>DEX</span>
         </button>
       </div>
 

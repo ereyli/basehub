@@ -154,6 +154,37 @@ const FarcasterBottomNav = () => {
           <span>GM/GN</span>
         </button>
 
+        {/* DEX Tab */}
+        <button
+          onClick={() => handleTabClick('dex')}
+          style={{
+            flex: 1,
+            padding: '12px 8px',
+            border: 'none',
+            borderRadius: '12px',
+            background: activeTab === 'dex' 
+              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+              : 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)',
+            color: activeTab === 'dex' ? 'white' : '#667eea',
+            fontSize: '12px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '6px',
+            transition: 'all 0.2s ease',
+            minHeight: '64px',
+            justifyContent: 'center',
+            boxShadow: activeTab === 'dex' 
+              ? '0 4px 12px rgba(102, 126, 234, 0.3)' 
+              : '0 2px 4px rgba(102, 126, 234, 0.1)'
+          }}
+        >
+          <Repeat size={18} />
+          <span>DEX</span>
+        </button>
+
         {/* GAMING Tab */}
         <button
           onClick={() => handleTabClick('gaming')}
@@ -307,37 +338,6 @@ const FarcasterBottomNav = () => {
         >
           <Users size={18} />
           <span>SOCIAL</span>
-        </button>
-
-        {/* DEX Tab */}
-        <button
-          onClick={() => handleTabClick('dex')}
-          style={{
-            flex: 1,
-            padding: '12px 8px',
-            border: 'none',
-            borderRadius: '12px',
-            background: activeTab === 'dex' 
-              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-              : 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)',
-            color: activeTab === 'dex' ? 'white' : '#667eea',
-            fontSize: '12px',
-            fontWeight: '700',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '6px',
-            transition: 'all 0.2s ease',
-            minHeight: '64px',
-            justifyContent: 'center',
-            boxShadow: activeTab === 'dex' 
-              ? '0 4px 12px rgba(102, 126, 234, 0.3)' 
-              : '0 2px 4px rgba(102, 126, 234, 0.1)'
-          }}
-        >
-          <Repeat size={18} />
-          <span>DEX</span>
         </button>
       </div>
 
