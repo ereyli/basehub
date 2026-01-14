@@ -19,6 +19,11 @@ const DeployERC1155 = () => {
   
   const [deployResult, setDeployResult] = useState(null)
 
+  const formatAddress = (address) => {
+    if (!address) return ''
+    return `${address.slice(0, 6)}...${address.slice(-4)}`
+  }
+
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({
