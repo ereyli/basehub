@@ -534,16 +534,16 @@ export const useDeployERC721 = () => {
 
       console.log('💰 Sending fee to wallet:', feeWallet)
       
-      // Use Farcaster SDK or window.ethereum based on environment
+      // Use wagmi sendTransaction for both Farcaster and web (Farcaster uses wagmi connector)
       let feeTxHash
-      if (isInFarcaster && farcasterContext?.sendTransaction) {
-        // Use Farcaster SDK for Farcaster environment
-        const result = await farcasterContext.sendTransaction({
+      if (isInFarcaster) {
+        // Use wagmi sendTransaction for Farcaster (works with Farcaster connector)
+        const { sendTransaction } = await import('wagmi/actions')
+        const result = await sendTransaction(config, {
           to: feeWallet,
           value: parseEther('0.00007'),
-          gas: 21000n,
         })
-        feeTxHash = result.transaction
+        feeTxHash = result
       } else {
         // Use window.ethereum for web environment
         if (typeof window === 'undefined' || !window.ethereum) {
@@ -591,15 +591,16 @@ export const useDeployERC721 = () => {
       
       const deployData = ERC721_BYTECODE + constructorData.slice(2)
       
-      // Use Farcaster SDK or window.ethereum based on environment
+      // Use wagmi sendTransaction for both Farcaster and web (Farcaster uses wagmi connector)
       let deployTxHash
-      if (isInFarcaster && farcasterContext?.sendTransaction) {
-        // Use Farcaster SDK for Farcaster environment
-        const result = await farcasterContext.sendTransaction({
+      if (isInFarcaster) {
+        // Use wagmi sendTransaction for Farcaster (works with Farcaster connector)
+        const { sendTransaction } = await import('wagmi/actions')
+        const result = await sendTransaction(config, {
           data: deployData,
           gas: 2000000n, // 2M gas for contract deployment
         })
-        deployTxHash = result.transaction
+        deployTxHash = result
       } else {
         // Use window.ethereum for web environment
         if (typeof window === 'undefined' || !window.ethereum) {
