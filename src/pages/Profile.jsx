@@ -182,11 +182,11 @@ const Profile = () => {
   // Get daily quests
   const getDailyQuests = () => {
     const quests = [
-      { type: 'gmUsed', label: 'GM Messages', title: 'GM Game', icon: '💬', current: questStats.gmUsed || 0, required: 1, xp: 30 },
-      { type: 'gnUsed', label: 'GN Messages', title: 'GN Game', icon: '🌙', current: questStats.gnUsed || 0, required: 1, xp: 30 },
-      { type: 'gamesPlayed', label: 'Games Played', title: 'Coin Flip Game', icon: '🎮', current: questStats.gamesPlayed || 0, required: 3, xp: 50 },
-      { type: 'swapsCompleted', label: 'Swaps Completed', title: 'Token Swap', icon: '🔄', current: questStats.swapsCompleted || 0, required: 1, xp: 250 },
-      { type: 'nftsMinted', label: 'NFTs Minted', title: 'AI NFT Launchpad', icon: '🖼️', current: questStats.nftsMinted || 0, required: 1, xp: 100 },
+      { type: 'gmUsed', label: 'GM Messages', title: 'GM Game', icon: MessageSquare, current: questStats.gmUsed || 0, required: 1, xp: 30 },
+      { type: 'gnUsed', label: 'GN Messages', title: 'GN Game', icon: MessageSquare, current: questStats.gnUsed || 0, required: 1, xp: 30 },
+      { type: 'gamesPlayed', label: 'Games Played', title: 'Coin Flip Game', icon: Gamepad2, current: questStats.gamesPlayed || 0, required: 3, xp: 50 },
+      { type: 'swapsCompleted', label: 'Swaps Completed', title: 'Token Swap', icon: Repeat, current: questStats.swapsCompleted || 0, required: 1, xp: 250 },
+      { type: 'nftsMinted', label: 'NFTs Minted', title: 'AI NFT Launchpad', icon: Layers, current: questStats.nftsMinted || 0, required: 1, xp: 100 },
     ]
 
     return quests.map(quest => {
@@ -336,9 +336,9 @@ const Profile = () => {
                       color: leaderboardRank <= 3 ? '#fbbf24' : '#ffffff'
                     }}>
                       #{leaderboardRank}
-                      {leaderboardRank === 1 && ' 🥇'}
-                      {leaderboardRank === 2 && ' 🥈'}
-                      {leaderboardRank === 3 && ' 🥉'}
+                      {leaderboardRank === 1 && <Medal size={16} style={{ color: '#fbbf24', marginLeft: '4px', display: 'inline-block' }} />}
+                      {leaderboardRank === 2 && <Medal size={16} style={{ color: '#9ca3af', marginLeft: '4px', display: 'inline-block' }} />}
+                      {leaderboardRank === 3 && <Medal size={16} style={{ color: '#d97706', marginLeft: '4px', display: 'inline-block' }} />}
                     </div>
                   </div>
                 </div>
@@ -373,7 +373,20 @@ const Profile = () => {
                   >
                     <div style={styles.questHeader}>
                       <div style={styles.questLeft}>
-                        <span style={styles.questIcon}>{quest.icon}</span>
+                        <div style={{
+                          ...styles.questIcon,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          background: 'rgba(59, 130, 246, 0.15)',
+                          border: '1px solid rgba(59, 130, 246, 0.3)',
+                          color: '#60a5fa'
+                        }}>
+                          {React.createElement(quest.icon, { size: 18 })}
+                        </div>
                         <div>
                           <div style={styles.questTitle}>{quest.label}</div>
                           <div style={styles.questXP}>+{quest.xp} XP</div>
@@ -408,7 +421,7 @@ const Profile = () => {
                 <div style={styles.weeklyBonus}>
                   <Trophy size={20} style={{ color: '#fbbf24' }} />
                   <div>
-                    <div style={styles.weeklyBonusTitle}>Weekly Bonus Earned! 🎉</div>
+                    <div style={styles.weeklyBonusTitle}>Weekly Bonus Earned</div>
                     <div style={styles.weeklyBonusText}>
                       You've completed all 7 days of quests
                     </div>
@@ -499,11 +512,12 @@ const styles = {
     width: '64px',
     height: '64px',
     borderRadius: '16px',
-    background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%)',
+    background: 'rgba(59, 130, 246, 0.15)',
+    border: '1px solid rgba(59, 130, 246, 0.3)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+    boxShadow: '0 2px 8px rgba(59, 130, 246, 0.2)'
   },
   profileInfo: {
     flex: 1
@@ -513,11 +527,7 @@ const styles = {
     fontSize: '28px',
     fontWeight: '700',
     color: '#ffffff',
-    marginBottom: '4px',
-    background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text'
+    marginBottom: '4px'
   },
   address: {
     margin: 0,

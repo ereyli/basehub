@@ -83,12 +83,12 @@ const Home = () => {
     setSuccessMessage('')
     
     try {
-      const result = await sendGMTransaction('GM from BaseHub! 🎮')
-      setSuccessMessage(`🎉 GM sent successfully! +30 XP earned!`)
+      const result = await sendGMTransaction('GM from BaseHub!')
+      setSuccessMessage(`GM sent successfully! +30 XP earned`)
       setTimeout(() => setSuccessMessage(''), 3000)
     } catch (error) {
       console.error('GM transaction failed:', error)
-      setSuccessMessage('❌ GM transaction failed. Please try again.')
+      setSuccessMessage('GM transaction failed. Please try again.')
       setTimeout(() => setSuccessMessage(''), 3000)
     } finally {
       setIsLoadingGM(false)
@@ -106,12 +106,12 @@ const Home = () => {
     setSuccessMessage('')
     
     try {
-      const result = await sendGNTransaction('GN from BaseHub! 🌙')
-      setSuccessMessage(`🌙 GN sent successfully! +30 XP earned!`)
+      const result = await sendGNTransaction('GN from BaseHub!')
+      setSuccessMessage(`GN sent successfully! +30 XP earned`)
       setTimeout(() => setSuccessMessage(''), 3000)
     } catch (error) {
       console.error('GN transaction failed:', error)
-      setSuccessMessage('❌ GN transaction failed. Please try again.')
+      setSuccessMessage('GN transaction failed. Please try again.')
       setTimeout(() => setSuccessMessage(''), 3000)
     } finally {
       setIsLoadingGN(false)
@@ -125,7 +125,7 @@ const Home = () => {
     try {
       // Use Coinbase Wallet SDK for x402 payment
       const result = await makeX402Payment()
-      setSuccessMessage('✅ Payment successful! +500 XP earned!')
+      setSuccessMessage('Payment successful! +500 XP earned')
       setTimeout(() => setSuccessMessage(''), 5000)
       console.log('x402 Payment successful:', result)
     } catch (err) {
@@ -137,11 +137,11 @@ const Home = () => {
   const getRankIcon = (rank) => {
     switch (rank) {
       case 1:
-        return <Trophy size={20} style={{ color: '#FFD700' }} />
+        return <Trophy size={20} style={{ color: '#f59e0b' }} />
       case 2:
-        return <Medal size={20} style={{ color: '#C0C0C0' }} />
+        return <Medal size={20} style={{ color: '#9ca3af' }} />
       case 3:
-        return <Award size={20} style={{ color: '#CD7F32' }} />
+        return <Award size={20} style={{ color: '#d97706' }} />
       default:
         return <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#6b7280' }}>#{rank}</span>
     }
@@ -164,7 +164,7 @@ const Home = () => {
       description: 'Send a GM message to earn XP',
       icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" loading="lazy" style={{ width: '35px', height: '35px', borderRadius: '18px', objectFit: 'cover' }} />,
       path: '/gm',
-      color: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+      color: '#10b981',
       xpReward: '30 XP',
       bonusXP: null
     },
@@ -174,7 +174,7 @@ const Home = () => {
       description: 'Send a GN message to earn XP',
       icon: <img src="/crypto-logos/basahub logo/GN.png" alt="GN Game" loading="lazy" style={{ width: '35px', height: '35px', borderRadius: '18px', objectFit: 'cover' }} />,
       path: '/gn',
-      color: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+      color: '#3b82f6',
       xpReward: '30 XP',
       bonusXP: null
     },
@@ -184,7 +184,7 @@ const Home = () => {
       description: 'Generate AI art and mint as NFT',
       icon: <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" loading="lazy" style={{ width: '35px', height: '35px', borderRadius: '18px', objectFit: 'cover' }} />,
       path: '/ai-nft',
-      color: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+      color: '#3b82f6',
       xpReward: '500 XP',
       bonusXP: null
     },
@@ -194,7 +194,7 @@ const Home = () => {
       description: 'Pay 0.1 USDC via x402',
       icon: <Star size={35} style={{ color: 'white' }} />,
       path: null, // Special handler
-      color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      color: '#667eea',
       xpReward: '500 XP',
       bonusXP: '0.1 USDC',
       isPayment: true // Mark as payment button
@@ -205,7 +205,7 @@ const Home = () => {
       description: 'Get fun insights about any wallet',
       icon: <Search size={35} style={{ color: 'white' }} />,
       path: '/wallet-analysis',
-      color: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
+      color: '#ec4899',
       xpReward: '400 XP',
       bonusXP: '0.40 USDC',
       isX402: true // Mark as x402 payment
@@ -216,7 +216,7 @@ const Home = () => {
       description: 'Analyze smart contract security risks',
       icon: <Shield size={35} style={{ color: 'white' }} />,
       path: '/contract-security',
-      color: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+      color: '#8b5cf6',
       xpReward: '500 XP',
       bonusXP: '0.50 USDC',
       isX402: true // Mark as x402 payment
@@ -227,7 +227,7 @@ const Home = () => {
       description: 'Scan and revoke risky token approvals',
       icon: <Trash2 size={35} style={{ color: 'white' }} />,
       path: '/allowance-cleaner',
-      color: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+      color: '#ef4444',
       xpReward: '300 XP',
       bonusXP: '0.1 USDC',
       isX402: true // Mark as x402 payment
@@ -238,7 +238,7 @@ const Home = () => {
       description: 'Register your profile and connect through mutual follows',
       icon: <Star size={35} style={{ color: 'white' }} />,
       path: '/featured-profiles',
-      color: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+      color: '#f59e0b',
       xpReward: '200 XP',
       bonusXP: '0.2-6.0 USDC',
       isX402: true // Mark as x402 payment
@@ -249,7 +249,7 @@ const Home = () => {
       description: 'Deploy your own NFT contract',
       icon: <img src="/crypto-logos/basahub logo/ERC-721.png" alt="Deploy ERC721" loading="lazy" style={{ width: '35px', height: '35px', borderRadius: '18px', objectFit: 'cover' }} />,
       path: '/deploy-erc721',
-      color: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+      color: '#8b5cf6',
       xpReward: '100 XP',
       bonusXP: null
     },
@@ -259,7 +259,7 @@ const Home = () => {
       description: 'Create your own ERC20 token',
       icon: <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" loading="lazy" style={{ width: '35px', height: '35px', borderRadius: '18px', objectFit: 'cover' }} />,
       path: '/deploy',
-      color: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+      color: '#10b981',
       xpReward: '50 XP',
       bonusXP: null
     },
@@ -339,14 +339,11 @@ const Home = () => {
         <div className="card">
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
             <div style={{ 
-              fontSize: '48px', 
               marginBottom: '16px',
-              background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
+              display: 'flex',
+              justifyContent: 'center'
             }}>
-              🎮
+              <Gamepad2 size={48} style={{ color: '#3b82f6' }} />
             </div>
             <h1 style={{ 
               fontSize: '32px', 
@@ -385,8 +382,8 @@ const Home = () => {
                 padding: '16px',
                 marginBottom: '24px'
               }}>
-                <p style={{ color: '#92400e', margin: 0 }}>
-                  💡 Connect your wallet to start playing and earning XP!
+                <p style={{ color: '#92400e', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Zap size={16} /> Connect your wallet to start playing and earning XP
                 </p>
               </div>
             )}
@@ -394,18 +391,18 @@ const Home = () => {
             {/* Success Message */}
             {successMessage && (
               <div style={{
-                background: successMessage.includes('❌') 
-                  ? 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)'
-                  : 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
-                border: successMessage.includes('❌') 
-                  ? '1px solid #fca5a5'
-                  : '1px solid #86efac',
-                borderRadius: '12px',
+                background: successMessage.includes('failed') 
+                  ? 'rgba(220, 38, 38, 0.1)'
+                  : 'rgba(22, 163, 74, 0.1)',
+                border: successMessage.includes('failed') 
+                  ? '1px solid rgba(220, 38, 38, 0.3)'
+                  : '1px solid rgba(22, 163, 74, 0.3)',
+                borderRadius: '8px',
                 padding: '12px 16px',
                 marginTop: '16px',
                 fontSize: '14px',
-                fontWeight: '600',
-                color: successMessage.includes('❌') ? '#dc2626' : '#16a34a',
+                fontWeight: '500',
+                color: successMessage.includes('failed') ? '#ef4444' : '#22c55e',
                 textAlign: 'center',
                 animation: 'slideInDown 0.3s ease-out'
               }}>
@@ -428,16 +425,17 @@ const Home = () => {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                   <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '10px',
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: 'white'
+                    color: '#10b981'
                   }}>
-                    <Sun size={24} />
+                    <Sun size={22} />
                   </div>
                   <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
                     GM / GN
@@ -515,16 +513,17 @@ const Home = () => {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                   <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '10px',
+                    background: 'rgba(245, 158, 11, 0.15)',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: 'white'
+                    color: '#f59e0b'
                   }}>
-                    <Gamepad2 size={24} />
+                    <Gamepad2 size={22} />
                   </div>
                   <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
                     GAMING
@@ -603,16 +602,17 @@ const Home = () => {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                   <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '10px',
+                    background: 'rgba(102, 126, 234, 0.15)',
+                    border: '1px solid rgba(102, 126, 234, 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: 'white'
+                    color: '#667eea'
                   }}>
-                    <Repeat size={24} />
+                    <Repeat size={22} />
                   </div>
                   <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
                     DEX AGGREGATOR
@@ -691,16 +691,17 @@ const Home = () => {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                   <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '10px',
+                    background: 'rgba(59, 130, 246, 0.15)',
+                    border: '1px solid rgba(59, 130, 246, 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: 'white'
+                    color: '#3b82f6'
                   }}>
-                    <TrendingUp size={24} />
+                    <TrendingUp size={22} />
                   </div>
                   <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
                     ANALYSIS
@@ -779,16 +780,17 @@ const Home = () => {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                   <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '10px',
+                    background: 'rgba(139, 92, 246, 0.15)',
+                    border: '1px solid rgba(139, 92, 246, 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: 'white'
+                    color: '#8b5cf6'
                   }}>
-                    <Image size={24} />
+                    <Image size={22} />
                   </div>
                   <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
                     NFT
@@ -1411,14 +1413,11 @@ const Home = () => {
           <div className="card">
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
               <div style={{ 
-                fontSize: '32px', 
                 marginBottom: '12px',
-                background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text'
+                display: 'flex',
+                justifyContent: 'center'
               }}>
-                🏆
+                <Trophy size={32} style={{ color: '#f59e0b' }} />
               </div>
               <h2 style={{ 
                 fontSize: '24px', 
@@ -1447,7 +1446,8 @@ const Home = () => {
                   }}
                 >
                   <div className="rank-icon" style={{ 
-                    background: index < 3 ? 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)' : 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)'
+                    background: index < 3 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(107, 114, 128, 0.15)',
+                    border: index < 3 ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(107, 114, 128, 0.3)'
                   }}>
                     {getRankIcon(index + 1)}
                   </div>
@@ -1468,14 +1468,17 @@ const Home = () => {
                       </span>
                       {index < 3 && (
                         <span style={{
-                          background: index === 0 ? 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)' : 
-                                     index === 1 ? 'linear-gradient(135deg, #C0C0C0 0%, #A0A0A0 100%)' :
-                                     'linear-gradient(135deg, #CD7F32 0%, #B8860B 100%)',
-                          color: 'white',
-                          padding: '1px 6px',
-                          borderRadius: '8px',
-                          fontSize: '8px',
-                          fontWeight: 'bold'
+                          background: index === 0 ? 'rgba(245, 158, 11, 0.2)' : 
+                                     index === 1 ? 'rgba(192, 192, 192, 0.2)' :
+                                     'rgba(205, 127, 50, 0.2)',
+                          color: index === 0 ? '#f59e0b' : index === 1 ? '#c0c0c0' : '#cd7f32',
+                          border: index === 0 ? '1px solid rgba(245, 158, 11, 0.4)' : 
+                                  index === 1 ? '1px solid rgba(192, 192, 192, 0.4)' :
+                                  '1px solid rgba(205, 127, 50, 0.4)',
+                          padding: '2px 6px',
+                          borderRadius: '6px',
+                          fontSize: '9px',
+                          fontWeight: '600'
                         }}>
                           TOP {index + 1}
                         </span>
@@ -1499,10 +1502,10 @@ const Home = () => {
                     alignItems: 'center',
                     gap: '4px'
                   }}>
-                    <Star size={14} style={{ color: '#FFD700' }} />
+                    <Star size={14} style={{ color: '#f59e0b' }} />
                     <span style={{ 
                       fontWeight: 'bold',
-                      color: '#FFD700',
+                      color: '#f59e0b',
                       fontSize: '14px'
                     }}>
                       {player.total_xp}
@@ -1515,7 +1518,9 @@ const Home = () => {
                   padding: '40px 20px',
                   color: '#6b7280'
                 }}>
-                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>🏆</div>
+                  <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
+                    <Trophy size={48} style={{ color: '#6b7280', opacity: 0.5 }} />
+                  </div>
                   <h3 style={{ 
                     fontSize: '18px', 
                     fontWeight: 'bold', 

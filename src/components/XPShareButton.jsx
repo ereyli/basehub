@@ -27,16 +27,6 @@ const XPShareButton = ({
 
   // Generate dynamic XP sharing content
   const generateXPContent = () => {
-    const gameEmojis = {
-      'gm': '🌅',
-      'gn': '🌙',
-      'flip': '🪙',
-      'lucky': '🍀',
-      'dice': '🎲',
-      'deploy': '🚀',
-      'swap': '🔄'
-    }
-
     const gameNames = {
       'gm': 'GM Game',
       'gn': 'GN Game', 
@@ -47,27 +37,26 @@ const XPShareButton = ({
       'swap': 'SwapHub DEX'
     }
 
-    const emoji = gameEmojis[gameType] || '🎮'
     const gameName = gameNames[gameType] || 'BaseHub Game'
     
-    let shareText = `${emoji} Just earned ${xpEarned} XP playing ${gameName} on BaseHub!`
+    let shareText = `Just earned ${xpEarned} XP playing ${gameName} on BaseHub!`
     
     if (gameResult) {
       if (gameType === 'flip') {
-        shareText += ` ${gameResult.won ? '🎉 Won!' : '😅 Lost, but still got XP!'}`
+        shareText += ` ${gameResult.won ? 'Won!' : 'Lost, but still got XP!'}`
       } else if (gameType === 'lucky') {
-        shareText += ` ${gameResult.won ? '🎯 Lucky number hit!' : '🎲 Close, but no luck!'}`
+        shareText += ` ${gameResult.won ? 'Lucky number hit!' : 'Close, but no luck!'}`
       } else if (gameType === 'dice') {
-        shareText += ` 🎲 Rolled ${gameResult.dice1} & ${gameResult.dice2}`
+        shareText += ` Rolled ${gameResult.dice1} & ${gameResult.dice2}`
       } else if (gameType === 'swap' && gameResult.amountIn) {
-        shareText = `${emoji} Just swapped ${gameResult.amountIn} ${gameResult.tokenIn} → ${gameResult.tokenOut} on SwapHub DEX!\n\n💰 Best rates across Uniswap V2 & V3\n🎉 Earned ${xpEarned} XP`
+        shareText = `Just swapped ${gameResult.amountIn} ${gameResult.tokenIn} → ${gameResult.tokenOut} on SwapHub DEX!\n\nBest rates across Uniswap V2 & V3\nEarned ${xpEarned} XP`
       }
     }
     
     if (gameType !== 'swap') {
-      shareText += `\n\nTotal XP: ${totalXP} (${Math.floor(totalXP / 50)} BHUP tokens)\n\nPlay on BaseHub and earn XP on Base network! 🚀`
+      shareText += `\n\nTotal XP: ${totalXP} (${Math.floor(totalXP / 50)} BHUP tokens)\n\nPlay on BaseHub and earn XP on Base network!`
     } else {
-      shareText += `\n\n⚡️ Powered by BaseHub`
+      shareText += `\n\nPowered by BaseHub`
     }
     
     return shareText
