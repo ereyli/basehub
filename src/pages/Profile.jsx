@@ -60,45 +60,52 @@ const Profile = () => {
 
           if (!playerError && player) {
             setLevel(player.level || calculateLevel(xp))
-          }
-
-          // Load transaction count and recent transactions
-          const { count: txCountResult, error: txCountError } = await supabase
-            .from('transactions')
-            .select('*', { count: 'exact', head: true })
-            .eq('wallet_address', address.toLowerCase())
-
-          if (!txCountError && txCountResult !== null) {
-            setTxCount(txCountResult || 0)
-          } else if (!playerError && player) {
-            // Fallback to player's total_transactions
+            // Use total_transactions from players table (most accurate)
             setTxCount(player.total_transactions || 0)
+          } else {
+            // If player doesn't exist, try to count from transactions table
+            const { count: txCountResult, error: txCountError } = await supabase
+              .from('transactions')
+              .select('*', { count: 'exact', head: true })
+              .eq('wallet_address', address.toLowerCase())
+
+            if (!txCountError && txCountResult !== null) {
+              setTxCount(txCountResult || 0)
+            }
           }
 
-          // Load recent transactions
-          const { data: transactions, error: txError } = await supabase
+          // Load ALL transactions for statistics (not just recent 10)
+          const { data: allTransactions, error: allTxError } = await supabase
             .from('transactions')
             .select('*')
             .eq('wallet_address', address.toLowerCase())
             .order('created_at', { ascending: false })
-            .limit(10)
 
-          if (!txError && transactions) {
-            setRecentTransactions(transactions || [])
+          if (!allTxError && allTransactions) {
+            // Set recent transactions (first 10)
+            setRecentTransactions(allTransactions.slice(0, 10) || [])
             
-            // Calculate stats from transactions
-            const gameTypes = transactions.map(tx => tx.game_type)
+            // Calculate stats from ALL transactions
+            const gameTypes = allTransactions.map(tx => tx.game_type)
             const newStats = {
               gamesPlayed: gameTypes.filter(t => ['GM_GAME', 'GN_GAME', 'FLIP_GAME', 'DICE_ROLL', 'LUCKY_NUMBER', 'SLOT_GAME'].includes(t)).length,
               swapsCompleted: gameTypes.filter(t => t === 'SWAP').length,
               nftsMinted: gameTypes.filter(t => t === 'NFT_MINT').length,
               gmUsed: gameTypes.filter(t => t === 'GM_GAME').length,
               gnUsed: gameTypes.filter(t => t === 'GN_GAME').length,
-              totalVolume: transactions
+              totalVolume: allTransactions
                 .filter(tx => tx.swap_amount_usd)
                 .reduce((sum, tx) => sum + (parseFloat(tx.swap_amount_usd) || 0), 0)
             }
             setStats(newStats)
+            
+            // If player doesn't exist but we have transactions, update tx count
+            if (playerError && allTransactions.length > 0) {
+              setTxCount(allTransactions.length)
+            }
+          } else if (!playerError && player) {
+            // If transactions query fails but player exists, use player's total_transactions
+            setTxCount(player.total_transactions || 0)
           }
 
           // Quest progress is loaded automatically by useQuestSystem hook
