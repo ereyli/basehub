@@ -102,7 +102,7 @@ const Profile = () => {
     // Refresh every 10 seconds
     const interval = setInterval(loadUserData, 10000)
     return () => clearInterval(interval)
-  }, [isConnected, address, supabase, loadQuestProgress])
+  }, [isConnected, address, supabase])
 
   if (!isConnected || !address) {
     return (
