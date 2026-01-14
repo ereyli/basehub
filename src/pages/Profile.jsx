@@ -182,16 +182,22 @@ const Profile = () => {
   // Get daily quests
   const getDailyQuests = () => {
     const quests = [
-      { type: 'gmUsed', label: 'GM Messages', icon: '💬', current: questStats.gmUsed || 0, required: 1, xp: 30 },
-      { type: 'gnUsed', label: 'GN Messages', icon: '🌙', current: questStats.gnUsed || 0, required: 1, xp: 30 },
-      { type: 'gamesPlayed', label: 'Games Played', icon: '🎮', current: questStats.gamesPlayed || 0, required: 3, xp: 50 },
-      { type: 'swapsCompleted', label: 'Swaps Completed', icon: '🔄', current: questStats.swapsCompleted || 0, required: 1, xp: 250 },
-      { type: 'nftsMinted', label: 'NFTs Minted', icon: '🖼️', current: questStats.nftsMinted || 0, required: 1, xp: 100 },
+      { type: 'gmUsed', label: 'GM Messages', title: 'GM Game', icon: '💬', current: questStats.gmUsed || 0, required: 1, xp: 30 },
+      { type: 'gnUsed', label: 'GN Messages', title: 'GN Game', icon: '🌙', current: questStats.gnUsed || 0, required: 1, xp: 30 },
+      { type: 'gamesPlayed', label: 'Games Played', title: 'Coin Flip Game', icon: '🎮', current: questStats.gamesPlayed || 0, required: 3, xp: 50 },
+      { type: 'swapsCompleted', label: 'Swaps Completed', title: 'Token Swap', icon: '🔄', current: questStats.swapsCompleted || 0, required: 1, xp: 250 },
+      { type: 'nftsMinted', label: 'NFTs Minted', title: 'AI NFT Launchpad', icon: '🖼️', current: questStats.nftsMinted || 0, required: 1, xp: 100 },
     ]
 
     return quests.map(quest => {
-      const questId = `${currentDay}-${quest.label}`
-      const isCompleted = completedQuests.includes(questId)
+      // Check both formats: using label and using title (as stored in DailyQuestSystem)
+      const questIdByLabel = `${currentDay}-${quest.label}`
+      const questIdByTitle = `${currentDay}-${quest.title}`
+      // A quest is completed if it's in completed_quests OR if current >= required
+      const isCompletedInDB = completedQuests.includes(questIdByLabel) || completedQuests.includes(questIdByTitle)
+      const isCompletedByProgress = quest.current >= quest.required
+      const isCompleted = isCompletedInDB || isCompletedByProgress
+      
       return {
         ...quest,
         isCompleted,
