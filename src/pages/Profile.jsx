@@ -4,7 +4,7 @@ import { useAccount } from 'wagmi'
 import { 
   User, ArrowLeft, Zap, Repeat, Calendar, Trophy, TrendingUp, 
   Award, Target, CheckCircle, Clock, BarChart3, Activity,
-  Gamepad2, Coins, Layers, MessageSquare, RefreshCw
+  Gamepad2, Coins, Layers, MessageSquare, RefreshCw, Medal
 } from 'lucide-react'
 import { getXP } from '../utils/xpUtils'
 import { useQuestSystem } from '../hooks/useQuestSystem'
@@ -21,6 +21,7 @@ const Profile = () => {
   const [level, setLevel] = useState(1)
   const [txCount, setTxCount] = useState(0)
   const [recentTransactions, setRecentTransactions] = useState([])
+  const [leaderboardRank, setLeaderboardRank] = useState(null)
   const [stats, setStats] = useState({
     gamesPlayed: 0,
     swapsCompleted: 0,
@@ -69,6 +70,21 @@ const Profile = () => {
             // Use total_transactions from players table (most accurate)
             console.log('📊 Total transactions from player:', player.total_transactions)
             setTxCount(player.total_transactions || 0)
+            
+            // Calculate leaderboard rank
+            const { data: allPlayers, error: rankError } = await supabase
+              .from('players')
+              .select('wallet_address, total_xp')
+              .order('total_xp', { ascending: false })
+
+            if (!rankError && allPlayers) {
+              const rank = allPlayers.findIndex(p => 
+                p.wallet_address.toLowerCase() === walletAddressLower || 
+                p.wallet_address === address
+              ) + 1
+              console.log('🏆 Leaderboard rank:', rank, 'out of', allPlayers.length)
+              setLeaderboardRank(rank > 0 ? rank : null)
+            }
           } else {
             console.log('⚠️ Player not found, trying transactions count')
             // If player doesn't exist, try to count from transactions table
@@ -286,6 +302,41 @@ const Profile = () => {
                   <div style={styles.statValue}>{currentDay}</div>
                 </div>
               </div>
+
+              {leaderboardRank && (
+                <div style={{
+                  ...styles.statCard,
+                  background: leaderboardRank <= 3 
+                    ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)'
+                    : 'rgba(30, 41, 59, 0.6)',
+                  border: leaderboardRank <= 3
+                    ? '1px solid rgba(251, 191, 36, 0.3)'
+                    : '1px solid rgba(59, 130, 246, 0.2)'
+                }}>
+                  <div style={{
+                    ...styles.statIcon,
+                    background: leaderboardRank <= 3
+                      ? 'rgba(251, 191, 36, 0.2)'
+                      : 'rgba(59, 130, 246, 0.15)'
+                  }}>
+                    <Medal size={20} style={{ 
+                      color: leaderboardRank <= 3 ? '#fbbf24' : '#60a5fa' 
+                    }} />
+                  </div>
+                  <div style={styles.statContent}>
+                    <div style={styles.statLabel}>Leaderboard Rank</div>
+                    <div style={{
+                      ...styles.statValue,
+                      color: leaderboardRank <= 3 ? '#fbbf24' : '#ffffff'
+                    }}>
+                      #{leaderboardRank}
+                      {leaderboardRank === 1 && ' 🥇'}
+                      {leaderboardRank === 2 && ' 🥈'}
+                      {leaderboardRank === 3 && ' 🥉'}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Activity Stats */}
