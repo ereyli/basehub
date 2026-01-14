@@ -59,8 +59,20 @@ const Profile = () => {
             .single()
 
           if (!playerError && player) {
-            setTxCount(player.total_transactions || 0)
             setLevel(player.level || calculateLevel(xp))
+          }
+
+          // Load transaction count and recent transactions
+          const { count: txCountResult, error: txCountError } = await supabase
+            .from('transactions')
+            .select('*', { count: 'exact', head: true })
+            .eq('wallet_address', address.toLowerCase())
+
+          if (!txCountError && txCountResult !== null) {
+            setTxCount(txCountResult || 0)
+          } else if (!playerError && player) {
+            // Fallback to player's total_transactions
+            setTxCount(player.total_transactions || 0)
           }
 
           // Load recent transactions
@@ -99,9 +111,7 @@ const Profile = () => {
     }
 
     loadUserData()
-    // Refresh every 10 seconds
-    const interval = setInterval(loadUserData, 10000)
-    return () => clearInterval(interval)
+    // Only load once when component mounts or address changes
   }, [isConnected, address, supabase])
 
   if (!isConnected || !address) {
