@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAccount } from 'wagmi'
+import { useAccount, useWalletClient } from 'wagmi'
 import { waitForTransactionReceipt, sendTransaction } from 'wagmi/actions'
 import { parseEther } from 'viem'
 import { config } from '../config/wagmi'
@@ -434,6 +434,7 @@ const ERC1155_ABI = [
 
 export const useDeployERC1155 = () => {
   const { address } = useAccount()
+  const { data: walletClient } = useWalletClient() // Get wallet client (works with Farcaster connector)
   const { isCorrectNetwork, networkName, baseNetworkName, switchToBaseNetwork } = useNetworkCheck()
   const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)

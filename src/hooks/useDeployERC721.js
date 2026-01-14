@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useWalletClient } from 'wagmi'
 import { waitForTransactionReceipt, sendTransaction } from 'wagmi/actions'
 import { parseEther, encodeAbiParameters, parseAbiParameters } from 'viem'
 import { config } from '../config/wagmi'
@@ -453,6 +453,7 @@ const ERC721_ABI = [
 
 export const useDeployERC721 = () => {
   const { address } = useAccount()
+  const { data: walletClient } = useWalletClient() // Get wallet client (works with Farcaster connector)
   const { isCorrectNetwork, networkName, baseNetworkName, switchToBaseNetwork } = useNetworkCheck()
   const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)
@@ -533,12 +534,11 @@ export const useDeployERC721 = () => {
 
       console.log('💰 Sending fee to wallet:', feeWallet)
       
-      // Use wagmi sendTransaction for both Farcaster and web (Farcaster uses wagmi connector)
+      // Use walletClient for Farcaster (automatically uses Farcaster connector) or window.ethereum for web
       let feeTxHash
-      if (isInFarcaster) {
-        // Use wagmi sendTransaction for Farcaster (works with Farcaster connector)
-        const { sendTransaction } = await import('wagmi/actions')
-        const result = await sendTransaction(config, {
+      if (isInFarcaster && walletClient) {
+        // Use walletClient for Farcaster (automatically uses Farcaster connector)
+        const result = await walletClient.sendTransaction({
           to: feeWallet,
           value: parseEther('0.00007'),
         })
@@ -590,12 +590,11 @@ export const useDeployERC721 = () => {
       
       const deployData = ERC721_BYTECODE + constructorData.slice(2)
       
-      // Use wagmi sendTransaction for both Farcaster and web (Farcaster uses wagmi connector)
+      // Use walletClient for Farcaster (automatically uses Farcaster connector) or window.ethereum for web
       let deployTxHash
-      if (isInFarcaster) {
-        // Use wagmi sendTransaction for Farcaster (works with Farcaster connector)
-        const { sendTransaction } = await import('wagmi/actions')
-        const result = await sendTransaction(config, {
+      if (isInFarcaster && walletClient) {
+        // Use walletClient for Farcaster (automatically uses Farcaster connector)
+        const result = await walletClient.sendTransaction({
           data: deployData,
           gas: 2000000n, // 2M gas for contract deployment
         })
