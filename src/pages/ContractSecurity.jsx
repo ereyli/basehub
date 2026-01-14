@@ -645,7 +645,7 @@ export default function ContractSecurity() {
                 }}>
                   <div>
                     <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Contract Name</div>
-                    <div style={{ fontSize: '16px', fontWeight: '700', color: '#1f2937' }}>
+                    <div style={{ fontSize: '16px', fontWeight: '700', color: '#e5e7eb' }}>
                       {analysis.contractName || 'Unknown'}
                     </div>
                   </div>
@@ -658,7 +658,7 @@ export default function ContractSecurity() {
                   {analysis.compilerVersion && (
                     <div>
                       <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Compiler</div>
-                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#1f2937' }}>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#e5e7eb' }}>
                         {analysis.compilerVersion}
                       </div>
                     </div>
