@@ -62,9 +62,7 @@ const Home = () => {
     }
 
     loadLeaderboard()
-    // Refresh every 10 seconds
-    const interval = setInterval(loadLeaderboard, 10000)
-    return () => clearInterval(interval)
+    // Only load once when component mounts, no auto-refresh
   }, [])
 
 
