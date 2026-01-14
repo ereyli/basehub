@@ -157,7 +157,6 @@ const Home = () => {
         block: 'start'
       })
     }
-    setIsMenuOpen(false)
   }
 
   const games = [
@@ -336,78 +335,6 @@ const Home = () => {
         buttonText="Play BaseHub"
       />
       
-      {/* Side Menu */}
-      {false && (
-        <div style={{
-          position: 'fixed',
-          top: '0',
-          right: '0',
-          width: '280px',
-          height: '100vh',
-          background: 'rgba(255, 255, 255, 0.98)',
-          backdropFilter: 'blur(20px)',
-          borderLeft: '1px solid rgba(0, 0, 0, 0.1)',
-          zIndex: 9998,
-          padding: '80px 24px 24px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '16px',
-          boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.1)'
-        }}>
-          <h3 style={{
-            fontSize: '18px',
-            fontWeight: 'bold',
-            color: '#e5e7eb',
-            marginBottom: '8px'
-          }}>
-            Quick Navigation
-          </h3>
-          
-          <button
-            onClick={() => scrollToSection('daily-quests')}
-            style={{
-              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '12px',
-              padding: '16px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              fontSize: '16px',
-              fontWeight: '600',
-              transition: 'all 0.2s ease',
-              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
-            }}
-          >
-            <Trophy size={20} />
-            Daily Quests
-          </button>
-          
-          <button
-            onClick={() => scrollToSection('leaderboard')}
-            style={{
-              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '12px',
-              padding: '16px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              fontSize: '16px',
-              fontWeight: '600',
-              transition: 'all 0.2s ease',
-              boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
-            }}
-          >
-            <Star size={20} />
-            Leaderboard
-          </button>
-        </div>
-      )}
 
 
       <div className="welcome-section">
