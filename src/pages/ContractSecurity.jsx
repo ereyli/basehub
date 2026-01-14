@@ -277,13 +277,13 @@ export default function ContractSecurity() {
 
           {/* Input Section */}
           <div style={{
-            background: 'rgba(255, 255, 255, 0.95)',
+            background: 'rgba(30, 41, 59, 0.95)',
             backdropFilter: 'blur(20px)',
             borderRadius: '24px',
             padding: '32px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
             marginBottom: '32px',
-            border: '1px solid rgba(255, 255, 255, 0.5)',
+            border: '2px solid rgba(102, 126, 234, 0.1)',
           }}>
             <div style={{
               display: 'flex',
