@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAccount } from 'wagmi'
 import { useDeployERC721 } from '../hooks/useDeployERC721'
-import { Image, Zap } from 'lucide-react'
+import { Image, Zap, CheckCircle, ExternalLink } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
@@ -18,6 +18,11 @@ const DeployERC721 = () => {
   })
   
   const [deployResult, setDeployResult] = useState(null)
+
+  const formatAddress = (address) => {
+    if (!address) return ''
+    return `${address.slice(0, 6)}...${address.slice(-4)}`
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -154,33 +159,96 @@ const DeployERC721 = () => {
         </form>
 
         {deployResult && (
-          <div className="deploy-result">
-            <h3>✅ ERC721 Contract Deployed!</h3>
-            <p>
-              **Contract Address:**{' '}
-              <a 
-                href={`https://basescan.org/address/${deployResult.contractAddress}`} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="link"
+          <div className="deploy-success">
+            <div className="success-icon">
+              <CheckCircle size={48} />
+            </div>
+            <h2>ERC721 Contract Deployed Successfully!</h2>
+            
+            <div className="deploy-details">
+              <div className="detail-item">
+                <strong>Collection Name:</strong> {formData.name}
+              </div>
+              <div className="detail-item">
+                <strong>Symbol:</strong> {formData.symbol}
+              </div>
+              <div className="detail-item">
+                <strong>Network:</strong> Base Mainnet
+              </div>
+              {deployResult.contractAddress && (
+                <div className="detail-item">
+                  <strong>Contract Address:</strong>
+                  <div className="tx-hash">
+                    {formatAddress(deployResult.contractAddress)}
+                    <a 
+                      href={`https://basescan.org/address/${deployResult.contractAddress}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="view-button"
+                    >
+                      <ExternalLink size={14} />
+                      View
+                    </a>
+                  </div>
+                </div>
+              )}
+              {deployResult.deployTxHash && (
+                <div className="detail-item">
+                  <strong>Deployment Transaction:</strong>
+                  <div className="tx-hash">
+                    {formatAddress(deployResult.deployTxHash)}
+                    <a 
+                      href={`https://basescan.org/tx/${deployResult.deployTxHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="view-button"
+                    >
+                      <ExternalLink size={14} />
+                      View
+                    </a>
+                  </div>
+                </div>
+              )}
+              {deployResult.metadataUrl && (
+                <div className="detail-item">
+                  <strong>Metadata URL (IPFS):</strong>
+                  <div className="tx-hash">
+                    <span style={{ fontSize: '12px', wordBreak: 'break-all' }}>
+                      {deployResult.metadataUrl.length > 40 
+                        ? `${deployResult.metadataUrl.slice(0, 40)}...` 
+                        : deployResult.metadataUrl}
+                    </span>
+                    <a 
+                      href={deployResult.metadataUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="view-button"
+                    >
+                      <ExternalLink size={14} />
+                      View
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="success-actions">
+              <button 
+                onClick={() => {
+                  setDeployResult(null)
+                  setFormData({ name: '', symbol: '' })
+                }}
+                className="deploy-another-button"
               >
-                {deployResult.contractAddress}
-              </a>
-            </p>
-            <p>
-              **Metadata URL (IPFS):**{' '}
-              <a 
-                href={deployResult.metadataUrl} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="link"
+                Deploy Another Contract
+              </button>
+              <button 
+                onClick={() => navigate('/')}
+                className="home-button"
               >
-                {deployResult.metadataUrl}
-              </a>
-            </p>
-            <button onClick={() => navigate('/')} className="home-button">
-              Go to Home
-            </button>
+                Home
+              </button>
+            </div>
           </div>
         )}
       </div>
