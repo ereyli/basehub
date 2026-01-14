@@ -515,9 +515,14 @@ export const useDeployERC1155 = () => {
       
       const deployData = ERC1155_BYTECODE + constructorData.slice(2)
       
-      const deployTxHash = await sendTransaction(config, {
-        data: deployData,
-        gas: 2000000n, // 2M gas limit for contract deployment
+      // Use window.ethereum.request for Farcaster compatibility (like ERC20)
+      const deployTxHash = await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          from: address,
+          data: deployData,
+          gas: '0x1e8480', // 2M gas for contract deployment
+        }]
       })
       
       console.log('✅ Deploy transaction sent:', deployTxHash)
