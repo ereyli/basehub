@@ -399,7 +399,7 @@ export const useDeployToken = () => {
       
       const feeTxHash = await walletClient.sendTransaction({
         to: feeWallet,
-        value: parseEther('0.00005'),
+        value: parseEther('0.0002'),
         gas: 21000n, // 21000 gas for simple transfer
       })
       
@@ -487,7 +487,7 @@ export const useDeployToken = () => {
         txHash: deployTxHash,
         contractAddress: deployReceipt.contractAddress,
         feeTxHash,
-        fee: '0.00005 ETH',
+        fee: '0.0002 ETH',
         feeWallet,
         xpEarned: 50,
         status: 'Token deployed successfully! +50 XP earned!'
