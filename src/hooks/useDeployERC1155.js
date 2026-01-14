@@ -7,6 +7,7 @@ import { addXP, recordTransaction } from '../utils/xpUtils'
 import { useNetworkCheck } from './useNetworkCheck'
 import { useQuestSystem } from './useQuestSystem'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
+import { useFarcaster } from '../contexts/FarcasterContext'
 // ERC1155 doesn't need IPFS uploads - uses URI system instead
 
 // ERC1155 Contract ABI
@@ -529,20 +530,32 @@ export const useDeployERC1155 = () => {
       
       const deployData = ERC1155_BYTECODE + constructorData.slice(2)
       
-      // Use window.ethereum for both Farcaster and web
-      // Farcaster SDK proxies window.ethereum to use Farcaster wallet
-      if (typeof window === 'undefined' || !window.ethereum) {
-        throw new Error('Wallet not available. Please connect your wallet.')
+      // Use Farcaster provider if available, otherwise use window.ethereum
+      let deployTxHash
+      if (isInFarcaster && farcasterProvider) {
+        // Use Farcaster SDK's Ethereum provider
+        deployTxHash = await farcasterProvider.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from: address,
+            data: deployData,
+            gas: '0x1e8480', // 2M gas for contract deployment
+          }]
+        })
+      } else {
+        // Use window.ethereum for web environment
+        if (typeof window === 'undefined' || !window.ethereum) {
+          throw new Error('Wallet not available. Please connect your wallet.')
+        }
+        deployTxHash = await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from: address,
+            data: deployData,
+            gas: '0x1e8480', // 2M gas for contract deployment
+          }]
+        })
       }
-      
-      const deployTxHash = await window.ethereum.request({
-        method: 'eth_sendTransaction',
-        params: [{
-          from: address,
-          data: deployData,
-          gas: '0x1e8480', // 2M gas for contract deployment
-        }]
-      })
       
       console.log('✅ Deploy transaction sent:', deployTxHash)
       

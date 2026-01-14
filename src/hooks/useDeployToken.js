@@ -400,21 +400,34 @@ export const useDeployToken = () => {
       
       console.log('💰 Sending fee to wallet:', feeWallet)
       
-      // Use window.ethereum for both Farcaster and web
-      // Farcaster SDK proxies window.ethereum to use Farcaster wallet
-      if (typeof window === 'undefined' || !window.ethereum) {
-        throw new Error('Wallet not available. Please connect your wallet.')
+      // Use Farcaster provider if available, otherwise use window.ethereum
+      let feeTxHash
+      if (isInFarcaster && farcasterProvider) {
+        // Use Farcaster SDK's Ethereum provider
+        feeTxHash = await farcasterProvider.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from: address,
+            to: feeWallet,
+            value: '0x' + parseEther('0.00005').toString(16),
+            gas: '0x5208', // 21000 gas for simple transfer
+          }]
+        })
+      } else {
+        // Use window.ethereum for web environment
+        if (typeof window === 'undefined' || !window.ethereum) {
+          throw new Error('Wallet not available. Please connect your wallet.')
+        }
+        feeTxHash = await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from: address,
+            to: feeWallet,
+            value: '0x' + parseEther('0.00005').toString(16),
+            gas: '0x5208', // 21000 gas for simple transfer
+          }]
+        })
       }
-      
-      const feeTxHash = await window.ethereum.request({
-        method: 'eth_sendTransaction',
-        params: [{
-          from: address,
-          to: feeWallet,
-          value: '0x' + parseEther('0.00005').toString(16),
-          gas: '0x5208', // 21000 gas for simple transfer
-        }]
-      })
       
       console.log('✅ Fee transaction sent:', feeTxHash)
       
@@ -443,20 +456,32 @@ export const useDeployToken = () => {
       
       const deployData = ERC20_BYTECODE + constructorData.slice(2)
       
-      // Use window.ethereum for both Farcaster and web
-      // Farcaster SDK proxies window.ethereum to use Farcaster wallet
-      if (typeof window === 'undefined' || !window.ethereum) {
-        throw new Error('Wallet not available. Please connect your wallet.')
+      // Use Farcaster provider if available, otherwise use window.ethereum
+      let deployTxHash
+      if (isInFarcaster && farcasterProvider) {
+        // Use Farcaster SDK's Ethereum provider
+        deployTxHash = await farcasterProvider.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from: address,
+            data: deployData,
+            gas: '0x1e8480', // 2M gas for contract deployment
+          }]
+        })
+      } else {
+        // Use window.ethereum for web environment
+        if (typeof window === 'undefined' || !window.ethereum) {
+          throw new Error('Wallet not available. Please connect your wallet.')
+        }
+        deployTxHash = await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from: address,
+            data: deployData,
+            gas: '0x1e8480', // 2M gas for contract deployment
+          }]
+        })
       }
-      
-      const deployTxHash = await window.ethereum.request({
-        method: 'eth_sendTransaction',
-        params: [{
-          from: address,
-          data: deployData,
-          gas: '0x1e8480', // 2M gas for contract deployment
-        }]
-      })
       
       console.log('✅ Deploy transaction sent:', deployTxHash)
       
