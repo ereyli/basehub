@@ -462,6 +462,232 @@ export default function StatsPanel({ isMobile = false }: StatsPanelProps) {
           </span>
         </div>
       </div>
+
+      {/* XP Rewards Event Details */}
+      <div style={{
+        marginTop: '20px',
+        paddingTop: '20px',
+        borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.08) 100%)',
+        borderRadius: '16px',
+        padding: isMobile ? '16px' : '20px',
+        border: '1px solid rgba(59, 130, 246, 0.2)',
+        boxShadow: '0 4px 16px rgba(59, 130, 246, 0.1)'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: '16px'
+        }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.2) 100%)',
+            border: '1px solid rgba(251, 191, 36, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '24px',
+            boxShadow: '0 4px 12px rgba(251, 191, 36, 0.2)'
+          }}>
+            ⚡
+          </div>
+          <div>
+            <h3 style={{
+              fontSize: isMobile ? '16px' : '18px',
+              fontWeight: '700',
+              color: '#ffffff',
+              margin: 0,
+              marginBottom: '4px',
+              background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              XP Rewards Program
+            </h3>
+            <p style={{
+              fontSize: '12px',
+              color: 'rgba(255, 255, 255, 0.6)',
+              margin: 0
+            }}>
+              Earn rewards on every swap!
+            </p>
+          </div>
+        </div>
+
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px'
+        }}>
+          <div style={{
+            padding: '12px',
+            background: 'rgba(255, 255, 255, 0.03)',
+            borderRadius: '12px',
+            border: '1px solid rgba(59, 130, 246, 0.15)'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '8px'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)',
+                  border: '1px solid rgba(251, 191, 36, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '16px'
+                }}>
+                  🎯
+                </div>
+                <div>
+                  <div style={{
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#ffffff',
+                    marginBottom: '2px'
+                  }}>
+                    Base Reward
+                  </div>
+                  <div style={{
+                    fontSize: '11px',
+                    color: 'rgba(255, 255, 255, 0.5)'
+                  }}>
+                    Every swap earns you XP
+                  </div>
+                </div>
+              </div>
+              <div style={{
+                padding: '6px 12px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)',
+                border: '1px solid rgba(251, 191, 36, 0.3)',
+                fontSize: '16px',
+                fontWeight: '700',
+                color: '#fbbf24'
+              }}>
+                250 XP
+              </div>
+            </div>
+            <p style={{
+              fontSize: '12px',
+              color: 'rgba(255, 255, 255, 0.7)',
+              margin: 0,
+              lineHeight: '1.5'
+            }}>
+              Get instant XP rewards on every successful swap, regardless of volume. Build your XP and climb the leaderboard!
+            </p>
+          </div>
+
+          <div style={{
+            padding: '12px',
+            background: 'rgba(255, 255, 255, 0.03)',
+            borderRadius: '12px',
+            border: '1px solid rgba(59, 130, 246, 0.15)'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '8px'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%)',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '16px'
+                }}>
+                  🚀
+                </div>
+                <div>
+                  <div style={{
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#ffffff',
+                    marginBottom: '2px'
+                  }}>
+                    Volume Milestone Bonus
+                  </div>
+                  <div style={{
+                    fontSize: '11px',
+                    color: 'rgba(255, 255, 255, 0.5)'
+                  }}>
+                    Massive bonus for high volume traders
+                  </div>
+                </div>
+              </div>
+              <div style={{
+                padding: '6px 12px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                fontSize: '16px',
+                fontWeight: '700',
+                color: '#60a5fa'
+              }}>
+                5,000 XP
+              </div>
+            </div>
+            <p style={{
+              fontSize: '12px',
+              color: 'rgba(255, 255, 255, 0.7)',
+              margin: 0,
+              lineHeight: '1.5'
+            }}>
+              Reach <strong style={{ color: '#60a5fa' }}>$500</strong> in cumulative swap volume and unlock a massive <strong style={{ color: '#fbbf24' }}>5,000 XP bonus</strong>! Multiple milestones = multiple bonuses. Trade more, earn more!
+            </p>
+          </div>
+
+          <div style={{
+            marginTop: '8px',
+            padding: '12px',
+            background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%)',
+            borderRadius: '12px',
+            border: '1px solid rgba(251, 191, 36, 0.2)',
+            textAlign: 'center' as const
+          }}>
+            <div style={{
+              fontSize: '13px',
+              fontWeight: '600',
+              color: '#fbbf24',
+              marginBottom: '4px'
+            }}>
+              💎 Pro Tip
+            </div>
+            <p style={{
+              fontSize: '11px',
+              color: 'rgba(255, 255, 255, 0.8)',
+              margin: 0,
+              lineHeight: '1.4'
+            }}>
+              Combine base rewards with milestone bonuses to maximize your XP earnings. Every swap counts towards your next milestone!
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
