@@ -34,6 +34,7 @@ import ContractSecurity from './pages/ContractSecurity'
 import AllowanceCleaner from './pages/AllowanceCleaner'
 import FeaturedProfiles from './pages/FeaturedProfiles'
 import SwapHub from './pages/SwapHub'
+import Profile from './pages/Profile'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
 import './styles/index.css'
@@ -232,6 +233,7 @@ function FarcasterAppContent() {
             <Route path="/allowance-cleaner" element={<AllowanceCleaner />} />
             <Route path="/featured-profiles" element={<FeaturedProfiles />} />
             <Route path="/swap" element={<SwapHub />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
           </Routes>
@@ -273,6 +275,7 @@ function WebAppContent() {
             <Route path="/allowance-cleaner" element={<AllowanceCleaner />} />
             <Route path="/featured-profiles" element={<FeaturedProfiles />} />
             <Route path="/swap" element={<SwapHub />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
           </Routes>
