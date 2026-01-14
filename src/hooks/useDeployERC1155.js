@@ -530,12 +530,11 @@ export const useDeployERC1155 = () => {
       
       const deployData = ERC1155_BYTECODE + constructorData.slice(2)
       
-      // Use wagmi sendTransaction for both Farcaster and web (Farcaster uses wagmi connector)
+      // Use walletClient for Farcaster (automatically uses Farcaster connector) or window.ethereum for web
       let deployTxHash
-      if (isInFarcaster) {
-        // Use wagmi sendTransaction for Farcaster (works with Farcaster connector)
-        const { sendTransaction } = await import('wagmi/actions')
-        const result = await sendTransaction(config, {
+      if (isInFarcaster && walletClient) {
+        // Use walletClient for Farcaster (automatically uses Farcaster connector)
+        const result = await walletClient.sendTransaction({
           data: deployData,
           gas: 2000000n, // 2M gas for contract deployment
         })
