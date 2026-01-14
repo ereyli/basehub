@@ -54,10 +54,12 @@ const Profile = () => {
         if (supabase) {
           console.log('🔍 Loading profile data for:', address)
           
+          // Try both lowercase and original case for wallet_address
+          const walletAddressLower = address.toLowerCase()
           const { data: player, error: playerError } = await supabase
             .from('players')
             .select('*')
-            .eq('wallet_address', address.toLowerCase())
+            .or(`wallet_address.eq.${walletAddressLower},wallet_address.eq.${address}`)
             .single()
 
           console.log('👤 Player data:', { player, playerError })
@@ -73,7 +75,7 @@ const Profile = () => {
             const { count: txCountResult, error: txCountError } = await supabase
               .from('transactions')
               .select('*', { count: 'exact', head: true })
-              .eq('wallet_address', address.toLowerCase())
+              .or(`wallet_address.eq.${walletAddressLower},wallet_address.eq.${address}`)
 
             console.log('📊 Transaction count result:', { txCountResult, txCountError })
             if (!txCountError && txCountResult !== null) {
@@ -82,10 +84,11 @@ const Profile = () => {
           }
 
           // Load ALL transactions for statistics (not just recent 10)
+          // Try both lowercase and original case
           const { data: allTransactions, error: allTxError } = await supabase
             .from('transactions')
             .select('*')
-            .eq('wallet_address', address.toLowerCase())
+            .or(`wallet_address.eq.${walletAddressLower},wallet_address.eq.${address}`)
             .order('created_at', { ascending: false })
 
           console.log('📋 All transactions:', { 
