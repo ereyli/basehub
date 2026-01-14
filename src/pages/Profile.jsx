@@ -9,46 +9,7 @@ import {
 import { getXP } from '../utils/xpUtils'
 import { useQuestSystem } from '../hooks/useQuestSystem'
 import { useSupabase } from '../hooks/useSupabase'
-// BackButton component inline
-const BackButton = () => {
-  const navigate = useNavigate()
-  return (
-    <button
-      onClick={() => navigate('/')}
-      style={{
-        position: 'fixed',
-        top: '100px',
-        left: '20px',
-        zIndex: 1000,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '10px 16px',
-        backgroundColor: 'rgba(30, 41, 59, 0.8)',
-        border: '1px solid rgba(59, 130, 246, 0.3)',
-        borderRadius: '12px',
-        color: '#ffffff',
-        fontSize: '14px',
-        fontWeight: '500',
-        cursor: 'pointer',
-        transition: 'all 0.2s ease',
-        backdropFilter: 'blur(10px)',
-        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)'
-        e.currentTarget.style.transform = 'translateX(-2px)'
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(30, 41, 59, 0.8)'
-        e.currentTarget.style.transform = 'translateX(0)'
-      }}
-    >
-      <ArrowLeft size={18} />
-      <span>Home</span>
-    </button>
-  )
-}
+import BackButton from '../components/BackButton'
 
 const Profile = () => {
   const navigate = useNavigate()
