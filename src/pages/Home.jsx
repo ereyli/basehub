@@ -37,7 +37,6 @@ const Home = () => {
   const isWeb = shouldUseRainbowKit()
   
   const [leaderboard, setLeaderboard] = useState([])
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [leaderboardLoading, setLeaderboardLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [isLoadingGM, setIsLoadingGM] = useState(false)
@@ -337,38 +336,8 @@ const Home = () => {
         buttonText="Play BaseHub"
       />
       
-      {/* Hamburger Menu */}
-      {(
-        <div style={{
-          position: 'fixed',
-          top: '12px',
-          right: '12px',
-          zIndex: 9999
-        }}>
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            style={{
-              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(245, 158, 11, 0.4)',
-              transition: 'all 0.2s ease',
-              minWidth: '36px',
-              minHeight: '36px'
-            }}
-          >
-            {isMenuOpen ? <X size={20} style={{ color: 'white' }} /> : <Menu size={20} style={{ color: 'white' }} />}
-          </button>
-        </div>
-      )}
-
       {/* Side Menu */}
-      {isMenuOpen && (
+      {false && (
         <div style={{
           position: 'fixed',
           top: '0',
@@ -440,21 +409,6 @@ const Home = () => {
         </div>
       )}
 
-      {/* Overlay for menu */}
-      {isMenuOpen && (
-        <div
-          onClick={() => setIsMenuOpen(false)}
-          style={{
-            position: 'fixed',
-            top: '0',
-            left: '0',
-            width: '100vw',
-            height: '100vh',
-            background: 'rgba(0, 0, 0, 0.3)',
-            zIndex: 9997
-          }}
-        />
-      )}
 
       <div className="welcome-section">
         <div className="card">
