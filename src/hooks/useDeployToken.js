@@ -352,13 +352,12 @@ export const useDeployToken = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   
-  // Get Farcaster context if available
-  let farcasterContext = null
+  // Check if we're in Farcaster environment
   let isInFarcaster = false
   if (!shouldUseRainbowKit()) {
     try {
       const { useFarcaster } = require('../contexts/FarcasterContext')
-      farcasterContext = useFarcaster()
+      const farcasterContext = useFarcaster()
       isInFarcaster = farcasterContext?.isInFarcaster || false
     } catch (error) {
       // If FarcasterProvider is not available, continue without it
