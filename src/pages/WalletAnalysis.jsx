@@ -82,11 +82,11 @@ export default function WalletAnalysis() {
   // Compact StatCard Component
   const StatCard = ({ icon, label, value, color }) => (
     <div style={{
-      background: 'white',
+      background: 'rgba(30, 41, 59, 0.95)',
       borderRadius: '16px',
       padding: '20px',
-      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
-      border: '2px solid #f3f4f6',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+      border: '2px solid rgba(102, 126, 234, 0.1)',
       transition: 'all 0.2s',
     }}>
       <div style={{
@@ -119,11 +119,11 @@ export default function WalletAnalysis() {
   // Compact InfoCard Component
   const InfoCard = ({ title, value, subtitle, icon }) => (
     <div style={{
-      background: 'white',
+      background: 'rgba(30, 41, 59, 0.95)',
       borderRadius: '12px',
       padding: '16px',
-      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-      border: '1px solid #f3f4f6',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+      border: '1px solid rgba(102, 126, 234, 0.1)',
     }}>
       <div style={{
         display: 'flex',
@@ -347,13 +347,13 @@ export default function WalletAnalysis() {
 
           {/* Input Section - Enhanced */}
           <div style={{
-            background: 'rgba(255, 255, 255, 0.95)',
+            background: 'rgba(30, 41, 59, 0.95)',
             backdropFilter: 'blur(20px)',
             borderRadius: '24px',
             padding: '32px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
             marginBottom: '32px',
-            border: '1px solid rgba(255, 255, 255, 0.5)',
+            border: '2px solid rgba(102, 126, 234, 0.1)',
           }}>
             <div style={{
               display: 'flex',
@@ -671,13 +671,13 @@ export default function WalletAnalysis() {
 
               {/* Top Tokens Section - Enhanced */}
               <div style={{
-                background: 'rgba(255, 255, 255, 0.95)',
+                background: 'rgba(30, 41, 59, 0.95)',
                 backdropFilter: 'blur(20px)',
                 borderRadius: '24px',
                 padding: '40px',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
                 marginBottom: '32px',
-                border: '1px solid rgba(255, 255, 255, 0.5)',
+                border: '2px solid rgba(102, 126, 234, 0.1)',
               }}>
                 <h3 style={{
                   fontSize: '28px',
@@ -714,20 +714,20 @@ export default function WalletAnalysis() {
                         key={index}
                         style={{
                           padding: '24px',
-                          background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)',
+                          background: 'rgba(15, 23, 42, 0.8)',
                           borderRadius: '16px',
-                          border: '2px solid #e5e7eb',
+                          border: '2px solid rgba(102, 126, 234, 0.2)',
                           transition: 'all 0.3s',
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)'
-                          e.currentTarget.style.boxShadow = '0 12px 24px rgba(0, 0, 0, 0.15)'
+                          e.currentTarget.style.boxShadow = '0 12px 24px rgba(102, 126, 234, 0.3)'
                           e.currentTarget.style.borderColor = '#667eea'
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.transform = 'translateY(0) scale(1)'
                           e.currentTarget.style.boxShadow = 'none'
-                          e.currentTarget.style.borderColor = '#e5e7eb'
+                          e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.2)'
                         }}
                       >
                         <div style={{
@@ -825,7 +825,7 @@ export default function WalletAnalysis() {
                         }}
                       >
                         <span style={{ fontSize: '32px' }}>✨</span>
-                        <span style={{ color: '#1f2937', fontWeight: '500' }}>{fact}</span>
+                        <span style={{ color: '#e5e7eb', fontWeight: '500' }}>{fact}</span>
                       </div>
                     ))}
                   </div>
@@ -836,12 +836,12 @@ export default function WalletAnalysis() {
               <div style={{
                 marginTop: '40px',
                 padding: '28px',
-                background: 'rgba(255, 255, 255, 0.95)',
+                background: 'rgba(30, 41, 59, 0.95)',
                 backdropFilter: 'blur(20px)',
                 borderRadius: '20px',
                 textAlign: 'center',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.5)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+                border: '2px solid rgba(102, 126, 234, 0.1)',
               }}>
                 <div style={{
                   color: '#9ca3af',
@@ -857,10 +857,10 @@ export default function WalletAnalysis() {
                   fontWeight: '700',
                   color: '#e5e7eb',
                   wordBreak: 'break-all',
-                  background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
+                  background: 'rgba(15, 23, 42, 0.8)',
                   padding: '16px 24px',
                   borderRadius: '12px',
-                  border: '2px solid #d1d5db',
+                  border: '2px solid rgba(102, 126, 234, 0.2)',
                 }}>
                   {analysis.walletAddress}
                 </div>
@@ -913,10 +913,10 @@ export default function WalletAnalysis() {
 function LargeStatCard({ icon, label, value, color, bgGradient }) {
   return (
     <div style={{
-      background: bgGradient || 'white',
+      background: bgGradient || 'rgba(30, 41, 59, 0.95)',
       borderRadius: '24px',
       padding: '36px 28px',
-      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1)',
+      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -933,13 +933,13 @@ function LargeStatCard({ icon, label, value, color, bgGradient }) {
     }}
     onMouseLeave={(e) => {
       e.currentTarget.style.transform = 'translateY(0) scale(1)'
-      e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.1)'
+      e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.2)'
       e.currentTarget.style.borderColor = `${color}30`
     }}
     >
       <div style={{
         color: color,
-        background: 'white',
+        background: 'rgba(15, 23, 42, 0.8)',
         width: '80px',
         height: '80px',
         borderRadius: '20px',
@@ -977,11 +977,11 @@ function LargeStatCard({ icon, label, value, color, bgGradient }) {
 function DetailCard({ title, value, subtitle, icon, color }) {
   return (
     <div style={{
-      background: 'rgba(255, 255, 255, 0.95)',
+      background: 'rgba(30, 41, 59, 0.95)',
       backdropFilter: 'blur(20px)',
       borderRadius: '20px',
       padding: '28px',
-      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1)',
+      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
       border: `3px solid ${color}20`,
       transition: 'all 0.3s',
     }}
@@ -993,7 +993,7 @@ function DetailCard({ title, value, subtitle, icon, color }) {
     onMouseLeave={(e) => {
       e.currentTarget.style.borderColor = `${color}20`
       e.currentTarget.style.transform = 'translateY(0)'
-      e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.1)'
+      e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.2)'
     }}
     >
       <div style={{
@@ -1018,7 +1018,7 @@ function DetailCard({ title, value, subtitle, icon, color }) {
         <span style={{
           fontSize: '18px',
           fontWeight: '700',
-          color: '#9ca3af',
+          color: '#e5e7eb',
         }}>
           {title}
         </span>
