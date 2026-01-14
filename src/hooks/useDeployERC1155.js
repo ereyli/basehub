@@ -6,6 +6,7 @@ import { config } from '../config/wagmi'
 import { addXP, recordTransaction } from '../utils/xpUtils'
 import { useNetworkCheck } from './useNetworkCheck'
 import { useQuestSystem } from './useQuestSystem'
+import { shouldUseRainbowKit } from '../config/rainbowkit'
 // ERC1155 doesn't need IPFS uploads - uses URI system instead
 
 // ERC1155 Contract ABI
@@ -437,6 +438,20 @@ export const useDeployERC1155 = () => {
   const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
+  
+  // Get Farcaster context if available
+  let farcasterContext = null
+  let isInFarcaster = false
+  if (!shouldUseRainbowKit()) {
+    try {
+      const { useFarcaster } = require('../contexts/FarcasterContext')
+      farcasterContext = useFarcaster()
+      isInFarcaster = farcasterContext?.isInFarcaster || false
+    } catch (error) {
+      // If FarcasterProvider is not available, continue without it
+      isInFarcaster = false
+    }
+  }
 
   // Network validation and auto-switch function
   const validateAndSwitchNetwork = async () => {
@@ -515,15 +530,29 @@ export const useDeployERC1155 = () => {
       
       const deployData = ERC1155_BYTECODE + constructorData.slice(2)
       
-      // Use window.ethereum.request for Farcaster compatibility (like ERC20)
-      const deployTxHash = await window.ethereum.request({
-        method: 'eth_sendTransaction',
-        params: [{
-          from: address,
+      // Use Farcaster SDK or window.ethereum based on environment
+      let deployTxHash
+      if (isInFarcaster && farcasterContext?.sendTransaction) {
+        // Use Farcaster SDK for Farcaster environment
+        const result = await farcasterContext.sendTransaction({
           data: deployData,
-          gas: '0x1e8480', // 2M gas for contract deployment
-        }]
-      })
+          gas: 2000000n, // 2M gas for contract deployment
+        })
+        deployTxHash = result.transaction
+      } else {
+        // Use window.ethereum for web environment
+        if (typeof window === 'undefined' || !window.ethereum) {
+          throw new Error('Wallet not available. Please connect your wallet.')
+        }
+        deployTxHash = await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from: address,
+            data: deployData,
+            gas: '0x1e8480', // 2M gas for contract deployment
+          }]
+        })
+      }
       
       console.log('✅ Deploy transaction sent:', deployTxHash)
       

@@ -7,6 +7,7 @@ import { addXP, recordTransaction } from '../utils/xpUtils'
 import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/pinata'
 import { useNetworkCheck } from './useNetworkCheck'
 import { useQuestSystem } from './useQuestSystem'
+import { shouldUseRainbowKit } from '../config/rainbowkit'
 
 // ERC721 Contract ABI
 const ERC721_ABI = [
@@ -456,6 +457,20 @@ export const useDeployERC721 = () => {
   const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
+  
+  // Get Farcaster context if available
+  let farcasterContext = null
+  let isInFarcaster = false
+  if (!shouldUseRainbowKit()) {
+    try {
+      const { useFarcaster } = require('../contexts/FarcasterContext')
+      farcasterContext = useFarcaster()
+      isInFarcaster = farcasterContext?.isInFarcaster || false
+    } catch (error) {
+      // If FarcasterProvider is not available, continue without it
+      isInFarcaster = false
+    }
+  }
 
   // Network validation and auto-switch function
   const validateAndSwitchNetwork = async () => {
@@ -519,16 +534,31 @@ export const useDeployERC721 = () => {
 
       console.log('💰 Sending fee to wallet:', feeWallet)
       
-      // Use a simple ETH transfer instead of sendTransaction
-      const feeTxHash = await window.ethereum.request({
-        method: 'eth_sendTransaction',
-        params: [{
-          from: address,
+      // Use Farcaster SDK or window.ethereum based on environment
+      let feeTxHash
+      if (isInFarcaster && farcasterContext?.sendTransaction) {
+        // Use Farcaster SDK for Farcaster environment
+        const result = await farcasterContext.sendTransaction({
           to: feeWallet,
-          value: '0x' + parseEther('0.00007').toString(16),
-          gas: '0x5208', // 21000 gas for simple transfer
-        }]
-      })
+          value: parseEther('0.00007'),
+          gas: 21000n,
+        })
+        feeTxHash = result.transaction
+      } else {
+        // Use window.ethereum for web environment
+        if (typeof window === 'undefined' || !window.ethereum) {
+          throw new Error('Wallet not available. Please connect your wallet.')
+        }
+        feeTxHash = await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from: address,
+            to: feeWallet,
+            value: '0x' + parseEther('0.00007').toString(16),
+            gas: '0x5208', // 21000 gas for simple transfer
+          }]
+        })
+      }
 
       console.log('✅ Fee transaction sent:', feeTxHash)
 
@@ -561,15 +591,29 @@ export const useDeployERC721 = () => {
       
       const deployData = ERC721_BYTECODE + constructorData.slice(2)
       
-      // Use window.ethereum.request for Farcaster compatibility (like ERC20)
-      const deployTxHash = await window.ethereum.request({
-        method: 'eth_sendTransaction',
-        params: [{
-          from: address,
+      // Use Farcaster SDK or window.ethereum based on environment
+      let deployTxHash
+      if (isInFarcaster && farcasterContext?.sendTransaction) {
+        // Use Farcaster SDK for Farcaster environment
+        const result = await farcasterContext.sendTransaction({
           data: deployData,
-          gas: '0x1e8480', // 2M gas for contract deployment
-        }]
-      })
+          gas: 2000000n, // 2M gas for contract deployment
+        })
+        deployTxHash = result.transaction
+      } else {
+        // Use window.ethereum for web environment
+        if (typeof window === 'undefined' || !window.ethereum) {
+          throw new Error('Wallet not available. Please connect your wallet.')
+        }
+        deployTxHash = await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from: address,
+            data: deployData,
+            gas: '0x1e8480', // 2M gas for contract deployment
+          }]
+        })
+      }
       
       console.log('✅ Deploy transaction sent:', deployTxHash)
       
