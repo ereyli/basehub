@@ -339,53 +339,6 @@ const Profile = () => {
               )}
             </div>
 
-            {/* Activity Stats */}
-            <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>
-                <Activity size={20} style={{ color: '#60a5fa', marginRight: '8px' }} />
-                Activity Statistics
-              </h2>
-              <div style={styles.activityGrid}>
-                <div style={styles.activityCard}>
-                  <Gamepad2 size={18} style={{ color: '#60a5fa' }} />
-                  <div style={styles.activityInfo}>
-                    <div style={styles.activityLabel}>Games Played</div>
-                    <div style={styles.activityValue}>{stats.gamesPlayed}</div>
-                  </div>
-                </div>
-                <div style={styles.activityCard}>
-                  <RefreshCw size={18} style={{ color: '#60a5fa' }} />
-                  <div style={styles.activityInfo}>
-                    <div style={styles.activityLabel}>Swaps</div>
-                    <div style={styles.activityValue}>{stats.swapsCompleted}</div>
-                  </div>
-                </div>
-                <div style={styles.activityCard}>
-                  <Layers size={18} style={{ color: '#60a5fa' }} />
-                  <div style={styles.activityInfo}>
-                    <div style={styles.activityLabel}>NFTs Minted</div>
-                    <div style={styles.activityValue}>{stats.nftsMinted}</div>
-                  </div>
-                </div>
-                <div style={styles.activityCard}>
-                  <MessageSquare size={18} style={{ color: '#60a5fa' }} />
-                  <div style={styles.activityInfo}>
-                    <div style={styles.activityLabel}>GM/GN Messages</div>
-                    <div style={styles.activityValue}>{stats.gmUsed + stats.gnUsed}</div>
-                  </div>
-                </div>
-                {stats.totalVolume > 0 && (
-                  <div style={styles.activityCard}>
-                    <Coins size={18} style={{ color: '#60a5fa' }} />
-                    <div style={styles.activityInfo}>
-                      <div style={styles.activityLabel}>Swap Volume</div>
-                      <div style={styles.activityValue}>${stats.totalVolume.toFixed(2)}</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
             {/* Daily Quests */}
             <div style={styles.section}>
               <div style={styles.sectionHeader}>
