@@ -255,9 +255,13 @@ const Profile = () => {
     })
   }
 
-  return (
-    <>
-      <style>{`
+  // Inject CSS animations
+  useEffect(() => {
+    const styleId = 'nft-float-animations'
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style')
+      style.id = styleId
+      style.textContent = `
         @keyframes nftFloat {
           0%, 100% {
             transform: translateY(0px) rotateY(0deg) rotateX(0deg);
@@ -272,14 +276,19 @@ const Profile = () => {
             transform: translateY(-12px) rotateY(-5deg) rotateX(-3deg);
           }
         }
-        
-        @keyframes spinning {
-          from { transform: rotate(0deg) translateY(0px); }
-          50% { transform: rotate(180deg) translateY(-10px); }
-          to { transform: rotate(360deg) translateY(0px); }
-        }
-      `}</style>
-      <div style={styles.container}>
+      `
+      document.head.appendChild(style)
+    }
+    return () => {
+      const styleElement = document.getElementById(styleId)
+      if (styleElement) {
+        styleElement.remove()
+      }
+    }
+  }, [])
+
+  return (
+    <div style={styles.container}>
         <BackButton />
       
       <div style={styles.content}>
@@ -567,7 +576,7 @@ const Profile = () => {
           </>
         )}
       </div>
-    </>
+    </div>
   )
 }
 
