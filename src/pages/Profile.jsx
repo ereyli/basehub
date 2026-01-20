@@ -33,18 +33,21 @@ const Profile = () => {
   })
   
   // Get Early Access NFT balance
-  const { data: nftBalance } = useReadContract({
+  const { data: nftBalance, error: nftBalanceError } = useReadContract({
     address: EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS || undefined,
     abi: EARLY_ACCESS_ABI,
     functionName: 'balanceOf',
-    args: [address],
+    args: address ? [address] : undefined,
     query: {
-      enabled: !!address && !!EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS,
-      refetchInterval: 10000 // Refresh every 10 seconds
+      enabled: !!address && !!EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS && !!isConnected,
+      refetchInterval: 10000, // Refresh every 10 seconds
+      retry: 1, // Reduce retries to prevent infinite loops
+      retryOnMount: false
     }
   })
   
-  const userNFTCount = nftBalance ? Number(nftBalance) : 0
+  // Safely convert to number, default to 0 if error or undefined
+  const userNFTCount = (nftBalance && !nftBalanceError && isConnected) ? Number(nftBalance) : 0
 
   // Calculate level from XP
   const calculateLevel = (xp) => {
@@ -263,11 +266,16 @@ const Profile = () => {
 
   // Inject CSS animations
   useEffect(() => {
+    // Check if we're in browser environment
+    if (typeof document === 'undefined') return
+    
     const styleId = 'nft-float-animations'
-    if (!document.getElementById(styleId)) {
-      const style = document.createElement('style')
-      style.id = styleId
-      style.textContent = `
+    let styleElement = document.getElementById(styleId)
+    
+    if (!styleElement) {
+      styleElement = document.createElement('style')
+      styleElement.id = styleId
+      styleElement.textContent = `
         @keyframes nftFloat {
           0%, 100% {
             transform: translateY(0px) rotateY(0deg) rotateX(0deg);
@@ -283,12 +291,18 @@ const Profile = () => {
           }
         }
       `
-      document.head.appendChild(style)
+      if (document.head) {
+        document.head.appendChild(styleElement)
+      }
     }
+    
     return () => {
-      const styleElement = document.getElementById(styleId)
-      if (styleElement) {
-        styleElement.remove()
+      // Only cleanup if we're in browser and element exists
+      if (typeof document !== 'undefined') {
+        const element = document.getElementById(styleId)
+        if (element && element.parentNode) {
+          element.parentNode.removeChild(element)
+        }
       }
     }
   }, [])
