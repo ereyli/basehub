@@ -213,10 +213,16 @@ const Profile = () => {
       const isCompletedByProgress = quest.current >= quest.required
       const isCompleted = isCompletedInDB || isCompletedByProgress
       
+      // If quest is completed in DB but current progress is less, show it as completed
+      // with progress at 100% for visual consistency
+      const displayCurrent = isCompletedInDB && quest.current < quest.required ? quest.required : quest.current
+      const progress = isCompleted ? 100 : Math.min((quest.current / quest.required) * 100, 100)
+      
       return {
         ...quest,
         isCompleted,
-        progress: Math.min((quest.current / quest.required) * 100, 100)
+        current: displayCurrent, // Use displayCurrent for visual consistency
+        progress
       }
     })
   }
