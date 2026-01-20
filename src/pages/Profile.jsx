@@ -32,22 +32,24 @@ const Profile = () => {
     totalVolume: 0
   })
   
-  // Get Early Access NFT balance
+  // Get Early Access NFT balance - always call hook but disable when conditions not met
+  const shouldFetchNFTBalance = !!address && !!EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS && !!isConnected
   const { data: nftBalance, error: nftBalanceError } = useReadContract({
-    address: EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS || undefined,
+    address: shouldFetchNFTBalance ? (EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS || undefined) : undefined,
     abi: EARLY_ACCESS_ABI,
     functionName: 'balanceOf',
-    args: address ? [address] : undefined,
+    args: shouldFetchNFTBalance && address ? [address] : undefined,
     query: {
-      enabled: !!address && !!EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS && !!isConnected,
-      refetchInterval: 10000, // Refresh every 10 seconds
-      retry: 1, // Reduce retries to prevent infinite loops
-      retryOnMount: false
+      enabled: shouldFetchNFTBalance,
+      refetchInterval: shouldFetchNFTBalance ? 10000 : false, // Disable refetch when not enabled
+      retry: 1,
+      retryOnMount: false,
+      gcTime: 0 // Disable garbage collection to prevent re-fetches
     }
   })
   
   // Safely convert to number, default to 0 if error or undefined
-  const userNFTCount = (nftBalance && !nftBalanceError && isConnected) ? Number(nftBalance) : 0
+  const userNFTCount = (shouldFetchNFTBalance && nftBalance && !nftBalanceError) ? Number(nftBalance) : 0
 
   // Calculate level from XP
   const calculateLevel = (xp) => {
@@ -176,7 +178,8 @@ const Profile = () => {
 
     loadUserData()
     // Only load once when component mounts or address changes
-  }, [isConnected, address, supabase])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected, address])
 
   if (!isConnected || !address) {
     return (
