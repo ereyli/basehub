@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAccount } from 'wagmi'
+import { useAccount, useReadContract } from 'wagmi'
 import { 
   User, ArrowLeft, Zap, Repeat, Calendar, Trophy, TrendingUp, 
   Award, Target, CheckCircle, Clock, BarChart3, Activity,
-  Gamepad2, Coins, Layers, MessageSquare, RefreshCw, Medal
+  Gamepad2, Coins, Layers, MessageSquare, RefreshCw, Medal, Sparkles
 } from 'lucide-react'
 import { getXP } from '../utils/xpUtils'
 import { useQuestSystem } from '../hooks/useQuestSystem'
 import { useSupabase } from '../hooks/useSupabase'
 import BackButton from '../components/BackButton'
+import { EARLY_ACCESS_CONFIG, EARLY_ACCESS_ABI } from '../config/earlyAccessNFT'
 
 const Profile = () => {
   const navigate = useNavigate()
@@ -30,6 +31,20 @@ const Profile = () => {
     gnUsed: 0,
     totalVolume: 0
   })
+  
+  // Get Early Access NFT balance
+  const { data: nftBalance } = useReadContract({
+    address: EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS || undefined,
+    abi: EARLY_ACCESS_ABI,
+    functionName: 'balanceOf',
+    args: [address],
+    query: {
+      enabled: !!address && !!EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS,
+      refetchInterval: 10000 // Refresh every 10 seconds
+    }
+  })
+  
+  const userNFTCount = nftBalance ? Number(nftBalance) : 0
 
   // Calculate level from XP
   const calculateLevel = (xp) => {
@@ -241,8 +256,31 @@ const Profile = () => {
   }
 
   return (
-    <div style={styles.container}>
-      <BackButton />
+    <>
+      <style>{`
+        @keyframes nftFloat {
+          0%, 100% {
+            transform: translateY(0px) rotateY(0deg) rotateX(0deg);
+          }
+          25% {
+            transform: translateY(-12px) rotateY(5deg) rotateX(3deg);
+          }
+          50% {
+            transform: translateY(-8px) rotateY(0deg) rotateX(0deg);
+          }
+          75% {
+            transform: translateY(-12px) rotateY(-5deg) rotateX(-3deg);
+          }
+        }
+        
+        @keyframes spinning {
+          from { transform: rotate(0deg) translateY(0px); }
+          50% { transform: rotate(180deg) translateY(-10px); }
+          to { transform: rotate(360deg) translateY(0px); }
+        }
+      `}</style>
+      <div style={styles.container}>
+        <BackButton />
       
       <div style={styles.content}>
         {/* Header Section */}
@@ -430,6 +468,56 @@ const Profile = () => {
               )}
             </div>
 
+            {/* Early Access NFTs */}
+            {userNFTCount > 0 && (
+              <div style={styles.section}>
+                <div style={styles.sectionHeader}>
+                  <h2 style={styles.sectionTitle}>
+                    <Sparkles size={20} style={{ color: '#60a5fa', marginRight: '8px' }} />
+                    Early Access NFTs
+                  </h2>
+                  <div style={styles.nftCountBadge}>
+                    {userNFTCount} {userNFTCount === 1 ? 'NFT' : 'NFTs'}
+                  </div>
+                </div>
+                <div style={styles.nftGrid}>
+                  {Array.from({ length: userNFTCount }).map((_, index) => {
+                    const animationDelay = index * 0.3
+                    const animationDuration = 4 + (index % 3) // Vary between 4-6 seconds
+                    return (
+                      <div
+                        key={index}
+                        style={{
+                          ...styles.nftCard,
+                          animationDelay: `${animationDelay}s`,
+                          animationDuration: `${animationDuration}s`
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-8px) scale(1.05)'
+                          e.currentTarget.style.boxShadow = '0 12px 32px rgba(59, 130, 246, 0.4)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = ''
+                          e.currentTarget.style.boxShadow = ''
+                        }}
+                      >
+                        <div style={styles.nftImageWrapper}>
+                          <img
+                            src="/BaseHubNFT.png"
+                            alt={`Early Access Pass #${index + 1}`}
+                            style={styles.nftImage}
+                          />
+                        </div>
+                        <div style={styles.nftLabel}>
+                          Early Access Pass #{index + 1}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Recent Transactions */}
             {recentTransactions.length > 0 && (
               <div style={styles.section}>
@@ -479,7 +567,7 @@ const Profile = () => {
           </>
         )}
       </div>
-    </div>
+    </>
   )
 }
 
@@ -823,6 +911,63 @@ const styles = {
     fontSize: '13px',
     fontWeight: '500',
     color: '#9ca3af'
+  },
+  nftCountBadge: {
+    padding: '6px 12px',
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#60a5fa',
+    border: '1px solid rgba(59, 130, 246, 0.3)'
+  },
+  nftGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+    gap: '20px',
+    marginTop: '20px'
+  },
+  nftCard: {
+    position: 'relative',
+    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%)',
+    borderRadius: '16px',
+    padding: '16px',
+    border: '1px solid rgba(59, 130, 246, 0.3)',
+    transition: 'all 0.3s ease',
+    cursor: 'default',
+    animation: 'nftFloat 5s ease-in-out infinite',
+    transformStyle: 'preserve-3d',
+    perspective: '1000px'
+  },
+  nftImageWrapper: {
+    position: 'relative',
+    width: '100%',
+    paddingTop: '100%',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    marginBottom: '12px',
+    background: 'rgba(15, 23, 42, 0.4)'
+  },
+  nftImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain',
+    borderRadius: '12px',
+    boxShadow: '0 8px 24px rgba(59, 130, 246, 0.3)',
+    border: '2px solid rgba(59, 130, 246, 0.2)'
+  },
+  nftLabel: {
+    fontSize: '12px',
+    fontWeight: '600',
+    color: '#cbd5e1',
+    textAlign: 'center',
+    padding: '8px',
+    background: 'rgba(15, 23, 42, 0.6)',
+    borderRadius: '8px',
+    border: '1px solid rgba(59, 130, 246, 0.2)'
   }
 }
 
