@@ -85,6 +85,7 @@ const WebBottomNav = () => {
   ]
 
   const nftTools = [
+    { id: 'early-access', title: 'Early Access', icon: <Rocket size={20} />, path: '/early-access', color: '#fbbf24' },
     { id: 'ai-nft', title: 'AI NFT', icon: <Layers size={20} />, path: '/ai-nft', color: '#ec4899' },
   ]
 

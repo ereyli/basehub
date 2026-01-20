@@ -592,6 +592,89 @@ const Home = () => {
                 </div>
               </div>
 
+              {/* Early Access NFT Category */}
+              <div style={{
+                background: 'rgba(30, 41, 59, 0.95)',
+                borderRadius: '20px',
+                padding: '32px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                border: '2px solid rgba(251, 191, 36, 0.2)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                  <div style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '10px',
+                    background: 'rgba(251, 191, 36, 0.15)',
+                    border: '1px solid rgba(251, 191, 36, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fbbf24'
+                  }}>
+                    <Rocket size={22} />
+                  </div>
+                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
+                    EARLY ACCESS NFT
+                  </h2>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                  <Link
+                    to="/early-access"
+                    className="game-card"
+                    style={{ 
+                      textDecoration: 'none',
+                      position: 'relative',
+                      display: 'block'
+                    }}
+                  >
+                    <div style={{
+                      background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                      padding: '24px',
+                      borderRadius: '16px',
+                      color: 'white',
+                      transition: 'all 0.3s ease'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
+                        <Rocket size={35} style={{ color: 'white' }} />
+                        <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
+                          Early Access Pass
+                        </h3>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                        <div style={{
+                          background: 'rgba(30, 41, 59, 0.95)',
+                          borderRadius: '12px',
+                          padding: '2px 8px',
+                          fontSize: '9px',
+                          fontWeight: 'bold',
+                          color: '#fbbf24',
+                          whiteSpace: 'nowrap',
+                          lineHeight: '1.2'
+                        }}>
+                          Limited: 5000
+                        </div>
+                        <div style={{
+                          background: 'rgba(255, 215, 0, 0.95)',
+                          borderRadius: '12px',
+                          padding: '2px 8px',
+                          fontSize: '9px',
+                          fontWeight: 'bold',
+                          color: '#92400e',
+                          whiteSpace: 'nowrap',
+                          lineHeight: '1.2'
+                        }}>
+                          0.001 ETH
+                        </div>
+                      </div>
+                      <p style={{ margin: '12px 0', fontSize: '14px', color: 'rgba(255, 255, 255, 0.9)', lineHeight: '1.4' }}>
+                        Mint your BaseHub Early Access Pass and unlock exclusive benefits
+                      </p>
+                    </div>
+                  </Link>
+                </div>
+              </div>
+
               {/* GAMING Category */}
               <div style={{
                 background: 'rgba(30, 41, 59, 0.95)',

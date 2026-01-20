@@ -73,6 +73,7 @@ const FarcasterBottomNav = () => {
   ]
 
   const nftTools = [
+    { id: 'early-access', title: 'Early Access', icon: <Rocket size={20} />, path: '/early-access', color: '#fbbf24' },
     { id: 'deploy-nft', title: 'Deploy NFT', icon: <Image size={20} />, path: '/deploy-nft', color: '#8b5cf6' },
     { id: 'ai-nft', title: 'AI NFT', icon: <Layers size={20} />, path: '/ai-nft', color: '#ec4899' },
     { id: 'erc721', title: 'ERC721', icon: <Package size={20} />, path: '/deploy-erc721', color: '#06b6d4' },

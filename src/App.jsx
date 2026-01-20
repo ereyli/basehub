@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense, lazy } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
@@ -35,11 +35,91 @@ import AllowanceCleaner from './pages/AllowanceCleaner'
 import FeaturedProfiles from './pages/FeaturedProfiles'
 import SwapHub from './pages/SwapHub'
 import Profile from './pages/Profile'
-import PrivacyPolicy from './pages/PrivacyPolicy'
-import TermsOfService from './pages/TermsOfService'
+import EarlyAccessNFT from './pages/EarlyAccessNFT'
+// Lazy load PrivacyPolicy and TermsOfService to avoid ad blocker issues
+const PrivacyPolicy = lazy(() => 
+  import('./pages/PrivacyPolicy').catch(() => ({
+    default: () => (
+      <div style={{ padding: '40px', textAlign: 'center', color: '#fff' }}>
+        <h2>Privacy Policy</h2>
+        <p>This page could not be loaded. Please disable ad blockers and try again.</p>
+      </div>
+    )
+  }))
+)
+
+const TermsOfService = lazy(() => 
+  import('./pages/TermsOfService').catch(() => ({
+    default: () => (
+      <div style={{ padding: '40px', textAlign: 'center', color: '#fff' }}>
+        <h2>Terms of Service</h2>
+        <p>This page could not be loaded. Please disable ad blockers and try again.</p>
+      </div>
+    )
+  }))
+)
 import './styles/index.css'
 
 const queryClient = new QueryClient()
+
+// Global error handler component
+function GlobalErrorHandler() {
+  useEffect(() => {
+    // Suppress KeyRing locked errors (Coinbase Wallet extension)
+    const originalError = console.error
+    console.error = (...args) => {
+      const errorMessage = args[0]?.toString() || ''
+      const fullMessage = args.join(' ')
+      
+      // Ignore common wallet extension errors
+      if (errorMessage.includes('KeyRing is locked') || 
+          errorMessage.includes('keyring') ||
+          errorMessage.includes('ERR_BLOCKED_BY_CLIENT') ||
+          fullMessage.includes('injectedScript.bundle.js') ||
+          fullMessage.includes('KeyRing is locked')) {
+        // Silently ignore these common extension-related errors
+        return
+      }
+      originalError.apply(console, args)
+    }
+
+    // Handle unhandled promise rejections
+    const handleRejection = (event) => {
+      const errorMessage = event.reason?.message || event.reason?.toString() || ''
+      const errorStack = event.reason?.stack || ''
+      
+      // Ignore wallet extension errors
+      if (errorMessage.includes('KeyRing is locked') || 
+          errorMessage.includes('keyring') ||
+          errorMessage.includes('ERR_BLOCKED_BY_CLIENT') ||
+          errorStack.includes('injectedScript.bundle.js')) {
+        event.preventDefault() // Prevent error from showing in console
+        return
+      }
+    }
+    window.addEventListener('unhandledrejection', handleRejection)
+
+    // Handle general errors
+    const handleError = (event) => {
+      const errorMessage = event.message || ''
+      if (errorMessage.includes('KeyRing is locked') || 
+          errorMessage.includes('ERR_BLOCKED_BY_CLIENT') ||
+          errorMessage.includes('injectedScript.bundle.js')) {
+        event.preventDefault()
+        return
+      }
+    }
+    window.addEventListener('error', handleError)
+
+    return () => {
+      console.error = originalError
+      window.removeEventListener('unhandledrejection', handleRejection)
+      window.removeEventListener('error', handleError)
+    }
+  }, [])
+  
+  return null
+}
 
 // AppContent component for Farcaster users only
 function FarcasterAppContent() {
@@ -94,6 +174,7 @@ function FarcasterAppContent() {
   // Farcaster app - Router'ı her zaman render et, loading overlay ile göster
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <GlobalErrorHandler />
       <div className="App farcaster-app">
         {/* Loading overlay - sadece göster, Router'ı engelleme */}
         {(!isInitialized || !isReady) && (
@@ -213,30 +294,33 @@ function FarcasterAppContent() {
         
         <FarcasterXPDisplay />
         <main className="container farcaster-main" style={{ paddingBottom: '100px' }}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/gm" element={<GMGame />} />
-            <Route path="/gn" element={<GNGame />} />
-            <Route path="/flip" element={<FlipGame />} />
-            <Route path="/lucky" element={<LuckyNumberGame />} />
-            <Route path="/dice" element={<DiceRollGame />} />
-            <Route path="/slot" element={<SlotGame />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/deploy" element={<DeployToken />} />
-            <Route path="/deploy-nft" element={<DeployNFT />} />
-            <Route path="/deploy-erc721" element={<DeployERC721 />} />
-            <Route path="/deploy-erc1155" element={<DeployERC1155 />} />
-            <Route path="/ai-nft" element={<AINFTLaunchpad />} />
-            <Route path="/share" element={<SharePage />} />
-            <Route path="/wallet-analysis" element={<WalletAnalysis />} />
-            <Route path="/contract-security" element={<ContractSecurity />} />
-            <Route path="/allowance-cleaner" element={<AllowanceCleaner />} />
-            <Route path="/featured-profiles" element={<FeaturedProfiles />} />
-            <Route path="/swap" element={<SwapHub />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsOfService />} />
-          </Routes>
+          <Suspense fallback={<SkeletonLoader />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/gm" element={<GMGame />} />
+              <Route path="/gn" element={<GNGame />} />
+              <Route path="/flip" element={<FlipGame />} />
+              <Route path="/lucky" element={<LuckyNumberGame />} />
+              <Route path="/dice" element={<DiceRollGame />} />
+              <Route path="/slot" element={<SlotGame />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/deploy" element={<DeployToken />} />
+              <Route path="/deploy-nft" element={<DeployNFT />} />
+              <Route path="/deploy-erc721" element={<DeployERC721 />} />
+              <Route path="/deploy-erc1155" element={<DeployERC1155 />} />
+              <Route path="/ai-nft" element={<AINFTLaunchpad />} />
+              <Route path="/share" element={<SharePage />} />
+              <Route path="/wallet-analysis" element={<WalletAnalysis />} />
+              <Route path="/contract-security" element={<ContractSecurity />} />
+              <Route path="/allowance-cleaner" element={<AllowanceCleaner />} />
+              <Route path="/featured-profiles" element={<FeaturedProfiles />} />
+              <Route path="/swap" element={<SwapHub />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/early-access" element={<EarlyAccessNFT />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
+            </Routes>
+          </Suspense>
         </main>
         <FarcasterBottomNav />
         <Footer />
@@ -252,33 +336,37 @@ function WebAppContent() {
 
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <GlobalErrorHandler />
       <div className="App web-app">
         <WebHeader />
         <main className="container" style={{ paddingLeft: '80px', paddingBottom: '40px' }}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/gm" element={<GMGame />} />
-            <Route path="/gn" element={<GNGame />} />
-            <Route path="/flip" element={<FlipGame />} />
-            <Route path="/lucky" element={<LuckyNumberGame />} />
-            <Route path="/dice" element={<DiceRollGame />} />
-            <Route path="/slot" element={<SlotGame />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/deploy" element={<DeployToken />} />
-            <Route path="/deploy-nft" element={<DeployNFT />} />
-            <Route path="/deploy-erc721" element={<DeployERC721 />} />
-            <Route path="/deploy-erc1155" element={<DeployERC1155 />} />
-            <Route path="/ai-nft" element={<AINFTLaunchpad />} />
-            <Route path="/share" element={<SharePage />} />
-            <Route path="/wallet-analysis" element={<WalletAnalysis />} />
-            <Route path="/contract-security" element={<ContractSecurity />} />
-            <Route path="/allowance-cleaner" element={<AllowanceCleaner />} />
-            <Route path="/featured-profiles" element={<FeaturedProfiles />} />
-            <Route path="/swap" element={<SwapHub />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsOfService />} />
-          </Routes>
+          <Suspense fallback={<SkeletonLoader />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/gm" element={<GMGame />} />
+              <Route path="/gn" element={<GNGame />} />
+              <Route path="/flip" element={<FlipGame />} />
+              <Route path="/lucky" element={<LuckyNumberGame />} />
+              <Route path="/dice" element={<DiceRollGame />} />
+              <Route path="/slot" element={<SlotGame />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/deploy" element={<DeployToken />} />
+              <Route path="/deploy-nft" element={<DeployNFT />} />
+              <Route path="/deploy-erc721" element={<DeployERC721 />} />
+              <Route path="/deploy-erc1155" element={<DeployERC1155 />} />
+              <Route path="/ai-nft" element={<AINFTLaunchpad />} />
+              <Route path="/share" element={<SharePage />} />
+              <Route path="/wallet-analysis" element={<WalletAnalysis />} />
+              <Route path="/contract-security" element={<ContractSecurity />} />
+              <Route path="/allowance-cleaner" element={<AllowanceCleaner />} />
+              <Route path="/featured-profiles" element={<FeaturedProfiles />} />
+              <Route path="/swap" element={<SwapHub />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/early-access" element={<EarlyAccessNFT />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
+            </Routes>
+          </Suspense>
         </main>
         <WebBottomNav />
         <Footer />
