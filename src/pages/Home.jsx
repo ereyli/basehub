@@ -643,6 +643,24 @@ const Home = () => {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
                         <div style={{
+                          background: 'rgba(16, 185, 129, 0.95)',
+                          borderRadius: '12px',
+                          padding: '4px 10px',
+                          fontSize: '10px',
+                          fontWeight: 'bold',
+                          color: '#fff',
+                          whiteSpace: 'nowrap',
+                          lineHeight: '1.2',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
+                          animation: 'pulse 2s infinite'
+                        }}>
+                          <Zap size={12} style={{ color: '#fff' }} />
+                          3000 XP
+                        </div>
+                        <div style={{
                           background: 'rgba(30, 41, 59, 0.95)',
                           borderRadius: '12px',
                           padding: '2px 8px',
@@ -1841,6 +1859,17 @@ const styles = `
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { 
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% { 
+      opacity: 0.8;
+      transform: scale(1.05);
+    }
   }
 
   .social-link-card {
