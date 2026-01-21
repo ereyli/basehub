@@ -212,14 +212,15 @@ const Home = () => {
   const renderMultiChainText = () => {
     return (
       <span style={{
-        fontSize: '11px',
+        fontSize: '12px',
         fontWeight: '600',
-        color: 'rgba(255, 255, 255, 0.8)',
-        background: 'rgba(59, 130, 246, 0.2)',
-        padding: '2px 8px',
+        color: 'rgba(255, 255, 255, 0.9)',
+        background: 'rgba(139, 92, 246, 0.2)',
+        padding: '4px 10px',
         borderRadius: '8px',
-        border: '1px solid rgba(59, 130, 246, 0.3)',
-        whiteSpace: 'nowrap'
+        border: '1px solid rgba(139, 92, 246, 0.3)',
+        whiteSpace: 'nowrap',
+        fontFamily: 'Poppins, sans-serif'
       }}>
         Multi-chain
       </span>
@@ -241,9 +242,9 @@ const Home = () => {
       id: 'gm',
       title: 'GM Game',
       description: 'Send a GM message to earn XP',
-      icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" loading="lazy" style={{ width: '35px', height: '35px', borderRadius: '18px', objectFit: 'cover' }} />,
+      icon: <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />,
       path: '/gm',
-      color: '#10b981',
+      color: '#3b82f6',
       xpReward: '30 XP',
       bonusXP: null,
       networks: ['base', 'ink']
@@ -252,7 +253,7 @@ const Home = () => {
       id: 'gn',
       title: 'GN Game',
       description: 'Send a GN message to earn XP',
-      icon: <img src="/crypto-logos/basahub logo/GN.png" alt="GN Game" loading="lazy" style={{ width: '35px', height: '35px', borderRadius: '18px', objectFit: 'cover' }} />,
+      icon: <img src="/crypto-logos/basahub logo/GN.png" alt="GN Game" loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />,
       path: '/gn',
       color: '#3b82f6',
       xpReward: '30 XP',
@@ -263,9 +264,9 @@ const Home = () => {
       id: 'ai-nft',
       title: 'AI NFT Launchpad',
       description: 'Generate AI art and mint as NFT',
-      icon: <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" loading="lazy" style={{ width: '35px', height: '35px', borderRadius: '18px', objectFit: 'cover' }} />,
+      icon: <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />,
       path: '/ai-nft',
-      color: '#3b82f6',
+      color: '#f59e0b',
       xpReward: '500 XP',
       bonusXP: null,
       networks: ['base']
@@ -274,9 +275,9 @@ const Home = () => {
       id: 'x402-premium',
       title: 'x402 test',
       description: 'Pay 0.1 USDC via x402',
-      icon: <Star size={35} style={{ color: 'white' }} />,
+      icon: <Star size={40} style={{ color: 'white' }} />,
       path: null, // Special handler
-      color: '#667eea',
+      color: '#8b5cf6',
       xpReward: '500 XP',
       bonusXP: '0.1 USDC',
       isPayment: true, // Mark as payment button
@@ -287,9 +288,9 @@ const Home = () => {
       id: 'wallet-analysis',
       title: 'Wallet Analysis',
       description: 'Get fun insights about any wallet',
-      icon: <Search size={35} style={{ color: 'white' }} />,
+      icon: <Search size={40} style={{ color: 'white' }} />,
       path: '/wallet-analysis',
-      color: '#ec4899',
+      color: '#8b5cf6',
       xpReward: '400 XP',
       bonusXP: '0.40 USDC',
       isX402: true, // Mark as x402 payment
@@ -299,7 +300,7 @@ const Home = () => {
       id: 'contract-security',
       title: 'Contract Security',
       description: 'Analyze smart contract security risks',
-      icon: <Shield size={35} style={{ color: 'white' }} />,
+      icon: <Shield size={40} style={{ color: 'white' }} />,
       path: '/contract-security',
       color: '#8b5cf6',
       xpReward: '500 XP',
@@ -311,9 +312,9 @@ const Home = () => {
       id: 'allowance-cleaner',
       title: 'Allowance Cleaner',
       description: 'Scan and revoke risky token approvals',
-      icon: <Trash2 size={35} style={{ color: 'white' }} />,
+      icon: <Trash2 size={40} style={{ color: 'white' }} />,
       path: '/allowance-cleaner',
-      color: '#ef4444',
+      color: '#8b5cf6',
       xpReward: '300 XP',
       bonusXP: '0.1 USDC',
       isX402: true, // Mark as x402 payment
@@ -323,7 +324,7 @@ const Home = () => {
       id: 'featured-profiles',
       title: 'Featured Profiles',
       description: 'Register your profile and connect through mutual follows',
-      icon: <Star size={35} style={{ color: 'white' }} />,
+      icon: <Star size={40} style={{ color: 'white' }} />,
       path: '/featured-profiles',
       color: '#f59e0b',
       xpReward: '200 XP',
@@ -335,7 +336,7 @@ const Home = () => {
       id: 'deploy-erc721',
       title: 'Deploy ERC721',
       description: 'Deploy your own NFT contract',
-      icon: <img src="/crypto-logos/basahub logo/ERC-721.png" alt="Deploy ERC721" loading="lazy" style={{ width: '35px', height: '35px', borderRadius: '18px', objectFit: 'cover' }} />,
+      icon: <img src="/crypto-logos/basahub logo/ERC-721.png" alt="Deploy ERC721" loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />,
       path: '/deploy-erc721',
       color: '#8b5cf6',
       xpReward: '100 XP',
@@ -346,9 +347,9 @@ const Home = () => {
       id: 'deploy',
       title: 'Deploy Token',
       description: 'Create your own ERC20 token',
-      icon: <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" loading="lazy" style={{ width: '35px', height: '35px', borderRadius: '18px', objectFit: 'cover' }} />,
+      icon: <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />,
       path: '/deploy',
-      color: '#10b981',
+      color: '#8b5cf6',
       xpReward: '50 XP',
       bonusXP: null,
       networks: ['base', 'ink']
@@ -357,9 +358,9 @@ const Home = () => {
       id: 'deploy-erc1155',
       title: 'Deploy ERC1155',
       description: 'Deploy multi-token contract',
-      icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" loading="lazy" style={{ width: '35px', height: '35px', borderRadius: '8px' }} />,
+      icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />,
       path: '/deploy-erc1155',
-      color: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+      color: '#8b5cf6',
       xpReward: '100 XP',
       bonusXP: null,
       networks: ['base', 'ink']
@@ -368,9 +369,9 @@ const Home = () => {
       id: 'flip',
       title: 'Coin Flip',
       description: 'Flip a coin and earn XP',
-      icon: <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip" loading="lazy" style={{ width: '35px', height: '35px', borderRadius: '8px' }} />,
+      icon: <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip" loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />,
       path: '/flip',
-      color: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+      color: '#f59e0b',
       xpReward: '60 XP',
       bonusXP: '+500 XP (Win)',
       networks: ['base', 'ink']
@@ -379,9 +380,9 @@ const Home = () => {
       id: 'lucky',
       title: 'Lucky Number',
       description: 'Guess 1-10 and earn XP',
-      icon: <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number" loading="lazy" style={{ width: '35px', height: '35px', borderRadius: '8px' }} />,
+      icon: <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number" loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />,
       path: '/lucky',
-      color: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+      color: '#f59e0b',
       xpReward: '60 XP',
       bonusXP: '+1000 XP (Win)',
       networks: ['base', 'ink']
@@ -390,9 +391,9 @@ const Home = () => {
       id: 'dice',
       title: 'Dice Roll',
       description: 'Roll dice and earn XP',
-      icon: <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll" loading="lazy" style={{ width: '35px', height: '35px', borderRadius: '8px' }} />,
+      icon: <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll" loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />,
       path: '/dice',
-      color: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+      color: '#f59e0b',
       xpReward: '60 XP',
       bonusXP: '+1500 XP (Win)',
       networks: ['base', 'ink']
@@ -401,9 +402,9 @@ const Home = () => {
       id: 'slot',
       title: 'Crypto Slots',
       description: 'Spin the reels and win XP',
-      icon: <img src="/crypto-logos/basahub logo/CryptoSloth.png" alt="Crypto Slots" loading="lazy" style={{ width: '35px', height: '35px', borderRadius: '8px' }} />,
+      icon: <img src="/crypto-logos/basahub logo/CryptoSloth.png" alt="Crypto Slots" loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />,
       path: '/slot',
-      color: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+      color: '#f59e0b',
       xpReward: '60 XP',
       bonusXP: '+2000 XP (Combo)',
       networks: ['base', 'ink']
@@ -412,9 +413,9 @@ const Home = () => {
       id: 'swap',
       title: 'SwapHub',
       description: 'DEX Aggregator - Swap tokens on Base',
-      icon: <ArrowLeftRight size={35} style={{ color: 'white' }} />,
+      icon: <ArrowLeftRight size={40} style={{ color: 'white' }} />,
       path: '/swap',
-      color: 'linear-gradient(135deg, #ff1cf7 0%, #00d4ff 100%)',
+      color: '#3b82f6',
       xpReward: '250 XP',
       bonusXP: '5000 XP (Every $500)',
       networks: ['base']
@@ -443,16 +444,19 @@ const Home = () => {
             </div>
             <h1 style={{ 
               fontSize: '32px', 
-              fontWeight: 'bold', 
+              fontWeight: '700', 
               marginBottom: '8px',
-              color: '#e5e7eb'
+              color: '#e5e7eb',
+              fontFamily: 'Poppins, sans-serif'
             }}>
               Welcome to BaseHub
             </h1>
             <p style={{ 
               fontSize: '18px', 
               color: '#6b7280',
-              marginBottom: '24px'
+              marginBottom: '24px',
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: '400'
             }}>
               Multi-chain Web3 platform. Deploy smart contracts, swap tokens, analyze wallets, and interact with blockchain to earn XP across multiple EVM networks. Available on Base and InkChain!
             </p>
@@ -517,23 +521,23 @@ const Home = () => {
                 borderRadius: '20px',
                 padding: '32px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '2px solid rgba(16, 185, 129, 0.2)'
+                border: '2px solid rgba(59, 130, 246, 0.2)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                   <div style={{
                     width: '44px',
                     height: '44px',
                     borderRadius: '10px',
-                    background: 'rgba(16, 185, 129, 0.15)',
-                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    background: 'rgba(59, 130, 246, 0.15)',
+                    border: '1px solid rgba(59, 130, 246, 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#10b981'
+                    color: '#3b82f6'
                   }}>
                     <Sun size={22} />
                   </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
+                  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
                     GM / GN
                   </h2>
                   {renderNetworkLogos(['base', 'ink'])}
@@ -558,43 +562,67 @@ const Home = () => {
                         transition: 'all 0.3s ease'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                        {game.icon}
-                        <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
-                          {game.title}
-                        </h3>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                        <div style={{
-                          background: 'rgba(30, 41, 59, 0.95)',
-                          borderRadius: '12px',
-                          padding: '2px 8px',
-                          fontSize: '9px',
-                          fontWeight: 'bold',
-                          color: '#059669',
-                          whiteSpace: 'nowrap',
-                          lineHeight: '1.2'
-                        }}>
-                          {game.xpReward}
-                        </div>
-                        {game.bonusXP && (
-                          <div style={{
-                            background: 'rgba(255, 215, 0, 0.95)',
-                            borderRadius: '12px',
-                            padding: '2px 8px',
-                            fontSize: '9px',
-                            fontWeight: 'bold',
-                            color: '#92400e',
-                            whiteSpace: 'nowrap',
-                            lineHeight: '1.2'
-                          }}>
-                            {game.bonusXP}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '140px' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                          <div style={{ flexShrink: 0 }}>
+                            {game.icon}
                           </div>
-                        )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <h3 style={{ 
+                              fontSize: '20px', 
+                              fontWeight: '600', 
+                              margin: '0 0 8px 0', 
+                              color: 'white', 
+                              lineHeight: '1.2',
+                              fontFamily: 'Poppins, sans-serif'
+                            }}>
+                              {game.title}
+                            </h3>
+                            <p style={{ 
+                              color: 'rgba(255, 255, 255, 0.9)', 
+                              fontSize: '14px', 
+                              margin: 0, 
+                              lineHeight: '1.4',
+                              fontFamily: 'Poppins, sans-serif',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {game.description}
+                            </p>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                          <div style={{
+                            background: 'rgba(30, 41, 59, 0.95)',
+                            borderRadius: '12px',
+                            padding: '4px 10px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: '#10b981',
+                            whiteSpace: 'nowrap',
+                            lineHeight: '1.2',
+                            fontFamily: 'Poppins, sans-serif'
+                          }}>
+                            {game.xpReward}
+                          </div>
+                          {game.bonusXP && (
+                            <div style={{
+                              background: 'rgba(255, 215, 0, 0.95)',
+                              borderRadius: '12px',
+                              padding: '4px 10px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              color: '#92400e',
+                              whiteSpace: 'nowrap',
+                              lineHeight: '1.2',
+                              fontFamily: 'Poppins, sans-serif'
+                            }}>
+                              {game.bonusXP}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0, lineHeight: '1.4' }}>
-                        {game.description}
-                      </p>
                     </button>
                   ))}
                 </div>
@@ -606,23 +634,23 @@ const Home = () => {
                 borderRadius: '20px',
                 padding: '32px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '2px solid rgba(102, 126, 234, 0.2)'
+                border: '2px solid rgba(59, 130, 246, 0.2)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                   <div style={{
                     width: '44px',
                     height: '44px',
                     borderRadius: '10px',
-                    background: 'rgba(102, 126, 234, 0.15)',
-                    border: '1px solid rgba(102, 126, 234, 0.3)',
+                    background: 'rgba(59, 130, 246, 0.15)',
+                    border: '1px solid rgba(59, 130, 246, 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#667eea'
+                    color: '#3b82f6'
                   }}>
                     <Repeat size={22} />
                   </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
+                  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
                     DEX AGGREGATOR
                   </h2>
                   {renderNetworkLogos(['base'])}
@@ -647,43 +675,67 @@ const Home = () => {
                         transition: 'all 0.3s ease',
                         height: '100%'
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                          {game.icon}
-                          <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
-                            {game.title}
-                          </h3>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                          <div style={{
-                            background: 'rgba(30, 41, 59, 0.95)',
-                            borderRadius: '12px',
-                            padding: '2px 8px',
-                            fontSize: '9px',
-                            fontWeight: 'bold',
-                            color: '#059669',
-                            whiteSpace: 'nowrap',
-                            lineHeight: '1.2'
-                          }}>
-                            {game.xpReward}
-                          </div>
-                          {game.bonusXP && (
-                            <div style={{
-                              background: 'rgba(255, 215, 0, 0.95)',
-                              borderRadius: '12px',
-                              padding: '2px 8px',
-                              fontSize: '9px',
-                              fontWeight: 'bold',
-                              color: '#92400e',
-                              whiteSpace: 'nowrap',
-                              lineHeight: '1.2'
-                            }}>
-                              {game.bonusXP}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '140px' }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                            <div style={{ flexShrink: 0 }}>
+                              {game.icon}
                             </div>
-                          )}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <h3 style={{ 
+                                fontSize: '20px', 
+                                fontWeight: '600', 
+                                margin: '0 0 8px 0', 
+                                color: 'white', 
+                                lineHeight: '1.2',
+                                fontFamily: 'Poppins, sans-serif'
+                              }}>
+                                {game.title}
+                              </h3>
+                              <p style={{ 
+                                color: 'rgba(255, 255, 255, 0.9)', 
+                                fontSize: '14px', 
+                                margin: 0, 
+                                lineHeight: '1.4',
+                                fontFamily: 'Poppins, sans-serif',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                {game.description}
+                              </p>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                            <div style={{
+                              background: 'rgba(30, 41, 59, 0.95)',
+                              borderRadius: '12px',
+                              padding: '4px 10px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              color: '#10b981',
+                              whiteSpace: 'nowrap',
+                              lineHeight: '1.2',
+                              fontFamily: 'Poppins, sans-serif'
+                            }}>
+                              {game.xpReward}
+                            </div>
+                            {game.bonusXP && (
+                              <div style={{
+                                background: 'rgba(255, 215, 0, 0.95)',
+                                borderRadius: '12px',
+                                padding: '4px 10px',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                color: '#92400e',
+                                whiteSpace: 'nowrap',
+                                lineHeight: '1.2',
+                                fontFamily: 'Poppins, sans-serif'
+                              }}>
+                                {game.bonusXP}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <p style={{ margin: '12px 0', fontSize: '14px', color: 'rgba(255, 255, 255, 0.9)', lineHeight: '1.4' }}>
-                          {game.description}
-                        </p>
                       </div>
                     </Link>
                   ))}
@@ -696,23 +748,23 @@ const Home = () => {
                 borderRadius: '20px',
                 padding: '32px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '2px solid rgba(251, 191, 36, 0.2)'
+                border: '2px solid rgba(245, 158, 11, 0.2)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                   <div style={{
                     width: '44px',
                     height: '44px',
                     borderRadius: '10px',
-                    background: 'rgba(251, 191, 36, 0.15)',
-                    border: '1px solid rgba(251, 191, 36, 0.3)',
+                    background: 'rgba(245, 158, 11, 0.15)',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#fbbf24'
+                    color: '#f59e0b'
                   }}>
                     <Rocket size={22} />
                   </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
+                  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
                     EARLY ACCESS NFT
                   </h2>
                   {renderNetworkLogos(['base'])}
@@ -728,82 +780,70 @@ const Home = () => {
                     }}
                   >
                     <div style={{
-                      background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                      background: '#f59e0b',
                       padding: '24px',
                       borderRadius: '16px',
                       color: 'white',
-                      transition: 'all 0.3s ease'
+                      transition: 'all 0.3s ease',
+                      minHeight: '140px',
+                      display: 'flex',
+                      flexDirection: 'column'
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                        <Rocket size={35} style={{ color: 'white' }} />
-                        <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
-                          Early Access Pass
-                        </h3>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+                        <Rocket size={40} style={{ color: 'white', flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <h3 style={{ 
+                            fontSize: '20px', 
+                            fontWeight: '600', 
+                            margin: '0 0 8px 0', 
+                            color: 'white', 
+                            lineHeight: '1.2',
+                            fontFamily: 'Poppins, sans-serif'
+                          }}>
+                            Early Access Pass
+                          </h3>
+                          <p style={{ 
+                            color: 'rgba(255, 255, 255, 0.9)', 
+                            fontSize: '14px', 
+                            margin: 0, 
+                            lineHeight: '1.4',
+                            fontFamily: 'Poppins, sans-serif',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            Mint your BaseHub Early Access Pass and unlock exclusive benefits
+                          </p>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                        <div style={{
-                          background: 'rgba(16, 185, 129, 0.95)',
-                          borderRadius: '12px',
-                          padding: '4px 10px',
-                          fontSize: '10px',
-                          fontWeight: 'bold',
-                          color: '#fff',
-                          whiteSpace: 'nowrap',
-                          lineHeight: '1.2',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
-                          animation: 'pulse 2s infinite'
-                        }}>
-                          <Zap size={12} style={{ color: '#fff' }} />
-                          3000 XP
-                        </div>
-                        <div style={{
-                          background: 'rgba(59, 130, 246, 0.18)',
-                          borderRadius: '12px',
-                          padding: '4px 10px',
-                          fontSize: '10px',
-                          fontWeight: 'bold',
-                          color: '#bfdbfe',
-                          whiteSpace: 'nowrap',
-                          lineHeight: '1.2',
-                          border: '1px solid rgba(59, 130, 246, 0.3)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}>
-                          <Zap size={12} style={{ color: '#93c5fd' }} />
-                          NFT holders earn 2x XP
-                        </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
                         <div style={{
                           background: 'rgba(30, 41, 59, 0.95)',
                           borderRadius: '12px',
-                          padding: '2px 8px',
-                          fontSize: '9px',
-                          fontWeight: 'bold',
-                          color: '#fbbf24',
+                          padding: '4px 10px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          color: '#10b981',
                           whiteSpace: 'nowrap',
-                          lineHeight: '1.2'
+                          lineHeight: '1.2',
+                          fontFamily: 'Poppins, sans-serif'
                         }}>
-                          Limited: 5000
+                          3000 XP
                         </div>
                         <div style={{
                           background: 'rgba(255, 215, 0, 0.95)',
                           borderRadius: '12px',
-                          padding: '2px 8px',
-                          fontSize: '9px',
-                          fontWeight: 'bold',
+                          padding: '4px 10px',
+                          fontSize: '12px',
+                          fontWeight: '600',
                           color: '#92400e',
                           whiteSpace: 'nowrap',
-                          lineHeight: '1.2'
+                          lineHeight: '1.2',
+                          fontFamily: 'Poppins, sans-serif'
                         }}>
                           0.001 ETH
                         </div>
                       </div>
-                      <p style={{ margin: '12px 0', fontSize: '14px', color: 'rgba(255, 255, 255, 0.9)', lineHeight: '1.4' }}>
-                        Mint your BaseHub Early Access Pass and unlock exclusive benefits
-                      </p>
                     </div>
                   </Link>
                 </div>
@@ -831,7 +871,7 @@ const Home = () => {
                   }}>
                     <Gamepad2 size={22} />
                   </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
+                  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
                     GAMING
                   </h2>
                   {renderNetworkLogos(['base', 'ink'])}
@@ -850,28 +890,54 @@ const Home = () => {
                     >
                       <div style={{
                         background: game.color,
-                        padding: '16px',
+                        padding: '24px',
                         borderRadius: '16px',
                         color: 'white',
                         transition: 'all 0.3s ease',
-                        height: '100%'
+                        minHeight: '140px',
+                        display: 'flex',
+                        flexDirection: 'column'
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                          {game.icon}
-                          <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
-                            {game.title}
-                          </h3>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+                          <div style={{ flexShrink: 0 }}>
+                            {game.icon}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <h3 style={{ 
+                              fontSize: '20px', 
+                              fontWeight: '600', 
+                              margin: '0 0 8px 0', 
+                              color: 'white', 
+                              lineHeight: '1.2',
+                              fontFamily: 'Poppins, sans-serif'
+                            }}>
+                              {game.title}
+                            </h3>
+                            <p style={{ 
+                              color: 'rgba(255, 255, 255, 0.9)', 
+                              fontSize: '14px', 
+                              margin: 0, 
+                              lineHeight: '1.4',
+                              fontFamily: 'Poppins, sans-serif',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {game.description}
+                            </p>
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
                           <div style={{
                             background: 'rgba(30, 41, 59, 0.95)',
                             borderRadius: '12px',
-                            padding: '2px 8px',
-                            fontSize: '9px',
-                            fontWeight: 'bold',
-                            color: '#059669',
+                            padding: '4px 10px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: '#10b981',
                             whiteSpace: 'nowrap',
-                            lineHeight: '1.2'
+                            lineHeight: '1.2',
+                            fontFamily: 'Poppins, sans-serif'
                           }}>
                             {game.xpReward}
                           </div>
@@ -879,20 +945,18 @@ const Home = () => {
                             <div style={{
                               background: 'rgba(255, 215, 0, 0.95)',
                               borderRadius: '12px',
-                              padding: '2px 8px',
-                              fontSize: '9px',
-                              fontWeight: 'bold',
+                              padding: '4px 10px',
+                              fontSize: '12px',
+                              fontWeight: '600',
                               color: '#92400e',
                               whiteSpace: 'nowrap',
-                              lineHeight: '1.2'
+                              lineHeight: '1.2',
+                              fontFamily: 'Poppins, sans-serif'
                             }}>
                               {game.bonusXP}
                             </div>
                           )}
                         </div>
-                        <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0, lineHeight: '1.4' }}>
-                          {game.description}
-                        </p>
                       </div>
                     </Link>
                   ))}
@@ -905,23 +969,23 @@ const Home = () => {
                 borderRadius: '20px',
                 padding: '32px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '2px solid rgba(59, 130, 246, 0.2)'
+                border: '2px solid rgba(139, 92, 246, 0.2)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                   <div style={{
                     width: '44px',
                     height: '44px',
                     borderRadius: '10px',
-                    background: 'rgba(59, 130, 246, 0.15)',
-                    border: '1px solid rgba(59, 130, 246, 0.3)',
+                    background: 'rgba(139, 92, 246, 0.15)',
+                    border: '1px solid rgba(139, 92, 246, 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#3b82f6'
+                    color: '#8b5cf6'
                   }}>
                     <TrendingUp size={22} />
                   </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
+                  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
                     ANALYSIS
                   </h2>
                   {renderMultiChainText()}
@@ -944,24 +1008,50 @@ const Home = () => {
                         borderRadius: '16px',
                         color: 'white',
                         transition: 'all 0.3s ease',
-                        height: '100%'
+                        minHeight: '140px',
+                        display: 'flex',
+                        flexDirection: 'column'
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                          {game.icon}
-                          <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
-                            {game.title}
-                          </h3>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+                          <div style={{ flexShrink: 0 }}>
+                            {game.icon}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <h3 style={{ 
+                              fontSize: '20px', 
+                              fontWeight: '600', 
+                              margin: '0 0 8px 0', 
+                              color: 'white', 
+                              lineHeight: '1.2',
+                              fontFamily: 'Poppins, sans-serif'
+                            }}>
+                              {game.title}
+                            </h3>
+                            <p style={{ 
+                              color: 'rgba(255, 255, 255, 0.9)', 
+                              fontSize: '14px', 
+                              margin: 0, 
+                              lineHeight: '1.4',
+                              fontFamily: 'Poppins, sans-serif',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {game.description}
+                            </p>
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
                           <div style={{
                             background: 'rgba(30, 41, 59, 0.95)',
                             borderRadius: '12px',
-                            padding: '2px 8px',
-                            fontSize: '9px',
-                            fontWeight: 'bold',
-                            color: '#059669',
+                            padding: '4px 10px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: '#10b981',
                             whiteSpace: 'nowrap',
-                            lineHeight: '1.2'
+                            lineHeight: '1.2',
+                            fontFamily: 'Poppins, sans-serif'
                           }}>
                             {game.xpReward}
                           </div>
@@ -969,20 +1059,18 @@ const Home = () => {
                             <div style={{
                               background: 'rgba(255, 215, 0, 0.95)',
                               borderRadius: '12px',
-                              padding: '2px 8px',
-                              fontSize: '9px',
-                              fontWeight: 'bold',
+                              padding: '4px 10px',
+                              fontSize: '12px',
+                              fontWeight: '600',
                               color: '#92400e',
                               whiteSpace: 'nowrap',
-                              lineHeight: '1.2'
+                              lineHeight: '1.2',
+                              fontFamily: 'Poppins, sans-serif'
                             }}>
                               {game.bonusXP}
                             </div>
                           )}
                         </div>
-                        <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0, lineHeight: '1.4' }}>
-                          {game.description}
-                        </p>
                       </div>
                     </Link>
                   ))}
@@ -995,28 +1083,32 @@ const Home = () => {
                 borderRadius: '20px',
                 padding: '32px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '2px solid rgba(236, 72, 153, 0.2)'
+                border: '2px solid rgba(59, 130, 246, 0.2)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                   <div style={{
                     width: '48px',
                     height: '48px',
                     borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
+                    background: 'rgba(59, 130, 246, 0.15)',
+                    border: '1px solid rgba(59, 130, 246, 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: 'white'
+                    color: '#3b82f6'
                   }}>
                     <Rocket size={24} />
                   </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
+                  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
                     DEPLOY
                   </h2>
                   {renderNetworkLogos(['base', 'ink'])}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                  {games.filter(g => ['deploy', 'deploy-erc721', 'deploy-erc1155', 'x402-premium'].includes(g.id)).map((game) => {
+                  {games.filter(g => ['deploy', 'deploy-erc721', 'deploy-erc1155', 'x402-premium'].includes(g.id)).sort((a, b) => {
+                    const order = ['deploy', 'deploy-erc721', 'deploy-erc1155', 'x402-premium'];
+                    return order.indexOf(a.id) - order.indexOf(b.id);
+                  }).map((game) => {
                     if (game.id === 'x402-premium') {
                       return (
                         <button
@@ -1026,42 +1118,68 @@ const Home = () => {
                           className="game-card"
                           style={{ 
                             textDecoration: 'none',
-                            border: 'none',
-                            outline: 'none',
-                            cursor: !isLoadingX402 ? 'pointer' : 'not-allowed',
-                            opacity: !isLoadingX402 ? 1 : 0.6,
                             position: 'relative',
                             display: 'block',
+                            border: 'none',
+                            outline: 'none',
                             background: 'transparent',
-                            padding: '20px',
-                            textAlign: 'left',
-                            boxShadow: 'none'
+                            padding: 0,
+                            margin: 0,
+                            cursor: !isLoadingX402 ? 'pointer' : 'not-allowed',
+                            opacity: !isLoadingX402 ? 1 : 0.6,
+                            fontFamily: 'inherit',
+                            fontSize: 'inherit'
                           }}
                         >
                           <div style={{
                             background: game.color,
-                            padding: '24px',
+                            padding: '20px',
                             borderRadius: '16px',
                             color: 'white',
                             transition: 'all 0.3s ease',
-                            height: '100%'
+                            minHeight: '140px',
+                            display: 'flex',
+                            flexDirection: 'column'
                           }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                              {game.icon}
-                              <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
-                                {game.title}
-                              </h3>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+                              <div style={{ flexShrink: 0, width: '40px', height: '40px' }}>
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <h3 style={{ 
+                                  fontSize: '20px', 
+                                  fontWeight: '600', 
+                                  margin: '0 0 8px 0', 
+                                  color: 'white', 
+                                  lineHeight: '1.2',
+                                  fontFamily: 'Poppins, sans-serif'
+                                }}>
+                                  {game.title}
+                                </h3>
+                                <p style={{ 
+                                  color: 'rgba(255, 255, 255, 0.9)', 
+                                  fontSize: '14px', 
+                                  margin: 0, 
+                                  lineHeight: '1.4',
+                                  fontFamily: 'Poppins, sans-serif',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}>
+                                  {game.description}
+                                </p>
+                              </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
                               <div style={{
                                 background: 'rgba(30, 41, 59, 0.95)',
                                 borderRadius: '12px',
-                                padding: '2px 8px',
-                                fontSize: '9px',
-                                fontWeight: 'bold',
-                                color: '#059669',
+                                padding: '4px 10px',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                color: '#10b981',
                                 whiteSpace: 'nowrap',
-                                lineHeight: '1.2'
+                                lineHeight: '1.2',
+                                fontFamily: 'Poppins, sans-serif'
                               }}>
                                 {game.xpReward}
                               </div>
@@ -1069,20 +1187,18 @@ const Home = () => {
                                 <div style={{
                                   background: 'rgba(255, 215, 0, 0.95)',
                                   borderRadius: '12px',
-                                  padding: '2px 8px',
-                                  fontSize: '9px',
-                                  fontWeight: 'bold',
+                                  padding: '4px 10px',
+                                  fontSize: '12px',
+                                  fontWeight: '600',
                                   color: '#92400e',
                                   whiteSpace: 'nowrap',
-                                  lineHeight: '1.2'
+                                  lineHeight: '1.2',
+                                  fontFamily: 'Poppins, sans-serif'
                                 }}>
                                   {game.bonusXP}
                                 </div>
                               )}
                             </div>
-                            <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0, lineHeight: '1.4' }}>
-                              {game.description}
-                            </p>
                           </div>
                         </button>
                       )
@@ -1104,24 +1220,50 @@ const Home = () => {
                           borderRadius: '16px',
                           color: 'white',
                           transition: 'all 0.3s ease',
-                          height: '100%'
+                          minHeight: '140px',
+                          display: 'flex',
+                          flexDirection: 'column'
                         }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                            {game.icon}
-                            <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
-                              {game.title}
-                            </h3>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+                            <div style={{ flexShrink: 0 }}>
+                              {game.icon}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <h3 style={{ 
+                                fontSize: '20px', 
+                                fontWeight: '600', 
+                                margin: '0 0 8px 0', 
+                                color: 'white', 
+                                lineHeight: '1.2',
+                                fontFamily: 'Poppins, sans-serif'
+                              }}>
+                                {game.title}
+                              </h3>
+                              <p style={{ 
+                                color: 'rgba(255, 255, 255, 0.9)', 
+                                fontSize: '14px', 
+                                margin: 0, 
+                                lineHeight: '1.4',
+                                fontFamily: 'Poppins, sans-serif',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                {game.description}
+                              </p>
+                            </div>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
                             <div style={{
                               background: 'rgba(30, 41, 59, 0.95)',
                               borderRadius: '12px',
-                              padding: '2px 8px',
-                              fontSize: '9px',
-                              fontWeight: 'bold',
-                              color: '#059669',
+                              padding: '4px 10px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              color: '#10b981',
                               whiteSpace: 'nowrap',
-                              lineHeight: '1.2'
+                              lineHeight: '1.2',
+                              fontFamily: 'Poppins, sans-serif'
                             }}>
                               {game.xpReward}
                             </div>
@@ -1129,20 +1271,18 @@ const Home = () => {
                               <div style={{
                                 background: 'rgba(255, 215, 0, 0.95)',
                                 borderRadius: '12px',
-                                padding: '2px 8px',
-                                fontSize: '9px',
-                                fontWeight: 'bold',
+                                padding: '4px 10px',
+                                fontSize: '12px',
+                                fontWeight: '600',
                                 color: '#92400e',
                                 whiteSpace: 'nowrap',
-                                lineHeight: '1.2'
+                                lineHeight: '1.2',
+                                fontFamily: 'Poppins, sans-serif'
                               }}>
                                 {game.bonusXP}
                               </div>
                             )}
                           </div>
-                          <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0, lineHeight: '1.4' }}>
-                            {game.description}
-                          </p>
                         </div>
                       </Link>
                     )
@@ -1156,22 +1296,23 @@ const Home = () => {
                 borderRadius: '20px',
                 padding: '32px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '2px solid rgba(251, 191, 36, 0.2)'
+                border: '2px solid rgba(245, 158, 11, 0.2)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                   <div style={{
                     width: '48px',
                     height: '48px',
                     borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                    background: 'rgba(245, 158, 11, 0.15)',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: 'white'
+                    color: '#f59e0b'
                   }}>
                     <Users size={24} />
                   </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
+                  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
                     SOCIAL
                   </h2>
                   {renderNetworkLogos(['base'])}
@@ -1194,24 +1335,50 @@ const Home = () => {
                         borderRadius: '16px',
                         color: 'white',
                         transition: 'all 0.3s ease',
-                        height: '100%'
+                        minHeight: '140px',
+                        display: 'flex',
+                        flexDirection: 'column'
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                          {game.icon}
-                          <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
-                            {game.title}
-                          </h3>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+                          <div style={{ flexShrink: 0 }}>
+                            {game.icon}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <h3 style={{ 
+                              fontSize: '20px', 
+                              fontWeight: '600', 
+                              margin: '0 0 8px 0', 
+                              color: 'white', 
+                              lineHeight: '1.2',
+                              fontFamily: 'Poppins, sans-serif'
+                            }}>
+                              {game.title}
+                            </h3>
+                            <p style={{ 
+                              color: 'rgba(255, 255, 255, 0.9)', 
+                              fontSize: '14px', 
+                              margin: 0, 
+                              lineHeight: '1.4',
+                              fontFamily: 'Poppins, sans-serif',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {game.description}
+                            </p>
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
                           <div style={{
                             background: 'rgba(30, 41, 59, 0.95)',
                             borderRadius: '12px',
-                            padding: '2px 8px',
-                            fontSize: '9px',
-                            fontWeight: 'bold',
-                            color: '#059669',
+                            padding: '4px 10px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: '#10b981',
                             whiteSpace: 'nowrap',
-                            lineHeight: '1.2'
+                            lineHeight: '1.2',
+                            fontFamily: 'Poppins, sans-serif'
                           }}>
                             {game.xpReward}
                           </div>
@@ -1219,20 +1386,18 @@ const Home = () => {
                             <div style={{
                               background: 'rgba(255, 215, 0, 0.95)',
                               borderRadius: '12px',
-                              padding: '2px 8px',
-                              fontSize: '9px',
-                              fontWeight: 'bold',
+                              padding: '4px 10px',
+                              fontSize: '12px',
+                              fontWeight: '600',
                               color: '#92400e',
                               whiteSpace: 'nowrap',
-                              lineHeight: '1.2'
+                              lineHeight: '1.2',
+                              fontFamily: 'Poppins, sans-serif'
                             }}>
                               {game.bonusXP}
                             </div>
                           )}
                         </div>
-                        <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0, lineHeight: '1.4' }}>
-                          {game.description}
-                        </p>
                       </div>
                     </Link>
                   ))}
@@ -1245,23 +1410,23 @@ const Home = () => {
                 borderRadius: '20px',
                 padding: '32px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '2px solid rgba(139, 92, 246, 0.2)'
+                border: '2px solid rgba(245, 158, 11, 0.2)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                   <div style={{
                     width: '44px',
                     height: '44px',
                     borderRadius: '10px',
-                    background: 'rgba(139, 92, 246, 0.15)',
-                    border: '1px solid rgba(139, 92, 246, 0.3)',
+                    background: 'rgba(245, 158, 11, 0.15)',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#8b5cf6'
+                    color: '#f59e0b'
                   }}>
                     <Image size={22} />
                   </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
+                  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
                     NFT
                   </h2>
                   {renderNetworkLogos(['base'])}
@@ -1284,24 +1449,50 @@ const Home = () => {
                         borderRadius: '16px',
                         color: 'white',
                         transition: 'all 0.3s ease',
-                        height: '100%'
+                        minHeight: '140px',
+                        display: 'flex',
+                        flexDirection: 'column'
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                          {game.icon}
-                          <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
-                            {game.title}
-                          </h3>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+                          <div style={{ flexShrink: 0 }}>
+                            {game.icon}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <h3 style={{ 
+                              fontSize: '20px', 
+                              fontWeight: '600', 
+                              margin: '0 0 8px 0', 
+                              color: 'white', 
+                              lineHeight: '1.2',
+                              fontFamily: 'Poppins, sans-serif'
+                            }}>
+                              {game.title}
+                            </h3>
+                            <p style={{ 
+                              color: 'rgba(255, 255, 255, 0.9)', 
+                              fontSize: '14px', 
+                              margin: 0, 
+                              lineHeight: '1.4',
+                              fontFamily: 'Poppins, sans-serif',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {game.description}
+                            </p>
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
                           <div style={{
                             background: 'rgba(30, 41, 59, 0.95)',
                             borderRadius: '12px',
-                            padding: '2px 8px',
-                            fontSize: '9px',
-                            fontWeight: 'bold',
-                            color: '#059669',
+                            padding: '4px 10px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: '#10b981',
                             whiteSpace: 'nowrap',
-                            lineHeight: '1.2'
+                            lineHeight: '1.2',
+                            fontFamily: 'Poppins, sans-serif'
                           }}>
                             {game.xpReward}
                           </div>
@@ -1309,20 +1500,18 @@ const Home = () => {
                             <div style={{
                               background: 'rgba(255, 215, 0, 0.95)',
                               borderRadius: '12px',
-                              padding: '2px 8px',
-                              fontSize: '9px',
-                              fontWeight: 'bold',
+                              padding: '4px 10px',
+                              fontSize: '12px',
+                              fontWeight: '600',
                               color: '#92400e',
                               whiteSpace: 'nowrap',
-                              lineHeight: '1.2'
+                              lineHeight: '1.2',
+                              fontFamily: 'Poppins, sans-serif'
                             }}>
                               {game.bonusXP}
                             </div>
                           )}
                         </div>
-                        <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', margin: 0, lineHeight: '1.4' }}>
-                          {game.description}
-                        </p>
                       </div>
                     </Link>
                   ))}
@@ -1862,7 +2051,7 @@ const Home = () => {
           right: '20px',
           width: '320px',
           maxWidth: 'calc(100vw - 40px)',
-          background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+          background: '#f59e0b',
           borderRadius: '16px',
           padding: '20px',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
@@ -1912,19 +2101,22 @@ const Home = () => {
             </div>
             <div style={{ flex: 1 }}>
               <h3 style={{
-                fontSize: '18px',
-                fontWeight: 'bold',
+                fontSize: '20px',
+                fontWeight: '600',
                 color: '#fff',
                 margin: '0 0 4px 0',
-                lineHeight: '1.2'
+                lineHeight: '1.2',
+                fontFamily: 'Poppins, sans-serif'
               }}>
                 Early Access NFT
               </h3>
               <p style={{
-                fontSize: '13px',
+                fontSize: '14px',
                 color: 'rgba(255, 255, 255, 0.95)',
                 margin: 0,
-                lineHeight: '1.4'
+                lineHeight: '1.4',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: '400'
               }}>
                 Mint your BaseHub Early Access Pass and unlock exclusive benefits!
               </p>
@@ -2076,16 +2268,6 @@ const styles = `
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
   }
 
-  .game-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
-    border-radius: 20px 20px 0 0;
-  }
 
   .game-icon {
     width: 80px;

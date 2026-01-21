@@ -172,7 +172,7 @@ const LuckyNumberGame = () => {
         <BackButton />
         
         <div style={{ textAlign: 'center', padding: '40px' }}>
-          <Target size={48} style={{ color: '#8b5cf6', marginBottom: '16px' }} />
+          <Target size={48} style={{ color: '#f59e0b', marginBottom: '16px' }} />
           <h2 style={{ 
             fontSize: '24px', 
             fontWeight: 'bold', 
@@ -205,7 +205,7 @@ const LuckyNumberGame = () => {
         <div 
           className="game-icon"
           style={{ 
-            background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+            background: '#f59e0b',
             margin: '0 auto 16px'
           }}
         >
@@ -393,16 +393,16 @@ const LuckyNumberGame = () => {
                 fontSize: '20px',
                 fontWeight: 'bold',
                 background: selectedNumber === number 
-                  ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' 
+                  ? '#f59e0b' 
                   : 'rgba(30, 41, 59, 0.8)',
                 color: selectedNumber === number ? 'white' : '#e5e7eb',
                 border: selectedNumber === number 
                   ? 'none' 
-                  : '2px solid rgba(139, 92, 246, 0.3)',
+                  : '2px solid rgba(245, 158, 11, 0.3)',
                 transition: 'all 0.3s ease',
                 transform: selectedNumber === number ? 'scale(1.1)' : 'scale(1)',
                 boxShadow: selectedNumber === number 
-                  ? '0 4px 15px rgba(139, 92, 246, 0.4)' 
+                  ? '0 4px 15px rgba(245, 158, 11, 0.4)' 
                   : 'none',
                 cursor: (isSpinning || isRevealing) ? 'not-allowed' : 'pointer',
                 opacity: (isSpinning || isRevealing) ? 0.6 : 1
@@ -431,24 +431,24 @@ const LuckyNumberGame = () => {
             width: '100%',
             background: (isLoading || isSpinning || isRevealing) 
               ? '#9ca3af' 
-              : 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+              : '#f59e0b',
             transition: 'all 0.3s ease',
             transform: (isLoading || isSpinning || isRevealing) ? 'none' : 'scale(1)',
             boxShadow: (isLoading || isSpinning || isRevealing) 
               ? 'none' 
-              : '0 4px 15px rgba(139, 92, 246, 0.4)',
+              : '0 4px 15px rgba(245, 158, 11, 0.4)',
             cursor: (isLoading || isSpinning || isRevealing) ? 'not-allowed' : 'pointer'
           }}
           onMouseEnter={(e) => {
             if (!isLoading && !isSpinning && !isRevealing) {
               e.target.style.transform = 'scale(1.02)'
-              e.target.style.boxShadow = '0 6px 20px rgba(139, 92, 246, 0.5)'
+              e.target.style.boxShadow = '0 6px 20px rgba(245, 158, 11, 0.5)'
             }
           }}
           onMouseLeave={(e) => {
             if (!isLoading && !isSpinning && !isRevealing) {
               e.target.style.transform = 'scale(1)'
-              e.target.style.boxShadow = '0 4px 15px rgba(139, 92, 246, 0.4)'
+              e.target.style.boxShadow = '0 4px 15px rgba(245, 158, 11, 0.4)'
             }
           }}
         >
