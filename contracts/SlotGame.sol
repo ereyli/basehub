@@ -5,7 +5,7 @@ contract SlotGame {
     address public owner;
     
     // Game constants
-    uint256 public constant CREDIT_PRICE = 0.00005 ether; // 0.00005 ETH per credit
+    uint256 public constant CREDIT_PRICE = 0.00002 ether; // 0.00002 ETH per credit
     uint256 public constant CREDITS_PER_SPIN = 1; // 1 credit per spin
     uint256 public constant BASE_XP = 10; // Base XP for playing
     uint256 public constant WIN_XP_2_MATCH = 100; // XP for 2 matching symbols

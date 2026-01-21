@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 contract LuckyNumber {
     address public owner;
     
-    uint256 public constant GAME_FEE = 0.000005 ether; // 0.000005 ETH fee
+    uint256 public constant GAME_FEE = 0.00002 ether; // 0.00002 ETH fee
     uint256 public constant BASE_XP = 10; // Base XP for playing
     uint256 public constant WIN_BONUS_XP = 1000; // Massive bonus XP for winning
     
