@@ -357,19 +357,11 @@ export const useDeployToken = () => {
   const farcasterContext = useFarcaster()
   const isInFarcaster = farcasterContext?.isInFarcaster || false
 
-  // Network validation and auto-switch function
+  // Network validation - allow Base or InkChain
   const validateAndSwitchNetwork = async () => {
     if (!isCorrectNetwork) {
-      console.log(`🔄 Wrong network detected! Switching from ${networkName} to ${baseNetworkName}...`)
-      try {
-        await switchToBaseNetwork()
-        console.log('✅ Successfully switched to Base network')
-        // Wait a moment for the network switch to complete
-        await new Promise(resolve => setTimeout(resolve, 1000))
-      } catch (switchError) {
-        console.error('❌ Failed to switch network:', switchError)
-        throw new Error(`Failed to switch to Base network. Please manually switch to ${baseNetworkName} and try again.`)
-      }
+      // Don't auto-switch - let user choose network via RainbowKit
+      throw new Error(`❌ SUPPORTED NETWORK REQUIRED!\n\nYou are currently on ${networkName}.\nBaseHub works on Base or InkChain networks.\n\nPlease switch to a supported network using RainbowKit's network selector.`)
     }
   }
 
