@@ -1,16 +1,37 @@
 import { http, createConfig } from 'wagmi'
 import { base } from 'wagmi/chains'
+import { defineChain } from 'viem'
 import { injected, metaMask } from 'wagmi/connectors'
 import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector'
+import { NETWORKS } from './networks'
+
+// InkChain chain definition
+const inkChain = defineChain({
+  id: NETWORKS.INKCHAIN.chainId,
+  name: NETWORKS.INKCHAIN.chainName,
+  nativeCurrency: NETWORKS.INKCHAIN.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.INKCHAIN.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'InkChain Explorer',
+      url: NETWORKS.INKCHAIN.blockExplorerUrls[0],
+    },
+  },
+})
 
 // Wagmi config with multiple wallet support
 export const config = createConfig({
-  chains: [base],
+  chains: [base, inkChain],
   transports: {
     [base.id]: http(),
+    [inkChain.id]: http(),
   },
   connectors: [
-    // Farcaster Mini App connector
+    // Farcaster Mini App connector (only works on Base)
     farcasterMiniApp(),
     // Other wallet connectors for web
     injected(),

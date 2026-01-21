@@ -61,3 +61,6 @@ export const getCurrentConfig = () => {
 export const getContractAddress = (contractName) => {
   return CONTRACT_ADDRESSES[contractName] // Direct access to mainnet addresses
 }
+
+// Re-export from networks.js for backward compatibility
+export { NETWORKS, getNetworkConfig, getContractAddress as getContractAddressByNetwork, isNetworkSupported } from './networks'

@@ -6,8 +6,10 @@ import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { getCurrentConfig } from '../config/base'
 import { useProofOfUsage } from '../hooks/useProofOfUsage'
+import { shouldUseRainbowKit } from '../config/rainbowkit'
 import WalletConnect from './WalletConnect'
 import UserProfile from './UserProfile'
+import NetworkSelector from './NetworkSelector'
 
 const Header = () => {
   const location = useLocation()
@@ -124,37 +126,17 @@ const Header = () => {
                 </div>
               )}
 
-              {/* Network Status */}
-              {isConnected && !isInFarcaster && (
-                <div className={`status-badge ${isCorrectNetwork ? 'connected' : 'error'}`}>
-                  {isCorrectNetwork ? (
-                    <Wifi size={14} />
-                  ) : (
-                    <WifiOff size={14} />
-                  )}
-                  <span>{isCorrectNetwork ? 'Base' : 'Wrong Network'}</span>
-                </div>
+              {/* Network Selector - only show in web, not in Farcaster */}
+              {isConnected && shouldUseRainbowKit() && !isInFarcaster && (
+                <NetworkSelector />
               )}
 
-              {/* Switch Network Button - only show when not on Base */}
+              {/* Network Status - show when not on supported network */}
               {isConnected && !isInFarcaster && !isCorrectNetwork && (
-                <button 
-                  onClick={handleSwitchNetwork}
-                  disabled={isSwitching}
-                  className="switch-network-btn"
-                >
-                  {isSwitching ? (
-                    <>
-                      <RefreshCw size={14} className="spinning" />
-                      <span>Switching...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Wifi size={14} />
-                      <span>Switch to Base</span>
-                    </>
-                  )}
-                </button>
+                <div className={`status-badge error`}>
+                  <WifiOff size={14} />
+                  <span>Wrong Network</span>
+                </div>
               )}
             </div>
             

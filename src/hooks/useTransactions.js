@@ -5,6 +5,7 @@ import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from './useNetworkCheck'
 import { addXP, addBonusXP, recordTransaction } from '../utils/xpUtils'
 import { getCurrentConfig, getContractAddress, GAS_CONFIG, GAME_CONFIG } from '../config/base'
+import { getContractAddressByNetwork, NETWORKS, isNetworkSupported } from '../config/networks'
 import { parseEther } from 'viem'
 import { config } from '../config/wagmi'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
@@ -27,7 +28,7 @@ export const useTransactions = () => {
   }
   const { address, chainId } = useAccount()
   const { writeContractAsync, data: txData } = useWriteContract()
-  const { isCorrectNetwork, networkName, baseNetworkName, switchToBaseNetwork } = useNetworkCheck()
+  const { isCorrectNetwork, networkName, currentNetworkConfig, switchToNetwork, supportedNetworks } = useNetworkCheck()
   const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -35,24 +36,30 @@ export const useTransactions = () => {
   // Network validation and auto-switch function
   const validateAndSwitchNetwork = async () => {
     if (!isCorrectNetwork) {
-      console.log(`🔄 Wrong network detected! Switching from ${networkName} to ${baseNetworkName}...`)
+      // Try to switch to a supported network (prefer Base, fallback to InkChain)
+      const targetNetwork = supportedNetworks[0] || NETWORKS.BASE
+      console.log(`🔄 Wrong network detected! Switching from ${networkName} to ${targetNetwork.chainName}...`)
       try {
-        await switchToBaseNetwork()
-        console.log('✅ Successfully switched to Base network')
+        await switchToNetwork(targetNetwork.chainId)
+        console.log(`✅ Successfully switched to ${targetNetwork.chainName} network`)
         // Wait a moment for the network switch to complete
         await new Promise(resolve => setTimeout(resolve, 2000))
         
         // Double-check network after switch
         const currentChainId = chainId
-        const baseConfig = getCurrentConfig()
-        if (currentChainId !== baseConfig.chainId) {
-          throw new Error(`Still on wrong network (Chain ID: ${currentChainId}). Please manually switch to Base network and try again.`)
+        if (!isNetworkSupported(currentChainId)) {
+          throw new Error(`Still on wrong network (Chain ID: ${currentChainId}). Please manually switch to a supported network and try again.`)
         }
       } catch (switchError) {
         console.error('❌ Failed to switch network:', switchError)
-        throw new Error(`❌ BASE NETWORK REQUIRED!\n\nYou are currently on ${networkName}.\nBaseHub only works on Base network.\n\nPlease switch to Base network manually and try again.`)
+        throw new Error(`❌ SUPPORTED NETWORK REQUIRED!\n\nYou are currently on ${networkName}.\nBaseHub works on Base or InkChain networks.\n\nPlease switch to a supported network manually and try again.`)
       }
     }
+  }
+  
+  // Get contract address for current network
+  const getContractAddressForCurrentNetwork = (contractName) => {
+    return getContractAddressByNetwork(contractName, chainId) || getContractAddress(contractName) // Fallback to Base
   }
 
   const sendGMTransaction = async (message = 'GM!') => {
@@ -67,7 +74,7 @@ export const useTransactions = () => {
     setError(null)
 
     try {
-      const contractAddress = getContractAddress('GM_GAME')
+      const contractAddress = getContractAddressForCurrentNetwork('GM_GAME')
       
       console.log('📡 Sending GM transaction to blockchain...')
       
@@ -149,7 +156,7 @@ export const useTransactions = () => {
     setError(null)
 
     try {
-      const contractAddress = getContractAddress('GN_GAME')
+      const contractAddress = getContractAddressForCurrentNetwork('GN_GAME')
       
       console.log('📡 Sending GN transaction to blockchain...')
       
@@ -226,7 +233,7 @@ export const useTransactions = () => {
 
     try {
 
-      const contractAddress = getContractAddress('FLIP_GAME')
+      const contractAddress = getContractAddressForCurrentNetwork('FLIP_GAME')
       
       // Encode the function call: playFlip(uint8 choice) where 0=Heads, 1=Tails
       const choice = selectedSide === 'heads' ? 0 : 1
@@ -318,7 +325,7 @@ export const useTransactions = () => {
 
     try {
 
-      const contractAddress = getContractAddress('LUCKY_NUMBER')
+      const contractAddress = getContractAddressForCurrentNetwork('LUCKY_NUMBER')
       
       console.log('📡 Sending Lucky Number transaction to blockchain...')
       
@@ -405,7 +412,7 @@ export const useTransactions = () => {
 
     try {
 
-      const contractAddress = getContractAddress('DICE_ROLL')
+      const contractAddress = getContractAddressForCurrentNetwork('DICE_ROLL')
       
       console.log('📡 Sending Dice Roll transaction to blockchain...')
       
@@ -495,7 +502,7 @@ export const useTransactions = () => {
     setError(null)
 
     try {
-      const contractAddress = getContractAddress('SLOT_GAME')
+      const contractAddress = getContractAddressForCurrentNetwork('SLOT_GAME')
       
       console.log('📡 Sending Slot transaction to blockchain...')
       
