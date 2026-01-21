@@ -30,7 +30,6 @@ export const useNetworkInterceptor = () => {
       setHasShownAlert(false)
     }
   }, [isConnected, chainId, hasShownAlert])
-  }, [isConnected, chainId, hasShownAlert])
 
   const currentNetwork = getNetworkConfig(chainId)
 
