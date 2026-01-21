@@ -1,11 +1,31 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit'
 import { base } from 'wagmi/chains'
+import { defineChain } from 'viem'
+import { NETWORKS } from './networks'
+
+// InkChain chain definition for RainbowKit
+const inkChain = defineChain({
+  id: NETWORKS.INKCHAIN.chainId,
+  name: NETWORKS.INKCHAIN.chainName,
+  nativeCurrency: NETWORKS.INKCHAIN.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.INKCHAIN.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'InkChain Explorer',
+      url: NETWORKS.INKCHAIN.blockExplorerUrls[0],
+    },
+  },
+})
 
 // RainbowKit configuration for web users only
 export const rainbowkitConfig = getDefaultConfig({
   appName: 'BaseHub',
   projectId: '21fef48091f12692cad574a6f7753643', // Temporary project ID - replace with your own
-  chains: [base], // Only Base Mainnet
+  chains: [base, inkChain], // Base and InkChain
   ssr: false, // Client-side rendering
 })
 
