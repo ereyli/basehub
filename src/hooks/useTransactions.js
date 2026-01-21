@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { useAccount, useWriteContract, usePublicClient } from 'wagmi'
-import { waitForTransactionReceipt, getPublicClient } from 'wagmi/actions'
-import { getPublicClient as getViemPublicClient } from 'viem'
+import { useAccount, useWriteContract } from 'wagmi'
+import { waitForTransactionReceipt } from 'wagmi/actions'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from './useNetworkCheck'
 import { addXP, addBonusXP, recordTransaction } from '../utils/xpUtils'
@@ -29,7 +28,6 @@ export const useTransactions = () => {
   }
   const { address, chainId } = useAccount()
   const { writeContractAsync, data: txData } = useWriteContract()
-  const publicClient = usePublicClient({ chainId })
   const { isCorrectNetwork, networkName, currentNetworkConfig, switchToNetwork, supportedNetworks } = useNetworkCheck()
   const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)
