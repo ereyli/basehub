@@ -3,7 +3,9 @@ import { useAccount } from 'wagmi'
 import { useEarlyAccessMint } from '../hooks/useEarlyAccessMint'
 import { Helmet } from 'react-helmet-async'
 import BackButton from '../components/BackButton'
-import { Zap, Users, Package, CheckCircle, ExternalLink, Sparkles } from 'lucide-react'
+import { useFarcaster } from '../contexts/FarcasterContext'
+import { shouldUseRainbowKit } from '../config/rainbowkit'
+import { Zap, Users, Package, CheckCircle, ExternalLink, Sparkles, Share2 } from 'lucide-react'
 
 const EarlyAccessNFT = () => {
   const { isConnected, address } = useAccount()
@@ -23,6 +25,19 @@ const EarlyAccessNFT = () => {
   } = useEarlyAccessMint()
 
   const [mintResult, setMintResult] = useState(null)
+  const [isSharing, setIsSharing] = useState(false)
+  
+  // Check if in Farcaster environment
+  let isInFarcaster = false
+  let farcasterContext = null
+  try {
+    if (!shouldUseRainbowKit()) {
+      farcasterContext = useFarcaster()
+      isInFarcaster = farcasterContext?.isInFarcaster || false
+    }
+  } catch (error) {
+    isInFarcaster = false
+  }
 
   const formatAddress = (addr) => {
     if (!addr) return ''
@@ -451,13 +466,78 @@ const EarlyAccessNFT = () => {
                     textDecoration: 'none',
                     fontSize: '0.95rem',
                     fontWeight: '500',
-                    transition: 'color 0.2s ease'
+                    transition: 'color 0.2s ease',
+                    marginBottom: '16px'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.color = '#93c5fd'}
                   onMouseLeave={(e) => e.currentTarget.style.color = '#60a5fa'}
                 >
                   View Transaction <ExternalLink size={16} />
                 </a>
+              )}
+              
+              {/* Share on Farcaster Button */}
+              {isInFarcaster && farcasterContext && (
+                <button
+                  onClick={async () => {
+                    if (!farcasterContext?.sdk?.actions?.composeCast) {
+                      console.warn('Farcaster SDK not available')
+                      return
+                    }
+                    
+                    setIsSharing(true)
+                    try {
+                      const castText = `🎉 Just minted my BaseHub Early Access Pass! 🚀\n\n✨ Unlock exclusive benefits:\n• 2x XP multiplier on ALL activities\n• Priority access to airdrops\n• Exclusive quests & rewards\n• Early feature access\n\n🔥 Only ${maxSupply - totalMinted} passes left!\n\nJoin the BaseHub community and level up faster! 💎\n\n#BaseHub #BaseNetwork #NFT #EarlyAccess`
+                      
+                      await farcasterContext.sdk.actions.composeCast({
+                        text: castText,
+                        embeds: ['https://basehub.fun/early-access']
+                      })
+                      
+                      console.log('✅ Cast shared successfully!')
+                    } catch (error) {
+                      console.error('❌ Failed to share cast:', error)
+                    } finally {
+                      setIsSharing(false)
+                    }
+                  }}
+                  disabled={isSharing}
+                  style={{
+                    width: '100%',
+                    padding: '14px 24px',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    background: isSharing 
+                      ? 'rgba(59, 130, 246, 0.3)'
+                      : 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '12px',
+                    cursor: isSharing ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    marginTop: '12px',
+                    boxShadow: isSharing ? 'none' : '0 4px 12px rgba(139, 92, 246, 0.3)'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSharing) {
+                      e.currentTarget.style.transform = 'translateY(-2px)'
+                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(139, 92, 246, 0.4)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSharing) {
+                      e.currentTarget.style.transform = 'translateY(0)'
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.3)'
+                    }
+                  }}
+                >
+                  <Share2 size={18} />
+                  {isSharing ? 'Sharing...' : 'Share on Farcaster 🎉'}
+                </button>
               )}
             </div>
           )}
