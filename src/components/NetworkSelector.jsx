@@ -92,7 +92,29 @@ const NetworkSelector = () => {
           }
         }}
       >
-        <Wifi size={16} />
+        {currentNetwork.chainId === NETWORKS.BASE.chainId ? (
+          <img 
+            src="/base-logo.jpg" 
+            alt="Base" 
+            style={{
+              width: '20px',
+              height: '20px',
+              borderRadius: '6px',
+              objectFit: 'cover'
+            }}
+          />
+        ) : (
+          <img 
+            src="/ink-logo.jpg" 
+            alt="InkChain" 
+            style={{
+              width: '20px',
+              height: '20px',
+              borderRadius: '6px',
+              objectFit: 'cover'
+            }}
+          />
+        )}
         <span>{currentNetwork.chainName}</span>
         <ChevronDown 
           size={14} 
@@ -155,7 +177,31 @@ const NetworkSelector = () => {
                   }
                 }}
               >
-                <Wifi size={16} style={{ opacity: isActive ? 1 : 0.6 }} />
+                {network.chainId === NETWORKS.BASE.chainId ? (
+                  <img 
+                    src="/base-logo.jpg" 
+                    alt="Base" 
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '6px',
+                      objectFit: 'cover',
+                      opacity: isActive ? 1 : 0.6
+                    }}
+                  />
+                ) : (
+                  <img 
+                    src="/ink-logo.jpg" 
+                    alt="InkChain" 
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '6px',
+                      objectFit: 'cover',
+                      opacity: isActive ? 1 : 0.6
+                    }}
+                  />
+                )}
                 <span>{network.chainName}</span>
                 {isActive && (
                   <span style={{

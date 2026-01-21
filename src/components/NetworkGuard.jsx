@@ -1,9 +1,10 @@
 import React from 'react'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
+import { NETWORKS } from '../config/networks'
 
 const NetworkGuard = ({ children, showWarning = false }) => {
-  const { isCorrectNetwork, networkName, baseNetworkName, switchToBaseNetwork } = useNetworkCheck()
+  const { isCorrectNetwork, currentNetworkConfig, switchToNetwork } = useNetworkCheck()
   
   // Safely get Farcaster context - only if not in web environment
   let isInFarcaster = false
@@ -24,10 +25,10 @@ const NetworkGuard = ({ children, showWarning = false }) => {
 
   const handleSwitchNetwork = async () => {
     try {
-      await switchToBaseNetwork()
+      await switchToNetwork(NETWORKS.BASE.chainId)
     } catch (error) {
       console.error('Failed to switch network:', error)
-      alert('Ağ geçişi başarısız oldu. Lütfen manuel olarak Base ağına geçin.')
+      alert('Network switch failed. Please manually switch to Base or InkChain network.')
     }
   }
 
@@ -42,10 +43,10 @@ const NetworkGuard = ({ children, showWarning = false }) => {
         margin: '20px 0',
         boxShadow: '0 4px 20px rgba(239, 68, 68, 0.3)'
       }}>
-        <h3 style={{ margin: '0 0 10px 0', fontSize: '18px' }}>⚠️ Yanlış Ağ Uyarısı</h3>
+        <h3 style={{ margin: '0 0 10px 0', fontSize: '18px' }}>⚠️ Wrong Network</h3>
         <p style={{ margin: '0 0 15px 0', opacity: 0.9 }}>
-          Şu anda <strong>{networkName}</strong> ağındasınız.<br/>
-          BaseHub sadece <strong>Base</strong> ağında çalışır.
+          You are currently on <strong>{currentNetworkConfig?.chainName || 'Unknown'}</strong> network.<br/>
+          BaseHub works on <strong>Base</strong> or <strong>InkChain</strong> networks.
         </p>
         {!isInFarcaster && (
           <button 
@@ -69,7 +70,7 @@ const NetworkGuard = ({ children, showWarning = false }) => {
               e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)'
             }}
           >
-            🔄 Base Ağına Geç
+            🔄 Switch to Base
           </button>
         )}
       </div>
@@ -105,9 +106,9 @@ const NetworkGuard = ({ children, showWarning = false }) => {
       }}>
         <div>
           <div style={{ fontSize: '24px', marginBottom: '10px' }}>🚫</div>
-          <div>Yanlış Ağ - İşlem Engellendi</div>
+          <div>Wrong Network - Action Blocked</div>
           <div style={{ fontSize: '14px', marginTop: '8px', opacity: 0.8 }}>
-            Base ağına geçin
+            Please switch to Base or InkChain network
           </div>
         </div>
       </div>
