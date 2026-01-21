@@ -512,6 +512,19 @@ const Profile = () => {
                     {userNFTCount} {userNFTCount === 1 ? 'NFT' : 'NFTs'}
                   </div>
                 </div>
+
+                <div style={styles.xpBoostBanner}>
+                  <div style={styles.xpBoostIcon}>
+                    <Zap size={16} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={styles.xpBoostTitle}>2x XP Boost Active</div>
+                    <div style={styles.xpBoostText}>
+                      Holding this pass doubles all XP you earn across the platform.
+                    </div>
+                  </div>
+                </div>
+
                 <div style={styles.nftGrid}>
                   {Array.from({ length: userNFTCount }).map((_, index) => {
                     const animationDelay = index * 0.3
@@ -943,6 +956,39 @@ const styles = {
     fontSize: '13px',
     fontWeight: '500',
     color: '#9ca3af'
+  },
+  xpBoostBanner: {
+    display: 'flex',
+    gap: '12px',
+    alignItems: 'center',
+    padding: '14px 16px',
+    borderRadius: '14px',
+    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.18) 0%, rgba(37, 99, 235, 0.12) 100%)',
+    border: '1px solid rgba(59, 130, 246, 0.35)',
+    marginBottom: '18px',
+    boxShadow: '0 6px 18px rgba(59, 130, 246, 0.25)'
+  },
+  xpBoostIcon: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '10px',
+    background: 'rgba(59, 130, 246, 0.15)',
+    border: '1px solid rgba(59, 130, 246, 0.35)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#93c5fd',
+    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.25)'
+  },
+  xpBoostTitle: {
+    fontSize: '14px',
+    fontWeight: '700',
+    color: '#e5e7eb'
+  },
+  xpBoostText: {
+    fontSize: '13px',
+    fontWeight: '500',
+    color: '#cbd5e1'
   },
   nftCountBadge: {
     padding: '6px 12px',
