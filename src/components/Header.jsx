@@ -127,7 +127,7 @@ const Header = () => {
               )}
 
               {/* Network Selector - only show in web, not in Farcaster */}
-              {isConnected && shouldUseRainbowKit() && !isInFarcaster && (
+              {!isInFarcaster && (
                 <NetworkSelector />
               )}
 
