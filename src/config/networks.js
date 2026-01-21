@@ -28,7 +28,8 @@ export const NETWORKS = {
       decimals: 18,
     },
     rpcUrls: [
-      'https://rpc.inkchain.io', // Update with actual RPC URL
+      'https://rpc-gel.inkonchain.com', // Primary InkChain RPC endpoint
+      'https://rpc-qnd.inkonchain.com', // Backup InkChain RPC endpoint
     ],
     blockExplorerUrls: ['https://explorer.inkonchain.com'], // InkChain explorer
     iconUrls: [],
