@@ -101,8 +101,14 @@ const NetworkSelector = () => {
       }}
     >
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          console.log('🔘 NetworkSelector button clicked, isOpen:', isOpen)
+          setIsOpen(!isOpen)
+        }}
         disabled={isPending}
+        type="button"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -118,7 +124,10 @@ const NetworkSelector = () => {
           outline: 'none',
           transition: 'all 0.2s ease',
           boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-          opacity: isPending ? 0.7 : 1
+          opacity: isPending ? 0.7 : 1,
+          position: 'relative',
+          zIndex: 1001,
+          pointerEvents: 'auto'
         }}
         onMouseEnter={(e) => {
           if (!isPending) {
