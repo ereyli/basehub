@@ -128,7 +128,10 @@ const Header = () => {
 
               {/* Network Selector - only show in web, not in Farcaster */}
               {!isInFarcaster && (
-                <NetworkSelector />
+                <>
+                  {console.log('🔍 Header: Rendering NetworkSelector, isInFarcaster:', isInFarcaster)}
+                  <NetworkSelector />
+                </>
               )}
 
               {/* Network Status - show when not on supported network (fallback) */}

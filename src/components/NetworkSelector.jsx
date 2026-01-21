@@ -9,14 +9,18 @@ const NetworkSelector = () => {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef(null)
   
-  // Debug logging
+  // Debug logging - ALWAYS log to see if component is rendering
   useEffect(() => {
-    console.log('🔍 NetworkSelector Render:', {
+    console.log('🔍 NetworkSelector Component Rendered:', {
       isConnected,
       chainId,
-      isOpen
+      isOpen,
+      timestamp: new Date().toISOString()
     })
   }, [isConnected, chainId, isOpen])
+  
+  // Force render a visible element for debugging
+  console.log('🔍 NetworkSelector Function Called - Component should render')
   
   // Default to Base if chainId is undefined
   const currentChainId = chainId || NETWORKS.BASE.chainId
