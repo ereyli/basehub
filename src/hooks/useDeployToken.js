@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAccount, useWriteContract, useWalletClient } from 'wagmi'
+import { useAccount, useWriteContract, useWalletClient, useChainId } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { parseEther, encodeAbiParameters, parseAbiParameters } from 'viem'
 import { config } from '../config/wagmi'
@@ -348,6 +348,7 @@ export const useDeployToken = () => {
   const { address } = useAccount()
   const { data: walletClient } = useWalletClient()
   const { writeContractAsync } = useWriteContract()
+  const chainId = useChainId()
   const { isCorrectNetwork, networkName, baseNetworkName, switchToBaseNetwork } = useNetworkCheck()
   const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)
@@ -397,13 +398,24 @@ export const useDeployToken = () => {
       
       console.log('✅ Fee transaction sent:', feeTxHash)
       
-      // Wait for fee transaction confirmation
-      const receipt = await waitForTransactionReceipt(config, {
-        hash: feeTxHash,
-        confirmations: 1,
-      })
-      
-      console.log('✅ Fee transaction confirmed!')
+      // Wait for fee transaction confirmation (non-blocking with timeout for InkChain)
+      console.log('⏳ Waiting for fee transaction confirmation...')
+      try {
+        const receipt = await Promise.race([
+          waitForTransactionReceipt(config, {
+            hash: feeTxHash,
+            chainId: chainId, // Explicitly set chainId for proper network
+            confirmations: 1,
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Fee transaction confirmation timeout')), 60000) // 60 seconds
+          )
+        ])
+        console.log('✅ Fee transaction confirmed!', receipt)
+      } catch (confirmError) {
+        console.warn('⚠️ Fee confirmation timeout (but proceeding with deploy):', confirmError.message)
+        // Continue with deploy even if confirmation times out
+      }
       
       // Now deploy the actual ERC20 contract
       console.log('🚀 Deploying ERC20 contract...')
@@ -434,13 +446,44 @@ export const useDeployToken = () => {
       
       console.log('✅ Deploy transaction sent:', deployTxHash)
       
-      // Wait for deploy confirmation
-      const deployReceipt = await waitForTransactionReceipt(config, {
-        hash: deployTxHash,
-        confirmations: 1,
-      })
-      
-      console.log('✅ ERC20 contract deployed successfully!')
+      // Wait for deploy confirmation (non-blocking with timeout for InkChain)
+      console.log('⏳ Waiting for deploy transaction confirmation...')
+      try {
+        const deployReceipt = await Promise.race([
+          waitForTransactionReceipt(config, {
+            hash: deployTxHash,
+            chainId: chainId, // Explicitly set chainId for proper network
+            confirmations: 1,
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Deploy transaction confirmation timeout')), 60000) // 60 seconds
+          )
+        ])
+        console.log('✅ ERC20 contract deployed successfully!', deployReceipt)
+        
+        // Return with contract address if confirmation succeeded
+        return {
+          txHash: deployTxHash,
+          contractAddress: deployReceipt.contractAddress,
+          feeTxHash,
+          fee: '0.0002 ETH',
+          feeWallet,
+          xpEarned: 50,
+          status: 'Token deployed successfully! +50 XP earned!'
+        }
+      } catch (confirmError) {
+        console.warn('⚠️ Deploy confirmation timeout (but transaction was sent):', confirmError.message)
+        // Return with txHash even if confirmation times out
+        return {
+          txHash: deployTxHash,
+          contractAddress: null, // Will be available after confirmation
+          feeTxHash,
+          fee: '0.0002 ETH',
+          feeWallet,
+          xpEarned: 50,
+          status: 'Token deployment transaction sent! Please check the transaction hash for contract address. +50 XP earned!'
+        }
+      }
       console.log('📄 Contract Address:', deployReceipt.contractAddress)
       
       // Award XP for successful token deployment
@@ -473,16 +516,6 @@ export const useDeployToken = () => {
         await updateQuestProgress('tokenDeployed', 1)
       } catch (questError) {
         console.error('❌ Failed to update quest progress:', questError)
-      }
-      
-      return {
-        txHash: deployTxHash,
-        contractAddress: deployReceipt.contractAddress,
-        feeTxHash,
-        fee: '0.0002 ETH',
-        feeWallet,
-        xpEarned: 50,
-        status: 'Token deployed successfully! +50 XP earned!'
       }
     } catch (err) {
       console.error('❌ Token deployment failed:', err)

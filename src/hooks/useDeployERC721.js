@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useWalletClient } from 'wagmi'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useWalletClient, useChainId } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { parseEther, encodeAbiParameters, parseAbiParameters } from 'viem'
 import { config } from '../config/wagmi'
@@ -454,6 +454,7 @@ const ERC721_ABI = [
 export const useDeployERC721 = () => {
   const { address } = useAccount()
   const { data: walletClient } = useWalletClient()
+  const chainId = useChainId()
   const { isCorrectNetwork, networkName, baseNetworkName, switchToBaseNetwork } = useNetworkCheck()
   const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)
@@ -530,13 +531,24 @@ export const useDeployERC721 = () => {
 
       console.log('✅ Fee transaction sent:', feeTxHash)
 
-      // Wait for fee transaction confirmation
-      await waitForTransactionReceipt(config, {
-        hash: feeTxHash,
-        confirmations: 1,
-      })
-
-      console.log('✅ Fee transaction confirmed!')
+      // Wait for fee transaction confirmation (non-blocking with timeout for InkChain)
+      console.log('⏳ Waiting for fee transaction confirmation...')
+      try {
+        await Promise.race([
+          waitForTransactionReceipt(config, {
+            hash: feeTxHash,
+            chainId: chainId, // Explicitly set chainId for proper network
+            confirmations: 1,
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Fee transaction confirmation timeout')), 60000) // 60 seconds
+          )
+        ])
+        console.log('✅ Fee transaction confirmed!')
+      } catch (confirmError) {
+        console.warn('⚠️ Fee confirmation timeout (but proceeding with deploy):', confirmError.message)
+        // Continue with deploy even if confirmation times out
+      }
 
       // Step 4: Deploy the actual ERC721 contract
       console.log('🚀 Deploying ERC721 contract...')
@@ -571,14 +583,26 @@ export const useDeployERC721 = () => {
       
       console.log('✅ Deploy transaction sent:', deployTxHash)
       
-      // Wait for deploy confirmation
-      const deployReceipt = await waitForTransactionReceipt(config, {
-        hash: deployTxHash,
-        confirmations: 1,
-      })
-      
-      console.log('✅ ERC721 contract deployed successfully!')
-      console.log('📄 Contract Address:', deployReceipt.contractAddress)
+      // Wait for deploy confirmation (non-blocking with timeout for InkChain)
+      console.log('⏳ Waiting for deploy transaction confirmation...')
+      let deployReceipt = null
+      try {
+        deployReceipt = await Promise.race([
+          waitForTransactionReceipt(config, {
+            hash: deployTxHash,
+            chainId: chainId, // Explicitly set chainId for proper network
+            confirmations: 1,
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Deploy transaction confirmation timeout')), 60000) // 60 seconds
+          )
+        ])
+        console.log('✅ ERC721 contract deployed successfully!')
+        console.log('📄 Contract Address:', deployReceipt.contractAddress)
+      } catch (confirmError) {
+        console.warn('⚠️ Deploy confirmation timeout (but transaction was sent):', confirmError.message)
+        // Continue with XP and quest updates even if confirmation times out
+      }
 
       // Award XP for successful ERC721 deployment
       try {
@@ -619,7 +643,7 @@ export const useDeployERC721 = () => {
       }
 
       return {
-        contractAddress: deployReceipt.contractAddress,
+        contractAddress: deployReceipt?.contractAddress || null, // Will be available after confirmation
         imageUrl: imageUrl || null,
         metadataUrl,
         deployTxHash
