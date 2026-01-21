@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useAccount, useChainId } from 'wagmi'
+import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { useEarlyAccessMint } from '../hooks/useEarlyAccessMint'
 import { Helmet } from 'react-helmet-async'
 import BackButton from '../components/BackButton'
@@ -11,6 +11,7 @@ import { NETWORKS, getTransactionExplorerUrl } from '../config/networks'
 const EarlyAccessNFT = () => {
   const { isConnected, address } = useAccount()
   const chainId = useChainId()
+  const { switchChain } = useSwitchChain()
   const {
     mint,
     isLoading,
@@ -102,6 +103,21 @@ const EarlyAccessNFT = () => {
   }
 
   const handleMint = async () => {
+    // If not on Base network, switch to Base first
+    if (!isOnBase) {
+      try {
+        await switchChain({ chainId: NETWORKS.BASE.chainId })
+        // Wait a bit for the network switch to complete
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        // After switching, the user can click mint again
+        return
+      } catch (err) {
+        console.error('Failed to switch to Base network:', err)
+        alert('Please switch to Base network to mint your NFT')
+        return
+      }
+    }
+    
     try {
       setMintResult(null)
       await mint()
@@ -121,68 +137,6 @@ const EarlyAccessNFT = () => {
 
   const remainingSupply = maxSupply - totalMinted
   const progressPercentage = maxSupply > 0 ? (totalMinted / maxSupply) * 100 : 0
-
-  // Show Base-only warning if not on Base network
-  if (isConnected && !isOnBase) {
-    return (
-      <div className="early-access-nft-page" style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #0a1929 0%, #1a2744 50%, #0f172a 100%)',
-        padding: '20px',
-        color: '#fff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <Helmet>
-          <title>Early Access NFT - BaseHub</title>
-          <meta name="description" content="Mint your BaseHub Early Access Pass NFT" />
-        </Helmet>
-        
-        <div style={{
-          maxWidth: '600px',
-          margin: '0 auto',
-          padding: '40px 20px',
-          textAlign: 'center',
-          backgroundColor: 'rgba(30, 41, 59, 0.95)',
-          borderRadius: '20px',
-          border: '2px solid rgba(239, 68, 68, 0.3)',
-          backdropFilter: 'blur(10px)'
-        }}>
-          <BackButton />
-          <AlertCircle size={48} style={{ color: '#ef4444', marginBottom: '20px', marginTop: '20px' }} />
-          <h2 style={{ 
-            fontSize: '24px', 
-            fontWeight: '700', 
-            color: '#ef4444', 
-            marginBottom: '16px' 
-          }}>
-            Base Network Required
-          </h2>
-          <p style={{ 
-            fontSize: '16px', 
-            color: '#9ca3af', 
-            marginBottom: '24px',
-            lineHeight: '1.6'
-          }}>
-            Early Access NFT minting only works on Base network.
-            <br />
-            Please switch to Base network using RainbowKit's network selector to mint your NFT.
-          </p>
-          <div style={{
-            padding: '12px 20px',
-            background: 'rgba(59, 130, 246, 0.1)',
-            borderRadius: '12px',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
-            color: '#60a5fa',
-            fontSize: '14px'
-          }}>
-            Current Network: {chainId === NETWORKS.INKCHAIN.chainId ? 'InkChain' : `Unknown (Chain ID: ${chainId})`}
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="early-access-nft-page" style={{
@@ -439,6 +393,25 @@ const EarlyAccessNFT = () => {
             Holders earn **2x XP** across the entire ecosystem.
           </div>
 
+          {/* Show network warning if not on Base */}
+          {!isOnBase && (
+            <div style={{
+              background: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
+              borderRadius: '12px',
+              padding: '16px',
+              marginBottom: '24px',
+              color: '#fca5a5',
+              fontSize: '0.95rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              <AlertCircle size={20} />
+              <span>Early Access NFT minting requires Base network. Click "Mint" to switch to Base automatically.</span>
+            </div>
+          )}
+
           {error && (
             <div style={{
               background: 'rgba(239, 68, 68, 0.15)',
@@ -528,6 +501,8 @@ const EarlyAccessNFT = () => {
               ? 'Sold Out'
               : mintingEnabled === false
               ? 'Minting Disabled'
+              : !isOnBase
+              ? 'Switch to Base & Mint'
               : 'Mint Early Access Pass'}
           </button>
 
