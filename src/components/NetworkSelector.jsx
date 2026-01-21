@@ -23,11 +23,51 @@ const NetworkSelector = () => {
     isInFarcaster = false
   }
   
-  if (!isWeb || isInFarcaster || !isConnected) {
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 NetworkSelector Debug:', {
+      isWeb,
+      isInFarcaster,
+      isConnected,
+      chainId,
+      shouldRender: isWeb && !isInFarcaster && isConnected
+    })
+  }, [isWeb, isInFarcaster, isConnected, chainId])
+  
+  // Always show in web environment, even if not connected (user can see it and connect)
+  if (!isWeb || isInFarcaster) {
     return null
   }
   
+  // If not connected, show a disabled state
+  if (!isConnected) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '8px 16px',
+        fontSize: '14px',
+        fontWeight: '600',
+        color: '#9ca3af',
+        background: 'rgba(59, 130, 246, 0.1)',
+        border: '1px solid rgba(59, 130, 246, 0.2)',
+        borderRadius: '20px',
+        cursor: 'not-allowed',
+        opacity: 0.6
+      }}>
+        <Wifi size={16} />
+        <span>Connect Wallet</span>
+      </div>
+    )
+  }
+  
   const currentNetwork = getNetworkConfig(chainId)
+  if (!currentNetwork) {
+    console.warn('⚠️ NetworkSelector: currentNetwork is undefined for chainId:', chainId)
+    return null
+  }
+  
   const supportedNetworks = Object.values(NETWORKS)
   
   const handleNetworkSelect = (targetChainId) => {
@@ -56,7 +96,8 @@ const NetworkSelector = () => {
       ref={dropdownRef}
       style={{
         position: 'relative',
-        display: 'inline-block'
+        display: 'inline-block',
+        zIndex: 1001
       }}
     >
       <button
@@ -137,7 +178,7 @@ const NetworkSelector = () => {
             border: '1px solid rgba(59, 130, 246, 0.3)',
             borderRadius: '12px',
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
-            zIndex: 1000,
+            zIndex: 10000,
             overflow: 'hidden'
           }}
         >
