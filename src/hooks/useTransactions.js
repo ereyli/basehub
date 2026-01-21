@@ -146,13 +146,19 @@ export const useTransactions = () => {
         // XP already awarded, so we don't throw error - just log warning
       }
       
+      // Clear any previous errors on success
+      setError(null)
+      
       return { 
         txHash,
         xpEarned: 30 
       }
     } catch (err) {
       console.error('❌ Transaction failed:', err)
-      setError(err.message)
+      // Only set error for actual transaction failures, not confirmation timeouts
+      if (!err.message?.includes('confirmation timeout') && !err.message?.includes('Confirmation timeout')) {
+        setError(err.message)
+      }
       throw err
     } finally {
       setIsLoading(false)
@@ -221,13 +227,19 @@ export const useTransactions = () => {
         console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
       }
       
+      // Clear any previous errors on success
+      setError(null)
+      
       return { 
         txHash,
         xpEarned: 30 
       }
     } catch (err) {
       console.error('❌ Transaction failed:', err)
-      setError(err.message)
+      // Only set error for actual transaction failures, not confirmation timeouts
+      if (!err.message?.includes('confirmation timeout') && !err.message?.includes('Confirmation timeout')) {
+        setError(err.message)
+      }
       throw err
     } finally {
       setIsLoading(false)
@@ -308,6 +320,9 @@ export const useTransactions = () => {
         console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
       }
       
+      // Clear any previous errors on success
+      setError(null)
+      
       return { 
         txHash, 
         playerChoice: selectedSide, 
@@ -316,7 +331,10 @@ export const useTransactions = () => {
         xpEarned: playerWon ? 560 : 60
       }
     } catch (err) {
-      setError(err.message)
+      // Only set error for actual transaction failures, not confirmation timeouts
+      if (!err.message?.includes('confirmation timeout') && !err.message?.includes('Confirmation timeout')) {
+        setError(err.message)
+      }
       throw err
     } finally {
       setIsLoading(false)
@@ -394,6 +412,9 @@ export const useTransactions = () => {
         console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
       }
       
+      // Clear any previous errors on success
+      setError(null)
+      
       return { 
         txHash, 
         playerGuess: guess, 
@@ -402,7 +423,10 @@ export const useTransactions = () => {
         xpEarned: playerWon ? 1060 : 60
       }
     } catch (err) {
-      setError(err.message)
+      // Only set error for actual transaction failures, not confirmation timeouts
+      if (!err.message?.includes('confirmation timeout') && !err.message?.includes('Confirmation timeout')) {
+        setError(err.message)
+      }
       throw err
     } finally {
       setIsLoading(false)
@@ -481,6 +505,9 @@ export const useTransactions = () => {
         console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
       }
       
+      // Clear any previous errors on success
+      setError(null)
+      
       return { 
         txHash, 
         playerGuess: guess, 
@@ -491,7 +518,10 @@ export const useTransactions = () => {
         xpEarned: playerWon ? 1560 : 60
       }
     } catch (err) {
-      setError(err.message)
+      // Only set error for actual transaction failures, not confirmation timeouts
+      if (!err.message?.includes('confirmation timeout') && !err.message?.includes('Confirmation timeout')) {
+        setError(err.message)
+      }
       throw err
     } finally {
       setIsLoading(false)
@@ -628,6 +658,9 @@ export const useTransactions = () => {
           console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
         }
         
+        // Clear any previous errors on success
+        setError(null)
+        
         return {
           txHash,
           symbols,
@@ -664,19 +697,20 @@ export const useTransactions = () => {
           console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
         }
         
+        // Clear any previous errors on success
+        setError(null)
+        
         return {
           txHash,
           creditsPurchased: params.amount,
           xpEarned: 10
-          }
         }
-        
-      } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout:', confirmError.message)
-        throw new Error('Transaction confirmation failed - please try again')
       }
     } catch (err) {
-      setError(err.message)
+      // Only set error for actual transaction failures, not confirmation timeouts
+      if (!err.message?.includes('confirmation timeout') && !err.message?.includes('Confirmation timeout')) {
+        setError(err.message)
+      }
       throw err
     } finally {
       setIsLoading(false)
