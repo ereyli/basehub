@@ -8,36 +8,17 @@ import { Wifi, ChevronDown } from 'lucide-react'
 const NetworkSelector = () => {
   const { chainId, isConnected } = useAccount()
   const { switchChain, isPending } = useSwitchChain()
-  const isWeb = shouldUseRainbowKit()
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef(null)
   
-  // Don't show in Farcaster - only Base is supported there
-  let isInFarcaster = false
-  try {
-    if (!isWeb) {
-      const farcasterContext = useFarcaster()
-      isInFarcaster = farcasterContext?.isInFarcaster || false
-    }
-  } catch (error) {
-    isInFarcaster = false
-  }
-  
   // Debug logging
   useEffect(() => {
-    console.log('🔍 NetworkSelector Debug:', {
-      isWeb,
-      isInFarcaster,
+    console.log('🔍 NetworkSelector Render:', {
       isConnected,
       chainId,
-      shouldRender: isWeb && !isInFarcaster && isConnected
+      isOpen
     })
-  }, [isWeb, isInFarcaster, isConnected, chainId])
-  
-  // Always show in web environment, even if not connected (user can see it and connect)
-  if (!isWeb || isInFarcaster) {
-    return null
-  }
+  }, [isConnected, chainId, isOpen])
   
   // If not connected, show a disabled state
   if (!isConnected) {
