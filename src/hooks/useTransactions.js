@@ -135,8 +135,8 @@ export const useTransactions = () => {
           waitForTransactionReceipt(config, {
             hash: txHash,
             chainId: chainId, // Explicitly set chainId for proper network
-            confirmations: 1,
-            pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base (faster polling)
+            confirmations: isOnInkChain ? 0 : 1, // 0 confirmations for InkChain (immediate), 1 for Base
+            pollingInterval: isOnInkChain ? 500 : 4000, // 500ms for InkChain (very fast), 4 seconds for Base
           }),
           new Promise((_, reject) => 
             setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
@@ -226,8 +226,8 @@ export const useTransactions = () => {
           waitForTransactionReceipt(config, {
             hash: txHash,
             chainId: chainId, // Explicitly set chainId
-            confirmations: 1,
-            pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base
+            confirmations: isOnInkChain ? 0 : 1, // 0 confirmations for InkChain (immediate), 1 for Base
+            pollingInterval: isOnInkChain ? 500 : 4000, // 500ms for InkChain (very fast), 4 seconds for Base
           }),
           new Promise((_, reject) => 
             setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
@@ -324,8 +324,8 @@ export const useTransactions = () => {
           waitForTransactionReceipt(config, {
             hash: txHash,
             chainId: chainId, // Explicitly set chainId
-            confirmations: 1,
-            pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base
+            confirmations: isOnInkChain ? 0 : 1, // 0 confirmations for InkChain (immediate), 1 for Base
+            pollingInterval: isOnInkChain ? 500 : 4000, // 500ms for InkChain (very fast), 4 seconds for Base
           }),
           new Promise((_, reject) => 
             setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
@@ -421,8 +421,8 @@ export const useTransactions = () => {
           waitForTransactionReceipt(config, {
             hash: txHash,
             chainId: chainId, // Explicitly set chainId
-            confirmations: 1,
-            pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base
+            confirmations: isOnInkChain ? 0 : 1, // 0 confirmations for InkChain (immediate), 1 for Base
+            pollingInterval: isOnInkChain ? 500 : 4000, // 500ms for InkChain (very fast), 4 seconds for Base
           }),
           new Promise((_, reject) => 
             setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
@@ -519,8 +519,8 @@ export const useTransactions = () => {
           waitForTransactionReceipt(config, {
             hash: txHash,
             chainId: chainId, // Explicitly set chainId
-            confirmations: 1,
-            pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base
+            confirmations: isOnInkChain ? 0 : 1, // 0 confirmations for InkChain (immediate), 1 for Base
+            pollingInterval: isOnInkChain ? 500 : 4000, // 500ms for InkChain (very fast), 4 seconds for Base
           }),
           new Promise((_, reject) => 
             setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
@@ -677,8 +677,8 @@ export const useTransactions = () => {
             waitForTransactionReceipt(config, {
               hash: txHash,
               chainId: chainId, // Explicitly set chainId
-              confirmations: 1,
-              pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base
+              confirmations: isOnInkChain ? 0 : 1, // 0 confirmations for InkChain (immediate), 1 for Base
+              pollingInterval: isOnInkChain ? 500 : 4000, // 500ms for InkChain (very fast), 4 seconds for Base
             }),
             new Promise((_, reject) => 
               setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
@@ -721,8 +721,8 @@ export const useTransactions = () => {
             waitForTransactionReceipt(config, {
               hash: txHash,
               chainId: chainId, // Explicitly set chainId
-              confirmations: 1,
-              pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base
+              confirmations: isOnInkChain ? 0 : 1, // 0 confirmations for InkChain (immediate), 1 for Base
+              pollingInterval: isOnInkChain ? 500 : 4000, // 500ms for InkChain (very fast), 4 seconds for Base
             }),
             new Promise((_, reject) => 
               setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
