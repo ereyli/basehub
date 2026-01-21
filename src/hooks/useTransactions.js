@@ -664,19 +664,10 @@ export const useTransactions = () => {
           console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
         }
         
-        // Credits purchase
-          try {
-            await addXP(address, 60) // XP for purchasing credits
-            await recordTransaction(address, 'SLOT_GAME', 60, txHash)
-            console.log('✅ XP added for credit purchase')
-          } catch (xpError) {
-            console.error('Error adding XP for credit purchase:', xpError)
-          }
-          
-          return {
-            txHash,
-            creditsPurchased: params.amount,
-            xpEarned: 10
+        return {
+          txHash,
+          creditsPurchased: params.amount,
+          xpEarned: 10
           }
         }
         
