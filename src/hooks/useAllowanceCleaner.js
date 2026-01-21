@@ -1,11 +1,12 @@
 // Hook for Allowance Cleaner using x402 payment
 import { useState } from 'react'
-import { useWalletClient, useAccount, useWriteContract, useReadContract } from 'wagmi'
+import { useWalletClient, useAccount, useWriteContract, useReadContract, useChainId, useSwitchChain } from 'wagmi'
 import { wrapFetchWithPayment } from 'x402-fetch'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { config } from '../config/wagmi'
 import { addXP, recordTransaction } from '../utils/xpUtils'
 import { useQuestSystem } from './useQuestSystem'
+import { NETWORKS } from '../config/networks'
 import { parseUnits, formatUnits, maxUint256 } from 'viem'
 
 // ERC20 ABI for allowance and approve
@@ -109,6 +110,17 @@ export const useAllowanceCleaner = () => {
 
     if (!walletClient) {
       throw new Error('Wallet client not available')
+    }
+
+    // x402 payments only work on Base network - switch if needed
+    if (chainId !== NETWORKS.BASE.chainId) {
+      try {
+        await switchChain({ chainId: NETWORKS.BASE.chainId })
+        // Wait a bit for network switch
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      } catch (err) {
+        throw new Error('Please switch to Base network to use x402 payments')
+      }
     }
 
     setIsScanning(true)

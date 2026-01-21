@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useAccount } from 'wagmi'
+import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { getLeaderboard } from '../utils/xpUtils'
 import { useTransactions } from '../hooks/useTransactions'
 import { useX402Payment } from '../hooks/useX402Payment'
@@ -9,10 +9,13 @@ import TwitterShareButton from '../components/TwitterShareButton'
 import DailyQuestSystem from '../components/DailyQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
+import { NETWORKS } from '../config/networks'
 import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat } from 'lucide-react'
 
 const Home = () => {
   const { isConnected } = useAccount()
+  const chainId = useChainId()
+  const { switchChain } = useSwitchChain()
   const { sendGMTransaction, sendGNTransaction, isLoading: transactionLoading } = useTransactions()
   
   // x402 Payment hook - uses x402-fetch (handles wallet UI automatically)
@@ -147,6 +150,50 @@ const Home = () => {
     }
   }
 
+  // Helper function to render network logos
+  const renderNetworkLogos = (networks) => {
+    if (!networks || networks.length === 0) return null
+    
+    return (
+      <div style={{ 
+        display: 'flex', 
+        gap: '4px', 
+        position: 'absolute',
+        top: '-4px',
+        right: '-4px',
+        background: 'rgba(0, 0, 0, 0.7)',
+        borderRadius: '8px',
+        padding: '2px 4px',
+        zIndex: 10
+      }}>
+        {networks.includes('base') && (
+          <img 
+            src="/baselogo.jpg" 
+            alt="Base" 
+            style={{ 
+              width: '16px', 
+              height: '16px', 
+              borderRadius: '4px',
+              objectFit: 'cover'
+            }} 
+          />
+        )}
+        {networks.includes('ink') && (
+          <img 
+            src="/inklogo.jpg" 
+            alt="InkChain" 
+            style={{ 
+              width: '16px', 
+              height: '16px', 
+              borderRadius: '4px',
+              objectFit: 'cover'
+            }} 
+          />
+        )}
+      </div>
+    )
+  }
+
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId)
     if (element) {
@@ -166,7 +213,8 @@ const Home = () => {
       path: '/gm',
       color: '#10b981',
       xpReward: '30 XP',
-      bonusXP: null
+      bonusXP: null,
+      networks: ['base', 'ink']
     },
     {
       id: 'gn',
@@ -176,7 +224,8 @@ const Home = () => {
       path: '/gn',
       color: '#3b82f6',
       xpReward: '30 XP',
-      bonusXP: null
+      bonusXP: null,
+      networks: ['base', 'ink']
     },
     {
       id: 'ai-nft',
@@ -186,7 +235,8 @@ const Home = () => {
       path: '/ai-nft',
       color: '#3b82f6',
       xpReward: '500 XP',
-      bonusXP: null
+      bonusXP: null,
+      networks: ['base']
     },
     {
       id: 'x402-premium',
@@ -197,7 +247,9 @@ const Home = () => {
       color: '#667eea',
       xpReward: '500 XP',
       bonusXP: '0.1 USDC',
-      isPayment: true // Mark as payment button
+      isPayment: true, // Mark as payment button
+      networks: ['base'],
+      isX402: true
     },
     {
       id: 'wallet-analysis',
@@ -208,7 +260,8 @@ const Home = () => {
       color: '#ec4899',
       xpReward: '400 XP',
       bonusXP: '0.40 USDC',
-      isX402: true // Mark as x402 payment
+      isX402: true, // Mark as x402 payment
+      networks: ['base']
     },
     {
       id: 'contract-security',
@@ -219,7 +272,8 @@ const Home = () => {
       color: '#8b5cf6',
       xpReward: '500 XP',
       bonusXP: '0.50 USDC',
-      isX402: true // Mark as x402 payment
+      isX402: true, // Mark as x402 payment
+      networks: ['base']
     },
     {
       id: 'allowance-cleaner',
@@ -230,7 +284,8 @@ const Home = () => {
       color: '#ef4444',
       xpReward: '300 XP',
       bonusXP: '0.1 USDC',
-      isX402: true // Mark as x402 payment
+      isX402: true, // Mark as x402 payment
+      networks: ['base']
     },
     {
       id: 'featured-profiles',
@@ -241,7 +296,8 @@ const Home = () => {
       color: '#f59e0b',
       xpReward: '200 XP',
       bonusXP: '0.2-6.0 USDC',
-      isX402: true // Mark as x402 payment
+      isX402: true, // Mark as x402 payment
+      networks: ['base']
     },
     {
       id: 'deploy-erc721',
@@ -251,7 +307,8 @@ const Home = () => {
       path: '/deploy-erc721',
       color: '#8b5cf6',
       xpReward: '100 XP',
-      bonusXP: null
+      bonusXP: null,
+      networks: ['base', 'ink']
     },
     {
       id: 'deploy',
@@ -261,7 +318,8 @@ const Home = () => {
       path: '/deploy',
       color: '#10b981',
       xpReward: '50 XP',
-      bonusXP: null
+      bonusXP: null,
+      networks: ['base', 'ink']
     },
     {
       id: 'deploy-erc1155',
@@ -271,7 +329,8 @@ const Home = () => {
       path: '/deploy-erc1155',
       color: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
       xpReward: '100 XP',
-      bonusXP: null
+      bonusXP: null,
+      networks: ['base', 'ink']
     },
     {
       id: 'flip',
@@ -281,7 +340,8 @@ const Home = () => {
       path: '/flip',
       color: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
       xpReward: '60 XP',
-      bonusXP: '+500 XP (Win)'
+      bonusXP: '+500 XP (Win)',
+      networks: ['base', 'ink']
     },
     {
       id: 'lucky',
@@ -291,7 +351,8 @@ const Home = () => {
       path: '/lucky',
       color: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
       xpReward: '60 XP',
-      bonusXP: '+1000 XP (Win)'
+      bonusXP: '+1000 XP (Win)',
+      networks: ['base', 'ink']
     },
     {
       id: 'dice',
@@ -301,7 +362,8 @@ const Home = () => {
       path: '/dice',
       color: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
       xpReward: '60 XP',
-      bonusXP: '+1500 XP (Win)'
+      bonusXP: '+1500 XP (Win)',
+      networks: ['base', 'ink']
     },
     {
       id: 'slot',
@@ -311,7 +373,8 @@ const Home = () => {
       path: '/slot',
       color: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
       xpReward: '60 XP',
-      bonusXP: '+2000 XP (Combo)'
+      bonusXP: '+2000 XP (Combo)',
+      networks: ['base', 'ink']
     },
     {
       id: 'swap',
@@ -321,7 +384,8 @@ const Home = () => {
       path: '/swap',
       color: 'linear-gradient(135deg, #ff1cf7 0%, #00d4ff 100%)',
       xpReward: '250 XP',
-      bonusXP: '5000 XP (Every $500)'
+      bonusXP: '5000 XP (Every $500)',
+      networks: ['base']
     },
   ]
 
@@ -462,7 +526,10 @@ const Home = () => {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                        {game.icon}
+                        <div style={{ position: 'relative' }}>
+                          {game.icon}
+                          {renderNetworkLogos(game.networks)}
+                        </div>
                         <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
                           {game.title}
                         </h3>
@@ -550,7 +617,10 @@ const Home = () => {
                         height: '100%'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                          {game.icon}
+                          <div style={{ position: 'relative' }}>
+                            {game.icon}
+                            {renderNetworkLogos(game.networks)}
+                          </div>
                           <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
                             {game.title}
                           </h3>
@@ -636,7 +706,10 @@ const Home = () => {
                       transition: 'all 0.3s ease'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                        <Rocket size={35} style={{ color: 'white' }} />
+                        <div style={{ position: 'relative' }}>
+                          <Rocket size={35} style={{ color: 'white' }} />
+                          {renderNetworkLogos(['base'])}
+                        </div>
                         <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
                           Early Access Pass
                         </h3>
@@ -757,7 +830,10 @@ const Home = () => {
                         height: '100%'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                          {game.icon}
+                          <div style={{ position: 'relative' }}>
+                            {game.icon}
+                            {renderNetworkLogos(game.networks)}
+                          </div>
                           <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
                             {game.title}
                           </h3>
@@ -846,7 +922,10 @@ const Home = () => {
                         height: '100%'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                          {game.icon}
+                          <div style={{ position: 'relative' }}>
+                            {game.icon}
+                            {renderNetworkLogos(game.networks)}
+                          </div>
                           <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
                             {game.title}
                           </h3>
@@ -945,7 +1024,10 @@ const Home = () => {
                             height: '100%'
                           }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                              {game.icon}
+                              <div style={{ position: 'relative' }}>
+                                {game.icon}
+                                {renderNetworkLogos(game.networks)}
+                              </div>
                               <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
                                 {game.title}
                               </h3>
@@ -1094,7 +1176,10 @@ const Home = () => {
                         height: '100%'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                          {game.icon}
+                          <div style={{ position: 'relative' }}>
+                            {game.icon}
+                            {renderNetworkLogos(game.networks)}
+                          </div>
                           <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
                             {game.title}
                           </h3>
@@ -1183,7 +1268,10 @@ const Home = () => {
                         height: '100%'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                          {game.icon}
+                          <div style={{ position: 'relative' }}>
+                            {game.icon}
+                            {renderNetworkLogos(game.networks)}
+                          </div>
                           <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
                             {game.title}
                           </h3>

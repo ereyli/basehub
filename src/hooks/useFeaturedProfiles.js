@@ -1,12 +1,15 @@
 // Hook for Featured Profiles and Follow System
 import { useState } from 'react'
 import { useFarcaster } from '../contexts/FarcasterContext'
-import { useWalletClient } from 'wagmi'
+import { useWalletClient, useChainId, useSwitchChain } from 'wagmi'
 import { wrapFetchWithPayment } from 'x402-fetch'
+import { NETWORKS } from '../config/networks'
 
 export const useFeaturedProfiles = () => {
   const { user } = useFarcaster()
   const { data: walletClient } = useWalletClient()
+  const chainId = useChainId()
+  const { switchChain } = useSwitchChain()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -22,6 +25,17 @@ export const useFeaturedProfiles = () => {
 
       if (!user?.fid) {
         throw new Error('Farcaster user not found')
+      }
+
+      // x402 payments only work on Base network - switch if needed
+      if (chainId !== NETWORKS.BASE.chainId) {
+        try {
+          await switchChain({ chainId: NETWORKS.BASE.chainId })
+          // Wait a bit for network switch
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        } catch (err) {
+          throw new Error('Please switch to Base network to use x402 payments')
+        }
       }
 
       // Pricing map

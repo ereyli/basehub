@@ -1,13 +1,16 @@
 // Hook for wallet analysis using x402 payment
 import { useState } from 'react'
-import { useWalletClient, useAccount } from 'wagmi'
+import { useWalletClient, useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { wrapFetchWithPayment } from 'x402-fetch'
 import { addXP, recordTransaction } from '../utils/xpUtils'
 import { useQuestSystem } from './useQuestSystem'
+import { NETWORKS } from '../config/networks'
 
 export const useWalletAnalysis = () => {
   const { data: walletClient } = useWalletClient()
   const { address } = useAccount()
+  const chainId = useChainId()
+  const { switchChain } = useSwitchChain()
   const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -25,6 +28,17 @@ export const useWalletAnalysis = () => {
 
     if (!walletClient) {
       throw new Error('Wallet not connected. Please connect your wallet first.')
+    }
+
+    // x402 payments only work on Base network - switch if needed
+    if (chainId !== NETWORKS.BASE.chainId) {
+      try {
+        await switchChain({ chainId: NETWORKS.BASE.chainId })
+        // Wait a bit for network switch
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      } catch (err) {
+        throw new Error('Please switch to Base network to use x402 payments')
+      }
     }
 
     setIsLoading(true)
