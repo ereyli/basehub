@@ -28,7 +28,11 @@ export const config = createConfig({
   chains: [base, inkChain],
   transports: {
     [base.id]: http(),
-    [inkChain.id]: http(),
+    [inkChain.id]: http(NETWORKS.INKCHAIN.rpcUrls[0], {
+      timeout: 30000, // 30 seconds timeout
+      retryCount: 3,
+      retryDelay: 1000,
+    }),
   },
   connectors: [
     // Farcaster Mini App connector (only works on Base)

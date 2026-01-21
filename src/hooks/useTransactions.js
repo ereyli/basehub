@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAccount, useWriteContract, usePublicClient } from 'wagmi'
 import { waitForTransactionReceipt, getPublicClient } from 'wagmi/actions'
+import { getPublicClient as getViemPublicClient } from 'viem'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from './useNetworkCheck'
 import { addXP, addBonusXP, recordTransaction } from '../utils/xpUtils'
@@ -32,6 +33,54 @@ export const useTransactions = () => {
   const { isCorrectNetwork, networkName, currentNetworkConfig, switchToNetwork, supportedNetworks } = useNetworkCheck()
   const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)
+
+  // Helper function to wait for transaction receipt with optimized polling for InkChain
+  const waitForTxReceipt = async (txHash, timeoutDuration = 60000) => {
+    const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+    
+    if (isOnInkChain && publicClient) {
+      // Manual polling for InkChain - more reliable
+      const startTime = Date.now()
+      const pollInterval = 500 // 500ms polling
+      const maxAttempts = Math.floor(timeoutDuration / pollInterval)
+      
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+          const receipt = await publicClient.getTransactionReceipt({ hash: txHash })
+          if (receipt) {
+            return receipt
+          }
+        } catch (pollError) {
+          // Transaction not yet mined, continue polling
+          if (attempt < maxAttempts - 1) {
+            await new Promise(resolve => setTimeout(resolve, pollInterval))
+            continue
+          }
+          throw pollError
+        }
+        
+        // Check timeout
+        if (Date.now() - startTime > timeoutDuration) {
+          throw new Error('Transaction confirmation timeout')
+        }
+      }
+      
+      throw new Error('Transaction receipt not found after polling')
+    } else {
+      // Use wagmi's waitForTransactionReceipt for Base
+      return await Promise.race([
+        waitForTransactionReceipt(config, {
+          hash: txHash,
+          chainId: chainId,
+          confirmations: 1,
+          pollingInterval: 4000,
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
+        )
+      ])
+    }
+  }
   const [error, setError] = useState(null)
 
   // Network validation and auto-switch function
@@ -127,21 +176,56 @@ export const useTransactions = () => {
       
       try {
         // Wait for confirmation with timeout - use publicClient for proper network
-        // For InkChain, use longer timeout and proper client
+        // For InkChain, use manual polling for better reliability
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
         const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
         
-        const receipt = await Promise.race([
-          waitForTransactionReceipt(config, {
-            hash: txHash,
-            chainId: chainId, // Explicitly set chainId for proper network
-            confirmations: isOnInkChain ? 0 : 1, // 0 confirmations for InkChain (immediate), 1 for Base
-            pollingInterval: isOnInkChain ? 500 : 4000, // 500ms for InkChain (very fast), 4 seconds for Base
-          }),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
-          )
-        ])
+        let receipt
+        if (isOnInkChain && publicClient) {
+          // Manual polling for InkChain - more reliable
+          const startTime = Date.now()
+          const pollInterval = 500 // 500ms polling
+          const maxAttempts = Math.floor(timeoutDuration / pollInterval)
+          
+          for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            try {
+              receipt = await publicClient.getTransactionReceipt({ hash: txHash })
+              if (receipt) {
+                console.log('✅ GM transaction confirmed via manual polling!')
+                break
+              }
+            } catch (pollError) {
+              // Transaction not yet mined, continue polling
+              if (attempt < maxAttempts - 1) {
+                await new Promise(resolve => setTimeout(resolve, pollInterval))
+                continue
+              }
+              throw pollError
+            }
+            
+            // Check timeout
+            if (Date.now() - startTime > timeoutDuration) {
+              throw new Error('Transaction confirmation timeout')
+            }
+          }
+          
+          if (!receipt) {
+            throw new Error('Transaction receipt not found after polling')
+          }
+        } else {
+          // Use wagmi's waitForTransactionReceipt for Base
+          receipt = await Promise.race([
+            waitForTransactionReceipt(config, {
+              hash: txHash,
+              chainId: chainId,
+              confirmations: 1,
+              pollingInterval: 4000,
+            }),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
+            )
+          ])
+        }
         
         console.log('✅ GM transaction confirmed!')
         console.log('📦 Receipt:', receipt)
@@ -218,21 +302,11 @@ export const useTransactions = () => {
       // Try to wait for confirmation (non-blocking)
       console.log('⏳ Waiting for transaction confirmation...')
       try {
-        // For InkChain, use longer timeout
+        // Wait for confirmation with optimized polling
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
         const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
         
-        const receipt = await Promise.race([
-          waitForTransactionReceipt(config, {
-            hash: txHash,
-            chainId: chainId, // Explicitly set chainId
-            confirmations: isOnInkChain ? 0 : 1, // 0 confirmations for InkChain (immediate), 1 for Base
-            pollingInterval: isOnInkChain ? 500 : 4000, // 500ms for InkChain (very fast), 4 seconds for Base
-          }),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
-          )
-        ])
+        const receipt = await waitForTxReceipt(txHash, timeoutDuration)
         
         console.log('✅ GN transaction confirmed!', receipt)
       } catch (confirmError) {
@@ -316,21 +390,11 @@ export const useTransactions = () => {
       // Try to wait for confirmation (non-blocking)
       console.log('⏳ Waiting for transaction confirmation...')
       try {
-        // For InkChain, use longer timeout
+        // Wait for confirmation with optimized polling
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
         const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
         
-        const receipt = await Promise.race([
-          waitForTransactionReceipt(config, {
-            hash: txHash,
-            chainId: chainId, // Explicitly set chainId
-            confirmations: isOnInkChain ? 0 : 1, // 0 confirmations for InkChain (immediate), 1 for Base
-            pollingInterval: isOnInkChain ? 500 : 4000, // 500ms for InkChain (very fast), 4 seconds for Base
-          }),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
-          )
-        ])
+        const receipt = await waitForTxReceipt(txHash, timeoutDuration)
         
         console.log('✅ Flip transaction confirmed!', receipt)
       } catch (confirmError) {
@@ -413,21 +477,11 @@ export const useTransactions = () => {
       // Try to wait for confirmation (non-blocking)
       console.log('⏳ Waiting for transaction confirmation...')
       try {
-        // For InkChain, use longer timeout
+        // Wait for confirmation with optimized polling
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
         const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
         
-        const receipt = await Promise.race([
-          waitForTransactionReceipt(config, {
-            hash: txHash,
-            chainId: chainId, // Explicitly set chainId
-            confirmations: isOnInkChain ? 0 : 1, // 0 confirmations for InkChain (immediate), 1 for Base
-            pollingInterval: isOnInkChain ? 500 : 4000, // 500ms for InkChain (very fast), 4 seconds for Base
-          }),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
-          )
-        ])
+        const receipt = await waitForTxReceipt(txHash, timeoutDuration)
         
         console.log('✅ Lucky Number transaction confirmed!', receipt)
       } catch (confirmError) {
@@ -511,21 +565,11 @@ export const useTransactions = () => {
       // Try to wait for confirmation (non-blocking)
       console.log('⏳ Waiting for transaction confirmation...')
       try {
-        // For InkChain, use longer timeout
+        // Wait for confirmation with optimized polling
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
         const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
         
-        const receipt = await Promise.race([
-          waitForTransactionReceipt(config, {
-            hash: txHash,
-            chainId: chainId, // Explicitly set chainId
-            confirmations: isOnInkChain ? 0 : 1, // 0 confirmations for InkChain (immediate), 1 for Base
-            pollingInterval: isOnInkChain ? 500 : 4000, // 500ms for InkChain (very fast), 4 seconds for Base
-          }),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
-          )
-        ])
+        const receipt = await waitForTxReceipt(txHash, timeoutDuration)
         
         console.log('✅ Dice Roll transaction confirmed!', receipt)
       } catch (confirmError) {
@@ -669,21 +713,11 @@ export const useTransactions = () => {
         // Try to wait for confirmation (non-blocking)
         console.log('⏳ Waiting for transaction confirmation...')
         try {
-          // For InkChain, use longer timeout
+          // Wait for confirmation with optimized polling
           const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
           const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
           
-          const receipt = await Promise.race([
-            waitForTransactionReceipt(config, {
-              hash: txHash,
-              chainId: chainId, // Explicitly set chainId
-              confirmations: isOnInkChain ? 0 : 1, // 0 confirmations for InkChain (immediate), 1 for Base
-              pollingInterval: isOnInkChain ? 500 : 4000, // 500ms for InkChain (very fast), 4 seconds for Base
-            }),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
-            )
-          ])
+          const receipt = await waitForTxReceipt(txHash, timeoutDuration)
           
           console.log('✅ Slot transaction confirmed!', receipt)
         } catch (confirmError) {
@@ -713,21 +747,11 @@ export const useTransactions = () => {
         // Try to wait for confirmation (non-blocking)
         console.log('⏳ Waiting for transaction confirmation...')
         try {
-          // For InkChain, use longer timeout
+          // Wait for confirmation with optimized polling
           const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
           const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
           
-          const receipt = await Promise.race([
-            waitForTransactionReceipt(config, {
-              hash: txHash,
-              chainId: chainId, // Explicitly set chainId
-              confirmations: isOnInkChain ? 0 : 1, // 0 confirmations for InkChain (immediate), 1 for Base
-              pollingInterval: isOnInkChain ? 500 : 4000, // 500ms for InkChain (very fast), 4 seconds for Base
-            }),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
-            )
-          ])
+          const receipt = await waitForTxReceipt(txHash, timeoutDuration)
           
           console.log('✅ Slot credits purchase confirmed!', receipt)
         } catch (confirmError) {
