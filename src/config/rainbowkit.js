@@ -10,7 +10,7 @@ const inkChain = defineChain({
   nativeCurrency: NETWORKS.INKCHAIN.nativeCurrency,
   rpcUrls: {
     default: {
-      http: NETWORKS.INKCHAIN.rpcUrls,
+      http: NETWORKS.INKCHAIN.rpcUrls[0], // Use first (primary) RPC URL
     },
   },
   blockExplorers: {
