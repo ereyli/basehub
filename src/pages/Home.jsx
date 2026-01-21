@@ -632,10 +632,7 @@ const Home = () => {
                         height: '100%'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                          <div style={{ position: 'relative' }}>
-                            {game.icon}
-                            {renderNetworkLogos(game.networks)}
-                          </div>
+                          {game.icon}
                           <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
                             {game.title}
                           </h3>
@@ -844,10 +841,7 @@ const Home = () => {
                         height: '100%'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                          <div style={{ position: 'relative' }}>
-                            {game.icon}
-                            {renderNetworkLogos(game.networks)}
-                          </div>
+                          {game.icon}
                           <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
                             {game.title}
                           </h3>
@@ -1164,6 +1158,7 @@ const Home = () => {
                   <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
                     SOCIAL
                   </h2>
+                  {renderNetworkLogos(['base'])}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
                   {games.filter(g => ['featured-profiles'].includes(g.id)).map((game) => (
@@ -1186,10 +1181,7 @@ const Home = () => {
                         height: '100%'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                          <div style={{ position: 'relative' }}>
-                            {game.icon}
-                            {renderNetworkLogos(game.networks)}
-                          </div>
+                          {game.icon}
                           <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
                             {game.title}
                           </h3>
@@ -1256,6 +1248,7 @@ const Home = () => {
                   <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
                     NFT
                   </h2>
+                  {renderNetworkLogos(['base'])}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
                   {games.filter(g => ['ai-nft'].includes(g.id)).map((game) => (
@@ -1278,10 +1271,7 @@ const Home = () => {
                         height: '100%'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                          <div style={{ position: 'relative' }}>
-                            {game.icon}
-                            {renderNetworkLogos(game.networks)}
-                          </div>
+                          {game.icon}
                           <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
                             {game.title}
                           </h3>
