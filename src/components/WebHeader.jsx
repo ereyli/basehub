@@ -102,16 +102,8 @@ const WebHeader = () => {
               </Link>
             )}
 
-            {/* Network Status */}
-            {isConnected && (
-              <div className={`network-status ${isCorrectNetwork ? 'connected' : 'error'}`}>
-                {isCorrectNetwork ? (
-                  <span>Base Network</span>
-                ) : (
-                  <span>❌ Wrong Network</span>
-                )}
-              </div>
-            )}
+            {/* Network Selector - replaced static "Base Network" with interactive selector */}
+            <NetworkSelector />
 
             {/* User Profile */}
             {isConnected && <UserProfile />}
