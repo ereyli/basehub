@@ -157,36 +157,37 @@ const Home = () => {
     return (
       <div style={{ 
         display: 'flex', 
-        gap: '4px', 
+        gap: '3px', 
         position: 'absolute',
-        top: '-4px',
-        right: '-4px',
-        background: 'rgba(0, 0, 0, 0.7)',
-        borderRadius: '8px',
-        padding: '2px 4px',
+        top: '0px',
+        right: '0px',
         zIndex: 10
       }}>
         {networks.includes('base') && (
           <img 
-            src="/baselogo.jpg" 
+            src="/base-logo.jpg" 
             alt="Base" 
             style={{ 
-              width: '16px', 
-              height: '16px', 
-              borderRadius: '4px',
-              objectFit: 'cover'
+              width: '18px', 
+              height: '18px', 
+              borderRadius: '50%',
+              objectFit: 'cover',
+              border: '2px solid rgba(255, 255, 255, 0.3)',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
             }} 
           />
         )}
         {networks.includes('ink') && (
           <img 
-            src="/inklogo.jpg" 
+            src="/ink-logo.jpg" 
             alt="InkChain" 
             style={{ 
-              width: '16px', 
-              height: '16px', 
-              borderRadius: '4px',
-              objectFit: 'cover'
+              width: '18px', 
+              height: '18px', 
+              borderRadius: '50%',
+              objectFit: 'cover',
+              border: '2px solid rgba(255, 255, 255, 0.3)',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
             }} 
           />
         )}

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, Component } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { useChainId, useSwitchChain } from 'wagmi';
 import SwapInterface from '../components/SwapInterface.tsx';
 import StatsPanel from '../components/StatsPanel.tsx';
 import BackButton from '../components/BackButton';
+import { NETWORKS } from '../config/networks';
 
 // Error Boundary Component
 class SwapErrorBoundary extends Component {
@@ -75,7 +77,12 @@ class SwapErrorBoundary extends Component {
 
 export default function SwapHub() {
   const navigate = useNavigate();
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  
+  // Swap only works on Base network
+  const isOnBase = chainId === NETWORKS.BASE.chainId;
 
   useEffect(() => {
     const handleResize = () => {
@@ -85,6 +92,17 @@ export default function SwapHub() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  const handleSwapClick = async () => {
+    if (!isOnBase) {
+      try {
+        await switchChain({ chainId: NETWORKS.BASE.chainId });
+      } catch (err) {
+        console.error('Failed to switch to Base network:', err);
+        alert('Please switch to Base network to use SwapHub');
+      }
+    }
+  };
 
   const styles = {
     container: {
@@ -298,10 +316,90 @@ export default function SwapHub() {
           </div>
         </div>
 
+        {/* Network Warning Banner - Show when not on Base */}
+        {!isOnBase && (
+          <div style={{
+            backgroundColor: 'rgba(245, 158, 11, 0.15)',
+            border: '2px solid rgba(245, 158, 11, 0.4)',
+            borderRadius: '16px',
+            padding: isMobile ? '16px' : '20px',
+            marginBottom: isMobile ? '16px' : '24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <AlertCircle size={24} style={{ color: '#f59e0b', flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ 
+                fontSize: isMobile ? '14px' : '16px', 
+                fontWeight: '600', 
+                color: '#fbbf24',
+                marginBottom: '4px'
+              }}>
+                SwapHub is only available on Base network
+              </div>
+              <div style={{ 
+                fontSize: isMobile ? '12px' : '14px', 
+                color: 'rgba(251, 191, 36, 0.8)' 
+              }}>
+                Please switch to Base network to use SwapHub DEX Aggregator
+              </div>
+            </div>
+            <button
+              onClick={handleSwapClick}
+              style={{
+                padding: isMobile ? '10px 16px' : '12px 24px',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: isMobile ? '13px' : '14px',
+                fontWeight: '600',
+                boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
+              }}
+            >
+              Switch to Base
+            </button>
+          </div>
+        )}
+
         <div style={styles.mainGrid}>
           <div style={styles.swapCard}>
             <SwapErrorBoundary>
-              <SwapInterface />
+              {isOnBase ? (
+                <SwapInterface />
+              ) : (
+                <div style={{
+                  padding: '40px',
+                  textAlign: 'center',
+                  color: '#9ca3af'
+                }}>
+                  <AlertCircle size={48} style={{ color: '#f59e0b', marginBottom: '16px', margin: '0 auto 16px' }} />
+                  <h3 style={{ color: '#fff', marginBottom: '8px' }}>Switch to Base Network</h3>
+                  <p style={{ marginBottom: '20px' }}>
+                    SwapHub is only available on Base network. Please switch to Base to continue.
+                  </p>
+                  <button
+                    onClick={handleSwapClick}
+                    style={{
+                      padding: '12px 24px',
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
+                    }}
+                  >
+                    Switch to Base Network
+                  </button>
+                </div>
+              )}
             </SwapErrorBoundary>
           </div>
 
