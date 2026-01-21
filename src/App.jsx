@@ -70,13 +70,16 @@ function GlobalErrorHandler() {
     console.error = (...args) => {
       const errorMessage = args[0]?.toString() || ''
       const fullMessage = args.join(' ')
+      const errorString = String(args[0] || '')
       
       // Ignore common wallet extension errors
       if (errorMessage.includes('KeyRing is locked') || 
           errorMessage.includes('keyring') ||
           errorMessage.includes('ERR_BLOCKED_BY_CLIENT') ||
           fullMessage.includes('injectedScript.bundle.js') ||
-          fullMessage.includes('KeyRing is locked')) {
+          fullMessage.includes('KeyRing is locked') ||
+          errorString.includes('KeyRing is locked') ||
+          errorString.includes('injectedScript.bundle.js')) {
         // Silently ignore these common extension-related errors
         return
       }
@@ -87,12 +90,15 @@ function GlobalErrorHandler() {
     const handleRejection = (event) => {
       const errorMessage = event.reason?.message || event.reason?.toString() || ''
       const errorStack = event.reason?.stack || ''
+      const errorString = String(event.reason || '')
       
       // Ignore wallet extension errors
       if (errorMessage.includes('KeyRing is locked') || 
           errorMessage.includes('keyring') ||
           errorMessage.includes('ERR_BLOCKED_BY_CLIENT') ||
-          errorStack.includes('injectedScript.bundle.js')) {
+          errorStack.includes('injectedScript.bundle.js') ||
+          errorString.includes('KeyRing is locked') ||
+          errorString.includes('injectedScript.bundle.js')) {
         event.preventDefault() // Prevent error from showing in console
         return
       }
