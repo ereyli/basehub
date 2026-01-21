@@ -186,10 +186,6 @@ const DeployNFT = () => {
 
             <div className="deploy-info">
               <div className="info-item">
-                <Zap size={16} />
-                <span>Deploy Fee: 0.000001 ETH</span>
-              </div>
-              <div className="info-item">
                 <Image size={16} />
                 <span>Simple NFT Contract</span>
               </div>

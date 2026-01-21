@@ -145,10 +145,6 @@ const DeployToken = () => {
 
             <div className="deploy-info">
               <div className="info-item">
-                <Zap size={16} />
-                <span>Deploy Fee: 0.00005 ETH</span>
-              </div>
-              <div className="info-item">
                 <Coins size={16} />
                 <span>Network: Base Mainnet</span>
               </div>

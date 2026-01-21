@@ -105,10 +105,6 @@ const DeployERC1155 = () => {
 
           <div className="deploy-info">
             <div className="info-item">
-              <Zap size={16} />
-              <span>Deploy Fee: 0.00007 ETH</span>
-            </div>
-            <div className="info-item">
               <Layers size={16} />
               <span>ERC1155 Standard</span>
             </div>
