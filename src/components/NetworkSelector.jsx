@@ -18,8 +18,14 @@ const NetworkSelector = () => {
     })
   }, [isConnected, chainId, isOpen])
   
-  // If not connected, show a disabled state
-  if (!isConnected) {
+  // Default to Base if chainId is undefined
+  const currentChainId = chainId || NETWORKS.BASE.chainId
+  const currentNetwork = getNetworkConfig(currentChainId)
+  
+  if (!currentNetwork) {
+    console.error('❌ NetworkSelector: currentNetwork is undefined for chainId:', currentChainId)
+    // Fallback to Base network
+    const fallbackNetwork = NETWORKS.BASE
     return (
       <div style={{
         display: 'flex',
@@ -28,29 +34,42 @@ const NetworkSelector = () => {
         padding: '8px 16px',
         fontSize: '14px',
         fontWeight: '600',
-        color: '#9ca3af',
-        background: 'rgba(59, 130, 246, 0.1)',
-        border: '1px solid rgba(59, 130, 246, 0.2)',
+        color: '#fff',
+        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+        border: 'none',
         borderRadius: '20px',
-        cursor: 'not-allowed',
-        opacity: 0.6
+        cursor: 'pointer',
+        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
       }}>
-        <Wifi size={16} />
-        <span>Connect Wallet</span>
+        <img 
+          src="/base-logo.jpg" 
+          alt="Base" 
+          style={{
+            width: '20px',
+            height: '20px',
+            borderRadius: '6px',
+            objectFit: 'cover'
+          }}
+        />
+        <span>{fallbackNetwork.chainName}</span>
+        <ChevronDown size={14} />
       </div>
     )
   }
   
-  const currentNetwork = getNetworkConfig(chainId)
-  if (!currentNetwork) {
-    console.warn('⚠️ NetworkSelector: currentNetwork is undefined for chainId:', chainId)
-    return null
-  }
+  // If not connected, show network selector anyway (user can see available networks)
+  // But make it clear they need to connect
   
   const supportedNetworks = Object.values(NETWORKS)
   
   const handleNetworkSelect = (targetChainId) => {
-    if (targetChainId !== chainId) {
+    if (!isConnected) {
+      console.warn('⚠️ Please connect wallet first to switch networks')
+      setIsOpen(false)
+      return
+    }
+    if (targetChainId !== currentChainId) {
+      console.log('🔄 Switching to network:', targetChainId)
       switchChain({ chainId: targetChainId })
       setIsOpen(false)
     }
@@ -121,7 +140,7 @@ const NetworkSelector = () => {
           }
         }}
       >
-        {currentNetwork.chainId === NETWORKS.BASE.chainId ? (
+        {currentNetwork.chainId === NETWORKS.BASE.chainId || !isConnected ? (
           <img 
             src="/base-logo.jpg" 
             alt="Base" 
@@ -171,7 +190,7 @@ const NetworkSelector = () => {
           }}
         >
           {supportedNetworks.map(network => {
-            const isActive = network.chainId === chainId
+            const isActive = network.chainId === currentChainId
             return (
               <button
                 key={network.chainId}
