@@ -328,9 +328,9 @@ const Home = () => {
   return (
     <div className="home">
       <EmbedMeta 
-        title="BaseHub - Play Games & Earn XP"
-        description="Multi-chain gaming platform. Play games and earn XP across multiple EVM networks. Currently available on Base and InkChain!"
-        buttonText="Play BaseHub"
+        title="BaseHub - Web3 Tools & Interactions"
+        description="Multi-chain Web3 platform. Deploy smart contracts, swap tokens, analyze wallets, and interact with blockchain to earn XP across multiple EVM networks. Available on Base and InkChain!"
+        buttonText="Explore BaseHub"
       />
       
 
@@ -358,7 +358,7 @@ const Home = () => {
               color: '#6b7280',
               marginBottom: '24px'
             }}>
-              Multi-chain gaming platform. Play games and earn XP across multiple EVM networks. Currently available on Base and InkChain!
+              Multi-chain Web3 platform. Deploy smart contracts, swap tokens, analyze wallets, and interact with blockchain to earn XP across multiple EVM networks. Available on Base and InkChain!
             </p>
             
             {/* Twitter Share Button for Web Users */}
@@ -369,8 +369,8 @@ const Home = () => {
             }}>
               <TwitterShareButton 
                 title="BaseHub"
-                description="Multi-chain gaming platform. Play games and earn XP across multiple EVM networks!"
-                hashtags={["BaseHub", "BaseNetwork", "Web3", "Gaming", "XP", "Farcaster", "MultiChain"]}
+                description="Multi-chain Web3 platform. Deploy contracts, swap tokens, analyze wallets, and earn XP!"
+                hashtags={["BaseHub", "BaseNetwork", "Web3", "DeFi", "XP", "MultiChain"]}
               />
             </div>
             

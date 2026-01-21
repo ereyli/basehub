@@ -4,8 +4,8 @@ import { shouldUseRainbowKit } from '../config/rainbowkit'
 
 const TwitterShareButton = ({ 
   title = "BaseHub",
-  description = "Play games and earn XP on Base network!",
-  hashtags = ["BaseHub", "BaseNetwork", "Web3", "Gaming", "XP"],
+  description = "Multi-chain Web3 platform. Deploy contracts, swap tokens, analyze wallets, and earn XP!",
+  hashtags = ["BaseHub", "BaseNetwork", "Web3", "DeFi", "XP"],
   style = {} 
 }) => {
   const [isCopied, setIsCopied] = useState(false)
@@ -20,7 +20,7 @@ const TwitterShareButton = ({
   }
 
   const generateTwitterContent = () => {
-    const tweetText = `🚀 ${title} - ${description}\n\n🎮 Multi-chain gaming platform\n🌐 Available on Base and InkChain\n🏆 Join the leaderboard and compete with friends\n💎 Deploy your own tokens and NFTs\n\n#${hashtags.join(' #')}\n\n`
+    const tweetText = `🚀 ${title} - ${description}\n\n🔧 Deploy smart contracts\n💱 Swap tokens with DEX aggregator\n🔍 Analyze wallets and contracts\n🎯 Gamified interactions with XP rewards\n🌐 Available on Base and InkChain\n\n#${hashtags.join(' #')}\n\n`
     return tweetText
   }
 
