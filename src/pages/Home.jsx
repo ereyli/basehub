@@ -10,7 +10,7 @@ import DailyQuestSystem from '../components/DailyQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { NETWORKS } from '../config/networks'
-import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat } from 'lucide-react'
+import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat, Sparkles } from 'lucide-react'
 
 const Home = () => {
   const { isConnected } = useAccount()
@@ -43,6 +43,7 @@ const Home = () => {
   const [leaderboardLoading, setLeaderboardLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [isLoadingGM, setIsLoadingGM] = useState(false)
+  const [showEarlyAccessNotification, setShowEarlyAccessNotification] = useState(false)
   const [isLoadingGN, setIsLoadingGN] = useState(false)
   const [visiblePlayersCount, setVisiblePlayersCount] = useState(5)
 
@@ -66,6 +67,21 @@ const Home = () => {
 
     loadLeaderboard()
     // Only load once when component mounts, no auto-refresh
+  }, [])
+
+  // Show Early Access NFT notification after 5-10 seconds
+  useEffect(() => {
+    // Check if user has already dismissed the notification
+    const hasDismissed = localStorage.getItem('earlyAccessNotificationDismissed')
+    if (hasDismissed) return
+
+    // Random delay between 5-10 seconds
+    const delay = Math.random() * 5000 + 5000 // 5000-10000ms
+    const timer = setTimeout(() => {
+      setShowEarlyAccessNotification(true)
+    }, delay)
+
+    return () => clearTimeout(timer)
   }, [])
 
 
