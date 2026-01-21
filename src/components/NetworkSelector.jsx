@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useAccount, useSwitchChain } from 'wagmi'
 import { NETWORKS, getNetworkConfig } from '../config/networks'
-import { shouldUseRainbowKit } from '../config/rainbowkit'
-import { useFarcaster } from '../contexts/FarcasterContext'
 import { Wifi, ChevronDown } from 'lucide-react'
 
 const NetworkSelector = () => {
