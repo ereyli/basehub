@@ -177,16 +177,13 @@ const DeployERC1155 = () => {
               <div className="detail-item">
                 <strong>Symbol:</strong> {formData.symbol}
               </div>
-              <div className="detail-item">
-                <strong>Network:</strong> Base Mainnet
-              </div>
               {deployResult.contractAddress && (
                 <div className="detail-item">
                   <strong>Contract Address:</strong>
                   <div className="tx-hash">
                     {formatAddress(deployResult.contractAddress)}
                     <a 
-                      href={`https://basescan.org/address/${deployResult.contractAddress}`}
+                      href={getAddressExplorerUrl(chainId, deployResult.contractAddress)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="view-button"
@@ -203,7 +200,7 @@ const DeployERC1155 = () => {
                   <div className="tx-hash">
                     {formatAddress(deployResult.deployTxHash)}
                     <a 
-                      href={`https://basescan.org/tx/${deployResult.deployTxHash}`}
+                      href={getTransactionExplorerUrl(chainId, deployResult.deployTxHash)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="view-button"
