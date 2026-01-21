@@ -560,31 +560,10 @@ const EarlyAccessNFT = () => {
                 </a>
               )}
               
-              {/* Share on Farcaster Button */}
+              {/* Share on Farcaster Button (After mint) */}
               {isInFarcaster && farcasterContext && (
                 <button
-                  onClick={async () => {
-                    if (!farcasterContext?.sdk?.actions?.composeCast) {
-                      console.warn('Farcaster SDK not available')
-                      return
-                    }
-                    
-                    setIsSharing(true)
-                    try {
-                      const castText = `🎉 Just minted my BaseHub Early Access Pass! 🚀\n\n✨ Unlock exclusive benefits:\n• 2x XP multiplier on ALL activities\n• Priority access to airdrops\n• Exclusive quests & rewards\n• Early feature access\n\n🔥 Only ${maxSupply - totalMinted} passes left!\n\nJoin the BaseHub community and level up faster! 💎\n\n#BaseHub #BaseNetwork #NFT #EarlyAccess`
-                      
-                      await farcasterContext.sdk.actions.composeCast({
-                        text: castText,
-                        embeds: ['https://basehub.fun/early-access']
-                      })
-                      
-                      console.log('✅ Cast shared successfully!')
-                    } catch (error) {
-                      console.error('❌ Failed to share cast:', error)
-                    } finally {
-                      setIsSharing(false)
-                    }
-                  }}
+                  onClick={() => handleShareCast(true)}
                   disabled={isSharing}
                   style={{
                     width: '100%',
