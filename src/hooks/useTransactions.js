@@ -108,20 +108,32 @@ export const useTransactions = () => {
       
       console.log('✅ GM transaction sent! Hash:', txHash)
       
-      // Even in Farcaster, wait for at least some confirmation
+      // Award XP immediately after transaction is sent (don't wait for confirmation)
+      // This ensures XP is awarded even if confirmation takes time or fails
+      try {
+        await addXP(address, 30) // GM gives 30 XP
+        await recordTransaction(address, 'GM_GAME', 30, txHash) // Record transaction
+        await updateQuestProgress('gmUsed', 1) // Update quest progress
+        await updateQuestProgress('transactions', 1) // Update transaction count
+        console.log('✅ XP added, transaction recorded, and quest progress updated')
+      } catch (xpError) {
+        console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
+      }
+      
+      // Try to wait for confirmation (non-blocking, for better UX)
       console.log('⏳ Waiting for transaction confirmation...')
       console.log('📋 Transaction hash:', txHash)
-      console.log('⏰ Will wait up to 30 seconds for confirmation...')
       
       try {
-        // Wait for confirmation with timeout for better UX
+        // Wait for confirmation with timeout - use chainId for proper network
         const receipt = await Promise.race([
           waitForTransactionReceipt(config, {
             hash: txHash,
+            chainId: chainId, // Explicitly set chainId for proper network
             confirmations: 1,
           }),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 30000) // 30 seconds
+            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 60000) // 60 seconds for InkChain
           )
         ])
         
@@ -129,25 +141,14 @@ export const useTransactions = () => {
         console.log('📦 Receipt:', receipt)
         console.log('🔢 Block number:', receipt.blockNumber)
         console.log('⛽ Gas used:', receipt.gasUsed?.toString())
-        
-        try {
-          await addXP(address, 30) // GM gives 30 XP
-          await recordTransaction(address, 'GM_GAME', 30, txHash) // Record transaction
-          await updateQuestProgress('gmUsed', 1) // Update quest progress
-          await updateQuestProgress('transactions', 1) // Update transaction count
-          console.log('✅ XP added, transaction recorded, and quest progress updated after confirmation')
-        } catch (xpError) {
-          console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
-        }
-        
-        return { 
-          txHash,
-          xpEarned: 10 
-        }
       } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout:', confirmError.message)
-        // Don't award XP if confirmation fails
-        throw new Error('Transaction confirmation failed - please try again')
+        console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
+        // XP already awarded, so we don't throw error - just log warning
+      }
+      
+      return { 
+        txHash,
+        xpEarned: 30 
       }
     } catch (err) {
       console.error('❌ Transaction failed:', err)
@@ -190,40 +191,39 @@ export const useTransactions = () => {
       
       console.log('✅ GN transaction sent! Hash:', txHash)
       
-      // Wait for transaction confirmation
+      // Award XP immediately after transaction is sent
+      try {
+        await addXP(address, 30) // GN gives 30 XP
+        await recordTransaction(address, 'GN_GAME', 30, txHash) // Record transaction
+        await updateQuestProgress('gnUsed', 1) // Update quest progress
+        await updateQuestProgress('transactions', 1) // Update transaction count
+        console.log('✅ XP added, transaction recorded, and quest progress updated')
+      } catch (xpError) {
+        console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
+      }
+      
+      // Try to wait for confirmation (non-blocking)
       console.log('⏳ Waiting for transaction confirmation...')
       try {
-        // Wait for confirmation with shorter timeout for better UX
         const receipt = await Promise.race([
           waitForTransactionReceipt(config, {
             hash: txHash,
+            chainId: chainId, // Explicitly set chainId
             confirmations: 1,
           }),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 30000) // 30 seconds
+            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 60000) // 60 seconds
           )
         ])
         
         console.log('✅ GN transaction confirmed!', receipt)
-        
-        try {
-          await addXP(address, 30) // GN gives 30 XP
-          await recordTransaction(address, 'GN_GAME', 30, txHash) // Record transaction
-          await updateQuestProgress('gnUsed', 1) // Update quest progress
-          await updateQuestProgress('transactions', 1) // Update transaction count
-          console.log('✅ XP added, transaction recorded, and quest progress updated after confirmation')
-        } catch (xpError) {
-          console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
-        }
-        
-        return { 
-          txHash,
-          xpEarned: 10 
-        }
       } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout:', confirmError.message)
-        // Don't award XP if confirmation fails
-        throw new Error('Transaction confirmation failed - please try again')
+        console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
+      }
+      
+      return { 
+        txHash,
+        xpEarned: 30 
       }
     } catch (err) {
       console.error('❌ Transaction failed:', err)
@@ -270,52 +270,50 @@ export const useTransactions = () => {
       
       console.log('✅ Flip transaction sent! Hash:', txHash)
       
-      // Wait for transaction confirmation before generating results
+      // Generate game result immediately (don't wait for confirmation)
+      const actualResult = Math.random() < 0.5 ? 'heads' : 'tails'
+      const playerWon = (selectedSide === 'heads' && actualResult === 'heads') || 
+                       (selectedSide === 'tails' && actualResult === 'tails')
+      
+      console.log('🎲 Flip result:', { selectedSide, actualResult, playerWon })
+      
+      // Award XP immediately after transaction is sent
+      try {
+        await addBonusXP(address, 'flip', playerWon)
+        const xpEarned = playerWon ? 60 + 500 : 60
+        await recordTransaction(address, 'FLIP_GAME', xpEarned, txHash) // Record transaction
+        await updateQuestProgress('coinFlipUsed', 1) // Update quest progress
+        await updateQuestProgress('transactions', 1) // Update transaction count
+        console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${playerWon ? 'WIN' : 'LOSS'})`)
+      } catch (xpError) {
+        console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
+      }
+      
+      // Try to wait for confirmation (non-blocking)
       console.log('⏳ Waiting for transaction confirmation...')
       try {
-        // Wait for confirmation with timeout
         const receipt = await Promise.race([
           waitForTransactionReceipt(config, {
             hash: txHash,
+            chainId: chainId, // Explicitly set chainId
             confirmations: 1,
           }),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 30000) // 30 seconds
+            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 60000) // 60 seconds
           )
         ])
         
         console.log('✅ Flip transaction confirmed!', receipt)
-        
-        // ONLY NOW generate game result after confirmation
-        const actualResult = Math.random() < 0.5 ? 'heads' : 'tails'
-        const playerWon = (selectedSide === 'heads' && actualResult === 'heads') || 
-                         (selectedSide === 'tails' && actualResult === 'tails')
-        
-        console.log('🎲 Flip result AFTER confirmation:', { selectedSide, actualResult, playerWon })
-        
-               try {
-                 await addBonusXP(address, 'flip', playerWon)
-                 const xpEarned = playerWon ? 60 + 500 : 60
-                 await recordTransaction(address, 'FLIP_GAME', xpEarned, txHash) // Record transaction
-                 await updateQuestProgress('coinFlipUsed', 1) // Update quest progress
-                 await updateQuestProgress('transactions', 1) // Update transaction count
-                 console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${playerWon ? 'WIN' : 'LOSS'})`)
-               } catch (xpError) {
-                 console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
-               }
-        
-        return { 
-          txHash, 
-          playerChoice: selectedSide, 
-          result: actualResult, 
-          isWin: playerWon,
-          xpEarned: playerWon ? 560 : 60
-        }
-        
       } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout:', confirmError.message)
-        // Don't generate results if confirmation fails
-        throw new Error('Transaction confirmation failed - please try again')
+        console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
+      }
+      
+      return { 
+        txHash, 
+        playerChoice: selectedSide, 
+        result: actualResult, 
+        isWin: playerWon,
+        xpEarned: playerWon ? 560 : 60
       }
     } catch (err) {
       setError(err.message)
@@ -359,51 +357,49 @@ export const useTransactions = () => {
       
       console.log('✅ Lucky Number transaction sent! Hash:', txHash)
       
-      // Wait for transaction confirmation before generating results
+      // Generate game result immediately
+      const winningNumber = Math.floor(Math.random() * 10) + 1
+      const playerWon = guess === winningNumber
+      
+      console.log('🎲 Lucky Number result:', { guess, winningNumber, playerWon })
+      
+      // Award XP immediately after transaction is sent
+      try {
+        await addBonusXP(address, 'luckynumber', playerWon)
+        const xpEarned = playerWon ? 60 + 1000 : 60
+        await recordTransaction(address, 'LUCKY_NUMBER', xpEarned, txHash) // Record transaction
+        await updateQuestProgress('luckyNumberUsed', 1) // Update quest progress
+        await updateQuestProgress('transactions', 1) // Update transaction count
+        console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${playerWon ? 'WIN' : 'LOSS'})`)
+      } catch (xpError) {
+        console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
+      }
+      
+      // Try to wait for confirmation (non-blocking)
       console.log('⏳ Waiting for transaction confirmation...')
       try {
-        // Wait for confirmation with timeout
         const receipt = await Promise.race([
           waitForTransactionReceipt(config, {
             hash: txHash,
+            chainId: chainId, // Explicitly set chainId
             confirmations: 1,
           }),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 30000) // 30 seconds
+            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 60000) // 60 seconds
           )
         ])
         
         console.log('✅ Lucky Number transaction confirmed!', receipt)
-        
-        // ONLY NOW generate game result after confirmation
-        const winningNumber = Math.floor(Math.random() * 10) + 1
-        const playerWon = guess === winningNumber
-        
-        console.log('🎲 Lucky Number result AFTER confirmation:', { guess, winningNumber, playerWon })
-        
-               try {
-                 await addBonusXP(address, 'luckynumber', playerWon)
-                 const xpEarned = playerWon ? 60 + 1000 : 60
-                 await recordTransaction(address, 'LUCKY_NUMBER', xpEarned, txHash) // Record transaction
-                 await updateQuestProgress('luckyNumberUsed', 1) // Update quest progress
-                 await updateQuestProgress('transactions', 1) // Update transaction count
-                 console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${playerWon ? 'WIN' : 'LOSS'})`)
-               } catch (xpError) {
-                 console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
-               }
-        
-        return { 
-          txHash, 
-          playerGuess: guess, 
-          winningNumber, 
-          isWin: playerWon,
-          xpEarned: playerWon ? 1060 : 60
-        }
-        
       } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout:', confirmError.message)
-        // Don't generate results if confirmation fails
-        throw new Error('Transaction confirmation failed - please try again')
+        console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
+      }
+      
+      return { 
+        txHash, 
+        playerGuess: guess, 
+        winningNumber, 
+        isWin: playerWon,
+        xpEarned: playerWon ? 1060 : 60
       }
     } catch (err) {
       setError(err.message)
@@ -446,55 +442,53 @@ export const useTransactions = () => {
       
       console.log('✅ Dice Roll transaction sent! Hash:', txHash)
       
-      // Wait for transaction confirmation before generating results
+      // Generate game result immediately
+      const dice1 = Math.floor(Math.random() * 6) + 1
+      const dice2 = Math.floor(Math.random() * 6) + 1
+      const diceTotal = dice1 + dice2
+      const playerWon = guess === diceTotal
+      
+      console.log('🎲 Dice Roll result:', { guess, dice1, dice2, diceTotal, playerWon })
+      
+      // Award XP immediately after transaction is sent
+      try {
+        await addBonusXP(address, 'diceroll', playerWon)
+        const xpEarned = playerWon ? 60 + 1500 : 60
+        await recordTransaction(address, 'DICE_ROLL', xpEarned, txHash) // Record transaction
+        await updateQuestProgress('diceRollUsed', 1) // Update quest progress
+        await updateQuestProgress('transactions', 1) // Update transaction count
+        console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${playerWon ? 'WIN' : 'LOSS'})`)
+      } catch (xpError) {
+        console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
+      }
+      
+      // Try to wait for confirmation (non-blocking)
       console.log('⏳ Waiting for transaction confirmation...')
       try {
-        // Wait for confirmation with timeout
         const receipt = await Promise.race([
           waitForTransactionReceipt(config, {
             hash: txHash,
+            chainId: chainId, // Explicitly set chainId
             confirmations: 1,
           }),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 30000) // 30 seconds
+            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 60000) // 60 seconds
           )
         ])
         
         console.log('✅ Dice Roll transaction confirmed!', receipt)
-        
-        // ONLY NOW generate game result after confirmation
-        const dice1 = Math.floor(Math.random() * 6) + 1
-        const dice2 = Math.floor(Math.random() * 6) + 1
-        const diceTotal = dice1 + dice2
-        const playerWon = guess === diceTotal
-        
-        console.log('🎲 Dice Roll result AFTER confirmation:', { guess, dice1, dice2, diceTotal, playerWon })
-        
-               try {
-                 await addBonusXP(address, 'diceroll', playerWon)
-                 const xpEarned = playerWon ? 60 + 1500 : 60
-                 await recordTransaction(address, 'DICE_ROLL', xpEarned, txHash) // Record transaction
-                 await updateQuestProgress('diceRollUsed', 1) // Update quest progress
-                 await updateQuestProgress('transactions', 1) // Update transaction count
-                 console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${playerWon ? 'WIN' : 'LOSS'})`)
-               } catch (xpError) {
-                 console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
-               }
-        
-        return { 
-          txHash, 
-          playerGuess: guess, 
-          dice1,
-          dice2,
-          diceTotal, 
-          isWin: playerWon,
-          xpEarned: playerWon ? 1560 : 60
-        }
-        
       } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout:', confirmError.message)
-        // Don't generate results if confirmation fails
-        throw new Error('Transaction confirmation failed - please try again')
+        console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
+      }
+      
+      return { 
+        txHash, 
+        playerGuess: guess, 
+        dice1,
+        dice2,
+        diceTotal, 
+        isWin: playerWon,
+        xpEarned: playerWon ? 1560 : 60
       }
     } catch (err) {
       setError(err.message)
@@ -563,23 +557,8 @@ export const useTransactions = () => {
         console.log('✅ Slot spin transaction sent! Hash:', txHash)
       }
       
-      // Wait for transaction confirmation
-      console.log('⏳ Waiting for transaction confirmation...')
-      try {
-        const receipt = await Promise.race([
-          waitForTransactionReceipt(config, {
-            hash: txHash,
-            confirmations: 1,
-          }),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 30000)
-          )
-        ])
-        
-        console.log('✅ Slot transaction confirmed!', receipt)
-        
-        // Generate slot result based on contract logic
-        if (action === 'spinSlot') {
+      // Generate slot result immediately (don't wait for confirmation)
+      if (action === 'spinSlot') {
           // Generate symbols using same logic as contract (0-3 for 4 crypto symbols)
           const symbols = [
             Math.floor(Math.random() * 4),
@@ -626,18 +605,66 @@ export const useTransactions = () => {
             await updateQuestProgress('slotUsed', 1)
             await updateQuestProgress('transactions', 1)
             console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${won ? 'WIN' : 'LOSS'})`)
-          } catch (xpError) {
-            console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
-          }
+        } catch (xpError) {
+          console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
+        }
+        
+        // Try to wait for confirmation (non-blocking)
+        console.log('⏳ Waiting for transaction confirmation...')
+        try {
+          const receipt = await Promise.race([
+            waitForTransactionReceipt(config, {
+              hash: txHash,
+              chainId: chainId, // Explicitly set chainId
+              confirmations: 1,
+            }),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Transaction confirmation timeout')), 60000) // 60 seconds
+            )
+          ])
           
-          return {
-            txHash,
-            symbols,
-            won,
-            xpEarned
-          }
-        } else {
-          // Credits purchase
+          console.log('✅ Slot transaction confirmed!', receipt)
+        } catch (confirmError) {
+          console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
+        }
+        
+        return {
+          txHash,
+          symbols,
+          won,
+          xpEarned
+        }
+      } else {
+        // Credits purchase - award XP immediately
+        try {
+          await addXP(address, 10) // Small XP for purchasing credits
+          await recordTransaction(address, 'SLOT_GAME_CREDITS', 10, txHash)
+          await updateQuestProgress('transactions', 1)
+          console.log('✅ XP added for credit purchase')
+        } catch (xpError) {
+          console.error('Error adding XP for credit purchase:', xpError)
+        }
+        
+        // Try to wait for confirmation (non-blocking)
+        console.log('⏳ Waiting for transaction confirmation...')
+        try {
+          const receipt = await Promise.race([
+            waitForTransactionReceipt(config, {
+              hash: txHash,
+              chainId: chainId, // Explicitly set chainId
+              confirmations: 1,
+            }),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Transaction confirmation timeout')), 60000) // 60 seconds
+            )
+          ])
+          
+          console.log('✅ Slot credits purchase confirmed!', receipt)
+        } catch (confirmError) {
+          console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
+        }
+        
+        // Credits purchase
           try {
             await addXP(address, 60) // XP for purchasing credits
             await recordTransaction(address, 'SLOT_GAME', 60, txHash)
