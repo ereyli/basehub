@@ -598,10 +598,11 @@ const SlotGame = () => {
               style={{ 
                 padding: '12px',
                 fontSize: '14px',
-                fontWeight: 'bold',
+                fontWeight: '700',
                 background: 'rgba(245, 158, 11, 0.1)',
-                color: '#1f2937',
-                border: '2px solid rgba(245, 158, 11, 0.3)'
+                color: '#000000',
+                border: '2px solid rgba(245, 158, 11, 0.3)',
+                textShadow: 'none'
               }}
             >
               {amount} Credits
@@ -644,11 +645,12 @@ const SlotGame = () => {
             style={{ 
               padding: '12px 20px',
               fontSize: '14px',
-              fontWeight: 'bold',
+              fontWeight: '700',
               background: 'rgba(245, 158, 11, 0.1)',
-              color: '#1f2937',
+              color: '#000000',
               border: '2px solid rgba(245, 158, 11, 0.3)',
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              textShadow: 'none'
             }}
           >
             Buy
