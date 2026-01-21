@@ -11,7 +11,7 @@ const EmbedMeta = ({
 }) => {
   const fullUrl = url || 'https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub'
   const fullTitle = title ? `${title} - BaseHub` : "BaseHub - Play Games and Earn XP"
-  const fullDescription = description || "Play games and earn XP on Base network through Farcaster"
+  const fullDescription = description || "Multi-chain gaming platform. Play games and earn XP across multiple EVM networks. Currently available on Base and InkChain!"
 
   const embedContent = {
     version: "1",

@@ -329,7 +329,7 @@ const Home = () => {
     <div className="home">
       <EmbedMeta 
         title="BaseHub - Play Games & Earn XP"
-        description="Play games and earn XP on Base network through Farcaster. Join the leaderboard and compete with other players!"
+        description="Multi-chain gaming platform. Play games and earn XP across multiple EVM networks. Currently available on Base and InkChain!"
         buttonText="Play BaseHub"
       />
       
@@ -358,7 +358,7 @@ const Home = () => {
               color: '#6b7280',
               marginBottom: '24px'
             }}>
-              Play games and earn XP on the Base network through Farcaster
+              Multi-chain gaming platform. Play games and earn XP across multiple EVM networks. Currently available on Base and InkChain!
             </p>
             
             {/* Twitter Share Button for Web Users */}
@@ -369,8 +369,8 @@ const Home = () => {
             }}>
               <TwitterShareButton 
                 title="BaseHub"
-                description="Play games and earn XP on Base network!"
-                hashtags={["BaseHub", "BaseNetwork", "Web3", "Gaming", "XP", "Farcaster"]}
+                description="Multi-chain gaming platform. Play games and earn XP across multiple EVM networks!"
+                hashtags={["BaseHub", "BaseNetwork", "Web3", "Gaming", "XP", "Farcaster", "MultiChain"]}
               />
             </div>
             

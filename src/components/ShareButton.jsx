@@ -37,7 +37,7 @@ const ShareButton = ({
     if (isCastShare && castData) {
       return `Check out this cast from @${castData.author?.username || 'unknown'} on BaseHub! ${castData.text?.slice(0, 100)}${castData.text?.length > 100 ? '...' : ''}`
     }
-    return `${title || 'BaseHub'} - ${description || 'Play games and earn XP on Base network!'}`
+    return `${title || 'BaseHub'} - ${description || 'Multi-chain gaming platform. Play games and earn XP across multiple EVM networks!'}`
   }
   
   const shareText = generateShareText()
@@ -73,7 +73,7 @@ const ShareButton = ({
         if (sdk && sdk.actions && sdk.actions.composeCast) {
           if (isCastShare && castData) {
             // For cast sharing, create a compose cast with the shared cast context
-            const castText = `🎮 Check out this cast from @${castData.author?.username || 'unknown'} on BaseHub!\n\n${castData.text?.slice(0, 200)}${castData.text?.length > 200 ? '...' : ''}\n\nPlay games and earn XP on Base network! 🚀`
+            const castText = `🎮 Check out this cast from @${castData.author?.username || 'unknown'} on BaseHub!\n\n${castData.text?.slice(0, 200)}${castData.text?.length > 200 ? '...' : ''}\n\nMulti-chain gaming platform. Play games and earn XP across multiple EVM networks! 🚀`
             
             console.log('🎭 Composing cast with text:', castText)
             await sdk.actions.composeCast({

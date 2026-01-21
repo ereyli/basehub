@@ -20,7 +20,7 @@ const TwitterShareButton = ({
   }
 
   const generateTwitterContent = () => {
-    const tweetText = `🚀 ${title} - ${description}\n\n🎮 Play games and earn XP on Base network\n🏆 Join the leaderboard and compete with friends\n💎 Deploy your own tokens and NFTs\n\n#${hashtags.join(' #')}\n\n`
+    const tweetText = `🚀 ${title} - ${description}\n\n🎮 Multi-chain gaming platform\n🌐 Available on Base and InkChain\n🏆 Join the leaderboard and compete with friends\n💎 Deploy your own tokens and NFTs\n\n#${hashtags.join(' #')}\n\n`
     return tweetText
   }
 
