@@ -938,13 +938,13 @@ const Home = () => {
                         height: '100%'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
-                          <div style={{ position: 'relative' }}>
-                            {game.icon}
-                            {renderNetworkLogos(game.networks)}
+                          {game.icon}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                            <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', lineHeight: '1.2' }}>
+                              {game.title}
+                            </h3>
+                            {renderMultiChainText()}
                           </div>
-                          <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
-                            {game.title}
-                          </h3>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
                           <div style={{
