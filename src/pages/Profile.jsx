@@ -200,14 +200,16 @@ const Profile = () => {
   const questStats = questProgress?.quest_stats || {}
   const completedQuests = questProgress?.completed_quests || []
 
-  // Get daily quests
+  // Get daily quests - must match DailyQuestSystem quests
   const getDailyQuests = () => {
+    // Calculate required count based on current day (Day 1 = 1, Day 2 = 2, etc.)
+    const requiredCount = currentDay
+    
     const quests = [
-      { type: 'gmUsed', label: 'GM Messages', title: 'GM Game', icon: MessageSquare, current: questStats.gmUsed || 0, required: 1, xp: 30 },
-      { type: 'gnUsed', label: 'GN Messages', title: 'GN Game', icon: MessageSquare, current: questStats.gnUsed || 0, required: 1, xp: 30 },
-      { type: 'gamesPlayed', label: 'Games Played', title: 'Coin Flip Game', icon: Gamepad2, current: questStats.gamesPlayed || 0, required: 3, xp: 50 },
-      { type: 'swapsCompleted', label: 'Swaps Completed', title: 'Token Swap', icon: Repeat, current: questStats.swapsCompleted || 0, required: 1, xp: 250 },
-      { type: 'nftsMinted', label: 'NFTs Minted', title: 'AI NFT Launchpad', icon: Layers, current: questStats.nftsMinted || 0, required: 1, xp: 100 },
+      { type: 'gmUsed', label: 'GM Messages', title: 'GM Game', icon: MessageSquare, current: questStats.gmUsed || 0, required: requiredCount, xp: 50 },
+      { type: 'gnUsed', label: 'GN Messages', title: 'GN Game', icon: MessageSquare, current: questStats.gnUsed || 0, required: requiredCount, xp: 50 },
+      { type: 'gamesPlayed', label: 'Games Played', title: 'Coin Flip Game', icon: Gamepad2, current: questStats.gamesPlayed || 0, required: requiredCount, xp: 50 },
+      { type: 'swapsCompleted', label: 'Swaps Completed', title: 'Swap', icon: Repeat, current: questStats.swapsCompleted || 0, required: requiredCount, xp: 1000 },
     ]
 
     return quests.map(quest => {
