@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react'
-import { useAccount } from 'wagmi'
+import { useAccount, useChainId } from 'wagmi'
 import { useEarlyAccessMint } from '../hooks/useEarlyAccessMint'
 import { Helmet } from 'react-helmet-async'
 import BackButton from '../components/BackButton'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
-import { Zap, Users, Package, CheckCircle, ExternalLink, Sparkles, Share2 } from 'lucide-react'
+import { Zap, Users, Package, CheckCircle, ExternalLink, Sparkles, Share2, AlertCircle } from 'lucide-react'
+import { NETWORKS } from '../config/networks'
 
 const EarlyAccessNFT = () => {
   const { isConnected, address } = useAccount()
+  const chainId = useChainId()
   const {
     mint,
     isLoading,
@@ -23,6 +25,9 @@ const EarlyAccessNFT = () => {
     isSuccess,
     hash
   } = useEarlyAccessMint()
+  
+  // Early Access NFT only works on Base network
+  const isOnBase = chainId === NETWORKS.BASE.chainId
 
   const [mintResult, setMintResult] = useState(null)
   const [isSharing, setIsSharing] = useState(false)
@@ -116,6 +121,68 @@ const EarlyAccessNFT = () => {
 
   const remainingSupply = maxSupply - totalMinted
   const progressPercentage = maxSupply > 0 ? (totalMinted / maxSupply) * 100 : 0
+
+  // Show Base-only warning if not on Base network
+  if (isConnected && !isOnBase) {
+    return (
+      <div className="early-access-nft-page" style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #0a1929 0%, #1a2744 50%, #0f172a 100%)',
+        padding: '20px',
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Helmet>
+          <title>Early Access NFT - BaseHub</title>
+          <meta name="description" content="Mint your BaseHub Early Access Pass NFT" />
+        </Helmet>
+        
+        <div style={{
+          maxWidth: '600px',
+          margin: '0 auto',
+          padding: '40px 20px',
+          textAlign: 'center',
+          backgroundColor: 'rgba(30, 41, 59, 0.95)',
+          borderRadius: '20px',
+          border: '2px solid rgba(239, 68, 68, 0.3)',
+          backdropFilter: 'blur(10px)'
+        }}>
+          <BackButton />
+          <AlertCircle size={48} style={{ color: '#ef4444', marginBottom: '20px', marginTop: '20px' }} />
+          <h2 style={{ 
+            fontSize: '24px', 
+            fontWeight: '700', 
+            color: '#ef4444', 
+            marginBottom: '16px' 
+          }}>
+            Base Network Required
+          </h2>
+          <p style={{ 
+            fontSize: '16px', 
+            color: '#9ca3af', 
+            marginBottom: '24px',
+            lineHeight: '1.6'
+          }}>
+            Early Access NFT minting only works on Base network.
+            <br />
+            Please switch to Base network using RainbowKit's network selector to mint your NFT.
+          </p>
+          <div style={{
+            padding: '12px 20px',
+            background: 'rgba(59, 130, 246, 0.1)',
+            borderRadius: '12px',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            color: '#60a5fa',
+            fontSize: '14px'
+          }}>
+            Current Network: {chainId === NETWORKS.INKCHAIN.chainId ? 'InkChain' : `Unknown (Chain ID: ${chainId})`}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="early-access-nft-page" style={{
