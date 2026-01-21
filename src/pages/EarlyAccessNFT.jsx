@@ -26,6 +26,7 @@ const EarlyAccessNFT = () => {
 
   const [mintResult, setMintResult] = useState(null)
   const [isSharing, setIsSharing] = useState(false)
+  const [isSharingGeneral, setIsSharingGeneral] = useState(false)
   
   // Check if in Farcaster environment
   let isInFarcaster = false
@@ -37,6 +38,46 @@ const EarlyAccessNFT = () => {
     }
   } catch (error) {
     isInFarcaster = false
+  }
+  
+  // Function to share cast (used by both buttons)
+  const handleShareCast = async (isAfterMint = false) => {
+    if (!farcasterContext?.sdk?.actions?.composeCast) {
+      console.warn('Farcaster SDK not available')
+      return
+    }
+    
+    if (isAfterMint) {
+      setIsSharing(true)
+    } else {
+      setIsSharingGeneral(true)
+    }
+    
+    try {
+      const remainingSupply = maxSupply - totalMinted
+      let castText = ''
+      
+      if (isAfterMint) {
+        castText = `🎉 Just minted my BaseHub Early Access Pass! 🚀\n\n✨ Unlock exclusive benefits:\n• 2x XP multiplier on ALL activities\n• Priority access to airdrops\n• Exclusive quests & rewards\n• Early feature access\n\n🔥 Only ${remainingSupply} passes left!\n\nJoin the BaseHub community and level up faster! 💎\n\n#BaseHub #BaseNetwork #NFT #EarlyAccess`
+      } else {
+        castText = `🚀 BaseHub Early Access Pass is LIVE! 🎉\n\n✨ Exclusive benefits for holders:\n• 2x XP multiplier on ALL activities\n• Priority access to airdrops\n• Exclusive quests & rewards\n• Early feature access\n\n🔥 Only ${remainingSupply} of ${maxSupply} passes remaining!\n\nMint yours now and join the BaseHub community! 💎\n\n#BaseHub #BaseNetwork #NFT #EarlyAccess`
+      }
+      
+      await farcasterContext.sdk.actions.composeCast({
+        text: castText,
+        embeds: ['https://basehub.fun/early-access']
+      })
+      
+      console.log('✅ Cast shared successfully!')
+    } catch (error) {
+      console.error('❌ Failed to share cast:', error)
+    } finally {
+      if (isAfterMint) {
+        setIsSharing(false)
+      } else {
+        setIsSharingGeneral(false)
+      }
+    }
   }
 
   const formatAddress = (addr) => {
@@ -431,6 +472,49 @@ const EarlyAccessNFT = () => {
             }}>
               Please confirm the transaction in your wallet...
             </div>
+          )}
+
+          {/* Share on Farcaster Button (Always visible) */}
+          {isInFarcaster && farcasterContext && (
+            <button
+              onClick={() => handleShareCast(false)}
+              disabled={isSharingGeneral}
+              style={{
+                width: '100%',
+                padding: '14px 24px',
+                fontSize: '1rem',
+                fontWeight: '600',
+                background: isSharingGeneral 
+                  ? 'rgba(139, 92, 246, 0.3)'
+                  : 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '12px',
+                cursor: isSharingGeneral ? 'not-allowed' : 'pointer',
+                transition: 'all 0.3s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                marginTop: '12px',
+                boxShadow: isSharingGeneral ? 'none' : '0 4px 12px rgba(139, 92, 246, 0.3)'
+              }}
+              onMouseEnter={(e) => {
+                if (!isSharingGeneral) {
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(139, 92, 246, 0.4)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSharingGeneral) {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.3)'
+                }
+              }}
+            >
+              <Share2 size={18} />
+              {isSharingGeneral ? 'Sharing...' : 'Share on Farcaster 🎉'}
+            </button>
           )}
 
           {mintResult?.success && (
