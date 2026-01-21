@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useAccount, useWriteContract } from 'wagmi'
-import { waitForTransactionReceipt } from 'wagmi/actions'
+import { useAccount, useWriteContract, usePublicClient } from 'wagmi'
+import { waitForTransactionReceipt, getPublicClient } from 'wagmi/actions'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from './useNetworkCheck'
 import { addXP, addBonusXP, recordTransaction } from '../utils/xpUtils'
@@ -28,6 +28,7 @@ export const useTransactions = () => {
   }
   const { address, chainId } = useAccount()
   const { writeContractAsync, data: txData } = useWriteContract()
+  const publicClient = usePublicClient({ chainId })
   const { isCorrectNetwork, networkName, currentNetworkConfig, switchToNetwork, supportedNetworks } = useNetworkCheck()
   const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)
@@ -125,7 +126,11 @@ export const useTransactions = () => {
       console.log('📋 Transaction hash:', txHash)
       
       try {
-        // Wait for confirmation with timeout - use chainId for proper network
+        // Wait for confirmation with timeout - use publicClient for proper network
+        // For InkChain, use longer timeout and proper client
+        const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+        const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
+        
         const receipt = await Promise.race([
           waitForTransactionReceipt(config, {
             hash: txHash,
@@ -133,7 +138,7 @@ export const useTransactions = () => {
             confirmations: 1,
           }),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 60000) // 60 seconds for InkChain
+            setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
           )
         ])
         
@@ -144,6 +149,7 @@ export const useTransactions = () => {
       } catch (confirmError) {
         console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
         // XP already awarded, so we don't throw error - just log warning
+        // For InkChain, transaction might still be processing, so we don't show error
       }
       
       // Clear any previous errors on success
@@ -211,6 +217,10 @@ export const useTransactions = () => {
       // Try to wait for confirmation (non-blocking)
       console.log('⏳ Waiting for transaction confirmation...')
       try {
+        // For InkChain, use longer timeout
+        const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+        const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
+        
         const receipt = await Promise.race([
           waitForTransactionReceipt(config, {
             hash: txHash,
@@ -218,7 +228,7 @@ export const useTransactions = () => {
             confirmations: 1,
           }),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 60000) // 60 seconds
+            setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
           )
         ])
         
@@ -304,6 +314,10 @@ export const useTransactions = () => {
       // Try to wait for confirmation (non-blocking)
       console.log('⏳ Waiting for transaction confirmation...')
       try {
+        // For InkChain, use longer timeout
+        const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+        const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
+        
         const receipt = await Promise.race([
           waitForTransactionReceipt(config, {
             hash: txHash,
@@ -311,7 +325,7 @@ export const useTransactions = () => {
             confirmations: 1,
           }),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 60000) // 60 seconds
+            setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
           )
         ])
         
@@ -396,6 +410,10 @@ export const useTransactions = () => {
       // Try to wait for confirmation (non-blocking)
       console.log('⏳ Waiting for transaction confirmation...')
       try {
+        // For InkChain, use longer timeout
+        const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+        const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
+        
         const receipt = await Promise.race([
           waitForTransactionReceipt(config, {
             hash: txHash,
@@ -403,7 +421,7 @@ export const useTransactions = () => {
             confirmations: 1,
           }),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 60000) // 60 seconds
+            setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
           )
         ])
         
@@ -489,6 +507,10 @@ export const useTransactions = () => {
       // Try to wait for confirmation (non-blocking)
       console.log('⏳ Waiting for transaction confirmation...')
       try {
+        // For InkChain, use longer timeout
+        const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+        const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
+        
         const receipt = await Promise.race([
           waitForTransactionReceipt(config, {
             hash: txHash,
@@ -496,7 +518,7 @@ export const useTransactions = () => {
             confirmations: 1,
           }),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Transaction confirmation timeout')), 60000) // 60 seconds
+            setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
           )
         ])
         
@@ -642,6 +664,10 @@ export const useTransactions = () => {
         // Try to wait for confirmation (non-blocking)
         console.log('⏳ Waiting for transaction confirmation...')
         try {
+          // For InkChain, use longer timeout
+          const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+          const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
+          
           const receipt = await Promise.race([
             waitForTransactionReceipt(config, {
               hash: txHash,
@@ -649,7 +675,7 @@ export const useTransactions = () => {
               confirmations: 1,
             }),
             new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Transaction confirmation timeout')), 60000) // 60 seconds
+              setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
             )
           ])
           
@@ -681,6 +707,10 @@ export const useTransactions = () => {
         // Try to wait for confirmation (non-blocking)
         console.log('⏳ Waiting for transaction confirmation...')
         try {
+          // For InkChain, use longer timeout
+          const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+          const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
+          
           const receipt = await Promise.race([
             waitForTransactionReceipt(config, {
               hash: txHash,
@@ -688,7 +718,7 @@ export const useTransactions = () => {
               confirmations: 1,
             }),
             new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Transaction confirmation timeout')), 60000) // 60 seconds
+              setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
             )
           ])
           
