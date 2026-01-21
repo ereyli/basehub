@@ -131,8 +131,8 @@ const Header = () => {
                 <NetworkSelector />
               )}
 
-              {/* Network Status - show when not on supported network */}
-              {isConnected && !isInFarcaster && !isCorrectNetwork && (
+              {/* Network Status - show when not on supported network (fallback) */}
+              {isConnected && !isInFarcaster && !isCorrectNetwork && !shouldUseRainbowKit() && (
                 <div className={`status-badge error`}>
                   <WifiOff size={14} />
                   <span>Wrong Network</span>
