@@ -1853,6 +1853,170 @@ const Home = () => {
           </div>
         </div>
       </div>
+
+      {/* Early Access NFT Notification Card */}
+      {showEarlyAccessNotification && (
+        <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          width: '320px',
+          maxWidth: 'calc(100vw - 40px)',
+          background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+          borderRadius: '16px',
+          padding: '20px',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+          zIndex: 1000,
+          animation: 'slideInUp 0.3s ease-out',
+          border: '2px solid rgba(255, 255, 255, 0.2)'
+        }}>
+          <button
+            onClick={() => {
+              setShowEarlyAccessNotification(false)
+              localStorage.setItem('earlyAccessNotificationDismissed', 'true')
+            }}
+            style={{
+              position: 'absolute',
+              top: '8px',
+              right: '8px',
+              background: 'rgba(0, 0, 0, 0.2)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '28px',
+              height: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#fff',
+              transition: 'background 0.2s'
+            }}
+            onMouseEnter={(e) => e.target.style.background = 'rgba(0, 0, 0, 0.4)'}
+            onMouseLeave={(e) => e.target.style.background = 'rgba(0, 0, 0, 0.2)'}
+          >
+            <X size={16} />
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '12px',
+              background: 'rgba(255, 255, 255, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <Sparkles size={24} style={{ color: '#fff' }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: 'bold',
+                color: '#fff',
+                margin: '0 0 4px 0',
+                lineHeight: '1.2'
+              }}>
+                Early Access NFT
+              </h3>
+              <p style={{
+                fontSize: '13px',
+                color: 'rgba(255, 255, 255, 0.95)',
+                margin: 0,
+                lineHeight: '1.4'
+              }}>
+                Mint your BaseHub Early Access Pass and unlock exclusive benefits!
+              </p>
+            </div>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            marginBottom: '12px'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              color: '#fff'
+            }}>
+              <Zap size={14} />
+              <span>2x XP multiplier on ALL activities</span>
+            </div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              color: '#fff'
+            }}>
+              <Star size={14} />
+              <span>Priority access to airdrops</span>
+            </div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              color: '#fff'
+            }}>
+              <Rocket size={14} />
+              <span>Exclusive quests & rewards</span>
+            </div>
+          </div>
+
+          <Link
+            to="/early-access"
+            onClick={() => {
+              setShowEarlyAccessNotification(false)
+              localStorage.setItem('earlyAccessNotificationDismissed', 'true')
+            }}
+            style={{
+              display: 'block',
+              width: '100%',
+              padding: '12px',
+              background: 'rgba(255, 255, 255, 0.95)',
+              color: '#f59e0b',
+              textAlign: 'center',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              fontSize: '14px',
+              textDecoration: 'none',
+              transition: 'all 0.2s',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#fff'
+              e.target.style.transform = 'translateY(-2px)'
+              e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)'
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(255, 255, 255, 0.95)'
+              e.target.style.transform = 'translateY(0)'
+              e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)'
+            }}
+          >
+            Mint Now →
+          </Link>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slideInUp {
+          from {
+            transform: translateY(100px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+      `}</style>
     </div>
   )
 }
