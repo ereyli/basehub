@@ -8,7 +8,6 @@ import { getCurrentConfig } from '../config/base'
 import { useProofOfUsage } from '../hooks/useProofOfUsage'
 import { getXP } from '../utils/xpUtils'
 import UserProfile from './UserProfile'
-import NetworkSelector from './NetworkSelector'
 
 const WebHeader = () => {
   const location = useLocation()
@@ -102,9 +101,6 @@ const WebHeader = () => {
                 <span>Home</span>
               </Link>
             )}
-
-            {/* Network Selector - replaced static "Base Network" with interactive selector */}
-            <NetworkSelector />
 
             {/* User Profile */}
             {isConnected && <UserProfile />}

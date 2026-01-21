@@ -9,7 +9,6 @@ import { useProofOfUsage } from '../hooks/useProofOfUsage'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import WalletConnect from './WalletConnect'
 import UserProfile from './UserProfile'
-import NetworkSelector from './NetworkSelector'
 
 const Header = () => {
   const location = useLocation()
@@ -124,14 +123,6 @@ const Header = () => {
                   <Zap size={14} />
                   <span>Farcaster</span>
                 </div>
-              )}
-
-              {/* Network Selector - only show in web, not in Farcaster */}
-              {!isInFarcaster && (
-                <>
-                  {console.log('🔍 Header: Rendering NetworkSelector, isInFarcaster:', isInFarcaster)}
-                  <NetworkSelector />
-                </>
               )}
 
               {/* Network Status - show when not on supported network (fallback) */}
