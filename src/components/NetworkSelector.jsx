@@ -66,7 +66,7 @@ const NetworkSelector = () => {
   
   const supportedNetworks = Object.values(NETWORKS)
   
-  const handleNetworkSelect = (targetChainId) => {
+  const handleNetworkSelect = async (targetChainId) => {
     if (!isConnected) {
       console.warn('⚠️ Please connect wallet first to switch networks')
       setIsOpen(false)
@@ -74,8 +74,45 @@ const NetworkSelector = () => {
     }
     if (targetChainId !== currentChainId) {
       console.log('🔄 Switching to network:', targetChainId)
-      switchChain({ chainId: targetChainId })
       setIsOpen(false)
+      
+      try {
+        await switchChain({ chainId: targetChainId })
+        console.log('✅ Network switch successful')
+      } catch (error) {
+        console.error('❌ Network switch failed:', error)
+        
+        // If chain not added, try to add it
+        if (error.code === 4902 || error.message?.includes('not been added')) {
+          const targetNetwork = Object.values(NETWORKS).find(net => net.chainId === targetChainId)
+          if (targetNetwork && typeof window.ethereum !== 'undefined') {
+            console.log('➕ Adding network to wallet:', targetNetwork.chainName)
+            try {
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: `0x${targetChainId.toString(16)}`,
+                  chainName: targetNetwork.chainName,
+                  nativeCurrency: targetNetwork.nativeCurrency,
+                  rpcUrls: targetNetwork.rpcUrls,
+                  blockExplorerUrls: targetNetwork.blockExplorerUrls,
+                }],
+              })
+              console.log('✅ Network added, retrying switch...')
+              // Retry switch after adding
+              await switchChain({ chainId: targetChainId })
+            } catch (addError) {
+              console.error('❌ Failed to add network:', addError)
+              alert(`Failed to add ${targetNetwork.chainName} network. Please add it manually in your wallet.`)
+            }
+          }
+        } else if (error.code === 4001) {
+          console.log('ℹ️ User rejected network switch')
+        } else {
+          console.error('❌ Network switch error:', error)
+          alert(`Failed to switch network: ${error.message || 'Unknown error'}`)
+        }
+      }
     }
   }
   
