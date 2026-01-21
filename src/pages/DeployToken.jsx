@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useAccount } from 'wagmi'
+import { useAccount, useChainId } from 'wagmi'
 import { useDeployToken } from '../hooks/useDeployToken'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Coins, Zap, CheckCircle, ExternalLink } from 'lucide-react'
@@ -7,9 +7,11 @@ import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
 import NetworkGuard from '../components/NetworkGuard'
+import { getTransactionExplorerUrl } from '../config/networks'
 
 const DeployToken = () => {
   const { isConnected } = useAccount()
+  const chainId = useChainId()
   const { deployToken, isLoading, error } = useDeployToken()
   const navigate = useNavigate()
   
@@ -236,7 +238,7 @@ const DeployToken = () => {
                 <div className="tx-hash">
                   {formatAddress(deployResult.txHash)}
                   <a 
-                    href={`https://basescan.org/tx/${deployResult.txHash}`}
+                    href={getTransactionExplorerUrl(chainId, deployResult.txHash)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="view-button"

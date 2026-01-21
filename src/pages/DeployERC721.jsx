@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAccount } from 'wagmi'
+import { useAccount, useChainId } from 'wagmi'
 import { useDeployERC721 } from '../hooks/useDeployERC721'
 import { Image, Zap, CheckCircle, ExternalLink } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
+import { getTransactionExplorerUrl, getAddressExplorerUrl } from '../config/networks'
 
 const DeployERC721 = () => {
   const { isConnected } = useAccount()
+  const chainId = useChainId()
   const { deployERC721, isLoading, error } = useDeployERC721()
   const navigate = useNavigate()
   
@@ -172,16 +174,13 @@ const DeployERC721 = () => {
               <div className="detail-item">
                 <strong>Symbol:</strong> {formData.symbol}
               </div>
-              <div className="detail-item">
-                <strong>Network:</strong> Base Mainnet
-              </div>
               {deployResult.contractAddress && (
                 <div className="detail-item">
                   <strong>Contract Address:</strong>
                   <div className="tx-hash">
                     {formatAddress(deployResult.contractAddress)}
                     <a 
-                      href={`https://basescan.org/address/${deployResult.contractAddress}`}
+                      href={getAddressExplorerUrl(chainId, deployResult.contractAddress)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="view-button"
@@ -198,7 +197,7 @@ const DeployERC721 = () => {
                   <div className="tx-hash">
                     {formatAddress(deployResult.deployTxHash)}
                     <a 
-                      href={`https://basescan.org/tx/${deployResult.deployTxHash}`}
+                      href={getTransactionExplorerUrl(chainId, deployResult.deployTxHash)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="view-button"

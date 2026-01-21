@@ -6,7 +6,7 @@ import BackButton from '../components/BackButton'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { Zap, Users, Package, CheckCircle, ExternalLink, Sparkles, Share2, AlertCircle } from 'lucide-react'
-import { NETWORKS } from '../config/networks'
+import { NETWORKS, getTransactionExplorerUrl } from '../config/networks'
 
 const EarlyAccessNFT = () => {
   const { isConnected, address } = useAccount()
@@ -606,7 +606,7 @@ const EarlyAccessNFT = () => {
               </div>
               {hash && (
                 <a
-                  href={`https://basescan.org/tx/${hash}`}
+                  href={getTransactionExplorerUrl(chainId, hash)}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{

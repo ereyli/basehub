@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAccount } from 'wagmi'
+import { useAccount, useChainId } from 'wagmi'
 import { useDeployERC1155 } from '../hooks/useDeployERC1155'
 import { Layers, Zap, CheckCircle, ExternalLink } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
+import { getTransactionExplorerUrl, getAddressExplorerUrl } from '../config/networks'
 
 const DeployERC1155 = () => {
   const { isConnected } = useAccount()
+  const chainId = useChainId()
   const { deployERC1155, isLoading, error } = useDeployERC1155()
   const navigate = useNavigate()
   

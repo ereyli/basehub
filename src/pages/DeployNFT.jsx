@@ -1,14 +1,16 @@
 import React, { useState } from 'react'
-import { useAccount } from 'wagmi'
+import { useAccount, useChainId } from 'wagmi'
 import { useDeployERC721 } from '../hooks/useDeployERC721'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Image, Zap, CheckCircle, ExternalLink, Upload, X } from 'lucide-react'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
+import { getTransactionExplorerUrl } from '../config/networks'
 
 const DeployNFT = () => {
   const { isConnected } = useAccount()
+  const chainId = useChainId()
   const { deployERC721, isLoading, error } = useDeployERC721()
   const navigate = useNavigate()
   
@@ -280,7 +282,7 @@ const DeployNFT = () => {
                 <div className="tx-hash">
                   {formatAddress(deployResult.txHash)}
                   <a 
-                    href={`https://basescan.org/tx/${deployResult.txHash}`}
+                    href={getTransactionExplorerUrl(chainId, deployResult.txHash)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="view-button"

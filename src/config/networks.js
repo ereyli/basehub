@@ -30,7 +30,7 @@ export const NETWORKS = {
     rpcUrls: [
       'https://rpc.inkchain.io', // Update with actual RPC URL
     ],
-    blockExplorerUrls: ['https://explorer.inkchain.io'], // Update with actual explorer
+    blockExplorerUrls: ['https://explorer.inkonchain.com'], // InkChain explorer
     iconUrls: [],
     isFarcasterSupported: false,
   }
@@ -77,4 +77,22 @@ export const getSupportedNetworks = () => {
 // Check if network is supported
 export const isNetworkSupported = (chainId) => {
   return Object.values(NETWORKS).some(net => net.chainId === chainId)
+}
+
+// Get block explorer URL for a network
+export const getExplorerUrl = (chainId) => {
+  const network = getNetworkConfig(chainId)
+  return network.blockExplorerUrls[0] || NETWORKS.BASE.blockExplorerUrls[0]
+}
+
+// Get transaction explorer URL
+export const getTransactionExplorerUrl = (chainId, txHash) => {
+  const explorerUrl = getExplorerUrl(chainId)
+  return `${explorerUrl}/tx/${txHash}`
+}
+
+// Get address explorer URL
+export const getAddressExplorerUrl = (chainId, address) => {
+  const explorerUrl = getExplorerUrl(chainId)
+  return `${explorerUrl}/address/${address}`
 }
