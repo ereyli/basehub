@@ -36,49 +36,29 @@ export const useTransactions = () => {
 
   // Helper function to wait for transaction receipt with optimized polling for InkChain
   const waitForTxReceipt = async (txHash, timeoutDuration = 60000) => {
-    const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
-    
-    if (isOnInkChain && publicClient) {
-      // Manual polling for InkChain - more reliable
-      const startTime = Date.now()
-      const pollInterval = 500 // 500ms polling
-      const maxAttempts = Math.floor(timeoutDuration / pollInterval)
-      
-      for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        try {
-          const receipt = await publicClient.getTransactionReceipt({ hash: txHash })
-          if (receipt) {
-            return receipt
-          }
-        } catch (pollError) {
-          // Transaction not yet mined, continue polling
-          if (attempt < maxAttempts - 1) {
-            await new Promise(resolve => setTimeout(resolve, pollInterval))
-            continue
-          }
-          throw pollError
-        }
-        
-        // Check timeout
-        if (Date.now() - startTime > timeoutDuration) {
-          throw new Error('Transaction confirmation timeout')
-        }
-      }
-      
-      throw new Error('Transaction receipt not found after polling')
-    } else {
-      // Use wagmi's waitForTransactionReceipt for Base
+    // Always use wagmi's waitForTransactionReceipt - it handles RPC correctly
+    // The manual polling was causing issues with RPC URL resolution
+    try {
       return await Promise.race([
         waitForTransactionReceipt(config, {
           hash: txHash,
-          chainId: chainId,
-          confirmations: 1,
-          pollingInterval: 4000,
+          chainId: chainId || NETWORKS.BASE.chainId, // Fallback to Base if chainId is undefined
+          confirmations: chainId === NETWORKS.INKCHAIN.chainId ? 0 : 1, // 0 for InkChain, 1 for Base
+          pollingInterval: chainId === NETWORKS.INKCHAIN.chainId ? 500 : 4000, // Faster for InkChain
         }),
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
         )
       ])
+    } catch (error) {
+      // Suppress 405 errors from basehub.fun/h endpoint
+      if (error?.message?.includes('405') || 
+          error?.message?.includes('Method Not Allowed') ||
+          error?.stack?.includes('basehub.fun/h')) {
+        console.warn('⚠️ Transaction confirmation error suppressed:', error.message)
+        throw new Error('Transaction confirmation timeout')
+      }
+      throw error
     }
   }
   const [error, setError] = useState(null)
@@ -176,56 +156,11 @@ export const useTransactions = () => {
       
       try {
         // Wait for confirmation with timeout - use publicClient for proper network
-        // For InkChain, use manual polling for better reliability
+        // Wait for confirmation using helper function
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
         const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
         
-        let receipt
-        if (isOnInkChain && publicClient) {
-          // Manual polling for InkChain - more reliable
-          const startTime = Date.now()
-          const pollInterval = 500 // 500ms polling
-          const maxAttempts = Math.floor(timeoutDuration / pollInterval)
-          
-          for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            try {
-              receipt = await publicClient.getTransactionReceipt({ hash: txHash })
-              if (receipt) {
-                console.log('✅ GM transaction confirmed via manual polling!')
-                break
-              }
-            } catch (pollError) {
-              // Transaction not yet mined, continue polling
-              if (attempt < maxAttempts - 1) {
-                await new Promise(resolve => setTimeout(resolve, pollInterval))
-                continue
-              }
-              throw pollError
-            }
-            
-            // Check timeout
-            if (Date.now() - startTime > timeoutDuration) {
-              throw new Error('Transaction confirmation timeout')
-            }
-          }
-          
-          if (!receipt) {
-            throw new Error('Transaction receipt not found after polling')
-          }
-        } else {
-          // Use wagmi's waitForTransactionReceipt for Base
-          receipt = await Promise.race([
-            waitForTransactionReceipt(config, {
-              hash: txHash,
-              chainId: chainId,
-              confirmations: 1,
-              pollingInterval: 4000,
-            }),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
-            )
-          ])
-        }
+        const receipt = await waitForTxReceipt(txHash, timeoutDuration)
         
         console.log('✅ GM transaction confirmed!')
         console.log('📦 Receipt:', receipt)
