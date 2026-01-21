@@ -1,17 +1,28 @@
 import React, { useState, useEffect } from 'react'
-import { useAccount } from 'wagmi'
+import { useAccount, useChainId } from 'wagmi'
 import { useTransactions } from '../hooks/useTransactions'
 import { useSupabase } from '../hooks/useSupabase'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
+import { NETWORKS } from '../config/networks'
+import { formatEther } from 'viem'
 import { Coins, Play, Star, CheckCircle, ExternalLink, TrendingUp, Zap, Gift } from 'lucide-react'
 
 const SlotGame = () => {
   const { isConnected, address } = useAccount()
+  const chainId = useChainId()
   const { sendSlotTransaction, isLoading, error } = useTransactions()
   const { calculateTokens } = useSupabase()
+  
+  // Get credit price based on network
+  const getCreditPrice = () => {
+    const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+    return isOnInkChain ? '0.00002' : '0.000005'
+  }
+  
+  const creditPrice = getCreditPrice()
   
   // Safely get Farcaster context - only if not in web environment
   let isInFarcaster = false
@@ -569,7 +580,7 @@ const SlotGame = () => {
           color: '#1f2937',
           textAlign: 'center'
         }}>
-          Purchase Credits (0.00005 ETH each)
+          Purchase Credits ({creditPrice} ETH each)
         </h3>
         
         <div style={{ 
@@ -721,7 +732,7 @@ const SlotGame = () => {
           lineHeight: '1.6',
           paddingLeft: '20px'
         }}>
-          <li>• Purchase credits with ETH (0.00005 ETH per credit)</li>
+          <li>• Purchase credits with ETH ({creditPrice} ETH per credit)</li>
           <li>• Spin costs 1 credit per play</li>
           <li>• Match 2+ symbols to win bonus XP</li>
           <li>• 4 matching symbols = COMBO! (2000 XP)</li>

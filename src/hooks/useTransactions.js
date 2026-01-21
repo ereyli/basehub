@@ -62,6 +62,20 @@ export const useTransactions = () => {
     return getContractAddressByNetwork(contractName, chainId) || getContractAddress(contractName) // Fallback to Base
   }
 
+  // Get game fee based on network
+  // Base: 0.000005 ETH, InkChain: 0.00002 ETH
+  const getGameFee = () => {
+    const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+    return isOnInkChain ? parseEther('0.00002') : parseEther('0.000005')
+  }
+
+  // Get slot credit price based on network
+  // Base: 0.000005 ETH, InkChain: 0.00002 ETH
+  const getSlotCreditPrice = () => {
+    const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+    return isOnInkChain ? parseEther('0.00002') : parseEther('0.000005')
+  }
+
   const sendGMTransaction = async (message = 'GM!') => {
     if (!address) {
       throw new Error('Wallet not connected')
@@ -89,7 +103,7 @@ export const useTransactions = () => {
         }],
         functionName: 'sendGM',
         args: [message],
-        value: parseEther('0.000005'), // 0.000005 ETH fee
+        value: getGameFee(), // Network-specific fee (Base: 0.000005 ETH, InkChain: 0.00002 ETH)
       })
       
       console.log('✅ GM transaction sent! Hash:', txHash)
@@ -171,7 +185,7 @@ export const useTransactions = () => {
         }],
         functionName: 'sendGN',
         args: [message],
-        value: parseEther('0.000005'), // 0.000005 ETH fee
+        value: getGameFee(), // Network-specific fee (Base: 0.000005 ETH, InkChain: 0.00002 ETH)
       })
       
       console.log('✅ GN transaction sent! Hash:', txHash)
@@ -251,7 +265,7 @@ export const useTransactions = () => {
         }],
         functionName: 'playFlip',
         args: [choice],
-        value: parseEther('0.000005'), // 0.000005 ETH fee
+        value: getGameFee(), // Network-specific fee (Base: 0.000005 ETH, InkChain: 0.00002 ETH)
       })
       
       console.log('✅ Flip transaction sent! Hash:', txHash)
@@ -340,7 +354,7 @@ export const useTransactions = () => {
         }],
         functionName: 'guessLuckyNumber',
         args: [guess],
-        value: parseEther('0.000005'), // 0.000005 ETH fee
+        value: getGameFee(), // Network-specific fee (Base: 0.000005 ETH, InkChain: 0.00002 ETH)
       })
       
       console.log('✅ Lucky Number transaction sent! Hash:', txHash)
@@ -427,7 +441,7 @@ export const useTransactions = () => {
         }],
         functionName: 'rollDice',
         args: [guess],
-        value: parseEther('0.000005'), // 0.000005 ETH fee
+        value: getGameFee(), // Network-specific fee (Base: 0.000005 ETH, InkChain: 0.00002 ETH)
       })
       
       console.log('✅ Dice Roll transaction sent! Hash:', txHash)
@@ -512,7 +526,9 @@ export const useTransactions = () => {
       if (action === 'purchaseCredits') {
         // Purchase credits
         const amount = params.amount || 10
-        const totalCost = amount * 0.00005 // 0.00005 ETH per credit
+        const creditPrice = getSlotCreditPrice()
+        // Calculate total cost: amount * creditPrice
+        const totalCost = BigInt(amount) * creditPrice
         
         txHash = await writeContractAsync({
           address: contractAddress,
@@ -524,7 +540,7 @@ export const useTransactions = () => {
           }],
           functionName: 'purchaseCredits',
           args: [amount],
-          value: parseEther(totalCost.toString()),
+          value: totalCost, // Network-specific credit price (Base: 0.000005 ETH, InkChain: 0.00002 ETH per credit)
         })
         
         console.log('✅ Credits purchase transaction sent! Hash:', txHash)
