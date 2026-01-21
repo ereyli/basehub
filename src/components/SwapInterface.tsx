@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useBalance, usePublicClient } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useBalance, usePublicClient, useChainId } from 'wagmi';
 import { parseUnits, formatUnits, maxUint256 } from 'viem';
 import { base } from 'wagmi/chains';
 import { DEFAULT_TOKENS, POPULAR_TOKENS, MEME_TOKENS, FEE_TIERS, searchTokens, getAllTokens, saveCustomToken, removeCustomToken, getTokenByAddress, BASE_CHAIN_ID, type AppToken } from '../config/tokens';
@@ -8,6 +8,8 @@ import StatsPanel from './StatsPanel';
 import swaphubLogo from '../assets/swaphub-logo.png';
 import { addXP, recordSwapTransaction } from '../utils/xpUtils';
 import { useQuestSystem } from '../hooks/useQuestSystem';
+import { NETWORKS } from '../config/networks';
+import { AlertCircle } from 'lucide-react';
 
 // ETH price state - will be fetched from CoinGecko API
 let cachedEthPrice = 2950; // Default fallback price
@@ -711,11 +713,15 @@ const WETH_ABI = [
 ];
 
 export default function SwapInterface() {
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
+  const chainId = useChainId();
   const { updateQuestProgress } = useQuestSystem();
   const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
   const { isLoading: isConfirming, isSuccess, error: txError } = useWaitForTransactionReceipt({ hash });
   const publicClient = usePublicClient();
+  
+  // SwapHub only works on Base network
+  const isOnBase = chainId === NETWORKS.BASE.chainId;
 
   // ETH price state - updated from CoinGecko API
   const [ethPriceUsd, setEthPriceUsd] = useState<number>(2950);
@@ -1996,6 +2002,52 @@ export default function SwapInterface() {
       padding: '6px 8px 3px'
     }
   } : {};
+
+  // Show Base-only warning if not on Base network
+  if (isConnected && !isOnBase) {
+    return (
+      <div style={{
+        padding: '40px 20px',
+        textAlign: 'center',
+        color: '#fff',
+        backgroundColor: 'rgba(30, 41, 59, 0.95)',
+        borderRadius: '20px',
+        border: '2px solid rgba(239, 68, 68, 0.3)',
+        maxWidth: '600px',
+        margin: '0 auto'
+      }}>
+        <AlertCircle size={48} style={{ color: '#ef4444', marginBottom: '20px' }} />
+        <h2 style={{ 
+          fontSize: '24px', 
+          fontWeight: '700', 
+          color: '#ef4444', 
+          marginBottom: '16px' 
+        }}>
+          Base Network Required
+        </h2>
+        <p style={{ 
+          fontSize: '16px', 
+          color: '#9ca3af', 
+          marginBottom: '24px',
+          lineHeight: '1.6'
+        }}>
+          SwapHub DEX Aggregator only works on Base network.
+          <br />
+          Please switch to Base network using RainbowKit's network selector to use SwapHub.
+        </p>
+        <div style={{
+          padding: '12px 20px',
+          background: 'rgba(59, 130, 246, 0.1)',
+          borderRadius: '12px',
+          border: '1px solid rgba(59, 130, 246, 0.3)',
+          color: '#60a5fa',
+          fontSize: '14px'
+        }}>
+          Current Network: {chainId === NETWORKS.INKCHAIN.chainId ? 'InkChain' : `Unknown (Chain ID: ${chainId})`}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.pageContainer}>
