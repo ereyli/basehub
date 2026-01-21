@@ -113,13 +113,17 @@ function GlobalErrorHandler() {
       const errorStack = event.reason?.stack || ''
       const errorString = String(event.reason || '')
       
-      // Ignore wallet extension errors
+      // Ignore wallet extension errors and 405 errors from basehub.fun/h
       if (errorMessage.includes('KeyRing is locked') || 
           errorMessage.includes('keyring') ||
           errorMessage.includes('ERR_BLOCKED_BY_CLIENT') ||
+          errorMessage.includes('405') ||
+          errorMessage.includes('Method Not Allowed') ||
           errorStack.includes('injectedScript.bundle.js') ||
+          errorStack.includes('basehub.fun/h') ||
           errorString.includes('KeyRing is locked') ||
-          errorString.includes('injectedScript.bundle.js')) {
+          errorString.includes('injectedScript.bundle.js') ||
+          errorString.includes('basehub.fun/h')) {
         event.preventDefault() // Prevent error from showing in console
         return
       }
