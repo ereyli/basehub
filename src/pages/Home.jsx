@@ -675,7 +675,7 @@ const Home = () => {
                           gap: '6px'
                         }}>
                           <Zap size={12} style={{ color: '#93c5fd' }} />
-                          NFT sahiplerine 2x XP
+                          NFT holders earn 2x XP
                         </div>
                         <div style={{
                           background: 'rgba(30, 41, 59, 0.95)',

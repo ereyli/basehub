@@ -313,7 +313,7 @@ const EarlyAccessNFT = () => {
             marginBottom: '24px'
           }}>
             <Zap size={16} style={{ color: '#93c5fd' }} />
-            Bu NFT'yi tutanlar tüm ekosistemde **2x XP** kazanır.
+            Holders earn **2x XP** across the entire ecosystem.
           </div>
 
           {error && (
