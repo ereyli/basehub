@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "./GameToken.sol";
-
 contract DiceRoll {
-    GameToken public gameToken;
     address public owner;
     
     uint256 public constant GAME_FEE = 0.000005 ether; // 0.000005 ETH fee
@@ -14,8 +11,7 @@ contract DiceRoll {
     mapping(address => uint256) public playerDiceCount;
     event DiceRolled(address indexed player, uint256 guess, uint256 result, bool won, uint256 xpEarned);
     
-    constructor(address _gameToken) {
-        gameToken = GameToken(_gameToken);
+    constructor() {
         owner = msg.sender;
     }
     
@@ -56,13 +52,9 @@ contract DiceRoll {
     
     // Get player stats
     function getPlayerStats(address player) external view returns (
-        uint256 diceCount,
-        uint256 tokenBalance
+        uint256 diceCount
     ) {
-        return (
-            playerDiceCount[player],
-            gameToken.balanceOf(player)
-        );
+        return playerDiceCount[player];
     }
     
     // Withdraw contract balance (only owner)

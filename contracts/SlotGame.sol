@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "./GameToken.sol";
-
 contract SlotGame {
-    GameToken public gameToken;
     address public owner;
     
     // Game constants
@@ -28,8 +25,7 @@ contract SlotGame {
     event SlotSpun(address indexed player, uint256[4] symbols, bool won, uint256 xpEarned);
     event CreditsWithdrawn(address indexed player, uint256 amount);
     
-    constructor(address _gameToken) {
-        gameToken = GameToken(_gameToken);
+    constructor() {
         owner = msg.sender;
     }
     
@@ -108,14 +104,12 @@ contract SlotGame {
     function getPlayerStats(address player) external view returns (
         uint256 credits,
         uint256 spinCount,
-        uint256 totalWins,
-        uint256 tokenBalance
+        uint256 totalWins
     ) {
         return (
             playerCredits[player],
             playerSpinCount[player],
-            playerTotalWins[player],
-            gameToken.balanceOf(player)
+            playerTotalWins[player]
         );
     }
     

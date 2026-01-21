@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "./GameToken.sol";
-
 contract FlipGame {
-    GameToken public gameToken;
     address public owner;
     
     uint256 public constant GAME_FEE = 0.000005 ether; // 0.000005 ETH fee
@@ -32,8 +29,7 @@ contract FlipGame {
         uint256 xpEarned
     );
     
-    constructor(address _gameToken) {
-        gameToken = GameToken(_gameToken);
+    constructor() {
         owner = msg.sender;
     }
     
@@ -84,8 +80,7 @@ contract FlipGame {
     function getPlayerStats(address player) external view returns (
         uint256 totalGames,
         uint256 wins,
-        uint256 totalXPEarned,
-        uint256 tokenBalance
+        uint256 totalXPEarned
     ) {
         GameResult[] memory games = playerGames[player];
         uint256 winCount = 0;
@@ -101,8 +96,7 @@ contract FlipGame {
         return (
             games.length,
             winCount,
-            totalXP,
-            gameToken.balanceOf(player)
+            totalXP
         );
     }
     

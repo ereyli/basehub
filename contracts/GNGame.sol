@@ -1,21 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "./GameToken.sol";
-
 contract GNGame {
-    GameToken public gameToken;
     address public owner;
     
-    uint256 public constant GN_REWARD = 1 * 10**18; // 1 token
     uint256 public constant GAME_FEE = 0.000005 ether; // 0.000005 ETH fee
     
     mapping(address => uint256) public playerGNCount;
     
-    event GNSent(address indexed player, string message, uint256 reward);
+    event GNSent(address indexed player, string message);
     
-    constructor(address _gameToken) {
-        gameToken = GameToken(_gameToken);
+    constructor() {
         owner = msg.sender;
     }
     
@@ -36,18 +31,14 @@ contract GNGame {
             payable(msg.sender).transfer(msg.value - GAME_FEE);
         }
         
-        emit GNSent(msg.sender, message, 0); // No token reward, only XP
+        emit GNSent(msg.sender, message);
     }
     
     // Get player stats
     function getPlayerStats(address player) external view returns (
-        uint256 gnCount,
-        uint256 tokenBalance
+        uint256 gnCount
     ) {
-        return (
-            playerGNCount[player],
-            gameToken.balanceOf(player)
-        );
+        return playerGNCount[player];
     }
     
     // Withdraw contract balance (only owner)

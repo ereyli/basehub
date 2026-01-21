@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "./GameToken.sol";
-
 contract LuckyNumber {
-    GameToken public gameToken;
     address public owner;
     
     uint256 public constant GAME_FEE = 0.000005 ether; // 0.000005 ETH fee
@@ -14,8 +11,7 @@ contract LuckyNumber {
     mapping(address => uint256) public playerLuckyCount;
     event LuckyNumberGuessed(address indexed player, uint256 guess, uint256 result, bool won, uint256 xpEarned);
     
-    constructor(address _gameToken) {
-        gameToken = GameToken(_gameToken);
+    constructor() {
         owner = msg.sender;
     }
     
@@ -56,13 +52,9 @@ contract LuckyNumber {
     
     // Get player stats
     function getPlayerStats(address player) external view returns (
-        uint256 luckyCount,
-        uint256 tokenBalance
+        uint256 luckyCount
     ) {
-        return (
-            playerLuckyCount[player],
-            gameToken.balanceOf(player)
-        );
+        return playerLuckyCount[player];
     }
     
     // Withdraw contract balance (only owner)
