@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Calendar, CheckCircle, Star, Trophy, Zap, Target, Gift, MessageSquare, Coins, Dice1, Dice6, Image, Layers, DollarSign } from 'lucide-react'
+import { Calendar, CheckCircle, Star, Trophy, Zap, Target, Gift, MessageSquare, Coins, Dice1, Dice6, Image, Layers, DollarSign, ArrowLeftRight } from 'lucide-react'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { useQuestSystem } from '../hooks/useQuestSystem'
@@ -242,6 +242,15 @@ const DailyQuestSystem = () => {
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { x402Payment: 1 }
       },
+      {
+        day: 1,
+        title: "Swap",
+        description: "Complete 1 swap",
+        xpReward: 1000,
+        icon: <ArrowLeftRight size={20} style={{ color: '#38bdf8' }} />,
+        color: "linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)",
+        requirements: { swapsCompleted: 1 }
+      },
 
       // Day 2 - Use all features 2 times
       {
@@ -324,6 +333,15 @@ const DailyQuestSystem = () => {
         icon: <DollarSign size={20} style={{ color: '#10b981' }} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { x402Payment: 2 }
+      },
+      {
+        day: 2,
+        title: "Swap",
+        description: "Complete 2 swaps",
+        xpReward: 1000,
+        icon: <ArrowLeftRight size={20} style={{ color: '#38bdf8' }} />,
+        color: "linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)",
+        requirements: { swapsCompleted: 2 }
       },
 
       // Day 3 - Use all features 3 times
@@ -408,6 +426,15 @@ const DailyQuestSystem = () => {
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { x402Payment: 3 }
       },
+      {
+        day: 3,
+        title: "Swap",
+        description: "Complete 3 swaps",
+        xpReward: 1000,
+        icon: <ArrowLeftRight size={20} style={{ color: '#38bdf8' }} />,
+        color: "linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)",
+        requirements: { swapsCompleted: 3 }
+      },
 
       // Day 4 - Use all features 4 times
       {
@@ -490,6 +517,15 @@ const DailyQuestSystem = () => {
         icon: <DollarSign size={20} style={{ color: '#10b981' }} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { x402Payment: 4 }
+      },
+      {
+        day: 4,
+        title: "Swap",
+        description: "Complete 4 swaps",
+        xpReward: 1000,
+        icon: <ArrowLeftRight size={20} style={{ color: '#38bdf8' }} />,
+        color: "linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)",
+        requirements: { swapsCompleted: 4 }
       },
 
       // Day 5 - Use all features 5 times
@@ -574,6 +610,15 @@ const DailyQuestSystem = () => {
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { x402Payment: 5 }
       },
+      {
+        day: 5,
+        title: "Swap",
+        description: "Complete 5 swaps",
+        xpReward: 1000,
+        icon: <ArrowLeftRight size={20} style={{ color: '#38bdf8' }} />,
+        color: "linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)",
+        requirements: { swapsCompleted: 5 }
+      },
 
       // Day 6 - Use all features 6 times
       {
@@ -657,6 +702,15 @@ const DailyQuestSystem = () => {
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { x402Payment: 6 }
       },
+      {
+        day: 6,
+        title: "Swap",
+        description: "Complete 6 swaps",
+        xpReward: 1000,
+        icon: <ArrowLeftRight size={20} style={{ color: '#38bdf8' }} />,
+        color: "linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)",
+        requirements: { swapsCompleted: 6 }
+      },
 
       // Day 7 - Use all features 7 times
       {
@@ -739,6 +793,15 @@ const DailyQuestSystem = () => {
         icon: <DollarSign size={20} style={{ color: '#10b981' }} />,
         color: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         requirements: { x402Payment: 7 }
+      },
+      {
+        day: 7,
+        title: "Swap",
+        description: "Complete 7 swaps",
+        xpReward: 1000,
+        icon: <ArrowLeftRight size={20} style={{ color: '#38bdf8' }} />,
+        color: "linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)",
+        requirements: { swapsCompleted: 7 }
       }
     ]
 
