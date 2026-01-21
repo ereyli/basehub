@@ -136,6 +136,7 @@ export const useTransactions = () => {
             hash: txHash,
             chainId: chainId, // Explicitly set chainId for proper network
             confirmations: 1,
+            pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base (faster polling)
           }),
           new Promise((_, reject) => 
             setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
@@ -226,6 +227,7 @@ export const useTransactions = () => {
             hash: txHash,
             chainId: chainId, // Explicitly set chainId
             confirmations: 1,
+            pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base
           }),
           new Promise((_, reject) => 
             setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
@@ -323,6 +325,7 @@ export const useTransactions = () => {
             hash: txHash,
             chainId: chainId, // Explicitly set chainId
             confirmations: 1,
+            pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base
           }),
           new Promise((_, reject) => 
             setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
@@ -419,6 +422,7 @@ export const useTransactions = () => {
             hash: txHash,
             chainId: chainId, // Explicitly set chainId
             confirmations: 1,
+            pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base
           }),
           new Promise((_, reject) => 
             setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
@@ -516,6 +520,7 @@ export const useTransactions = () => {
             hash: txHash,
             chainId: chainId, // Explicitly set chainId
             confirmations: 1,
+            pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base
           }),
           new Promise((_, reject) => 
             setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
@@ -673,6 +678,7 @@ export const useTransactions = () => {
               hash: txHash,
               chainId: chainId, // Explicitly set chainId
               confirmations: 1,
+              pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base
             }),
             new Promise((_, reject) => 
               setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
@@ -716,6 +722,7 @@ export const useTransactions = () => {
               hash: txHash,
               chainId: chainId, // Explicitly set chainId
               confirmations: 1,
+              pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base
             }),
             new Promise((_, reject) => 
               setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)

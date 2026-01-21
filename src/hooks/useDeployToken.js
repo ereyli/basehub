@@ -401,14 +401,17 @@ export const useDeployToken = () => {
       // Wait for fee transaction confirmation (non-blocking with timeout for InkChain)
       console.log('⏳ Waiting for fee transaction confirmation...')
       try {
+        const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+        const timeoutDuration = isOnInkChain ? 120000 : 60000
         const receipt = await Promise.race([
           waitForTransactionReceipt(config, {
             hash: feeTxHash,
             chainId: chainId, // Explicitly set chainId for proper network
             confirmations: 1,
+            pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base
           }),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Fee transaction confirmation timeout')), 60000) // 60 seconds
+            setTimeout(() => reject(new Error('Fee transaction confirmation timeout')), timeoutDuration)
           )
         ])
         console.log('✅ Fee transaction confirmed!', receipt)
@@ -449,14 +452,17 @@ export const useDeployToken = () => {
       // Wait for deploy confirmation (non-blocking with timeout for InkChain)
       console.log('⏳ Waiting for deploy transaction confirmation...')
       try {
+        const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+        const timeoutDuration = isOnInkChain ? 120000 : 60000
         const deployReceipt = await Promise.race([
           waitForTransactionReceipt(config, {
             hash: deployTxHash,
             chainId: chainId, // Explicitly set chainId for proper network
             confirmations: 1,
+            pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base
           }),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Deploy transaction confirmation timeout')), 60000) // 60 seconds
+            setTimeout(() => reject(new Error('Deploy transaction confirmation timeout')), timeoutDuration)
           )
         ])
         console.log('✅ ERC20 contract deployed successfully!', deployReceipt)

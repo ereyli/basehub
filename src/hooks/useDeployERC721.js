@@ -8,6 +8,7 @@ import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/
 import { useNetworkCheck } from './useNetworkCheck'
 import { useQuestSystem } from './useQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'
+import { NETWORKS } from '../config/networks'
 
 // ERC721 Contract ABI
 const ERC721_ABI = [
@@ -534,14 +535,17 @@ export const useDeployERC721 = () => {
       // Wait for fee transaction confirmation (non-blocking with timeout for InkChain)
       console.log('⏳ Waiting for fee transaction confirmation...')
       try {
+        const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+        const timeoutDuration = isOnInkChain ? 120000 : 60000
         await Promise.race([
           waitForTransactionReceipt(config, {
             hash: feeTxHash,
             chainId: chainId, // Explicitly set chainId for proper network
             confirmations: 1,
+            pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base
           }),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Fee transaction confirmation timeout')), 60000) // 60 seconds
+            setTimeout(() => reject(new Error('Fee transaction confirmation timeout')), timeoutDuration)
           )
         ])
         console.log('✅ Fee transaction confirmed!')
@@ -587,14 +591,17 @@ export const useDeployERC721 = () => {
       console.log('⏳ Waiting for deploy transaction confirmation...')
       let deployReceipt = null
       try {
+        const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+        const timeoutDuration = isOnInkChain ? 120000 : 60000
         deployReceipt = await Promise.race([
           waitForTransactionReceipt(config, {
             hash: deployTxHash,
             chainId: chainId, // Explicitly set chainId for proper network
             confirmations: 1,
+            pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base
           }),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Deploy transaction confirmation timeout')), 60000) // 60 seconds
+            setTimeout(() => reject(new Error('Deploy transaction confirmation timeout')), timeoutDuration)
           )
         ])
         console.log('✅ ERC721 contract deployed successfully!')
