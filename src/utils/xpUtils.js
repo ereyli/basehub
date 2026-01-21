@@ -101,9 +101,12 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
 
   // Apply 2x multiplier if wallet holds our NFT
   let finalXP = xpAmount
+  let bonusXP = 0
+  let isNFTOwner = false
   try {
-    const ownsNFT = await isWalletNFTOwner(walletAddress)
-    if (ownsNFT) {
+    isNFTOwner = await isWalletNFTOwner(walletAddress)
+    if (isNFTOwner) {
+      bonusXP = xpAmount // Bonus equals base XP (2x total)
       finalXP = xpAmount * 2
       console.log(`🎁 NFT detected, applying 2x XP: ${xpAmount} -> ${finalXP}`)
       showXPToast()
@@ -175,6 +178,9 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
           wallet_address: walletAddress,
           game_type: gameType,
           xp_earned: finalXP,
+          base_xp: xpAmount,
+          bonus_xp: bonusXP,
+          is_nft_owner: isNFTOwner,
           transaction_hash: null // Can be added later if needed
         })
       } catch (txError) {
@@ -212,7 +218,10 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
         await recordTransaction({
           wallet_address: walletAddress,
           game_type: gameType,
-          xp_earned: xpAmount,
+          xp_earned: finalXP,
+          base_xp: xpAmount,
+          bonus_xp: bonusXP,
+          is_nft_owner: isNFTOwner,
           transaction_hash: null // Can be added later if needed
         })
       } catch (txError) {
@@ -220,7 +229,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
         console.warn('⚠️ Failed to record transaction (non-critical):', txError)
       }
 
-      console.log(`✅ Created new player ${walletAddress} with ${xpAmount} XP`)
+      console.log(`✅ Created new player ${walletAddress} with ${finalXP} XP`)
       return xpAmount
     }
   } catch (error) {

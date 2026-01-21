@@ -594,8 +594,29 @@ const Profile = () => {
                       </div>
                       <div style={styles.transactionRight}>
                         {tx.xp_earned && (
-                          <div style={styles.transactionXP}>
-                            +{tx.xp_earned} XP
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                            <div style={styles.transactionXP}>
+                              +{tx.xp_earned} XP
+                              {tx.bonus_xp && tx.bonus_xp > 0 && (
+                                <span style={{ 
+                                  fontSize: '11px', 
+                                  color: '#10b981', 
+                                  marginLeft: '6px',
+                                  fontWeight: '500'
+                                }}>
+                                  (2x)
+                                </span>
+                              )}
+                            </div>
+                            {tx.bonus_xp && tx.bonus_xp > 0 && (
+                              <div style={{
+                                fontSize: '11px',
+                                color: '#10b981',
+                                fontWeight: '500'
+                              }}>
+                                +{tx.bonus_xp} XP bonus
+                              </div>
+                            )}
                           </div>
                         )}
                         {tx.swap_amount_usd && (
