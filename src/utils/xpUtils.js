@@ -20,7 +20,7 @@ const showXPToast = () => {
   }
   const toast = document.createElement('div')
   toast.id = 'xp-toast-2x'
-  toast.textContent = '🎉 NFT sahibi olduğun için 2x XP kazandın!'
+  toast.textContent = '🎉 You earned 2x XP for being an NFT holder!'
   toast.style.position = 'fixed'
   toast.style.bottom = '20px'
   toast.style.right = '20px'
