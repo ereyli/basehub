@@ -520,6 +520,7 @@ const Home = () => {
                   <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
                     GM / GN
                   </h2>
+                  {renderNetworkLogos(['base', 'ink'])}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
                   {games.filter(g => g.id === 'gm' || g.id === 'gn').map((game) => (
@@ -543,12 +544,9 @@ const Home = () => {
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
                         {game.icon}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                          <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', lineHeight: '1.2' }}>
-                            {game.title}
-                          </h3>
-                          {renderNetworkLogos(game.networks)}
-                        </div>
+                        <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
+                          {game.title}
+                        </h3>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
                         <div style={{
@@ -611,6 +609,7 @@ const Home = () => {
                   <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
                     DEX AGGREGATOR
                   </h2>
+                  {renderNetworkLogos(['base'])}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
                   {games.filter(g => g.id === 'swap').map((game) => (
@@ -703,6 +702,7 @@ const Home = () => {
                   <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
                     EARLY ACCESS NFT
                   </h2>
+                  {renderNetworkLogos(['base'])}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
                   <Link
@@ -723,12 +723,9 @@ const Home = () => {
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
                         <Rocket size={35} style={{ color: 'white' }} />
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                          <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', lineHeight: '1.2' }}>
-                            Early Access Pass
-                          </h3>
-                          {renderNetworkLogos(['base'])}
-                        </div>
+                        <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
+                          Early Access Pass
+                        </h3>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
                         <div style={{
@@ -824,6 +821,7 @@ const Home = () => {
                   <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
                     GAMING
                   </h2>
+                  {renderNetworkLogos(['base', 'ink'])}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
                   {games.filter(g => ['flip', 'dice', 'slot', 'lucky'].includes(g.id)).map((game) => (
@@ -916,6 +914,7 @@ const Home = () => {
                   <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
                     ANALYSIS
                   </h2>
+                  {renderMultiChainText()}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
                   {games.filter(g => ['wallet-analysis', 'contract-security', 'allowance-cleaner'].includes(g.id)).map((game) => (
@@ -939,12 +938,9 @@ const Home = () => {
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
                           {game.icon}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                            <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', lineHeight: '1.2' }}>
-                              {game.title}
-                            </h3>
-                            {renderMultiChainText()}
-                          </div>
+                          <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
+                            {game.title}
+                          </h3>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
                           <div style={{
@@ -1007,6 +1003,7 @@ const Home = () => {
                   <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb', margin: 0 }}>
                     DEPLOY
                   </h2>
+                  {renderNetworkLogos(['base', 'ink'])}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
                   {games.filter(g => ['deploy', 'deploy-erc721', 'deploy-erc1155', 'x402-premium'].includes(g.id)).map((game) => {
@@ -1041,12 +1038,9 @@ const Home = () => {
                           }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', position: 'relative' }}>
                               {game.icon}
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                                <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', lineHeight: '1.2' }}>
-                                  {game.title}
-                                </h3>
-                                {renderNetworkLogos(game.networks)}
-                              </div>
+                              <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'white', flex: 1, lineHeight: '1.2' }}>
+                                {game.title}
+                              </h3>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
                               <div style={{
