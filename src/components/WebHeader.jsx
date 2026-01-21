@@ -8,6 +8,7 @@ import { getCurrentConfig } from '../config/base'
 import { useProofOfUsage } from '../hooks/useProofOfUsage'
 import { getXP } from '../utils/xpUtils'
 import UserProfile from './UserProfile'
+import NetworkSelector from './NetworkSelector'
 
 const WebHeader = () => {
   const location = useLocation()
