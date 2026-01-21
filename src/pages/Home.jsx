@@ -165,8 +165,8 @@ const Home = () => {
             src="/base-logo.jpg" 
             alt="Base" 
             style={{ 
-              width: '18px', 
-              height: '18px', 
+              width: '24px', 
+              height: '24px', 
               borderRadius: '50%',
               objectFit: 'cover',
               border: '2px solid rgba(255, 255, 255, 0.3)',
@@ -179,8 +179,8 @@ const Home = () => {
             src="/ink-logo.jpg" 
             alt="InkChain" 
             style={{ 
-              width: '18px', 
-              height: '18px', 
+              width: '24px', 
+              height: '24px', 
               borderRadius: '50%',
               objectFit: 'cover',
               border: '2px solid rgba(255, 255, 255, 0.3)',
@@ -189,6 +189,24 @@ const Home = () => {
           />
         )}
       </div>
+    )
+  }
+
+  // Helper function to render multi-chain text for ANALYSIS features
+  const renderMultiChainText = () => {
+    return (
+      <span style={{
+        fontSize: '11px',
+        fontWeight: '600',
+        color: 'rgba(255, 255, 255, 0.8)',
+        background: 'rgba(59, 130, 246, 0.2)',
+        padding: '2px 8px',
+        borderRadius: '8px',
+        border: '1px solid rgba(59, 130, 246, 0.3)',
+        whiteSpace: 'nowrap'
+      }}>
+        Multi-chain
+      </span>
     )
   }
 
