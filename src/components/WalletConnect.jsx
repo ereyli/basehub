@@ -8,17 +8,10 @@ function WalletConnect() {
   const { isConnected, address } = useAccount()
   const { connect, connectors } = useConnect()
   const { disconnect } = useDisconnect()
-  const { isCorrectNetwork, switchToBaseNetwork } = useNetworkCheck()
+  const { isCorrectNetwork } = useNetworkCheck()
 
-  // Auto-switch to Base network when wallet connects
-  useEffect(() => {
-    if (isConnected && !isCorrectNetwork) {
-      console.log('🔄 Wallet connected but not on Base network, switching...')
-      switchToBaseNetwork().catch(error => {
-        console.error('Failed to auto-switch to Base:', error)
-      })
-    }
-  }, [isConnected, isCorrectNetwork, switchToBaseNetwork])
+  // Don't auto-switch - let RainbowKit handle network selection
+  // User can select Base or InkChain via RainbowKit's network selector
 
   const handleConnect = () => {
     const preferredConnector = getPreferredConnector(connectors)

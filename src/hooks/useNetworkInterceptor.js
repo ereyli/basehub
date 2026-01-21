@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useAccount, useChainId } from 'wagmi'
-import { getCurrentConfig } from '../config/base'
+import { isNetworkSupported, getNetworkConfig, NETWORKS } from '../config/networks'
 
 export const useNetworkInterceptor = () => {
   const { isConnected } = useAccount()
   const chainId = useChainId()
-  const baseConfig = getCurrentConfig()
   const [hasShownAlert, setHasShownAlert] = useState(false)
 
   useEffect(() => {
@@ -14,59 +13,31 @@ export const useNetworkInterceptor = () => {
       return
     }
 
-    const isOnBase = chainId === baseConfig.chainId
+    // Check if current network is supported (Base or InkChain)
+    const isSupported = isNetworkSupported(chainId)
     
-    if (!isOnBase && !hasShownAlert) {
-      console.log('🚨 WRONG NETWORK DETECTED!')
-      console.log('Current network:', getNetworkName(chainId))
-      console.log('Required network:', baseConfig.chainName)
-      console.log('Chain ID:', chainId, 'vs Required:', baseConfig.chainId)
+    if (!isSupported && !hasShownAlert) {
+      const currentNetwork = getNetworkConfig(chainId)
+      console.log('🚨 UNSUPPORTED NETWORK DETECTED!')
+      console.log('Current network:', currentNetwork?.chainName || `Unknown (Chain ID: ${chainId})`)
+      console.log('Supported networks: Base or InkChain')
       
       setHasShownAlert(true)
       
-      // Show alert to user with stronger message
-      alert(`🚫 BASE AĞI GEREKLİ!\n\nŞu anda ${getNetworkName(chainId)} ağındasınız.\nBaseHub SADECE Base ağında çalışır.\n\nLütfen cüzdanınızı Base ağına geçirin!\n\nBase ağına geçmeden işlem yapamazsınız.`)
-      
-      // Also try to automatically switch
-      if (typeof window.ethereum !== 'undefined') {
-        try {
-          window.ethereum.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: `0x${baseConfig.chainId.toString(16)}` }],
-          }).then(() => {
-            console.log('✅ Auto-switched to Base network')
-            setHasShownAlert(false)
-          }).catch((error) => {
-            console.log('❌ Auto-switch failed:', error)
-            // Show another alert if auto-switch fails
-            setTimeout(() => {
-              alert(`❌ Otomatik ağ geçişi başarısız!\n\nLütfen manuel olarak Base ağına geçin.\n\nBase ağına geçmeden işlem yapamazsınız.`)
-            }, 1000)
-          })
-        } catch (error) {
-          console.log('❌ Auto-switch failed:', error)
-          // Show another alert if auto-switch fails
-          setTimeout(() => {
-            alert(`❌ Otomatik ağ geçişi başarısız!\n\nLütfen manuel olarak Base ağına geçin.\n\nBase ağına geçmeden işlem yapamazsınız.`)
-          }, 1000)
-        }
-      }
-    } else if (isOnBase) {
+      // Show alert to user
+      alert(`🚫 UNSUPPORTED NETWORK!\n\nYou are currently on ${currentNetwork?.chainName || `Unknown Network (Chain ID: ${chainId})`}.\nBaseHub works on Base or InkChain networks.\n\nPlease switch to a supported network.`)
+    } else if (isSupported) {
       setHasShownAlert(false)
     }
-  }, [isConnected, chainId, baseConfig.chainId, hasShownAlert])
+  }, [isConnected, chainId, hasShownAlert])
 
-  const getNetworkName = (chainId) => {
-    // Only support Base mainnet
-    if (chainId === 8453) {
-      return 'Base'
-    }
-    return `Unsupported Network (Chain ID: ${chainId})`
-  }
+  const currentNetwork = getNetworkConfig(chainId)
 
   return {
-    isOnBase: chainId === baseConfig.chainId,
-    currentNetwork: getNetworkName(chainId),
-    requiredNetwork: baseConfig.chainName
+    isOnSupportedNetwork: isNetworkSupported(chainId),
+    isOnBase: chainId === NETWORKS.BASE.chainId,
+    isOnInkChain: chainId === NETWORKS.INKCHAIN.chainId,
+    currentNetwork: currentNetwork?.chainName || `Unknown (Chain ID: ${chainId})`,
+    supportedNetworks: ['Base', 'InkChain']
   }
 }

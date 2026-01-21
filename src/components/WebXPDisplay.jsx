@@ -10,20 +10,8 @@ const WebXPDisplay = () => {
   const [totalXP, setTotalXP] = useState(0)
   const [isSwitching, setIsSwitching] = useState(false)
   
-  // Auto-switch to Base network when wallet connects
-  useEffect(() => {
-    if (isConnected && !isCorrectNetwork) {
-      console.log('🔄 Wallet connected but not on Base network, attempting switch...')
-      switchToBaseNetwork().catch(error => {
-        // Don't log errors for user-rejected requests (normal in Farcaster)
-        if (error.message?.includes('not been authorized') || error.code === 4001) {
-          console.log('ℹ️ Network switch request was rejected (this is normal)')
-        } else {
-        console.error('Failed to auto-switch to Base:', error)
-        }
-      })
-    }
-  }, [isConnected, isCorrectNetwork, switchToBaseNetwork])
+  // Don't auto-switch - let RainbowKit handle network selection
+  // User can select Base or InkChain via RainbowKit's network selector
   
   // Load XP from Supabase and refresh every 3 seconds
   useEffect(() => {
