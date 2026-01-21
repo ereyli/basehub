@@ -60,7 +60,24 @@ const TermsOfService = lazy(() =>
 )
 import './styles/index.css'
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Disable automatic refetching on window focus to reduce unnecessary requests
+      refetchOnWindowFocus: false,
+      // Disable automatic refetching on reconnect
+      refetchOnReconnect: false,
+      // Reduce retry attempts
+      retry: 1,
+      // Increase stale time to reduce refetching
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+    mutations: {
+      // Reduce retry attempts for mutations
+      retry: 1,
+    },
+  },
+})
 
 // Global error handler component
 function GlobalErrorHandler() {
@@ -72,15 +89,19 @@ function GlobalErrorHandler() {
       const fullMessage = args.join(' ')
       const errorString = String(args[0] || '')
       
-      // Ignore common wallet extension errors
+      // Ignore common wallet extension errors and 405 errors from basehub.fun/h
       if (errorMessage.includes('KeyRing is locked') || 
           errorMessage.includes('keyring') ||
           errorMessage.includes('ERR_BLOCKED_BY_CLIENT') ||
+          errorMessage.includes('405') ||
+          errorMessage.includes('Method Not Allowed') ||
           fullMessage.includes('injectedScript.bundle.js') ||
           fullMessage.includes('KeyRing is locked') ||
+          fullMessage.includes('basehub.fun/h') ||
           errorString.includes('KeyRing is locked') ||
-          errorString.includes('injectedScript.bundle.js')) {
-        // Silently ignore these common extension-related errors
+          errorString.includes('injectedScript.bundle.js') ||
+          errorString.includes('basehub.fun/h')) {
+        // Silently ignore these common extension-related errors and 405 errors
         return
       }
       originalError.apply(console, args)
