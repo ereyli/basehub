@@ -7,6 +7,7 @@ import { addXP, recordTransaction } from '../utils/xpUtils'
 import { useNetworkCheck } from './useNetworkCheck'
 import { useQuestSystem } from './useQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'
+import { NETWORKS } from '../config/networks'
 
 // ERC20 ABI with constructor for writeContractAsync
 const ERC20_ABI = [
