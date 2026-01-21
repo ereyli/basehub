@@ -661,6 +661,23 @@ const Home = () => {
                           3000 XP
                         </div>
                         <div style={{
+                          background: 'rgba(59, 130, 246, 0.18)',
+                          borderRadius: '12px',
+                          padding: '4px 10px',
+                          fontSize: '10px',
+                          fontWeight: 'bold',
+                          color: '#bfdbfe',
+                          whiteSpace: 'nowrap',
+                          lineHeight: '1.2',
+                          border: '1px solid rgba(59, 130, 246, 0.3)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}>
+                          <Zap size={12} style={{ color: '#93c5fd' }} />
+                          NFT sahiplerine 2x XP
+                        </div>
+                        <div style={{
                           background: 'rgba(30, 41, 59, 0.95)',
                           borderRadius: '12px',
                           padding: '2px 8px',

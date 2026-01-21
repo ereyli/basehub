@@ -1,5 +1,94 @@
 // XP utility functions with Supabase integration
 import { supabase } from '../config/supabase'
+import { createPublicClient, http } from 'viem'
+import { base } from 'viem/chains'
+
+// Simple in-memory cache for NFT ownership checks
+const nftOwnerCache = new Map()
+const NFT_CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
+// Show a lightweight toast when 2x XP is applied
+const showXPToast = () => {
+  if (typeof document === 'undefined') return
+  const existing = document.getElementById('xp-toast-2x')
+  if (existing) {
+    // restart animation
+    existing.classList.remove('xp-toast-show')
+    void existing.offsetWidth
+    existing.classList.add('xp-toast-show')
+    return
+  }
+  const toast = document.createElement('div')
+  toast.id = 'xp-toast-2x'
+  toast.textContent = '🎉 NFT sahibi olduğun için 2x XP kazandın!'
+  toast.style.position = 'fixed'
+  toast.style.bottom = '20px'
+  toast.style.right = '20px'
+  toast.style.padding = '12px 16px'
+  toast.style.background = 'linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)'
+  toast.style.color = '#fff'
+  toast.style.borderRadius = '12px'
+  toast.style.boxShadow = '0 10px 30px rgba(37, 99, 235, 0.35)'
+  toast.style.fontSize = '14px'
+  toast.style.fontWeight = '600'
+  toast.style.zIndex = '9999'
+  toast.style.opacity = '0'
+  toast.style.transform = 'translateY(10px)'
+  toast.style.transition = 'opacity 0.2s ease, transform 0.2s ease'
+  toast.classList.add('xp-toast-show')
+
+  const fadeOut = () => {
+    toast.style.opacity = '0'
+    toast.style.transform = 'translateY(10px)'
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast)
+    }, 200)
+  }
+
+  setTimeout(fadeOut, 2200)
+  document.body.appendChild(toast)
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1'
+    toast.style.transform = 'translateY(0)'
+  })
+}
+
+// Check if wallet owns Early Access NFT (with cache)
+const isWalletNFTOwner = async (walletAddress) => {
+  if (!walletAddress) return false
+
+  // cache
+  const cached = nftOwnerCache.get(walletAddress)
+  if (cached && Date.now() - cached.timestamp < NFT_CACHE_DURATION) {
+    return cached.hasNFT
+  }
+
+  try {
+    const { EARLY_ACCESS_CONFIG, EARLY_ACCESS_ABI } = await import('../config/earlyAccessNFT.js')
+    if (!EARLY_ACCESS_CONFIG?.CONTRACT_ADDRESS) {
+      return false
+    }
+
+    const publicClient = createPublicClient({
+      chain: base,
+      transport: http()
+    })
+
+    const balance = await publicClient.readContract({
+      address: EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS,
+      abi: EARLY_ACCESS_ABI,
+      functionName: 'balanceOf',
+      args: [walletAddress]
+    })
+
+    const hasNFT = Number(balance || 0) > 0
+    nftOwnerCache.set(walletAddress, { hasNFT, timestamp: Date.now() })
+    return hasNFT
+  } catch (error) {
+    console.warn('⚠️ NFT ownership check failed, skipping 2x XP:', error)
+    return false
+  }
+}
 
 // Add XP to user's wallet address (every game gives XP)
 export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
@@ -10,12 +99,25 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
 
   console.log('🎯 Adding XP:', { walletAddress, xpAmount, gameType })
 
+  // Apply 2x multiplier if wallet holds our NFT
+  let finalXP = xpAmount
+  try {
+    const ownsNFT = await isWalletNFTOwner(walletAddress)
+    if (ownsNFT) {
+      finalXP = xpAmount * 2
+      console.log(`🎁 NFT detected, applying 2x XP: ${xpAmount} -> ${finalXP}`)
+      showXPToast()
+    }
+  } catch (err) {
+    console.warn('⚠️ NFT check error, using base XP:', err)
+  }
+
   // Check if Supabase is available
   if (!supabase || !supabase.from) {
     console.log('⚠️ Supabase not available, XP will be stored locally')
     // Store in localStorage as fallback
     const localXP = JSON.parse(localStorage.getItem('basehub_xp') || '{}')
-    localXP[walletAddress] = (localXP[walletAddress] || 0) + xpAmount
+    localXP[walletAddress] = (localXP[walletAddress] || 0) + finalXP
     localStorage.setItem('basehub_xp', JSON.stringify(localXP))
     console.log('✅ XP stored locally:', localXP[walletAddress])
     return localXP[walletAddress]
@@ -40,13 +142,13 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
     if (existingPlayer) {
       console.log('👤 Updating existing player:', existingPlayer.wallet_address)
       // Update existing player - add XP
-      const newTotalXP = existingPlayer.total_xp + xpAmount
+      const newTotalXP = existingPlayer.total_xp + finalXP
       const newLevel = Math.floor(newTotalXP / 100) + 1
       const newTotalTransactions = existingPlayer.total_transactions + 1
 
       console.log('📈 Player update data:', { 
         oldXP: existingPlayer.total_xp, 
-        xpToAdd: xpAmount, 
+        xpToAdd: finalXP, 
         newXP: newTotalXP, 
         newLevel, 
         newTotalTransactions 
@@ -72,7 +174,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
         await recordTransaction({
           wallet_address: walletAddress,
           game_type: gameType,
-          xp_earned: xpAmount,
+          xp_earned: finalXP,
           transaction_hash: null // Can be added later if needed
         })
       } catch (txError) {
@@ -87,8 +189,8 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
       // Create new player
       const newPlayerData = {
         wallet_address: walletAddress,
-        total_xp: xpAmount,
-        level: Math.floor(xpAmount / 100) + 1,
+        total_xp: finalXP,
+        level: Math.floor(finalXP / 100) + 1,
         total_transactions: 1,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()

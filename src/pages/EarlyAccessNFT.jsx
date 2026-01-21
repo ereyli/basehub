@@ -300,6 +300,22 @@ const EarlyAccessNFT = () => {
             {formatPrice(mintPrice)} ETH
           </div>
 
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '12px 16px',
+            borderRadius: '14px',
+            background: 'rgba(59, 130, 246, 0.15)',
+            border: '1px solid rgba(59, 130, 246, 0.35)',
+            color: '#bfdbfe',
+            fontWeight: '600',
+            marginBottom: '24px'
+          }}>
+            <Zap size={16} style={{ color: '#93c5fd' }} />
+            Bu NFT'yi tutanlar tüm ekosistemde **2x XP** kazanır.
+          </div>
+
           {error && (
             <div style={{
               background: 'rgba(239, 68, 68, 0.15)',

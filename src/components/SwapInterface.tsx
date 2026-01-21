@@ -7,6 +7,7 @@ import { Token } from '@uniswap/sdk-core';
 import StatsPanel from './StatsPanel';
 import swaphubLogo from '../assets/swaphub-logo.png';
 import { addXP, recordSwapTransaction } from '../utils/xpUtils';
+import { useQuestSystem } from '../hooks/useQuestSystem';
 
 // ETH price state - will be fetched from CoinGecko API
 let cachedEthPrice = 2950; // Default fallback price
@@ -711,6 +712,7 @@ const WETH_ABI = [
 
 export default function SwapInterface() {
   const { address } = useAccount();
+  const { updateQuestProgress } = useQuestSystem();
   const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
   const { isLoading: isConfirming, isSuccess, error: txError } = useWaitForTransactionReceipt({ hash });
   const publicClient = usePublicClient();
@@ -801,6 +803,8 @@ export default function SwapInterface() {
             recordSwapTransaction(address, swapAmountUSD, hash, 250)
               .then(() => {
                 console.log('✅ Swap transaction recorded with volume tracking');
+                // Update quest progress for swap quest
+                updateQuestProgress?.('swapsCompleted', 1);
               })
               .catch(error => {
                 console.error('❌ Error recording swap transaction:', error);
