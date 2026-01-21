@@ -63,4 +63,4 @@ export const getContractAddress = (contractName) => {
 }
 
 // Re-export from networks.js for backward compatibility
-export { NETWORKS, getNetworkConfig, getContractAddress as getContractAddressByNetwork, isNetworkSupported } from './networks'
+export { NETWORKS, getNetworkConfig, getContractAddressByNetwork, isNetworkSupported } from './networks'
