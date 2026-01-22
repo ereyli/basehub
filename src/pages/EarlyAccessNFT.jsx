@@ -377,25 +377,6 @@ const EarlyAccessNFT = () => {
             {formatPrice(mintPrice)} ETH
           </div>
 
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '10px',
-            padding: '12px 16px',
-            borderRadius: '14px',
-            background: 'rgba(59, 130, 246, 0.15)',
-            border: '1px solid rgba(59, 130, 246, 0.35)',
-            color: '#bfdbfe',
-            fontWeight: '600',
-            marginBottom: '24px'
-          }}>
-            <Zap size={16} style={{ color: '#93c5fd' }} />
-            <span>
-              <strong>Dynamic XP Multiplier:</strong> Earn <strong>(NFT Count + 1)x</strong> XP on all activities!
-              <br />
-              <small style={{ opacity: 0.9 }}>Example: 1 NFT = 2x, 2 NFTs = 3x, 10 NFTs = 11x multiplier</small>
-            </span>
-          </div>
 
           {/* Show network warning if not on Base */}
           {!isOnBase && (
