@@ -91,7 +91,7 @@ const isWalletNFTOwner = async (walletAddress) => {
 }
 
 // Add XP to user's wallet address (every game gives XP)
-export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
+export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chainId = null) => {
   if (!walletAddress || !xpAmount) {
     console.log('❌ Missing walletAddress or xpAmount:', { walletAddress, xpAmount })
     return
@@ -181,7 +181,8 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
           base_xp: xpAmount,
           bonus_xp: bonusXP,
           is_nft_owner: isNFTOwner,
-          transaction_hash: null // Can be added later if needed
+          transaction_hash: null, // Can be added later if needed
+          chain_id: chainId || null
         })
       } catch (txError) {
         // Don't fail the XP update if transaction recording fails
@@ -222,7 +223,8 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL') => {
           base_xp: xpAmount,
           bonus_xp: bonusXP,
           is_nft_owner: isNFTOwner,
-          transaction_hash: null // Can be added later if needed
+          transaction_hash: null, // Can be added later if needed
+          chain_id: chainId || null
         })
       } catch (txError) {
         // Don't fail the player creation if transaction recording fails

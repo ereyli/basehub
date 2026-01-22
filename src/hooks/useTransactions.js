@@ -139,8 +139,14 @@ export const useTransactions = () => {
       // Award XP immediately after transaction is sent (don't wait for confirmation)
       // This ensures XP is awarded even if confirmation takes time or fails
       try {
-        await addXP(address, 30) // GM gives 30 XP
-        await recordTransaction(address, 'GM_GAME', 30, txHash) // Record transaction
+        await addXP(address, 30, 'GM_GAME', chainId) // GM gives 30 XP
+        await recordTransaction({
+          wallet_address: address,
+          game_type: 'GM_GAME',
+          xp_earned: 30,
+          transaction_hash: txHash,
+          chain_id: chainId || null
+        }) // Record transaction
         await updateQuestProgress('gmUsed', 1) // Update quest progress
         await updateQuestProgress('transactions', 1) // Update transaction count
         console.log('✅ XP added, transaction recorded, and quest progress updated')
@@ -223,8 +229,14 @@ export const useTransactions = () => {
       
       // Award XP immediately after transaction is sent
       try {
-        await addXP(address, 30) // GN gives 30 XP
-        await recordTransaction(address, 'GN_GAME', 30, txHash) // Record transaction
+        await addXP(address, 30, 'GN_GAME', chainId) // GN gives 30 XP
+        await recordTransaction({
+          wallet_address: address,
+          game_type: 'GN_GAME',
+          xp_earned: 30,
+          transaction_hash: txHash,
+          chain_id: chainId || null
+        }) // Record transaction
         await updateQuestProgress('gnUsed', 1) // Update quest progress
         await updateQuestProgress('transactions', 1) // Update transaction count
         console.log('✅ XP added, transaction recorded, and quest progress updated')
@@ -312,7 +324,13 @@ export const useTransactions = () => {
       try {
         await addBonusXP(address, 'flip', playerWon)
         const xpEarned = playerWon ? 60 + 500 : 60
-        await recordTransaction(address, 'FLIP_GAME', xpEarned, txHash) // Record transaction
+        await recordTransaction({
+          wallet_address: address,
+          game_type: 'FLIP_GAME',
+          xp_earned: xpEarned,
+          transaction_hash: txHash,
+          chain_id: chainId || null
+        }) // Record transaction
         await updateQuestProgress('coinFlipUsed', 1) // Update quest progress
         await updateQuestProgress('transactions', 1) // Update transaction count
         console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${playerWon ? 'WIN' : 'LOSS'})`)
@@ -399,7 +417,13 @@ export const useTransactions = () => {
       try {
         await addBonusXP(address, 'luckynumber', playerWon)
         const xpEarned = playerWon ? 60 + 1000 : 60
-        await recordTransaction(address, 'LUCKY_NUMBER', xpEarned, txHash) // Record transaction
+        await recordTransaction({
+          wallet_address: address,
+          game_type: 'LUCKY_NUMBER',
+          xp_earned: xpEarned,
+          transaction_hash: txHash,
+          chain_id: chainId || null
+        }) // Record transaction
         await updateQuestProgress('luckyNumberUsed', 1) // Update quest progress
         await updateQuestProgress('transactions', 1) // Update transaction count
         console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${playerWon ? 'WIN' : 'LOSS'})`)
@@ -487,7 +511,13 @@ export const useTransactions = () => {
       try {
         await addBonusXP(address, 'diceroll', playerWon)
         const xpEarned = playerWon ? 60 + 1500 : 60
-        await recordTransaction(address, 'DICE_ROLL', xpEarned, txHash) // Record transaction
+        await recordTransaction({
+          wallet_address: address,
+          game_type: 'DICE_ROLL',
+          xp_earned: xpEarned,
+          transaction_hash: txHash,
+          chain_id: chainId || null
+        }) // Record transaction
         await updateQuestProgress('diceRollUsed', 1) // Update quest progress
         await updateQuestProgress('transactions', 1) // Update transaction count
         console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${playerWon ? 'WIN' : 'LOSS'})`)
@@ -634,8 +664,14 @@ export const useTransactions = () => {
           xpEarned = 60 + bonusXp // BASE_XP + bonus
           
           try {
-            await addXP(address, xpEarned)
-            await recordTransaction(address, 'SLOT_GAME', xpEarned, txHash)
+            await addXP(address, xpEarned, 'SLOT_GAME', chainId)
+            await recordTransaction({
+              wallet_address: address,
+              game_type: 'SLOT_GAME',
+              xp_earned: xpEarned,
+              transaction_hash: txHash,
+              chain_id: chainId || null
+            })
             await updateQuestProgress('slotUsed', 1)
             await updateQuestProgress('transactions', 1)
             console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${won ? 'WIN' : 'LOSS'})`)
@@ -669,8 +705,14 @@ export const useTransactions = () => {
       } else {
         // Credits purchase - award XP immediately
         try {
-          await addXP(address, 10) // Small XP for purchasing credits
-          await recordTransaction(address, 'SLOT_GAME_CREDITS', 10, txHash)
+          await addXP(address, 10, 'SLOT_GAME_CREDITS', chainId) // Small XP for purchasing credits
+          await recordTransaction({
+            wallet_address: address,
+            game_type: 'SLOT_GAME_CREDITS',
+            xp_earned: 10,
+            transaction_hash: txHash,
+            chain_id: chainId || null
+          })
           await updateQuestProgress('transactions', 1)
           console.log('✅ XP added for credit purchase')
         } catch (xpError) {

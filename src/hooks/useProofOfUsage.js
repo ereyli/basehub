@@ -24,7 +24,9 @@ export const useProofOfUsage = () => {
       // Get last 24 hours timestamp
       const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
-      // 1. Get last 24 hours transaction count
+      // 1. Get last 24 hours transaction count (Base + InkChain)
+      // Count all transactions from last 24 hours regardless of chain_id
+      // This includes both Base and InkChain transactions
       const { count: txCount24h, error: txError24h } = await supabase
         .from('transactions')
         .select('*', { count: 'exact', head: true })
