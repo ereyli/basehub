@@ -36,7 +36,7 @@ export const useProofOfUsage = () => {
       const { data: activeUsersData24h, error: usersError24h } = await supabase
         .from('transactions')
         .select('wallet_address')
-        .gte('created_at', last24HoursISO)
+        .gte('created_at', last24Hours)
 
       // 3. Get total users count from players table
       const { count: totalUsersCount, error: totalUsersError } = await supabase
