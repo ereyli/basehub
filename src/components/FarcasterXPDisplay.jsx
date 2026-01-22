@@ -6,6 +6,7 @@ import { getXP } from '../utils/xpUtils'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { useProofOfUsage } from '../hooks/useProofOfUsage'
+import { useSupabase } from '../hooks/useSupabase'
 import UserProfile from './UserProfile'
 
 const FarcasterXPDisplay = () => {

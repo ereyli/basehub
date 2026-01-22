@@ -7,6 +7,7 @@ import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { getCurrentConfig } from '../config/base'
 import { useProofOfUsage } from '../hooks/useProofOfUsage'
 import { getXP } from '../utils/xpUtils'
+import { useSupabase } from '../hooks/useSupabase'
 import UserProfile from './UserProfile'
 
 const WebHeader = () => {
@@ -16,6 +17,7 @@ const WebHeader = () => {
   const { isCorrectNetwork } = useNetworkCheck()
   const baseConfig = getCurrentConfig()
   const { totalUsers, loading: proofLoading } = useProofOfUsage()
+  const { supabase } = useSupabase()
   const [isScrolled, setIsScrolled] = React.useState(false)
   const [totalXP, setTotalXP] = React.useState(0)
 
@@ -33,16 +35,36 @@ const WebHeader = () => {
   // Load XP from Supabase and refresh every 3 seconds
   React.useEffect(() => {
     const loadXP = async () => {
-      if (isConnected && address) {
+      if (isConnected && address && supabase) {
         try {
+          // Try to get XP directly from Supabase (same as Profile page)
+          const walletAddressLower = address.toLowerCase()
+          const { data: player, error: playerError } = await supabase
+            .from('players')
+            .select('total_xp')
+            .eq('wallet_address', walletAddressLower)
+            .single()
+
+          if (!playerError && player && player.total_xp !== undefined && player.total_xp !== null) {
+            console.log('📊 Header: Using total_xp from Supabase:', player.total_xp)
+            setTotalXP(player.total_xp)
+            return
+          }
+
+          // Fallback to getXP function
+          console.log('⚠️ Header: Player not found in Supabase, using getXP fallback')
           const xp = await getXP(address)
           setTotalXP(xp)
         } catch (error) {
-          console.error('Error loading XP:', error)
-          // Fallback to localStorage
-          const xpKey = `xp_${address}`
-          const savedXP = localStorage.getItem(xpKey)
-          setTotalXP(savedXP ? parseInt(savedXP) : 0)
+          console.error('❌ Error loading XP in header:', error)
+          // Fallback to getXP
+          try {
+            const xp = await getXP(address)
+            setTotalXP(xp)
+          } catch (fallbackError) {
+            console.error('❌ Error in getXP fallback:', fallbackError)
+            setTotalXP(0)
+          }
         }
       } else {
         setTotalXP(0)
@@ -52,7 +74,7 @@ const WebHeader = () => {
     loadXP()
     const interval = setInterval(loadXP, 3000) // Refresh every 3 seconds
     return () => clearInterval(interval)
-  }, [isConnected, address])
+  }, [isConnected, address, supabase])
 
 
   return (
