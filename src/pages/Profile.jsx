@@ -87,7 +87,15 @@ const Profile = () => {
           console.log('👤 Player data:', { player, playerError })
 
           if (!playerError && player) {
-            setLevel(player.level || calculateLevel(xp))
+            // Use total_xp from players table (most accurate, directly from Supabase)
+            if (player.total_xp !== undefined && player.total_xp !== null) {
+              console.log('📊 Using total_xp from player data:', player.total_xp)
+              setTotalXP(player.total_xp)
+              setLevel(player.level || calculateLevel(player.total_xp))
+            } else {
+              // Fallback to getXP result if total_xp is not available
+              setLevel(player.level || calculateLevel(xp))
+            }
             // Use total_transactions from players table (most accurate)
             console.log('📊 Total transactions from player:', player.total_transactions)
             setTxCount(player.total_transactions || 0)
