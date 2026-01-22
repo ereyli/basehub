@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
 import { Zap, Wallet, Home, LogOut, Wifi, RefreshCw, Users } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { getXP } from '../utils/xpUtils'
+import { getXP, getNFTCount } from '../utils/xpUtils'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { useProofOfUsage } from '../hooks/useProofOfUsage'
@@ -21,12 +21,36 @@ const FarcasterXPDisplay = () => {
   const location = useLocation()
   const [totalXP, setTotalXP] = useState(0)
   const [isSwitching, setIsSwitching] = useState(false)
+  const [nftCount, setNftCount] = useState(0)
+  const [multiplier, setMultiplier] = useState(1)
   
   // In Farcaster, only Base is supported - no auto-switch needed
   // RainbowKit will handle network selection in web environment
   
   // Check if we're on home page
   const isHomePage = location.pathname === '/'
+
+  // Load NFT count only once when component mounts or address changes
+  useEffect(() => {
+    const loadNFTCount = async () => {
+      if (isConnected && address) {
+        try {
+          const count = await getNFTCount(address)
+          setNftCount(count)
+          setMultiplier(count > 0 ? count + 1 : 1)
+        } catch (nftError) {
+          console.warn('⚠️ Error loading NFT count:', nftError)
+          setNftCount(0)
+          setMultiplier(1)
+        }
+      } else {
+        setNftCount(0)
+        setMultiplier(1)
+      }
+    }
+
+    loadNFTCount()
+  }, [isConnected, address])
 
   // Load XP from Supabase and refresh every 3 seconds
   useEffect(() => {
@@ -45,13 +69,12 @@ const FarcasterXPDisplay = () => {
           if (!playerError && player && player.total_xp !== undefined && player.total_xp !== null) {
             console.log('📊 FarcasterXPDisplay: Using total_xp from Supabase:', player.total_xp)
             setTotalXP(player.total_xp)
-            return
+          } else {
+            // Fallback to getXP function
+            console.log('⚠️ FarcasterXPDisplay: Player not found in Supabase, using getXP fallback')
+            const xp = await getXP(address)
+            setTotalXP(xp)
           }
-
-          // Fallback to getXP function
-          console.log('⚠️ FarcasterXPDisplay: Player not found in Supabase, using getXP fallback')
-          const xp = await getXP(address)
-          setTotalXP(xp)
         } catch (error) {
           console.error('❌ Error loading XP in FarcasterXPDisplay:', error)
           // Fallback to getXP
@@ -203,9 +226,26 @@ const FarcasterXPDisplay = () => {
           </button>
         )}
 
-        <div className="stat-mini xp">
+        <div 
+          className="stat-mini xp" 
+          title={multiplier > 1 ? `${multiplier}x multiplier (${nftCount} NFT${nftCount > 1 ? 's' : ''})` : ''}
+          style={{ position: 'relative' }}
+        >
           <Zap size={14} />
           <span>{totalXP}</span>
+          {multiplier > 1 && (
+            <span style={{
+              marginLeft: '4px',
+              padding: '1px 4px',
+              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+              borderRadius: '4px',
+              fontSize: '9px',
+              fontWeight: '700',
+              color: '#fff'
+            }}>
+              {multiplier}x
+            </span>
+          )}
         </div>
         
         {/* User Profile Button */}

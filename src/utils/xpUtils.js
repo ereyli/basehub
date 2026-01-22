@@ -8,7 +8,7 @@ const nftCountCache = new Map()
 const NFT_CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 // Show a lightweight toast when bonus XP is applied
-const showXPToast = (multiplier, nftCount) => {
+const showXPToast = (multiplier, nftCount, finalXP, baseXP) => {
   if (typeof document === 'undefined') return
   const existing = document.getElementById('xp-toast-bonus')
   if (existing) {
@@ -20,7 +20,19 @@ const showXPToast = (multiplier, nftCount) => {
   }
   const toast = document.createElement('div')
   toast.id = 'xp-toast-bonus'
-  toast.textContent = `🎉 You earned ${multiplier}x XP for holding ${nftCount} NFT${nftCount > 1 ? 's' : ''}!`
+  
+  // Show actual XP earned with multiplier info
+  if (multiplier > 1) {
+    toast.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="font-size: 16px; font-weight: 700;">🎉 +${finalXP.toLocaleString()} XP earned!</div>
+        <div style="font-size: 12px; opacity: 0.9;">${multiplier}x multiplier (${nftCount} NFT${nftCount > 1 ? 's' : ''})</div>
+      </div>
+    `
+  } else {
+    toast.textContent = `🎉 +${finalXP.toLocaleString()} XP earned!`
+  }
+  
   toast.style.position = 'fixed'
   toast.style.bottom = '20px'
   toast.style.right = '20px'
@@ -45,7 +57,7 @@ const showXPToast = (multiplier, nftCount) => {
     }, 200)
   }
 
-  setTimeout(fadeOut, 3000)
+  setTimeout(fadeOut, 4000)
   document.body.appendChild(toast)
   requestAnimationFrame(() => {
     toast.style.opacity = '1'
@@ -54,7 +66,7 @@ const showXPToast = (multiplier, nftCount) => {
 }
 
 // Get NFT count for wallet (returns 0 if no NFT)
-const getNFTCount = async (walletAddress) => {
+export const getNFTCount = async (walletAddress) => {
   if (!walletAddress) return 0
 
   // Check cache
@@ -114,7 +126,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
       bonusXP = xpAmount * (multiplier - 1) // Bonus is the extra XP beyond base
       finalXP = xpAmount * multiplier
       console.log(`🎁 ${nftCount} NFT${nftCount > 1 ? 's' : ''} detected, applying ${multiplier}x XP: ${xpAmount} -> ${finalXP}`)
-      showXPToast(multiplier, nftCount)
+      showXPToast(multiplier, nftCount, finalXP, xpAmount)
     }
   } catch (err) {
     console.warn('⚠️ NFT check error, using base XP:', err)

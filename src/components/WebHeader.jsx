@@ -6,7 +6,7 @@ import { Gamepad2, Home, Users, Zap } from 'lucide-react'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { getCurrentConfig } from '../config/base'
 import { useProofOfUsage } from '../hooks/useProofOfUsage'
-import { getXP } from '../utils/xpUtils'
+import { getXP, getNFTCount } from '../utils/xpUtils'
 import { useSupabase } from '../hooks/useSupabase'
 import UserProfile from './UserProfile'
 
@@ -20,6 +20,8 @@ const WebHeader = () => {
   const { supabase } = useSupabase()
   const [isScrolled, setIsScrolled] = React.useState(false)
   const [totalXP, setTotalXP] = React.useState(0)
+  const [nftCount, setNftCount] = React.useState(0)
+  const [multiplier, setMultiplier] = React.useState(1)
 
   // Handle scroll detection
   React.useEffect(() => {
@@ -31,6 +33,28 @@ const WebHeader = () => {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Load NFT count only once when component mounts or address changes
+  React.useEffect(() => {
+    const loadNFTCount = async () => {
+      if (isConnected && address) {
+        try {
+          const count = await getNFTCount(address)
+          setNftCount(count)
+          setMultiplier(count > 0 ? count + 1 : 1)
+        } catch (nftError) {
+          console.warn('⚠️ Error loading NFT count:', nftError)
+          setNftCount(0)
+          setMultiplier(1)
+        }
+      } else {
+        setNftCount(0)
+        setMultiplier(1)
+      }
+    }
+
+    loadNFTCount()
+  }, [isConnected, address])
 
   // Load XP from Supabase and refresh every 3 seconds
   React.useEffect(() => {
@@ -49,13 +73,12 @@ const WebHeader = () => {
           if (!playerError && player && player.total_xp !== undefined && player.total_xp !== null) {
             console.log('📊 Header: Using total_xp from Supabase:', player.total_xp)
             setTotalXP(player.total_xp)
-            return
+          } else {
+            // Fallback to getXP function
+            console.log('⚠️ Header: Player not found in Supabase, using getXP fallback')
+            const xp = await getXP(address)
+            setTotalXP(xp)
           }
-
-          // Fallback to getXP function
-          console.log('⚠️ Header: Player not found in Supabase, using getXP fallback')
-          const xp = await getXP(address)
-          setTotalXP(xp)
         } catch (error) {
           console.error('❌ Error loading XP in header:', error)
           // Fallback to getXP
@@ -97,10 +120,23 @@ const WebHeader = () => {
           <div className="header-right">
             {/* XP Display */}
             {isConnected && address && (
-              <div className="header-xp-display">
+              <div className="header-xp-display" title={multiplier > 1 ? `${multiplier}x multiplier (${nftCount} NFT${nftCount > 1 ? 's' : ''})` : ''}>
                 <Zap size={16} style={{ color: '#ffc107' }} />
                 <span className="header-xp-value">{totalXP.toLocaleString()}</span>
                 <span className="header-xp-label">XP</span>
+                {multiplier > 1 && (
+                  <span className="header-xp-multiplier" style={{
+                    marginLeft: '6px',
+                    padding: '2px 6px',
+                    background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    color: '#fff'
+                  }}>
+                    {multiplier}x
+                  </span>
+                )}
               </div>
             )}
 
