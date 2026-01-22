@@ -23,6 +23,7 @@ export const useProofOfUsage = () => {
 
       // Get last 24 hours timestamp
       const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+      console.log('🔍 Fetching 24h transactions since:', last24Hours)
 
       // 1. Get last 24 hours transaction count (Base + InkChain)
       // Count all transactions from last 24 hours regardless of chain_id
@@ -31,6 +32,8 @@ export const useProofOfUsage = () => {
         .from('transactions')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', last24Hours)
+
+      console.log('📊 24h transaction query result:', { count: txCount24h, error: txError24h })
 
       // 2. Get last 24 hours active users (unique wallet addresses from transactions)
       const { data: activeUsersData24h, error: usersError24h } = await supabase
@@ -85,8 +88,8 @@ export const useProofOfUsage = () => {
   useEffect(() => {
     fetchProofOfUsage()
 
-    // Refresh every 2 minutes (120 seconds)
-    const interval = setInterval(fetchProofOfUsage, 120000)
+    // Refresh every 30 seconds for real-time updates
+    const interval = setInterval(fetchProofOfUsage, 30000)
 
     return () => clearInterval(interval)
   }, [])

@@ -128,11 +128,13 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
 
   try {
     console.log('📊 Checking if player exists in Supabase...')
+    // Normalize wallet address to lowercase for consistent querying
+    const normalizedWalletAddress = walletAddress.toLowerCase()
     // First, check if player already exists
     const { data: existingPlayer, error: fetchError } = await supabase
       .from('players')
       .select('*')
-      .eq('wallet_address', walletAddress)
+      .eq('wallet_address', normalizedWalletAddress)
       .single()
 
     if (fetchError && fetchError.code !== 'PGRST116') {
@@ -165,7 +167,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
           total_transactions: newTotalTransactions,
           updated_at: new Date().toISOString()
         })
-        .eq('wallet_address', walletAddress)
+        .eq('wallet_address', normalizedWalletAddress)
 
       if (updateError) {
         console.error('❌ Error updating player:', updateError)
@@ -175,7 +177,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
       // Record transaction in transactions table
       try {
         await recordTransaction({
-          wallet_address: walletAddress,
+          wallet_address: normalizedWalletAddress,
           game_type: gameType,
           xp_earned: finalXP,
           base_xp: xpAmount,
@@ -192,10 +194,10 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
       console.log(`✅ Updated ${walletAddress} with ${xpAmount} XP. Total: ${newTotalXP}`)
       return newTotalXP
     } else {
-      console.log('🆕 Creating new player for:', walletAddress)
+      console.log('🆕 Creating new player for:', normalizedWalletAddress)
       // Create new player
       const newPlayerData = {
-        wallet_address: walletAddress,
+        wallet_address: normalizedWalletAddress,
         total_xp: finalXP,
         level: Math.floor(finalXP / 100) + 1,
         total_transactions: 1,
@@ -217,7 +219,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
       // Record transaction in transactions table
       try {
         await recordTransaction({
-          wallet_address: walletAddress,
+          wallet_address: normalizedWalletAddress,
           game_type: gameType,
           xp_earned: finalXP,
           base_xp: xpAmount,
@@ -380,13 +382,19 @@ export const recordTransaction = async (transactionData) => {
   if (!transactionData || !transactionData.wallet_address) return
 
   try {
+    // Normalize wallet_address to lowercase for consistent querying
+    const normalizedTransactionData = {
+      ...transactionData,
+      wallet_address: transactionData.wallet_address.toLowerCase()
+    }
+
     // Check if Supabase is available
     if (!supabase || !supabase.from) {
       console.log('⚠️ Supabase not available, storing transaction locally')
       // Store in localStorage as fallback
       const localTransactions = JSON.parse(localStorage.getItem('basehub_transactions') || '[]')
       localTransactions.push({
-        ...transactionData,
+        ...normalizedTransactionData,
         created_at: new Date().toISOString()
       })
       localStorage.setItem('basehub_transactions', JSON.stringify(localTransactions))
@@ -394,21 +402,25 @@ export const recordTransaction = async (transactionData) => {
       return
     }
 
-    console.log('📝 Recording transaction to Supabase:', transactionData)
+    console.log('📝 Recording transaction to Supabase:', normalizedTransactionData)
     
-    const { error } = await supabase
+    const transactionToInsert = {
+      ...normalizedTransactionData,
+      created_at: new Date().toISOString()
+    }
+    console.log('📝 Transaction data to insert:', transactionToInsert)
+    
+    const { data, error } = await supabase
       .from('transactions')
-      .insert([{
-        ...transactionData,
-        created_at: new Date().toISOString()
-      }])
+      .insert([transactionToInsert])
+      .select()
 
     if (error) {
       console.error('❌ Error recording transaction:', error)
       throw error
     }
 
-    console.log('✅ Transaction recorded successfully')
+    console.log('✅ Transaction recorded successfully:', data)
   } catch (error) {
     console.error('❌ Error in recordTransaction:', error)
     // Don't throw error - this is not critical for user experience
