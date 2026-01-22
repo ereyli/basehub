@@ -16,7 +16,7 @@ const WebHeader = () => {
   const chainId = useChainId()
   const { isCorrectNetwork } = useNetworkCheck()
   const baseConfig = getCurrentConfig()
-  const { totalUsers, last24hTxCount, loading: proofLoading } = useProofOfUsage()
+  const { totalUsers, loading: proofLoading } = useProofOfUsage()
   const { supabase } = useSupabase()
   const [isScrolled, setIsScrolled] = React.useState(false)
   const [totalXP, setTotalXP] = React.useState(0)
@@ -106,11 +106,6 @@ const WebHeader = () => {
 
             {/* Proof of Usage */}
             <div className="proof-of-usage">
-              <div className="proof-metric">
-                <Repeat size={14} />
-                <span className="proof-label">24h tx:</span>
-                <span className="proof-value">{proofLoading ? '...' : last24hTxCount.toLocaleString()}</span>
-              </div>
               <div className="proof-metric">
                 <Users size={14} />
                 <span className="proof-label">Total Users:</span>
