@@ -246,25 +246,42 @@ export const getXP = async (walletAddress) => {
     // Normalize wallet address to lowercase for consistent querying (same as addXP)
     const normalizedWalletAddress = walletAddress.toLowerCase()
     
+    console.log(`🔍 getXP: Querying Supabase for wallet: ${normalizedWalletAddress}`)
+    
     // Get total XP from players table (includes both game XP and quest XP)
     const { data: player, error } = await supabase
       .from('players')
-      .select('total_xp')
+      .select('total_xp, wallet_address')
       .eq('wallet_address', normalizedWalletAddress)
       .single()
 
-    if (error && error.code === 'PGRST116') return 0 // No player found
-    if (error) throw error
+    console.log(`🔍 getXP: Supabase response:`, { player, error: error?.code, errorMessage: error?.message })
 
-    const totalXP = player?.total_xp || 0
-    console.log(`📊 Total XP from players table: ${totalXP} for ${normalizedWalletAddress}`)
+    if (error && error.code === 'PGRST116') {
+      console.log(`⚠️ getXP: No player found for ${normalizedWalletAddress}, returning 0`)
+      return 0 // No player found
+    }
+    if (error) {
+      console.error('❌ getXP: Supabase error:', error)
+      throw error
+    }
+
+    const totalXP = player?.total_xp ?? 0
+    console.log(`✅ getXP: Total XP from players table: ${totalXP} for ${normalizedWalletAddress}`)
+    
+    // If total_xp is null or undefined, try to get it from the player object
+    if (totalXP === 0 && player) {
+      console.log(`⚠️ getXP: total_xp is 0, but player exists:`, player)
+    }
     
     return totalXP
   } catch (error) {
     console.error('❌ Error in getXP:', error)
     // Fallback to local storage
     const localXP = JSON.parse(localStorage.getItem('basehub_xp') || '{}')
-    return localXP[walletAddress] || 0
+    const fallbackXP = localXP[walletAddress] || 0
+    console.log(`⚠️ getXP: Using fallback XP from localStorage: ${fallbackXP}`)
+    return fallbackXP
   }
 }
 
