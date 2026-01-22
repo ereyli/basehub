@@ -103,8 +103,7 @@ const Home = () => {
     
     try {
       const result = await sendGMTransaction('GM from BaseHub!')
-      setSuccessMessage(`GM sent successfully! +30 XP earned`)
-      setTimeout(() => setSuccessMessage(''), 3000)
+      // XP notification is shown via toast in xpUtils.js
     } catch (error) {
       console.error('GM transaction failed:', error)
       setSuccessMessage('GM transaction failed. Please try again.')
@@ -126,8 +125,7 @@ const Home = () => {
     
     try {
       const result = await sendGNTransaction('GN from BaseHub!')
-      setSuccessMessage(`GN sent successfully! +30 XP earned`)
-      setTimeout(() => setSuccessMessage(''), 3000)
+      // XP notification is shown via toast in xpUtils.js
     } catch (error) {
       console.error('GN transaction failed:', error)
       setSuccessMessage('GN transaction failed. Please try again.')
@@ -144,8 +142,7 @@ const Home = () => {
     try {
       // Use Coinbase Wallet SDK for x402 payment
       const result = await makeX402Payment()
-      setSuccessMessage('Payment successful! +500 XP earned')
-      setTimeout(() => setSuccessMessage(''), 5000)
+      // XP notification is shown via toast in xpUtils.js
       console.log('x402 Payment successful:', result)
     } catch (err) {
       // Error is already set in hook
@@ -517,20 +514,16 @@ const Home = () => {
             )}
             
             {/* Success Message */}
-            {successMessage && (
+            {successMessage && successMessage.includes('failed') && (
               <div style={{
-                background: successMessage.includes('failed') 
-                  ? 'rgba(220, 38, 38, 0.1)'
-                  : 'rgba(22, 163, 74, 0.1)',
-                border: successMessage.includes('failed') 
-                  ? '1px solid rgba(220, 38, 38, 0.3)'
-                  : '1px solid rgba(22, 163, 74, 0.3)',
+                background: 'rgba(220, 38, 38, 0.1)',
+                border: '1px solid rgba(220, 38, 38, 0.3)',
                 borderRadius: '8px',
                 padding: '12px 16px',
                 marginTop: '16px',
                 fontSize: '14px',
                 fontWeight: '500',
-                color: successMessage.includes('failed') ? '#ef4444' : '#22c55e',
+                color: '#ef4444',
                 textAlign: 'center',
                 animation: 'slideInDown 0.3s ease-out'
               }}>

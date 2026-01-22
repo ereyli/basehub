@@ -690,50 +690,26 @@ const EarlyAccessNFT = () => {
               </p>
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                gap: '12px',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                gap: '10px',
                 marginBottom: '20px'
               }}>
-                <div style={{
-                  background: 'rgba(139, 92, 246, 0.15)',
-                  border: '1px solid rgba(139, 92, 246, 0.3)',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ color: '#a78bfa', fontSize: '1.5rem', fontWeight: '700', marginBottom: '4px' }}>1 NFT</div>
-                  <div style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>2x Multiplier</div>
-                </div>
-                <div style={{
-                  background: 'rgba(139, 92, 246, 0.15)',
-                  border: '1px solid rgba(139, 92, 246, 0.3)',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ color: '#a78bfa', fontSize: '1.5rem', fontWeight: '700', marginBottom: '4px' }}>2 NFTs</div>
-                  <div style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>3x Multiplier</div>
-                </div>
-                <div style={{
-                  background: 'rgba(139, 92, 246, 0.15)',
-                  border: '1px solid rgba(139, 92, 246, 0.3)',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ color: '#a78bfa', fontSize: '1.5rem', fontWeight: '700', marginBottom: '4px' }}>3 NFTs</div>
-                  <div style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>4x Multiplier</div>
-                </div>
-                <div style={{
-                  background: 'rgba(139, 92, 246, 0.15)',
-                  border: '1px solid rgba(139, 92, 246, 0.3)',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ color: '#a78bfa', fontSize: '1.5rem', fontWeight: '700', marginBottom: '4px' }}>10 NFTs</div>
-                  <div style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>11x Multiplier</div>
-                </div>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((nftCount) => (
+                  <div key={nftCount} style={{
+                    background: 'rgba(139, 92, 246, 0.15)',
+                    border: '1px solid rgba(139, 92, 246, 0.3)',
+                    borderRadius: '8px',
+                    padding: '10px',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ color: '#a78bfa', fontSize: '1.3rem', fontWeight: '700', marginBottom: '4px' }}>
+                      {nftCount} {nftCount === 1 ? 'NFT' : 'NFTs'}
+                    </div>
+                    <div style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>
+                      {(nftCount + 1)}x Multiplier
+                    </div>
+                  </div>
+                ))}
               </div>
               <div style={{
                 background: 'rgba(59, 130, 246, 0.1)',
