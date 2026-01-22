@@ -147,21 +147,38 @@ export const useTransactions = () => {
       
       // Award XP immediately after transaction is sent (don't wait for confirmation)
       // This ensures XP is awarded even if confirmation takes time or fails
+      // Separate try-catch blocks to ensure XP is awarded even if transaction recording fails
       try {
         console.log('🎯 Awarding XP for GM transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName })
         await addXP(address, 30, 'GM_GAME', chainId) // GM gives 30 XP
+        console.log('✅ XP added successfully')
+      } catch (xpError) {
+        console.error('❌ Error adding XP:', xpError)
+        // Don't throw - XP failure shouldn't block the transaction
+      }
+      
+      // Record transaction separately (non-blocking)
+      try {
         await recordTransaction({
           wallet_address: address,
           game_type: 'GM_GAME',
           xp_earned: 30,
-          transaction_hash: txHash,
-          chain_id: chainId || null
-        }) // Record transaction
-        await updateQuestProgress('gmUsed', 1) // Update quest progress
-        await updateQuestProgress('transactions', 1) // Update transaction count
-        console.log('✅ XP added, transaction recorded, and quest progress updated')
-      } catch (xpError) {
-        console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
+          transaction_hash: txHash
+        })
+        console.log('✅ Transaction recorded')
+      } catch (txError) {
+        console.error('⚠️ Error recording transaction (non-critical):', txError)
+        // Don't throw - transaction recording failure shouldn't block XP
+      }
+      
+      // Update quest progress separately (non-blocking)
+      try {
+        await updateQuestProgress('gmUsed', 1)
+        await updateQuestProgress('transactions', 1)
+        console.log('✅ Quest progress updated')
+      } catch (questError) {
+        console.error('⚠️ Error updating quest progress (non-critical):', questError)
+        // Don't throw - quest progress failure shouldn't block XP
       }
       
       // Try to wait for confirmation (non-blocking, for better UX)
@@ -238,21 +255,38 @@ export const useTransactions = () => {
       console.log('✅ GN transaction sent! Hash:', txHash)
       
       // Award XP immediately after transaction is sent
+      // Separate try-catch blocks to ensure XP is awarded even if transaction recording fails
       try {
         console.log('🎯 Awarding XP for GN transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName })
         await addXP(address, 30, 'GN_GAME', chainId) // GN gives 30 XP
+        console.log('✅ XP added successfully')
+      } catch (xpError) {
+        console.error('❌ Error adding XP:', xpError)
+        // Don't throw - XP failure shouldn't block the transaction
+      }
+      
+      // Record transaction separately (non-blocking)
+      try {
         await recordTransaction({
           wallet_address: address,
           game_type: 'GN_GAME',
           xp_earned: 30,
-          transaction_hash: txHash,
-          chain_id: chainId || null
-        }) // Record transaction
-        await updateQuestProgress('gnUsed', 1) // Update quest progress
-        await updateQuestProgress('transactions', 1) // Update transaction count
-        console.log('✅ XP added, transaction recorded, and quest progress updated')
-      } catch (xpError) {
-        console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
+          transaction_hash: txHash
+        })
+        console.log('✅ Transaction recorded')
+      } catch (txError) {
+        console.error('⚠️ Error recording transaction (non-critical):', txError)
+        // Don't throw - transaction recording failure shouldn't block XP
+      }
+      
+      // Update quest progress separately (non-blocking)
+      try {
+        await updateQuestProgress('gnUsed', 1)
+        await updateQuestProgress('transactions', 1)
+        console.log('✅ Quest progress updated')
+      } catch (questError) {
+        console.error('⚠️ Error updating quest progress (non-critical):', questError)
+        // Don't throw - quest progress failure shouldn't block XP
       }
       
       // Try to wait for confirmation (non-blocking)
@@ -332,22 +366,40 @@ export const useTransactions = () => {
       console.log('🎲 Flip result:', { selectedSide, actualResult, playerWon })
       
       // Award XP immediately after transaction is sent
+      // Separate try-catch blocks to ensure XP is awarded even if transaction recording fails
       try {
         console.log('🎯 Awarding XP for Flip transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName, playerWon })
         await addBonusXP(address, 'flip', playerWon, chainId)
-        const xpEarned = playerWon ? 60 + 500 : 60
+        console.log('✅ XP added successfully')
+      } catch (xpError) {
+        console.error('❌ Error adding XP:', xpError)
+        // Don't throw - XP failure shouldn't block the transaction
+      }
+      
+      const xpEarned = playerWon ? 60 + 500 : 60
+      
+      // Record transaction separately (non-blocking)
+      try {
         await recordTransaction({
           wallet_address: address,
           game_type: 'FLIP_GAME',
           xp_earned: xpEarned,
-          transaction_hash: txHash,
-          chain_id: chainId || null
-        }) // Record transaction
-        await updateQuestProgress('coinFlipUsed', 1) // Update quest progress
-        await updateQuestProgress('transactions', 1) // Update transaction count
-        console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${playerWon ? 'WIN' : 'LOSS'})`)
-      } catch (xpError) {
-        console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
+          transaction_hash: txHash
+        })
+        console.log('✅ Transaction recorded')
+      } catch (txError) {
+        console.error('⚠️ Error recording transaction (non-critical):', txError)
+        // Don't throw - transaction recording failure shouldn't block XP
+      }
+      
+      // Update quest progress separately (non-blocking)
+      try {
+        await updateQuestProgress('coinFlipUsed', 1)
+        await updateQuestProgress('transactions', 1)
+        console.log('✅ Quest progress updated')
+      } catch (questError) {
+        console.error('⚠️ Error updating quest progress (non-critical):', questError)
+        // Don't throw - quest progress failure shouldn't block XP
       }
       
       // Try to wait for confirmation (non-blocking)
@@ -426,22 +478,40 @@ export const useTransactions = () => {
       console.log('🎲 Lucky Number result:', { guess, winningNumber, playerWon })
       
       // Award XP immediately after transaction is sent
+      // Separate try-catch blocks to ensure XP is awarded even if transaction recording fails
       try {
         console.log('🎯 Awarding XP for Lucky Number transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName, playerWon })
         await addBonusXP(address, 'luckynumber', playerWon, chainId)
-        const xpEarned = playerWon ? 60 + 1000 : 60
+        console.log('✅ XP added successfully')
+      } catch (xpError) {
+        console.error('❌ Error adding XP:', xpError)
+        // Don't throw - XP failure shouldn't block the transaction
+      }
+      
+      const xpEarned = playerWon ? 60 + 1000 : 60
+      
+      // Record transaction separately (non-blocking)
+      try {
         await recordTransaction({
           wallet_address: address,
           game_type: 'LUCKY_NUMBER',
           xp_earned: xpEarned,
-          transaction_hash: txHash,
-          chain_id: chainId || null
-        }) // Record transaction
-        await updateQuestProgress('luckyNumberUsed', 1) // Update quest progress
-        await updateQuestProgress('transactions', 1) // Update transaction count
-        console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${playerWon ? 'WIN' : 'LOSS'})`)
-      } catch (xpError) {
-        console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
+          transaction_hash: txHash
+        })
+        console.log('✅ Transaction recorded')
+      } catch (txError) {
+        console.error('⚠️ Error recording transaction (non-critical):', txError)
+        // Don't throw - transaction recording failure shouldn't block XP
+      }
+      
+      // Update quest progress separately (non-blocking)
+      try {
+        await updateQuestProgress('luckyNumberUsed', 1)
+        await updateQuestProgress('transactions', 1)
+        console.log('✅ Quest progress updated')
+      } catch (questError) {
+        console.error('⚠️ Error updating quest progress (non-critical):', questError)
+        // Don't throw - quest progress failure shouldn't block XP
       }
       
       // Try to wait for confirmation (non-blocking)
@@ -521,22 +591,40 @@ export const useTransactions = () => {
       console.log('🎲 Dice Roll result:', { guess, dice1, dice2, diceTotal, playerWon })
       
       // Award XP immediately after transaction is sent
+      // Separate try-catch blocks to ensure XP is awarded even if transaction recording fails
       try {
         console.log('🎯 Awarding XP for Dice Roll transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName, playerWon })
         await addBonusXP(address, 'diceroll', playerWon, chainId)
-        const xpEarned = playerWon ? 60 + 1500 : 60
+        console.log('✅ XP added successfully')
+      } catch (xpError) {
+        console.error('❌ Error adding XP:', xpError)
+        // Don't throw - XP failure shouldn't block the transaction
+      }
+      
+      const xpEarned = playerWon ? 60 + 1500 : 60
+      
+      // Record transaction separately (non-blocking)
+      try {
         await recordTransaction({
           wallet_address: address,
           game_type: 'DICE_ROLL',
           xp_earned: xpEarned,
-          transaction_hash: txHash,
-          chain_id: chainId || null
-        }) // Record transaction
-        await updateQuestProgress('diceRollUsed', 1) // Update quest progress
-        await updateQuestProgress('transactions', 1) // Update transaction count
-        console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${playerWon ? 'WIN' : 'LOSS'})`)
-      } catch (xpError) {
-        console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
+          transaction_hash: txHash
+        })
+        console.log('✅ Transaction recorded')
+      } catch (txError) {
+        console.error('⚠️ Error recording transaction (non-critical):', txError)
+        // Don't throw - transaction recording failure shouldn't block XP
+      }
+      
+      // Update quest progress separately (non-blocking)
+      try {
+        await updateQuestProgress('diceRollUsed', 1)
+        await updateQuestProgress('transactions', 1)
+        console.log('✅ Quest progress updated')
+      } catch (questError) {
+        console.error('⚠️ Error updating quest progress (non-critical):', questError)
+        // Don't throw - quest progress failure shouldn't block XP
       }
       
       // Try to wait for confirmation (non-blocking)
@@ -677,22 +765,39 @@ export const useTransactions = () => {
           
           xpEarned = 60 + bonusXp // BASE_XP + bonus
           
+          // Award XP separately (non-blocking)
           try {
             console.log('🎯 Awarding XP for Slot transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName, xpEarned })
             await addXP(address, xpEarned, 'SLOT_GAME', chainId)
+            console.log('✅ XP added successfully')
+          } catch (xpError) {
+            console.error('❌ Error adding XP:', xpError)
+            // Don't throw - XP failure shouldn't block the transaction
+          }
+          
+          // Record transaction separately (non-blocking)
+          try {
             await recordTransaction({
               wallet_address: address,
               game_type: 'SLOT_GAME',
               xp_earned: xpEarned,
-              transaction_hash: txHash,
-              chain_id: chainId || null
+              transaction_hash: txHash
             })
+            console.log('✅ Transaction recorded')
+          } catch (txError) {
+            console.error('⚠️ Error recording transaction (non-critical):', txError)
+            // Don't throw - transaction recording failure shouldn't block XP
+          }
+          
+          // Update quest progress separately (non-blocking)
+          try {
             await updateQuestProgress('slotUsed', 1)
             await updateQuestProgress('transactions', 1)
-            console.log(`✅ XP added, transaction recorded, and quest progress updated: ${xpEarned} (${won ? 'WIN' : 'LOSS'})`)
-        } catch (xpError) {
-          console.error('Error adding XP, recording transaction, or updating quest progress:', xpError)
-        }
+            console.log('✅ Quest progress updated')
+          } catch (questError) {
+            console.error('⚠️ Error updating quest progress (non-critical):', questError)
+            // Don't throw - quest progress failure shouldn't block XP
+          }
         
         // Try to wait for confirmation (non-blocking)
         console.log('⏳ Waiting for transaction confirmation...')
@@ -719,20 +824,37 @@ export const useTransactions = () => {
         }
       } else {
         // Credits purchase - award XP immediately
+        // Award XP separately (non-blocking)
         try {
           console.log('🎯 Awarding XP for Slot credits purchase:', { address, chainId, chainName: currentNetworkConfig?.chainName })
           await addXP(address, 10, 'SLOT_GAME_CREDITS', chainId) // Small XP for purchasing credits
+          console.log('✅ XP added successfully')
+        } catch (xpError) {
+          console.error('❌ Error adding XP:', xpError)
+          // Don't throw - XP failure shouldn't block the transaction
+        }
+        
+        // Record transaction separately (non-blocking)
+        try {
           await recordTransaction({
             wallet_address: address,
             game_type: 'SLOT_GAME_CREDITS',
             xp_earned: 10,
-            transaction_hash: txHash,
-            chain_id: chainId || null
+            transaction_hash: txHash
           })
+          console.log('✅ Transaction recorded')
+        } catch (txError) {
+          console.error('⚠️ Error recording transaction (non-critical):', txError)
+          // Don't throw - transaction recording failure shouldn't block XP
+        }
+        
+        // Update quest progress separately (non-blocking)
+        try {
           await updateQuestProgress('transactions', 1)
-          console.log('✅ XP added for credit purchase')
-        } catch (xpError) {
-          console.error('Error adding XP for credit purchase:', xpError)
+          console.log('✅ Quest progress updated')
+        } catch (questError) {
+          console.error('⚠️ Error updating quest progress (non-critical):', questError)
+          // Don't throw - quest progress failure shouldn't block XP
         }
         
         // Try to wait for confirmation (non-blocking)

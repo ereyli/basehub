@@ -592,7 +592,7 @@ export const useDeployERC1155 = () => {
           currency: 'ETH',
           status: 'success',
           game_type: 'ERC1155 Deployment',
-          chain_id: chainId || null,
+          // Note: chain_id removed - column doesn't exist in Supabase table yet
           metadata: {
             name,
             symbol,

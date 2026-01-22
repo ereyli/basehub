@@ -508,8 +508,8 @@ export const useDeployToken = () => {
           contract_address: deployReceipt.contractAddress,
           token_name: name,
           token_symbol: symbol,
-          initial_supply: initialSupply.toString(),
-          chain_id: chainId || null
+          initial_supply: initialSupply.toString()
+          // Note: chain_id removed - column doesn't exist in Supabase table yet
         })
         
         console.log('✅ XP awarded and transaction recorded!')
