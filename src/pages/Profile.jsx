@@ -524,17 +524,24 @@ const Profile = () => {
                   </div>
                 </div>
 
-                <div style={styles.xpBoostBanner}>
-                  <div style={styles.xpBoostIcon}>
-                    <Zap size={16} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={styles.xpBoostTitle}>2x XP Boost Active</div>
-                    <div style={styles.xpBoostText}>
-                      Holding this pass doubles all XP you earn across the platform.
+                {userNFTCount > 0 && (
+                  <div style={styles.xpBoostBanner}>
+                    <div style={styles.xpBoostIcon}>
+                      <Zap size={16} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={styles.xpBoostTitle}>
+                        {(userNFTCount + 1)}x XP Boost Active
+                      </div>
+                      <div style={styles.xpBoostText}>
+                        {userNFTCount === 1 
+                          ? 'Holding this pass multiplies all XP you earn by 2x across the platform.'
+                          : `Holding ${userNFTCount} passes multiplies all XP you earn by ${userNFTCount + 1}x across the platform.`
+                        }
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 <div style={styles.nftGrid}>
                   {Array.from({ length: userNFTCount }).map((_, index) => {
