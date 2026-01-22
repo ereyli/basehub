@@ -23,7 +23,6 @@ export const useProofOfUsage = () => {
 
       // Get last 24 hours timestamp
       const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-      console.log('🔍 Fetching 24h transactions since:', last24Hours)
 
       // 1. Get last 24 hours transaction count (Base + InkChain)
       // Count all transactions from last 24 hours regardless of chain_id
@@ -33,13 +32,11 @@ export const useProofOfUsage = () => {
         .select('*', { count: 'exact', head: true })
         .gte('created_at', last24Hours)
 
-      console.log('📊 24h transaction query result:', { count: txCount24h, error: txError24h })
-
       // 2. Get last 24 hours active users (unique wallet addresses from transactions)
       const { data: activeUsersData24h, error: usersError24h } = await supabase
         .from('transactions')
         .select('wallet_address')
-        .gte('created_at', last24Hours)
+        .gte('created_at', last24HoursISO)
 
       // 3. Get total users count from players table
       const { count: totalUsersCount, error: totalUsersError } = await supabase
@@ -91,7 +88,25 @@ export const useProofOfUsage = () => {
     // Refresh every 30 seconds for real-time updates
     const interval = setInterval(fetchProofOfUsage, 30000)
 
-    return () => clearInterval(interval)
+    // Listen for transaction refresh events
+    const checkRefresh = () => {
+      const refreshFlag = localStorage.getItem('basehub_tx_refresh')
+      if (refreshFlag) {
+        const refreshTime = parseInt(refreshFlag)
+        // Only refresh if the flag was set in the last 5 seconds (to avoid duplicate refreshes)
+        if (Date.now() - refreshTime < 5000) {
+          fetchProofOfUsage()
+        }
+      }
+    }
+
+    // Check for refresh flag every 2 seconds
+    const refreshInterval = setInterval(checkRefresh, 2000)
+
+    return () => {
+      clearInterval(interval)
+      clearInterval(refreshInterval)
+    }
   }, [])
 
   return {

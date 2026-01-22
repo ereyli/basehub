@@ -421,6 +421,10 @@ export const recordTransaction = async (transactionData) => {
     }
 
     console.log('✅ Transaction recorded successfully:', data)
+    
+    // Trigger header refresh by setting a flag in localStorage
+    // Header will check this flag and refresh when it changes
+    localStorage.setItem('basehub_tx_refresh', Date.now().toString())
   } catch (error) {
     console.error('❌ Error in recordTransaction:', error)
     // Don't throw error - this is not critical for user experience
