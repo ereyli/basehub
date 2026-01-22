@@ -18,11 +18,12 @@ const XPDisplay = () => {
       if (isConnected && address && supabase) {
         try {
           // Try to get XP directly from Supabase (same as Profile page)
+          // Use .or() to check both lowercase and original case (like Profile page)
           const walletAddressLower = address.toLowerCase()
           const { data: player, error: playerError } = await supabase
             .from('players')
             .select('total_xp')
-            .eq('wallet_address', walletAddressLower)
+            .or(`wallet_address.eq.${walletAddressLower},wallet_address.eq.${address}`)
             .single()
 
           if (!playerError && player && player.total_xp !== undefined && player.total_xp !== null) {
