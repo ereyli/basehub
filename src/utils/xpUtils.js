@@ -294,30 +294,38 @@ export const getXP = async (walletAddress) => {
     // Normalize wallet address to lowercase for consistent querying (same as addXP)
     const normalizedWalletAddress = walletAddress.toLowerCase()
     
-    console.log(`🔍 getXP: Querying Supabase for wallet: ${normalizedWalletAddress}`)
+    console.log(`🔍 getXP: Querying Supabase for wallet: ${normalizedWalletAddress} (original: ${walletAddress})`)
     
     // Get total XP from players table (includes both game XP and quest XP)
+    // Use .or() to check both lowercase and original case (like Profile page and addXP)
     const { data: player, error } = await supabase
       .from('players')
       .select('total_xp, wallet_address')
-      .eq('wallet_address', normalizedWalletAddress)
-      .single()
+      .or(`wallet_address.eq.${normalizedWalletAddress},wallet_address.eq.${walletAddress}`)
+      .maybeSingle() // Use maybeSingle() instead of single() to avoid error if not found
 
-    console.log(`🔍 getXP: Supabase response:`, { player, error: error?.code, errorMessage: error?.message })
+    console.log(`🔍 getXP: Supabase response:`, { 
+      player, 
+      playerWalletAddress: player?.wallet_address,
+      error: error?.code, 
+      errorMessage: error?.message,
+      hasPlayer: !!player
+    })
 
-    if (error && error.code === 'PGRST116') {
-      console.log(`⚠️ getXP: No player found for ${normalizedWalletAddress}, returning 0`)
-      return 0 // No player found
-    }
     if (error) {
       console.error('❌ getXP: Supabase error:', error)
-      throw error
+      // Don't throw, try to continue
+    }
+
+    if (!player) {
+      console.log(`⚠️ getXP: No player found for ${normalizedWalletAddress} or ${walletAddress}, returning 0`)
+      return 0 // No player found
     }
 
     const totalXP = player?.total_xp ?? 0
-    console.log(`✅ getXP: Total XP from players table: ${totalXP} for ${normalizedWalletAddress}`)
+    console.log(`✅ getXP: Total XP from players table: ${totalXP} for ${player.wallet_address}`)
     
-    // If total_xp is null or undefined, try to get it from the player object
+    // If total_xp is null or undefined, log warning
     if (totalXP === 0 && player) {
       console.log(`⚠️ getXP: total_xp is 0, but player exists:`, player)
     }
