@@ -147,13 +147,23 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
     if (existingPlayer) {
       console.log('👤 Updating existing player:', existingPlayer.wallet_address)
       console.log('🔗 Chain ID for XP update:', chainId)
+      
+      // CRITICAL: Ensure existingPlayer.total_xp is a valid number
+      const currentXP = existingPlayer.total_xp ?? 0
+      if (typeof currentXP !== 'number' || isNaN(currentXP)) {
+        console.error('❌ CRITICAL: existingPlayer.total_xp is invalid:', existingPlayer.total_xp)
+        console.error('❌ Player data:', existingPlayer)
+        // Don't proceed if XP is invalid - this could cause data loss
+        throw new Error(`Invalid total_xp value: ${existingPlayer.total_xp}`)
+      }
+      
       // Update existing player - add XP
-      const newTotalXP = existingPlayer.total_xp + finalXP
+      const newTotalXP = currentXP + finalXP
       const newLevel = Math.floor(newTotalXP / 100) + 1
-      const newTotalTransactions = existingPlayer.total_transactions + 1
+      const newTotalTransactions = (existingPlayer.total_transactions || 0) + 1
 
       console.log('📈 Player update data:', { 
-        oldXP: existingPlayer.total_xp, 
+        oldXP: currentXP, 
         xpToAdd: finalXP, 
         newXP: newTotalXP, 
         newLevel, 
@@ -184,7 +194,43 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
       return newTotalXP
     } else {
       console.log('🆕 Creating new player for:', normalizedWalletAddress)
-      // Create new player
+      
+      // CRITICAL: Before creating new player, double-check if player exists
+      // This prevents race conditions where player might have been created between checks
+      const { data: doubleCheckPlayer, error: doubleCheckError } = await supabase
+        .from('players')
+        .select('total_xp, total_transactions')
+        .eq('wallet_address', normalizedWalletAddress)
+        .single()
+      
+      if (doubleCheckPlayer && !doubleCheckError) {
+        console.log('⚠️ Player found on double-check, updating instead of creating')
+        // Player exists, update instead
+        const currentXP = doubleCheckPlayer.total_xp ?? 0
+        const newTotalXP = currentXP + finalXP
+        const newLevel = Math.floor(newTotalXP / 100) + 1
+        const newTotalTransactions = (doubleCheckPlayer.total_transactions || 0) + 1
+        
+        const { error: updateError } = await supabase
+          .from('players')
+          .update({
+            total_xp: newTotalXP,
+            level: newLevel,
+            total_transactions: newTotalTransactions,
+            updated_at: new Date().toISOString()
+          })
+          .eq('wallet_address', normalizedWalletAddress)
+        
+        if (updateError) {
+          console.error('❌ Error updating player on double-check:', updateError)
+          throw updateError
+        }
+        
+        console.log(`✅ Updated ${walletAddress} with ${xpAmount} XP (double-check). Total: ${newTotalXP}`)
+        return newTotalXP
+      }
+      
+      // Create new player only if double-check confirms player doesn't exist
       const newPlayerData = {
         wallet_address: normalizedWalletAddress,
         total_xp: finalXP,
