@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAccount, useChainId } from 'wagmi'
-import { Wallet, Home, Wifi, WifiOff, Gamepad2, Zap, Shield, ExternalLink, Twitter, RefreshCw, Repeat, Users } from 'lucide-react'
+import { Wallet, Home, Wifi, WifiOff, Gamepad2, Zap, Shield, ExternalLink, Twitter, RefreshCw, Users } from 'lucide-react'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { getCurrentConfig } from '../config/base'
@@ -17,7 +17,7 @@ const Header = () => {
   const { isInFarcaster, user } = useFarcaster()
   const { isCorrectNetwork, isChecking, switchToBaseNetwork } = useNetworkCheck()
   const baseConfig = getCurrentConfig()
-  const { last24hTxCount, activeUsers, totalUsers, loading: proofLoading } = useProofOfUsage()
+  const { totalUsers, loading: proofLoading } = useProofOfUsage()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isSwitching, setIsSwitching] = useState(false)
 
@@ -69,11 +69,6 @@ const Header = () => {
           <div className="header-right">
             {/* Proof of Usage */}
             <div className="proof-of-usage">
-              <div className="proof-metric">
-                <Repeat size={14} />
-                <span className="proof-label">24h tx:</span>
-                <span className="proof-value">{proofLoading ? '...' : last24hTxCount.toLocaleString()}</span>
-              </div>
               <div className="proof-metric">
                 <Users size={14} />
                 <span className="proof-label">Total Users:</span>

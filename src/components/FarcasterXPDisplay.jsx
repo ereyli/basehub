@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
-import { Zap, Wallet, Home, LogOut, Wifi, RefreshCw, Repeat, Users } from 'lucide-react'
+import { Zap, Wallet, Home, LogOut, Wifi, RefreshCw, Users } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { getXP } from '../utils/xpUtils'
 import { useFarcaster } from '../contexts/FarcasterContext'
@@ -14,7 +14,7 @@ const FarcasterXPDisplay = () => {
   const { disconnect } = useDisconnect()
   const { isInFarcaster } = useFarcaster()
   const { isCorrectNetwork, switchToBaseNetwork } = useNetworkCheck()
-  const { last24hTxCount, totalUsers, loading: proofLoading } = useProofOfUsage()
+  const { totalUsers, loading: proofLoading } = useProofOfUsage()
   const navigate = useNavigate()
   const location = useLocation()
   const [totalXP, setTotalXP] = useState(0)
@@ -144,19 +144,6 @@ const FarcasterXPDisplay = () => {
           border: '1px solid rgba(59, 130, 246, 0.2)',
           marginRight: '8px'
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            fontSize: '11px',
-            color: '#e5e7eb'
-          }}>
-            <Repeat size={12} style={{ color: '#3b82f6' }} />
-            <span style={{ fontWeight: '500', color: '#9ca3af', fontSize: '10px' }}>24h tx:</span>
-            <span style={{ fontWeight: '700', color: '#e5e7eb' }}>
-              {proofLoading ? '...' : last24hTxCount.toLocaleString()}
-            </span>
-          </div>
           <div style={{
             display: 'flex',
             alignItems: 'center',
