@@ -1850,7 +1850,29 @@ body {
   }
   
   .web-app .web-header .proof-of-usage {
-    display: none !important; /* Hide on mobile to save space */
+    display: flex !important;
+    gap: 6px;
+    padding: 4px 8px;
+    flex-shrink: 0;
+  }
+  
+  .web-app .web-header .proof-metric {
+    font-size: 9px;
+    gap: 3px;
+  }
+  
+  .web-app .web-header .proof-label {
+    display: none;
+  }
+  
+  .web-app .web-header .proof-value {
+    font-size: 10px;
+    font-weight: 700;
+  }
+  
+  .web-app .web-header .proof-metric svg {
+    width: 10px;
+    height: 10px;
   }
   
   .web-app .web-header .nav-button {

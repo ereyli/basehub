@@ -174,22 +174,9 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
         throw updateError
       }
 
-      // Record transaction in transactions table
-      try {
-        await recordTransaction({
-          wallet_address: normalizedWalletAddress,
-          game_type: gameType,
-          xp_earned: finalXP,
-          base_xp: xpAmount,
-          bonus_xp: bonusXP,
-          is_nft_owner: isNFTOwner,
-          transaction_hash: null, // Can be added later if needed
-          chain_id: chainId || null
-        })
-      } catch (txError) {
-        // Don't fail the XP update if transaction recording fails
-        console.warn('⚠️ Failed to record transaction (non-critical):', txError)
-      }
+      // Note: Transaction is recorded separately in useTransactions.js with transaction_hash
+      // We don't record here to avoid duplicate entries
+      // Transaction recording happens after transaction confirmation in game hooks
 
       console.log(`✅ Updated ${walletAddress} with ${xpAmount} XP. Total: ${newTotalXP}`)
       return newTotalXP
@@ -427,6 +414,13 @@ export const recordTransaction = async (transactionData) => {
     localStorage.setItem('basehub_tx_refresh', Date.now().toString())
   } catch (error) {
     console.error('❌ Error in recordTransaction:', error)
+    // Even if transaction recording fails, try to trigger refresh
+    // in case transaction was partially recorded
+    try {
+      localStorage.setItem('basehub_tx_refresh', Date.now().toString())
+    } catch (e) {
+      // Ignore localStorage errors
+    }
     // Don't throw error - this is not critical for user experience
   }
 }

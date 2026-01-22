@@ -22,21 +22,38 @@ export const useProofOfUsage = () => {
       }
 
       // Get last 24 hours timestamp
-      const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+      const now = new Date()
+      const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+      const last24HoursISO = last24Hours.toISOString()
+      
+      console.log('🔍 Fetching 24h transactions:', {
+        now: now.toISOString(),
+        last24Hours: last24HoursISO,
+        timeDiff: now.getTime() - last24Hours.getTime()
+      })
 
       // 1. Get last 24 hours transaction count (Base + InkChain)
       // Count all transactions from last 24 hours regardless of chain_id
       // This includes both Base and InkChain transactions
-      const { count: txCount24h, error: txError24h } = await supabase
+      const { count: txCount24h, error: txError24h, data: sampleTxs } = await supabase
         .from('transactions')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', last24Hours)
+        .select('created_at, chain_id, game_type', { count: 'exact' })
+        .gte('created_at', last24HoursISO)
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      console.log('📊 24h transaction query:', {
+        count: txCount24h,
+        error: txError24h,
+        sampleCount: sampleTxs?.length || 0,
+        sampleTransactions: sampleTxs
+      })
 
       // 2. Get last 24 hours active users (unique wallet addresses from transactions)
       const { data: activeUsersData24h, error: usersError24h } = await supabase
         .from('transactions')
         .select('wallet_address')
-        .gte('created_at', last24Hours)
+        .gte('created_at', last24HoursISO)
 
       // 3. Get total users count from players table
       const { count: totalUsersCount, error: totalUsersError } = await supabase
@@ -89,19 +106,26 @@ export const useProofOfUsage = () => {
     const interval = setInterval(fetchProofOfUsage, 30000)
 
     // Listen for transaction refresh events
+    let lastRefreshFlag = null
     const checkRefresh = () => {
       const refreshFlag = localStorage.getItem('basehub_tx_refresh')
-      if (refreshFlag) {
+      if (refreshFlag && refreshFlag !== lastRefreshFlag) {
+        lastRefreshFlag = refreshFlag
         const refreshTime = parseInt(refreshFlag)
-        // Only refresh if the flag was set in the last 5 seconds (to avoid duplicate refreshes)
-        if (Date.now() - refreshTime < 5000) {
-          fetchProofOfUsage()
+        // Only refresh if the flag was set in the last 10 seconds (to avoid duplicate refreshes)
+        if (Date.now() - refreshTime < 10000) {
+          console.log('🔄 Refreshing transaction count due to new transaction')
+          fetchProofOfUsage().then(() => {
+            // Clear the flag after successful refresh
+            localStorage.removeItem('basehub_tx_refresh')
+            lastRefreshFlag = null
+          })
         }
       }
     }
 
-    // Check for refresh flag every 2 seconds
-    const refreshInterval = setInterval(checkRefresh, 2000)
+    // Check for refresh flag every 1 second for faster updates
+    const refreshInterval = setInterval(checkRefresh, 1000)
 
     return () => {
       clearInterval(interval)
