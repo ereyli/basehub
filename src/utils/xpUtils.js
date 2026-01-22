@@ -220,7 +220,17 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
       if (doubleCheckPlayer && !doubleCheckError) {
         console.log('⚠️ Player found on double-check, updating instead of creating')
         // Player exists, update instead
-        const currentXP = doubleCheckPlayer.total_xp ?? 0
+        // Handle string/number conversion for total_xp
+        let currentXP = doubleCheckPlayer.total_xp
+        if (currentXP === null || currentXP === undefined) {
+          currentXP = 0
+        } else if (typeof currentXP === 'string') {
+          currentXP = parseFloat(currentXP) || 0
+        } else if (typeof currentXP !== 'number' || isNaN(currentXP)) {
+          console.warn('⚠️ Double-check: Invalid total_xp, using 0 as fallback:', doubleCheckPlayer.total_xp)
+          currentXP = 0
+        }
+        
         const newTotalXP = currentXP + finalXP
         const newLevel = Math.floor(newTotalXP / 100) + 1
         const newTotalTransactions = (doubleCheckPlayer.total_transactions || 0) + 1
