@@ -64,9 +64,9 @@ const EarlyAccessNFT = () => {
       let castText = ''
       
       if (isAfterMint) {
-        castText = `🎉 Just minted my BaseHub Early Access Pass! 🚀\n\n✨ Unlock exclusive benefits:\n• 2x XP multiplier on ALL activities\n• Priority access to airdrops\n• Exclusive quests & rewards\n• Early feature access\n\n🔥 Only ${remainingSupply} passes left!\n\nJoin the BaseHub community and level up faster! 💎\n\n#BaseHub #BaseNetwork #NFT #EarlyAccess`
+        castText = `🎉 Just minted my BaseHub Early Access Pass! 🚀\n\n✨ Unlock exclusive benefits:\n• Dynamic XP multiplier: (NFT Count + 1)x on ALL activities\n• 1 NFT = 2x, 2 NFTs = 3x, 10 NFTs = 11x!\n• Priority access to airdrops\n• Exclusive quests & rewards\n• Early feature access\n\n🔥 Only ${remainingSupply} passes left!\n\nJoin the BaseHub community and level up faster! 💎\n\n#BaseHub #BaseNetwork #NFT #EarlyAccess`
       } else {
-        castText = `🚀 BaseHub Early Access Pass is LIVE! 🎉\n\n✨ Exclusive benefits for holders:\n• 2x XP multiplier on ALL activities\n• Priority access to airdrops\n• Exclusive quests & rewards\n• Early feature access\n\n🔥 Only ${remainingSupply} of ${maxSupply} passes remaining!\n\nMint yours now and join the BaseHub community! 💎\n\n#BaseHub #BaseNetwork #NFT #EarlyAccess`
+        castText = `🚀 BaseHub Early Access Pass is LIVE! 🎉\n\n✨ Exclusive benefits for holders:\n• Dynamic XP multiplier: (NFT Count + 1)x on ALL activities\n• 1 NFT = 2x, 2 NFTs = 3x, 10 NFTs = 11x!\n• Priority access to airdrops\n• Exclusive quests & rewards\n• Early feature access\n\n🔥 Only ${remainingSupply} of ${maxSupply} passes remaining!\n\nMint yours now and join the BaseHub community! 💎\n\n#BaseHub #BaseNetwork #NFT #EarlyAccess`
       }
       
       await farcasterContext.sdk.actions.composeCast({
@@ -390,7 +390,11 @@ const EarlyAccessNFT = () => {
             marginBottom: '24px'
           }}>
             <Zap size={16} style={{ color: '#93c5fd' }} />
-            Holders earn **2x XP** across the entire ecosystem.
+            <span>
+              <strong>Dynamic XP Multiplier:</strong> Earn <strong>(NFT Count + 1)x</strong> XP on all activities!
+              <br />
+              <small style={{ opacity: 0.9 }}>Example: 1 NFT = 2x, 2 NFTs = 3x, 10 NFTs = 11x multiplier</small>
+            </span>
           </div>
 
           {/* Show network warning if not on Base */}
@@ -668,42 +672,140 @@ const EarlyAccessNFT = () => {
             Early Access Benefits
           </h3>
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '20px'
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '24px'
           }}>
-            <div style={{ 
-              color: '#cbd5e1', 
-              fontSize: '1rem',
-              fontWeight: '500',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px'
+            {/* Dynamic XP Multiplier Section */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(59, 130, 246, 0.15) 100%)',
+              border: '1px solid rgba(139, 92, 246, 0.4)',
+              borderRadius: '12px',
+              padding: '24px'
             }}>
-              <CheckCircle size={20} color="#60a5fa" />
-              Bonus Multiplier
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                marginBottom: '16px'
+              }}>
+                <Zap size={24} color="#a78bfa" />
+                <h4 style={{
+                  fontSize: '1.25rem',
+                  fontWeight: '700',
+                  color: '#fff',
+                  margin: 0
+                }}>
+                  Dynamic XP Multiplier System
+                </h4>
+              </div>
+              <p style={{
+                color: '#cbd5e1',
+                fontSize: '1rem',
+                lineHeight: '1.6',
+                marginBottom: '20px'
+              }}>
+                The more NFTs you hold, the higher your XP multiplier! Your multiplier is calculated as <strong style={{ color: '#a78bfa' }}>(NFT Count + 1)</strong>, meaning:
+              </p>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: '12px',
+                marginBottom: '20px'
+              }}>
+                <div style={{
+                  background: 'rgba(139, 92, 246, 0.15)',
+                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ color: '#a78bfa', fontSize: '1.5rem', fontWeight: '700', marginBottom: '4px' }}>1 NFT</div>
+                  <div style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>2x Multiplier</div>
+                </div>
+                <div style={{
+                  background: 'rgba(139, 92, 246, 0.15)',
+                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ color: '#a78bfa', fontSize: '1.5rem', fontWeight: '700', marginBottom: '4px' }}>2 NFTs</div>
+                  <div style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>3x Multiplier</div>
+                </div>
+                <div style={{
+                  background: 'rgba(139, 92, 246, 0.15)',
+                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ color: '#a78bfa', fontSize: '1.5rem', fontWeight: '700', marginBottom: '4px' }}>3 NFTs</div>
+                  <div style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>4x Multiplier</div>
+                </div>
+                <div style={{
+                  background: 'rgba(139, 92, 246, 0.15)',
+                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ color: '#a78bfa', fontSize: '1.5rem', fontWeight: '700', marginBottom: '4px' }}>10 NFTs</div>
+                  <div style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>11x Multiplier</div>
+                </div>
+              </div>
+              <div style={{
+                background: 'rgba(59, 130, 246, 0.1)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                borderRadius: '8px',
+                padding: '12px',
+                color: '#93c5fd',
+                fontSize: '0.9rem',
+                fontStyle: 'italic'
+              }}>
+                💡 <strong>Pro Tip:</strong> Hold multiple NFTs to maximize your XP earnings! Every NFT you own increases your multiplier by 1x.
+              </div>
             </div>
-            <div style={{ 
-              color: '#cbd5e1', 
-              fontSize: '1rem',
-              fontWeight: '500',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px'
+
+            {/* Other Benefits */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '20px'
             }}>
-              <CheckCircle size={20} color="#60a5fa" />
-              Early Feature Access
-            </div>
-            <div style={{ 
-              color: '#cbd5e1', 
-              fontSize: '1rem',
-              fontWeight: '500',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px'
-            }}>
-              <CheckCircle size={20} color="#60a5fa" />
-              Exclusive Quests
+              <div style={{ 
+                color: '#cbd5e1', 
+                fontSize: '1rem',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                <CheckCircle size={20} color="#60a5fa" />
+                Early Feature Access
+              </div>
+              <div style={{ 
+                color: '#cbd5e1', 
+                fontSize: '1rem',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                <CheckCircle size={20} color="#60a5fa" />
+                Priority Airdrops
+              </div>
+              <div style={{ 
+                color: '#cbd5e1', 
+                fontSize: '1rem',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                <CheckCircle size={20} color="#60a5fa" />
+                Exclusive Quests
+              </div>
             </div>
           </div>
         </div>

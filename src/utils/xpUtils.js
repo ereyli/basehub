@@ -3,14 +3,14 @@ import { supabase } from '../config/supabase'
 import { createPublicClient, http } from 'viem'
 import { base } from 'viem/chains'
 
-// Simple in-memory cache for NFT ownership checks
-const nftOwnerCache = new Map()
+// Simple in-memory cache for NFT count checks
+const nftCountCache = new Map()
 const NFT_CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
-// Show a lightweight toast when 2x XP is applied
-const showXPToast = () => {
+// Show a lightweight toast when bonus XP is applied
+const showXPToast = (multiplier, nftCount) => {
   if (typeof document === 'undefined') return
-  const existing = document.getElementById('xp-toast-2x')
+  const existing = document.getElementById('xp-toast-bonus')
   if (existing) {
     // restart animation
     existing.classList.remove('xp-toast-show')
@@ -19,8 +19,8 @@ const showXPToast = () => {
     return
   }
   const toast = document.createElement('div')
-  toast.id = 'xp-toast-2x'
-  toast.textContent = '🎉 You earned 2x XP for being an NFT holder!'
+  toast.id = 'xp-toast-bonus'
+  toast.textContent = `🎉 You earned ${multiplier}x XP for holding ${nftCount} NFT${nftCount > 1 ? 's' : ''}!`
   toast.style.position = 'fixed'
   toast.style.bottom = '20px'
   toast.style.right = '20px'
@@ -45,7 +45,7 @@ const showXPToast = () => {
     }, 200)
   }
 
-  setTimeout(fadeOut, 2200)
+  setTimeout(fadeOut, 3000)
   document.body.appendChild(toast)
   requestAnimationFrame(() => {
     toast.style.opacity = '1'
@@ -53,20 +53,20 @@ const showXPToast = () => {
   })
 }
 
-// Check if wallet owns Early Access NFT (with cache)
-const isWalletNFTOwner = async (walletAddress) => {
-  if (!walletAddress) return false
+// Get NFT count for wallet (returns 0 if no NFT)
+const getNFTCount = async (walletAddress) => {
+  if (!walletAddress) return 0
 
-  // cache
-  const cached = nftOwnerCache.get(walletAddress)
+  // Check cache
+  const cached = nftCountCache.get(walletAddress)
   if (cached && Date.now() - cached.timestamp < NFT_CACHE_DURATION) {
-    return cached.hasNFT
+    return cached.count
   }
 
   try {
     const { EARLY_ACCESS_CONFIG, EARLY_ACCESS_ABI } = await import('../config/earlyAccessNFT.js')
     if (!EARLY_ACCESS_CONFIG?.CONTRACT_ADDRESS) {
-      return false
+      return 0
     }
 
     const publicClient = createPublicClient({
@@ -81,12 +81,12 @@ const isWalletNFTOwner = async (walletAddress) => {
       args: [walletAddress]
     })
 
-    const hasNFT = Number(balance || 0) > 0
-    nftOwnerCache.set(walletAddress, { hasNFT, timestamp: Date.now() })
-    return hasNFT
+    const nftCount = Number(balance || 0)
+    nftCountCache.set(walletAddress, { count: nftCount, timestamp: Date.now() })
+    return nftCount
   } catch (error) {
-    console.warn('⚠️ NFT ownership check failed, skipping 2x XP:', error)
-    return false
+    console.warn('⚠️ NFT count check failed, using base XP:', error)
+    return 0
   }
 }
 
@@ -99,17 +99,22 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
 
   console.log('🎯 Adding XP:', { walletAddress, xpAmount, gameType, chainId })
 
-  // Apply 2x multiplier if wallet holds our NFT
+  // Get NFT count and calculate multiplier
   let finalXP = xpAmount
   let bonusXP = 0
-  let isNFTOwner = false
+  let nftCount = 0
+  let multiplier = 1
+  
   try {
-    isNFTOwner = await isWalletNFTOwner(walletAddress)
-    if (isNFTOwner) {
-      bonusXP = xpAmount // Bonus equals base XP (2x total)
-      finalXP = xpAmount * 2
-      console.log(`🎁 NFT detected, applying 2x XP: ${xpAmount} -> ${finalXP}`)
-      showXPToast()
+    nftCount = await getNFTCount(walletAddress)
+    if (nftCount > 0) {
+      // Multiplier formula: nftCount + 1
+      // 1 NFT = 2x, 2 NFT = 3x, 3 NFT = 4x, etc.
+      multiplier = nftCount + 1
+      bonusXP = xpAmount * (multiplier - 1) // Bonus is the extra XP beyond base
+      finalXP = xpAmount * multiplier
+      console.log(`🎁 ${nftCount} NFT${nftCount > 1 ? 's' : ''} detected, applying ${multiplier}x XP: ${xpAmount} -> ${finalXP}`)
+      showXPToast(multiplier, nftCount)
     }
   } catch (err) {
     console.warn('⚠️ NFT check error, using base XP:', err)
@@ -283,7 +288,8 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
           xp_earned: finalXP,
           base_xp: xpAmount,
           bonus_xp: bonusXP,
-          is_nft_owner: isNFTOwner,
+          nft_count: nftCount,
+          multiplier: multiplier,
           transaction_hash: null // Can be added later if needed
           // Note: chain_id removed - column doesn't exist in Supabase table yet
         })
