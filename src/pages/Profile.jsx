@@ -68,6 +68,7 @@ const Profile = () => {
       try {
         // Load XP and level
         const xp = await getXP(address)
+        console.log('📊 Profile XP loaded:', xp)
         setTotalXP(xp)
         setLevel(calculateLevel(xp))
 
@@ -177,7 +178,43 @@ const Profile = () => {
     }
 
     loadUserData()
-    // Only load once when component mounts or address changes
+    
+    // Refresh XP every 3 seconds for real-time updates
+    const xpInterval = setInterval(async () => {
+      if (isConnected && address) {
+        try {
+          const xp = await getXP(address)
+          console.log('🔄 Refreshing XP in profile:', xp)
+          setTotalXP(xp)
+          setLevel(calculateLevel(xp))
+        } catch (error) {
+          console.error('❌ Error refreshing XP:', error)
+        }
+      }
+    }, 3000)
+    
+    // Listen for transaction refresh events (from localStorage flag)
+    let lastRefreshFlag = null
+    const checkRefresh = () => {
+      const refreshFlag = localStorage.getItem('basehub_tx_refresh')
+      if (refreshFlag && refreshFlag !== lastRefreshFlag) {
+        lastRefreshFlag = refreshFlag
+        const refreshTime = parseInt(refreshFlag)
+        // Only refresh if the flag was set in the last 10 seconds
+        if (Date.now() - refreshTime < 10000) {
+          console.log('🔄 Refreshing profile data due to new transaction')
+          loadUserData()
+        }
+      }
+    }
+    
+    // Check for refresh flag every 1 second
+    const refreshInterval = setInterval(checkRefresh, 1000)
+    
+    return () => {
+      clearInterval(xpInterval)
+      clearInterval(refreshInterval)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, address])
 

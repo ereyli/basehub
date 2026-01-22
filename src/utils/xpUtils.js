@@ -243,18 +243,21 @@ export const getXP = async (walletAddress) => {
   }
   
   try {
+    // Normalize wallet address to lowercase for consistent querying (same as addXP)
+    const normalizedWalletAddress = walletAddress.toLowerCase()
+    
     // Get total XP from players table (includes both game XP and quest XP)
     const { data: player, error } = await supabase
       .from('players')
       .select('total_xp')
-      .eq('wallet_address', walletAddress)
+      .eq('wallet_address', normalizedWalletAddress)
       .single()
 
     if (error && error.code === 'PGRST116') return 0 // No player found
     if (error) throw error
 
     const totalXP = player?.total_xp || 0
-    console.log(`📊 Total XP from players table: ${totalXP}`)
+    console.log(`📊 Total XP from players table: ${totalXP} for ${normalizedWalletAddress}`)
     
     return totalXP
   } catch (error) {
