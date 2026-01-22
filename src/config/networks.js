@@ -46,7 +46,7 @@ export const NETWORKS = {
     rpcUrls: [
       'https://rpc.soneium.org', // Primary Soneium RPC endpoint
     ],
-    blockExplorerUrls: ['https://soneiumscan.org'], // Soneium explorer (update if different)
+    blockExplorerUrls: ['https://soneium.blockscout.com'], // Soneium explorer
     iconUrls: [],
     isFarcasterSupported: false,
   },
