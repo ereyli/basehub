@@ -214,8 +214,8 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
           base_xp: xpAmount,
           bonus_xp: bonusXP,
           is_nft_owner: isNFTOwner,
-          transaction_hash: null, // Can be added later if needed
-          chain_id: chainId || null
+          transaction_hash: null // Can be added later if needed
+          // Note: chain_id removed - column doesn't exist in Supabase table yet
         })
       } catch (txError) {
         // Don't fail the player creation if transaction recording fails
@@ -393,8 +393,11 @@ export const recordTransaction = async (transactionData) => {
 
     console.log('📝 Recording transaction to Supabase:', normalizedTransactionData)
     
+    // Remove chain_id if it exists (column doesn't exist in Supabase table yet)
+    const { chain_id, ...transactionWithoutChainId } = normalizedTransactionData
+    
     const transactionToInsert = {
-      ...normalizedTransactionData,
+      ...transactionWithoutChainId,
       created_at: new Date().toISOString()
     }
     console.log('📝 Transaction data to insert:', transactionToInsert)
@@ -406,7 +409,9 @@ export const recordTransaction = async (transactionData) => {
 
     if (error) {
       console.error('❌ Error recording transaction:', error)
-      throw error
+      // Don't throw error - allow XP to be awarded even if transaction recording fails
+      console.warn('⚠️ Transaction recording failed, but XP was already awarded')
+      return
     }
 
     console.log('✅ Transaction recorded successfully:', data)

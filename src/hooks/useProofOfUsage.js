@@ -32,12 +32,12 @@ export const useProofOfUsage = () => {
         timeDiff: now.getTime() - last24Hours.getTime()
       })
 
-      // 1. Get last 24 hours transaction count (Base + InkChain)
-      // Count all transactions from last 24 hours regardless of chain_id
-      // This includes both Base and InkChain transactions
+      // 1. Get last 24 hours transaction count (Base + InkChain + Soneium + Katana)
+      // Count all transactions from last 24 hours
+      // Note: chain_id column doesn't exist in Supabase table yet
       const { count: txCount24h, error: txError24h, data: sampleTxs } = await supabase
         .from('transactions')
-        .select('created_at, chain_id, game_type', { count: 'exact' })
+        .select('created_at, game_type', { count: 'exact' })
         .gte('created_at', last24HoursISO)
         .order('created_at', { ascending: false })
         .limit(5)
