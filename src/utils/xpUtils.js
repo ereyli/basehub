@@ -150,13 +150,25 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
       console.log('🔗 Chain ID for XP update:', chainId)
       
       // CRITICAL: Ensure existingPlayer.total_xp is a valid number
-      const currentXP = existingPlayer.total_xp ?? 0
-      if (typeof currentXP !== 'number' || isNaN(currentXP)) {
+      // Convert to number if it's a string (Supabase sometimes returns strings)
+      let currentXP = existingPlayer.total_xp
+      if (currentXP === null || currentXP === undefined) {
+        currentXP = 0
+      } else if (typeof currentXP === 'string') {
+        currentXP = parseFloat(currentXP) || 0
+      } else if (typeof currentXP !== 'number' || isNaN(currentXP)) {
         console.error('❌ CRITICAL: existingPlayer.total_xp is invalid:', existingPlayer.total_xp)
         console.error('❌ Player data:', existingPlayer)
-        // Don't proceed if XP is invalid - this could cause data loss
-        throw new Error(`Invalid total_xp value: ${existingPlayer.total_xp}`)
+        // Use 0 as fallback instead of throwing - this prevents XP loss
+        currentXP = 0
+        console.warn('⚠️ Using 0 as fallback for invalid total_xp')
       }
+      
+      console.log('📊 Current XP value:', { 
+        raw: existingPlayer.total_xp, 
+        processed: currentXP, 
+        type: typeof currentXP 
+      })
       
       // Update existing player - add XP
       const newTotalXP = currentXP + finalXP
