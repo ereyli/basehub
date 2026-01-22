@@ -76,12 +76,12 @@ const Profile = () => {
         if (supabase) {
           console.log('🔍 Loading profile data for:', address)
           
-          // Try both lowercase and original case for wallet_address
+          // All wallet addresses are now normalized to lowercase in Supabase
           const walletAddressLower = address.toLowerCase()
           const { data: player, error: playerError } = await supabase
             .from('players')
             .select('*')
-            .or(`wallet_address.eq.${walletAddressLower},wallet_address.eq.${address}`)
+            .eq('wallet_address', walletAddressLower)
             .single()
 
           console.log('👤 Player data:', { player, playerError })

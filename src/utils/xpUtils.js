@@ -131,11 +131,11 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
     // Normalize wallet address to lowercase for consistent querying
     const normalizedWalletAddress = walletAddress.toLowerCase()
     // First, check if player already exists
-    // Use .or() to check both lowercase and original case (prevent XP reset bug)
+    // All wallet addresses are now normalized to lowercase in Supabase
     const { data: existingPlayer, error: fetchError } = await supabase
       .from('players')
       .select('*')
-      .or(`wallet_address.eq.${normalizedWalletAddress},wallet_address.eq.${walletAddress}`)
+      .eq('wallet_address', normalizedWalletAddress)
       .single()
 
     if (fetchError && fetchError.code !== 'PGRST116') {
@@ -210,11 +210,11 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
       
       // CRITICAL: Before creating new player, double-check if player exists
       // This prevents race conditions where player might have been created between checks
-      // Use .or() to check both lowercase and original case
+      // All wallet addresses are now normalized to lowercase in Supabase
       const { data: doubleCheckPlayer, error: doubleCheckError } = await supabase
         .from('players')
         .select('total_xp, total_transactions')
-        .or(`wallet_address.eq.${normalizedWalletAddress},wallet_address.eq.${walletAddress}`)
+        .eq('wallet_address', normalizedWalletAddress)
         .single()
       
       if (doubleCheckPlayer && !doubleCheckError) {
@@ -319,11 +319,11 @@ export const getXP = async (walletAddress) => {
     console.log(`🔍 getXP: Querying Supabase for wallet: ${normalizedWalletAddress} (original: ${walletAddress})`)
     
     // Get total XP from players table (includes both game XP and quest XP)
-    // Use .or() to check both lowercase and original case (like Profile page and addXP)
+    // All wallet addresses are now normalized to lowercase in Supabase
     const { data: player, error } = await supabase
       .from('players')
       .select('total_xp, wallet_address')
-      .or(`wallet_address.eq.${normalizedWalletAddress},wallet_address.eq.${walletAddress}`)
+      .eq('wallet_address', normalizedWalletAddress)
       .maybeSingle() // Use maybeSingle() instead of single() to avoid error if not found
 
     console.log(`🔍 getXP: Supabase response:`, { 
