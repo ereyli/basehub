@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAccount, useWriteContract } from 'wagmi'
+import { useAccount, useWriteContract, useChainId } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from './useNetworkCheck'
@@ -26,7 +26,8 @@ export const useTransactions = () => {
       isInFarcaster = false
     }
   }
-  const { address, chainId } = useAccount()
+  const { address } = useAccount()
+  const chainId = useChainId() // Use useChainId hook to ensure we always get the current chainId
   const { writeContractAsync, data: txData } = useWriteContract()
   const { isCorrectNetwork, networkName, currentNetworkConfig, switchToNetwork, supportedNetworks } = useNetworkCheck()
   const { updateQuestProgress } = useQuestSystem()
@@ -63,8 +64,9 @@ export const useTransactions = () => {
 
   // Network validation and auto-switch function
   const validateAndSwitchNetwork = async () => {
+    console.log('🔍 Validating network:', { chainId, isCorrectNetwork, networkName, currentNetworkConfig: currentNetworkConfig?.chainName })
     if (!isCorrectNetwork) {
-      // Try to switch to a supported network (prefer Base, fallback to InkChain)
+      // Try to switch to a supported network (prefer Base, fallback to first supported)
       const targetNetwork = supportedNetworks[0] || NETWORKS.BASE
       console.log(`🔄 Wrong network detected! Switching from ${networkName} to ${targetNetwork.chainName}...`)
       try {
@@ -80,7 +82,8 @@ export const useTransactions = () => {
         }
       } catch (switchError) {
         console.error('❌ Failed to switch network:', switchError)
-        throw new Error(`❌ SUPPORTED NETWORK REQUIRED!\n\nYou are currently on ${networkName}.\nBaseHub works on Base or InkChain networks.\n\nPlease switch to a supported network manually and try again.`)
+        const supportedNames = Object.values(NETWORKS).map(n => n.chainName).join(', ')
+        throw new Error(`❌ SUPPORTED NETWORK REQUIRED!\n\nYou are currently on ${networkName}.\nBaseHub works on: ${supportedNames}\n\nPlease switch to a supported network manually and try again.`)
       }
     }
   }
@@ -91,14 +94,14 @@ export const useTransactions = () => {
   }
 
   // Get game fee based on network
-  // Base: 0.000005 ETH, InkChain/Soneium: 0.00002 ETH
+  // Base: 0.000005 ETH, InkChain/Soneium/Katana: 0.00002 ETH
   const getGameFee = () => {
     const isOnBase = chainId === NETWORKS.BASE.chainId
     return isOnBase ? parseEther('0.000005') : parseEther('0.00002')
   }
 
   // Get slot credit price based on network
-  // Base: 0.000005 ETH, InkChain/Soneium: 0.00002 ETH
+  // Base: 0.000005 ETH, InkChain/Soneium/Katana: 0.00002 ETH
   const getSlotCreditPrice = () => {
     const isOnBase = chainId === NETWORKS.BASE.chainId
     return isOnBase ? parseEther('0.000005') : parseEther('0.00002')
@@ -116,8 +119,14 @@ export const useTransactions = () => {
     setError(null)
 
     try {
+      console.log('🔍 GM Transaction - Network Info:', { 
+        chainId, 
+        chainName: currentNetworkConfig?.chainName,
+        isCorrectNetwork,
+        address 
+      })
       const contractAddress = getContractAddressForCurrentNetwork('GM_GAME')
-      
+      console.log('📡 Contract address for GM_GAME:', contractAddress)
       console.log('📡 Sending GM transaction to blockchain...')
       
       // Send transaction to blockchain
@@ -139,6 +148,7 @@ export const useTransactions = () => {
       // Award XP immediately after transaction is sent (don't wait for confirmation)
       // This ensures XP is awarded even if confirmation takes time or fails
       try {
+        console.log('🎯 Awarding XP for GM transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName })
         await addXP(address, 30, 'GM_GAME', chainId) // GM gives 30 XP
         await recordTransaction({
           wallet_address: address,
@@ -229,6 +239,7 @@ export const useTransactions = () => {
       
       // Award XP immediately after transaction is sent
       try {
+        console.log('🎯 Awarding XP for GN transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName })
         await addXP(address, 30, 'GN_GAME', chainId) // GN gives 30 XP
         await recordTransaction({
           wallet_address: address,
@@ -322,6 +333,7 @@ export const useTransactions = () => {
       
       // Award XP immediately after transaction is sent
       try {
+        console.log('🎯 Awarding XP for Flip transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName, playerWon })
         await addBonusXP(address, 'flip', playerWon, chainId)
         const xpEarned = playerWon ? 60 + 500 : 60
         await recordTransaction({
@@ -415,6 +427,7 @@ export const useTransactions = () => {
       
       // Award XP immediately after transaction is sent
       try {
+        console.log('🎯 Awarding XP for Lucky Number transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName, playerWon })
         await addBonusXP(address, 'luckynumber', playerWon, chainId)
         const xpEarned = playerWon ? 60 + 1000 : 60
         await recordTransaction({
@@ -509,6 +522,7 @@ export const useTransactions = () => {
       
       // Award XP immediately after transaction is sent
       try {
+        console.log('🎯 Awarding XP for Dice Roll transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName, playerWon })
         await addBonusXP(address, 'diceroll', playerWon, chainId)
         const xpEarned = playerWon ? 60 + 1500 : 60
         await recordTransaction({
@@ -664,6 +678,7 @@ export const useTransactions = () => {
           xpEarned = 60 + bonusXp // BASE_XP + bonus
           
           try {
+            console.log('🎯 Awarding XP for Slot transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName, xpEarned })
             await addXP(address, xpEarned, 'SLOT_GAME', chainId)
             await recordTransaction({
               wallet_address: address,
@@ -705,6 +720,7 @@ export const useTransactions = () => {
       } else {
         // Credits purchase - award XP immediately
         try {
+          console.log('🎯 Awarding XP for Slot credits purchase:', { address, chainId, chainName: currentNetworkConfig?.chainName })
           await addXP(address, 10, 'SLOT_GAME_CREDITS', chainId) // Small XP for purchasing credits
           await recordTransaction({
             wallet_address: address,

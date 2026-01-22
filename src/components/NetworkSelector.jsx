@@ -214,6 +214,17 @@ const NetworkSelector = () => {
               objectFit: 'cover'
             }}
           />
+        ) : currentNetwork.chainId === NETWORKS.KATANA.chainId ? (
+          <img 
+            src="/katana-logo.jpg" 
+            alt="Katana" 
+            style={{
+              width: '20px',
+              height: '20px',
+              borderRadius: '6px',
+              objectFit: 'cover'
+            }}
+          />
         ) : (
           <img 
             src="/base-logo.jpg" 
@@ -316,6 +327,19 @@ const NetworkSelector = () => {
                   <img 
                     src="/soneium-logo.jpg" 
                     alt="Soneium" 
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '6px',
+                      objectFit: 'cover',
+                      opacity: isActive ? 1 : 0.6,
+                      display: 'block'
+                    }}
+                  />
+                ) : network.chainId === NETWORKS.KATANA.chainId ? (
+                  <img 
+                    src="/katana-logo.jpg" 
+                    alt="Katana" 
                     style={{
                       width: '20px',
                       height: '20px',

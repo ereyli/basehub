@@ -49,6 +49,21 @@ export const NETWORKS = {
     blockExplorerUrls: ['https://soneiumscan.org'], // Soneium explorer (update if different)
     iconUrls: [],
     isFarcasterSupported: false,
+  },
+  KATANA: {
+    chainId: 747474, // Katana mainnet chain ID
+    chainName: 'Katana',
+    nativeCurrency: {
+      name: 'Ethereum',
+      symbol: 'ETH',
+      decimals: 18,
+    },
+    rpcUrls: [
+      'https://rpc.katana.network', // Primary Katana RPC endpoint
+    ],
+    blockExplorerUrls: ['https://explorer.katanarpc.com'], // Katana explorer
+    iconUrls: [],
+    isFarcasterSupported: false,
   }
 }
 
@@ -78,6 +93,14 @@ export const CONTRACT_ADDRESSES = {
     FLIP_GAME: '0x933570b7A6B872e1be0A1585AACcDbf609C5F981',
     LUCKY_NUMBER: '0xA15CE1eAdA8E34ec67d82f8D7aB242a42C767C2d',
     SLOT_GAME: '0xB2b2c587E51175a2aE4713d8Ea68A934a8527a4b',
+  },
+  KATANA: {
+    GM_GAME: '0x74A2C6466d98253cA932fe6a6CcB811d4d7d5784',
+    GN_GAME: '0x84e4dD821c8F848470Fc49Def3B14Fc870Fa97f0',
+    FLIP_GAME: '0x933570b7A6B872e1be0A1585AACcDbf609C5F981',
+    LUCKY_NUMBER: '0xA15CE1eAdA8E34ec67d82f8D7aB242a42C767C2d',
+    DICE_ROLL: '0xCaA2a1FB271AE0a04415654e62FB26BDd1AdAC64',
+    SLOT_GAME: '0xB2b2c587E51175a2aE4713d8Ea68A934a8527a4b',
   }
 }
 
@@ -94,6 +117,8 @@ export const getContractAddressByNetwork = (contractName, chainId) => {
     networkKey = 'INKCHAIN'
   } else if (network.chainId === NETWORKS.SONEIUM.chainId) {
     networkKey = 'SONEIUM'
+  } else if (network.chainId === NETWORKS.KATANA.chainId) {
+    networkKey = 'KATANA'
   }
   return CONTRACT_ADDRESSES[networkKey]?.[contractName] || null
 }

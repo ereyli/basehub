@@ -43,11 +43,31 @@ const soneium = defineChain({
   iconBackground: '#ffffff',
 })
 
+// Katana chain definition for RainbowKit
+const katana = defineChain({
+  id: NETWORKS.KATANA.chainId,
+  name: NETWORKS.KATANA.chainName,
+  nativeCurrency: NETWORKS.KATANA.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.KATANA.rpcUrls[0], // Use first (primary) RPC URL
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Katana Explorer',
+      url: NETWORKS.KATANA.blockExplorerUrls[0],
+    },
+  },
+  iconUrl: '/katana-logo.jpg',
+  iconBackground: '#ffffff',
+})
+
 // RainbowKit configuration for web users only
 export const rainbowkitConfig = getDefaultConfig({
   appName: 'BaseHub',
   projectId: '21fef48091f12692cad574a6f7753643', // Temporary project ID - replace with your own
-  chains: [base, inkChain, soneium], // Base, InkChain, and Soneium
+  chains: [base, inkChain, soneium, katana], // Base, InkChain, Soneium, and Katana
   ssr: false, // Client-side rendering
 })
 

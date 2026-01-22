@@ -97,7 +97,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
     return
   }
 
-  console.log('🎯 Adding XP:', { walletAddress, xpAmount, gameType })
+  console.log('🎯 Adding XP:', { walletAddress, xpAmount, gameType, chainId })
 
   // Apply 2x multiplier if wallet holds our NFT
   let finalXP = xpAmount
@@ -146,6 +146,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
 
     if (existingPlayer) {
       console.log('👤 Updating existing player:', existingPlayer.wallet_address)
+      console.log('🔗 Chain ID for XP update:', chainId)
       // Update existing player - add XP
       const newTotalXP = existingPlayer.total_xp + finalXP
       const newLevel = Math.floor(newTotalXP / 100) + 1
@@ -156,7 +157,8 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
         xpToAdd: finalXP, 
         newXP: newTotalXP, 
         newLevel, 
-        newTotalTransactions 
+        newTotalTransactions,
+        chainId
       })
 
       const { error: updateError } = await supabase

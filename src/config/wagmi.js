@@ -41,9 +41,27 @@ const soneium = defineChain({
   },
 })
 
+// Katana chain definition
+const katana = defineChain({
+  id: NETWORKS.KATANA.chainId,
+  name: NETWORKS.KATANA.chainName,
+  nativeCurrency: NETWORKS.KATANA.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.KATANA.rpcUrls[0], // Use first RPC URL
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Katana Explorer',
+      url: NETWORKS.KATANA.blockExplorerUrls[0],
+    },
+  },
+})
+
 // Wagmi config with multiple wallet support
 export const config = createConfig({
-  chains: [base, inkChain, soneium],
+  chains: [base, inkChain, soneium, katana],
   transports: {
     [base.id]: http(),
     [inkChain.id]: http(NETWORKS.INKCHAIN.rpcUrls[0], {
@@ -52,6 +70,11 @@ export const config = createConfig({
       retryDelay: 1000,
     }),
     [soneium.id]: http(NETWORKS.SONEIUM.rpcUrls[0], {
+      timeout: 30000, // 30 seconds timeout
+      retryCount: 3,
+      retryDelay: 1000,
+    }),
+    [katana.id]: http(NETWORKS.KATANA.rpcUrls[0], {
       timeout: 30000, // 30 seconds timeout
       retryCount: 3,
       retryDelay: 1000,
