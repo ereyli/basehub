@@ -38,11 +38,13 @@ contract SlotGame {
         playerCredits[msg.sender] += amount;
         
         // Send ETH directly to owner
-        payable(owner).transfer(totalCost);
+        (bool success1, ) = payable(owner).call{value: totalCost}("");
+        require(success1, "Payment transfer failed");
         
         // Refund excess ETH
         if (msg.value > totalCost) {
-            payable(msg.sender).transfer(msg.value - totalCost);
+            (bool success2, ) = payable(msg.sender).call{value: msg.value - totalCost}("");
+            require(success2, "Refund transfer failed");
         }
         
         emit CreditsPurchased(msg.sender, amount, playerCredits[msg.sender]);
@@ -131,7 +133,8 @@ contract SlotGame {
         require(msg.sender == owner, "Only owner");
         uint256 balance = address(this).balance;
         require(balance > 0, "No ETH to withdraw");
-        payable(owner).transfer(balance);
+        (bool success, ) = payable(owner).call{value: balance}("");
+        require(success, "Withdraw failed");
     }
     
     // Get contract balance (for owner to check)

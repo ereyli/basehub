@@ -66,7 +66,8 @@ contract FlipGame {
         playerStats[msg.sender]++;
         
         // Send game fee to owner
-        payable(owner).transfer(GAME_FEE);
+        (bool success, ) = payable(owner).call{value: GAME_FEE}("");
+        require(success, "Fee transfer failed");
         
         emit GamePlayed(msg.sender, choice, result, won, xpEarned);
     }
@@ -103,6 +104,7 @@ contract FlipGame {
     // Withdraw contract balance (only owner)
     function withdraw() external {
         require(msg.sender == owner, "Only owner");
-        payable(owner).transfer(address(this).balance);
+        (bool success, ) = payable(owner).call{value: address(this).balance}("");
+        require(success, "Withdraw failed");
     }
 }

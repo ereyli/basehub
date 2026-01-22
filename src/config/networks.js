@@ -34,6 +34,21 @@ export const NETWORKS = {
     blockExplorerUrls: ['https://explorer.inkonchain.com'], // InkChain explorer
     iconUrls: [],
     isFarcasterSupported: false,
+  },
+  SONEIUM: {
+    chainId: 1868, // Soneium mainnet chain ID
+    chainName: 'Soneium',
+    nativeCurrency: {
+      name: 'Ethereum',
+      symbol: 'ETH',
+      decimals: 18,
+    },
+    rpcUrls: [
+      'https://rpc.soneium.org', // Primary Soneium RPC endpoint
+    ],
+    blockExplorerUrls: ['https://soneiumscan.org'], // Soneium explorer (update if different)
+    iconUrls: [],
+    isFarcasterSupported: false,
   }
 }
 
@@ -55,6 +70,14 @@ export const CONTRACT_ADDRESSES = {
     LUCKY_NUMBER: '0xA15CE1eAdA8E34ec67d82f8D7aB242a42C767C2d',
     DICE_ROLL: '0x74A2C6466d98253cA932fe6a6CcB811d4d7d5784',
     SLOT_GAME: '0xB2b2c587E51175a2aE4713d8Ea68A934a8527a4b',
+  },
+  SONEIUM: {
+    GM_GAME: '0x5E86e9Cd50E7F64b692b90FaE1487d2F6ED1AbA9',
+    GN_GAME: '0x1fe43a182B2a4A5845B91bA29Cd7E7EEBC4b68Df',
+    DICE_ROLL: '0x74A2C6466d98253cA932fe6a6CcB811d4d7d5784',
+    FLIP_GAME: '0x933570b7A6B872e1be0A1585AACcDbf609C5F981',
+    LUCKY_NUMBER: '0xA15CE1eAdA8E34ec67d82f8D7aB242a42C767C2d',
+    SLOT_GAME: '0xB2b2c587E51175a2aE4713d8Ea68A934a8527a4b',
   }
 }
 
@@ -66,7 +89,12 @@ export const getNetworkConfig = (chainId) => {
 // Get contract address for current network
 export const getContractAddressByNetwork = (contractName, chainId) => {
   const network = getNetworkConfig(chainId)
-  const networkKey = network.chainId === NETWORKS.BASE.chainId ? 'BASE' : 'INKCHAIN'
+  let networkKey = 'BASE'
+  if (network.chainId === NETWORKS.INKCHAIN.chainId) {
+    networkKey = 'INKCHAIN'
+  } else if (network.chainId === NETWORKS.SONEIUM.chainId) {
+    networkKey = 'SONEIUM'
+  }
   return CONTRACT_ADDRESSES[networkKey]?.[contractName] || null
 }
 

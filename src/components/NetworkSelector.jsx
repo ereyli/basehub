@@ -181,7 +181,7 @@ const NetworkSelector = () => {
           }
         }}
       >
-        {currentNetwork.chainId === NETWORKS.BASE.chainId || !isConnected ? (
+        {currentNetwork.chainId === NETWORKS.BASE.chainId ? (
           <img 
             src="/base-logo.jpg" 
             alt="Base" 
@@ -192,10 +192,32 @@ const NetworkSelector = () => {
               objectFit: 'cover'
             }}
           />
-        ) : (
+        ) : currentNetwork.chainId === NETWORKS.INKCHAIN.chainId ? (
           <img 
             src="/ink-logo.jpg" 
             alt="InkChain" 
+            style={{
+              width: '20px',
+              height: '20px',
+              borderRadius: '6px',
+              objectFit: 'cover'
+            }}
+          />
+        ) : currentNetwork.chainId === NETWORKS.SONEIUM.chainId ? (
+          <img 
+            src="/soneium-logo.jpg" 
+            alt="Soneium" 
+            style={{
+              width: '20px',
+              height: '20px',
+              borderRadius: '6px',
+              objectFit: 'cover'
+            }}
+          />
+        ) : (
+          <img 
+            src="/base-logo.jpg" 
+            alt="Base" 
             style={{
               width: '20px',
               height: '20px',
@@ -278,10 +300,35 @@ const NetworkSelector = () => {
                       opacity: isActive ? 1 : 0.6
                     }}
                   />
-                ) : (
+                ) : network.chainId === NETWORKS.INKCHAIN.chainId ? (
                   <img 
                     src="/ink-logo.jpg" 
                     alt="InkChain" 
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '6px',
+                      objectFit: 'cover',
+                      opacity: isActive ? 1 : 0.6
+                    }}
+                  />
+                ) : network.chainId === NETWORKS.SONEIUM.chainId ? (
+                  <img 
+                    src="/soneium-logo.jpg" 
+                    alt="Soneium" 
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '6px',
+                      objectFit: 'cover',
+                      opacity: isActive ? 1 : 0.6,
+                      display: 'block'
+                    }}
+                  />
+                ) : (
+                  <img 
+                    src="/base-logo.jpg" 
+                    alt="Base" 
                     style={{
                       width: '20px',
                       height: '20px',

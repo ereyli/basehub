@@ -19,13 +19,35 @@ const inkChain = defineChain({
       url: NETWORKS.INKCHAIN.blockExplorerUrls[0],
     },
   },
+  iconUrl: '/ink-logo.jpg',
+  iconBackground: '#ffffff',
+})
+
+// Soneium chain definition for RainbowKit
+const soneium = defineChain({
+  id: NETWORKS.SONEIUM.chainId,
+  name: NETWORKS.SONEIUM.chainName,
+  nativeCurrency: NETWORKS.SONEIUM.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.SONEIUM.rpcUrls[0], // Use first (primary) RPC URL
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Soneium Explorer',
+      url: NETWORKS.SONEIUM.blockExplorerUrls[0],
+    },
+  },
+  iconUrl: '/soneium-logo.jpg',
+  iconBackground: '#ffffff',
 })
 
 // RainbowKit configuration for web users only
 export const rainbowkitConfig = getDefaultConfig({
   appName: 'BaseHub',
   projectId: '21fef48091f12692cad574a6f7753643', // Temporary project ID - replace with your own
-  chains: [base, inkChain], // Base and InkChain
+  chains: [base, inkChain, soneium], // Base, InkChain, and Soneium
   ssr: false, // Client-side rendering
 })
 

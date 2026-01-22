@@ -23,12 +23,35 @@ const inkChain = defineChain({
   },
 })
 
+// Soneium chain definition
+const soneium = defineChain({
+  id: NETWORKS.SONEIUM.chainId,
+  name: NETWORKS.SONEIUM.chainName,
+  nativeCurrency: NETWORKS.SONEIUM.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.SONEIUM.rpcUrls[0], // Use first RPC URL
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Soneium Explorer',
+      url: NETWORKS.SONEIUM.blockExplorerUrls[0],
+    },
+  },
+})
+
 // Wagmi config with multiple wallet support
 export const config = createConfig({
-  chains: [base, inkChain],
+  chains: [base, inkChain, soneium],
   transports: {
     [base.id]: http(),
     [inkChain.id]: http(NETWORKS.INKCHAIN.rpcUrls[0], {
+      timeout: 30000, // 30 seconds timeout
+      retryCount: 3,
+      retryDelay: 1000,
+    }),
+    [soneium.id]: http(NETWORKS.SONEIUM.rpcUrls[0], {
       timeout: 30000, // 30 seconds timeout
       retryCount: 3,
       retryDelay: 1000,

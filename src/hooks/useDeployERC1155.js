@@ -568,7 +568,7 @@ export const useDeployERC1155 = () => {
       // Award XP for successful ERC1155 deployment
       try {
         console.log('🎉 Awarding 100 XP for ERC1155 deployment!')
-        await addXP(address, 100, 'ERC1155 Deployment')
+        await addXP(address, 100, 'ERC1155 Deployment', chainId)
       } catch (xpError) {
         console.error('❌ Failed to add XP:', xpError)
       }
@@ -592,6 +592,7 @@ export const useDeployERC1155 = () => {
           currency: 'ETH',
           status: 'success',
           game_type: 'ERC1155 Deployment',
+          chain_id: chainId || null,
           metadata: {
             name,
             symbol,

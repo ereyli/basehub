@@ -426,7 +426,7 @@ export const recordTransaction = async (transactionData) => {
 }
 
 // Add bonus XP for winning games
-export const addBonusXP = async (walletAddress, gameType, isWin) => {
+export const addBonusXP = async (walletAddress, gameType, isWin, chainId = null) => {
   if (!walletAddress || !gameType) return
 
   // Base XP for playing (varies by game type)
@@ -464,7 +464,7 @@ export const addBonusXP = async (walletAddress, gameType, isWin) => {
   const totalXP = baseXP + bonusXP
   console.log(`${gameType} game: Base ${baseXP} XP + Bonus ${bonusXP} XP = ${totalXP} XP total`)
   
-  return await addXP(walletAddress, totalXP)
+  return await addXP(walletAddress, totalXP, gameType.toUpperCase() + '_GAME', chainId)
 }
 
 // Claim tokens (convert XP to BHUP tokens) - COMING SOON

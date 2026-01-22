@@ -40,11 +40,13 @@ contract DiceRoll {
         playerDiceCount[msg.sender]++;
         
         // Send fee to owner
-        payable(owner).transfer(GAME_FEE);
+        (bool success1, ) = payable(owner).call{value: GAME_FEE}("");
+        require(success1, "Fee transfer failed");
         
         // Refund excess ETH
         if (msg.value > GAME_FEE) {
-            payable(msg.sender).transfer(msg.value - GAME_FEE);
+            (bool success2, ) = payable(msg.sender).call{value: msg.value - GAME_FEE}("");
+            require(success2, "Refund transfer failed");
         }
         
         emit DiceRolled(msg.sender, guess, result, won, xpEarned);
@@ -60,6 +62,7 @@ contract DiceRoll {
     // Withdraw contract balance (only owner)
     function withdraw() external {
         require(msg.sender == owner, "Only owner");
-        payable(owner).transfer(address(this).balance);
+        (bool success, ) = payable(owner).call{value: address(this).balance}("");
+        require(success, "Withdraw failed");
     }
 }

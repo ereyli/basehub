@@ -496,7 +496,7 @@ export const useDeployToken = () => {
       // Award XP for successful token deployment
       try {
         console.log('🎉 Awarding 50 XP for token deployment!')
-        await addXP(address, 50, 'Token Deployment')
+        await addXP(address, 50, 'Token Deployment', chainId)
         
         // Record the transaction for tracking
         await recordTransaction({
@@ -508,7 +508,8 @@ export const useDeployToken = () => {
           contract_address: deployReceipt.contractAddress,
           token_name: name,
           token_symbol: symbol,
-          initial_supply: initialSupply.toString()
+          initial_supply: initialSupply.toString(),
+          chain_id: chainId || null
         })
         
         console.log('✅ XP awarded and transaction recorded!')

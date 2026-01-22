@@ -91,17 +91,17 @@ export const useTransactions = () => {
   }
 
   // Get game fee based on network
-  // Base: 0.000005 ETH, InkChain: 0.00002 ETH
+  // Base: 0.000005 ETH, InkChain/Soneium: 0.00002 ETH
   const getGameFee = () => {
-    const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
-    return isOnInkChain ? parseEther('0.00002') : parseEther('0.000005')
+    const isOnBase = chainId === NETWORKS.BASE.chainId
+    return isOnBase ? parseEther('0.000005') : parseEther('0.00002')
   }
 
   // Get slot credit price based on network
-  // Base: 0.000005 ETH, InkChain: 0.00002 ETH
+  // Base: 0.000005 ETH, InkChain/Soneium: 0.00002 ETH
   const getSlotCreditPrice = () => {
-    const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
-    return isOnInkChain ? parseEther('0.00002') : parseEther('0.000005')
+    const isOnBase = chainId === NETWORKS.BASE.chainId
+    return isOnBase ? parseEther('0.000005') : parseEther('0.00002')
   }
 
   const sendGMTransaction = async (message = 'GM!') => {
@@ -322,7 +322,7 @@ export const useTransactions = () => {
       
       // Award XP immediately after transaction is sent
       try {
-        await addBonusXP(address, 'flip', playerWon)
+        await addBonusXP(address, 'flip', playerWon, chainId)
         const xpEarned = playerWon ? 60 + 500 : 60
         await recordTransaction({
           wallet_address: address,
@@ -415,7 +415,7 @@ export const useTransactions = () => {
       
       // Award XP immediately after transaction is sent
       try {
-        await addBonusXP(address, 'luckynumber', playerWon)
+        await addBonusXP(address, 'luckynumber', playerWon, chainId)
         const xpEarned = playerWon ? 60 + 1000 : 60
         await recordTransaction({
           wallet_address: address,
@@ -509,7 +509,7 @@ export const useTransactions = () => {
       
       // Award XP immediately after transaction is sent
       try {
-        await addBonusXP(address, 'diceroll', playerWon)
+        await addBonusXP(address, 'diceroll', playerWon, chainId)
         const xpEarned = playerWon ? 60 + 1500 : 60
         await recordTransaction({
           wallet_address: address,

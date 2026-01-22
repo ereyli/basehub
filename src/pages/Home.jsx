@@ -204,6 +204,20 @@ const Home = () => {
             }} 
           />
         )}
+        {networks.includes('soneium') && (
+          <img 
+            src="/soneium-logo.jpg" 
+            alt="Soneium" 
+            style={{ 
+              width: '24px', 
+              height: '24px', 
+              borderRadius: '50%',
+              objectFit: 'cover',
+              border: '2px solid rgba(255, 255, 255, 0.3)',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+            }} 
+          />
+        )}
       </div>
     )
   }
@@ -247,7 +261,7 @@ const Home = () => {
       color: '#3b82f6',
       xpReward: '30 XP',
       bonusXP: null,
-      networks: ['base', 'ink']
+      networks: ['base', 'ink', 'soneium']
     },
     {
       id: 'gn',
@@ -258,7 +272,7 @@ const Home = () => {
       color: '#3b82f6',
       xpReward: '30 XP',
       bonusXP: null,
-      networks: ['base', 'ink']
+      networks: ['base', 'ink', 'soneium']
     },
     {
       id: 'ai-nft',
@@ -341,7 +355,7 @@ const Home = () => {
       color: '#8b5cf6',
       xpReward: '100 XP',
       bonusXP: null,
-      networks: ['base', 'ink']
+      networks: ['base', 'ink', 'soneium']
     },
     {
       id: 'deploy',
@@ -352,7 +366,7 @@ const Home = () => {
       color: '#8b5cf6',
       xpReward: '50 XP',
       bonusXP: null,
-      networks: ['base', 'ink']
+      networks: ['base', 'ink', 'soneium']
     },
     {
       id: 'deploy-erc1155',
@@ -363,7 +377,7 @@ const Home = () => {
       color: '#8b5cf6',
       xpReward: '100 XP',
       bonusXP: null,
-      networks: ['base', 'ink']
+      networks: ['base', 'ink', 'soneium']
     },
     {
       id: 'flip',
@@ -374,7 +388,7 @@ const Home = () => {
       color: '#f59e0b',
       xpReward: '60 XP',
       bonusXP: '+500 XP (Win)',
-      networks: ['base', 'ink']
+      networks: ['base', 'ink', 'soneium']
     },
     {
       id: 'lucky',
@@ -385,7 +399,7 @@ const Home = () => {
       color: '#f59e0b',
       xpReward: '60 XP',
       bonusXP: '+1000 XP (Win)',
-      networks: ['base', 'ink']
+      networks: ['base', 'ink', 'soneium']
     },
     {
       id: 'dice',
@@ -396,7 +410,7 @@ const Home = () => {
       color: '#f59e0b',
       xpReward: '60 XP',
       bonusXP: '+1500 XP (Win)',
-      networks: ['base', 'ink']
+      networks: ['base', 'ink', 'soneium']
     },
     {
       id: 'slot',
@@ -407,7 +421,7 @@ const Home = () => {
       color: '#f59e0b',
       xpReward: '60 XP',
       bonusXP: '+2000 XP (Combo)',
-      networks: ['base', 'ink']
+      networks: ['base', 'ink', 'soneium']
     },
     {
       id: 'swap',
@@ -540,7 +554,7 @@ const Home = () => {
                   <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
                     GM / GN
                   </h2>
-                  {renderNetworkLogos(['base', 'ink'])}
+                  {renderNetworkLogos(['base', 'ink', 'soneium'])}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
                   {games.filter(g => g.id === 'gm' || g.id === 'gn').map((game) => (
@@ -874,7 +888,7 @@ const Home = () => {
                   <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
                     GAMING
                   </h2>
-                  {renderNetworkLogos(['base', 'ink'])}
+                  {renderNetworkLogos(['base', 'ink', 'soneium'])}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
                   {games.filter(g => ['flip', 'dice', 'slot', 'lucky'].includes(g.id)).map((game) => (
@@ -1102,7 +1116,7 @@ const Home = () => {
                   <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
                     DEPLOY
                   </h2>
-                  {renderNetworkLogos(['base', 'ink'])}
+                  {renderNetworkLogos(['base', 'ink', 'soneium'])}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
                   {games.filter(g => ['deploy', 'deploy-erc721', 'deploy-erc1155', 'x402-premium'].includes(g.id)).sort((a, b) => {

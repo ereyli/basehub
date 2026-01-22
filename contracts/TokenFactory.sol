@@ -22,7 +22,8 @@ contract TokenFactory {
         require(msg.value >= deployFee, "Insufficient fee");
         
         // Send fee to owner
-        payable(owner).transfer(deployFee);
+        (bool success, ) = payable(owner).call{value: deployFee}("");
+        require(success, "Fee transfer failed");
         
         // Deploy new token
         ERC20Template newToken = new ERC20Template(
