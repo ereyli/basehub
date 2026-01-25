@@ -92,7 +92,11 @@ const Leaderboard = () => {
       <div className="card">
         <div style={{ textAlign: 'center', padding: '40px 20px' }}>
           <div className="loading" style={{ marginBottom: '16px' }} />
-          <p style={{ color: '#6b7280' }}>Loading leaderboard...</p>
+          <p style={{ 
+            color: '#A78BFA',
+            fontFamily: 'Exo 2, sans-serif',
+            fontSize: '16px'
+          }}>Loading leaderboard...</p>
         </div>
       </div>
     )

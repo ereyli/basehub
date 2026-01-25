@@ -68,16 +68,27 @@ const GMGame = () => {
     return (
       <div className="card">
         <div style={{ textAlign: 'center', padding: '40px' }}>
-          <Sun size={48} style={{ color: '#10b981', marginBottom: '16px' }} />
+          <Sun size={64} style={{ 
+            color: '#FBBF24', 
+            marginBottom: '20px',
+            filter: 'drop-shadow(0 0 20px rgba(251, 191, 36, 0.8))'
+          }} />
           <h2 style={{ 
-            fontSize: '24px', 
-            fontWeight: 'bold', 
-            marginBottom: '8px',
-            color: '#1f2937'
+            fontSize: '28px', 
+            fontWeight: '800', 
+            marginBottom: '12px',
+            color: '#F8FAFC',
+            fontFamily: 'Orbitron, sans-serif',
+            letterSpacing: '0.05em',
+            textShadow: '0 0 15px rgba(139, 92, 246, 0.6)'
           }}>
             Connect Wallet to Play
           </h2>
-          <p style={{ color: '#6b7280' }}>
+          <p style={{ 
+            color: '#A78BFA',
+            fontFamily: 'Exo 2, sans-serif',
+            fontSize: '16px'
+          }}>
             Please connect your wallet to start sending GM messages
           </p>
         </div>
@@ -101,25 +112,36 @@ const GMGame = () => {
         <div 
           className="game-icon"
           style={{ 
-            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-            margin: '0 auto 16px'
+            background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
+            margin: '0 auto 20px',
+            boxShadow: '0 8px 24px rgba(139, 92, 246, 0.5), 0 0 30px rgba(139, 92, 246, 0.4)',
+            border: '1px solid rgba(139, 92, 246, 0.5)'
           }}
         >
           <img src="/crypto-logos/basahub logo/GM.png" alt="GM Game" loading="lazy" style={{ width: '60px', height: '60px', borderRadius: '16px' }} />
         </div>
         <h1 style={{ 
-          fontSize: '32px', 
-          fontWeight: 'bold', 
-          marginBottom: '8px',
-          color: '#1f2937'
+          fontSize: '36px', 
+          fontWeight: '800', 
+          marginBottom: '12px',
+          color: '#F8FAFC',
+          fontFamily: 'Orbitron, sans-serif',
+          letterSpacing: '0.05em',
+          textShadow: '0 0 20px rgba(59, 130, 246, 0.6), 0 0 40px rgba(59, 130, 246, 0.3)',
+          background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text'
         }}>
           GM Game
         </h1>
         <p style={{ 
-          color: '#6b7280',
-          fontSize: '16px'
+          color: '#A78BFA',
+          fontSize: '18px',
+          fontFamily: 'Exo 2, sans-serif',
+          fontWeight: '400'
         }}>
-          Send a GM (Good Morning) message and earn XP!
+          Send a GM (Good Morning) message and earn XP! 🌅
         </p>
       </div>
 
@@ -161,10 +183,12 @@ const GMGame = () => {
 
       <div style={{ marginTop: '24px' }}>
         <h3 style={{ 
-          fontSize: '18px', 
-          fontWeight: 'bold', 
+          fontSize: '20px', 
+          fontWeight: '700', 
           marginBottom: '16px',
-          color: '#1f2937'
+          color: '#F8FAFC',
+          fontFamily: 'Orbitron, sans-serif',
+          letterSpacing: '0.03em'
         }}>
           Your GM Message:
         </h3>
@@ -177,12 +201,15 @@ const GMGame = () => {
             placeholder="Enter your GM message..."
             style={{
               width: '100%',
-              padding: '12px 16px',
-              border: '2px solid rgba(16, 185, 129, 0.2)',
-              borderRadius: '8px',
+              padding: '14px 18px',
+              border: '1px solid rgba(139, 92, 246, 0.4)',
+              borderRadius: '12px',
               fontSize: '16px',
-              background: 'rgba(255, 255, 255, 0.8)',
-              color: '#1f2937'
+              background: 'rgba(15, 15, 35, 0.8)',
+              color: '#F8FAFC',
+              fontFamily: 'Exo 2, sans-serif',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 4px 16px rgba(139, 92, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
             }}
           />
         </div>
@@ -193,7 +220,17 @@ const GMGame = () => {
           className="btn btn-primary"
           style={{ 
             width: '100%',
-            background: isLoading || !message.trim() ? '#9ca3af' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+            background: isLoading || !message.trim() 
+              ? 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)' 
+              : 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+            boxShadow: isLoading || !message.trim() 
+              ? 'none' 
+              : '0 8px 24px rgba(139, 92, 246, 0.5), 0 0 20px rgba(139, 92, 246, 0.3)',
+            border: isLoading || !message.trim() 
+              ? '1px solid rgba(107, 114, 128, 0.3)' 
+              : '1px solid rgba(139, 92, 246, 0.4)',
+            fontFamily: 'Exo 2, sans-serif',
+            fontWeight: '600'
           }}
         >
           {isLoading ? (

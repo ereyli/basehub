@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { useAccount, useSwitchChain } from 'wagmi'
+import { useAccount } from 'wagmi'
 import { NETWORKS, getNetworkConfig } from '../config/networks'
+import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { Wifi, ChevronDown } from 'lucide-react'
 
 const NetworkSelector = () => {
   const { chainId, isConnected } = useAccount()
-  const { switchChain, isPending } = useSwitchChain()
+  const { switchToNetwork } = useNetworkCheck()
   const [isOpen, setIsOpen] = useState(false)
+  const [isPending, setIsPending] = useState(false)
   const dropdownRef = useRef(null)
   
   // Debug logging - ALWAYS log to see if component is rendering
@@ -72,47 +74,35 @@ const NetworkSelector = () => {
       setIsOpen(false)
       return
     }
-    if (targetChainId !== currentChainId) {
-      console.log('🔄 Switching to network:', targetChainId)
+    
+    // Check if already on target network
+    if (targetChainId === currentChainId) {
       setIsOpen(false)
+      return
+    }
+    
+    console.log('🔄 Switching to network:', targetChainId)
+    setIsOpen(false)
+    setIsPending(true)
+    
+    try {
+      // Use switchToNetwork which automatically handles adding network if needed
+      await switchToNetwork(targetChainId)
+      console.log('✅ Network switch successful')
       
-      try {
-        await switchChain({ chainId: targetChainId })
-        console.log('✅ Network switch successful')
-      } catch (error) {
-        console.error('❌ Network switch failed:', error)
-        
-        // If chain not added, try to add it
-        if (error.code === 4902 || error.message?.includes('not been added')) {
-          const targetNetwork = Object.values(NETWORKS).find(net => net.chainId === targetChainId)
-          if (targetNetwork && typeof window.ethereum !== 'undefined') {
-            console.log('➕ Adding network to wallet:', targetNetwork.chainName)
-            try {
-              await window.ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [{
-                  chainId: `0x${targetChainId.toString(16)}`,
-                  chainName: targetNetwork.chainName,
-                  nativeCurrency: targetNetwork.nativeCurrency,
-                  rpcUrls: targetNetwork.rpcUrls,
-                  blockExplorerUrls: targetNetwork.blockExplorerUrls,
-                }],
-              })
-              console.log('✅ Network added, retrying switch...')
-              // Retry switch after adding
-              await switchChain({ chainId: targetChainId })
-            } catch (addError) {
-              console.error('❌ Failed to add network:', addError)
-              alert(`Failed to add ${targetNetwork.chainName} network. Please add it manually in your wallet.`)
-            }
-          }
-        } else if (error.code === 4001) {
-          console.log('ℹ️ User rejected network switch')
-        } else {
-          console.error('❌ Network switch error:', error)
-          alert(`Failed to switch network: ${error.message || 'Unknown error'}`)
-        }
+      // Wait a moment for the network switch to complete
+      await new Promise(resolve => setTimeout(resolve, 500))
+    } catch (error) {
+      console.error('❌ Network switch failed:', error)
+      
+      if (error.message?.includes('cancelled') || error.message?.includes('rejected')) {
+        console.log('ℹ️ User rejected network switch')
+        // Don't show alert for user cancellation
+      } else {
+        alert(`Failed to switch network: ${error.message || 'Unknown error'}`)
       }
+    } finally {
+      setIsPending(false)
     }
   }
   

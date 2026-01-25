@@ -74,20 +74,21 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 20px;
-  background: #3b82f6;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 .connect-wallet-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(59, 130, 246, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
 }
 
 .wallet-connected {
@@ -160,13 +161,13 @@ body {
 /* Farcaster-specific game card styles */
 .farcaster-app .game-card {
   margin-bottom: 8px;
-  border-radius: 12px;
-  background: rgba(30, 41, 59, 0.95);
-  backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
-  padding: 12px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.95) 100%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 14px;
   cursor: pointer;
   position: relative;
   overflow: hidden;
@@ -174,8 +175,9 @@ body {
 }
 
 .farcaster-app .game-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .farcaster-app .game-card:active {
@@ -237,13 +239,20 @@ body {
 
 /* Farcaster-specific card styles */
 .farcaster-app .card {
-  background: rgba(30, 41, 59, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.95) 100%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
   margin-bottom: 24px;
   color: #e5e7eb;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.farcaster-app .card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 /* Farcaster-specific welcome section */
@@ -1186,15 +1195,15 @@ body {
   right: 0;
   z-index: 1000;
   background: rgba(30, 41, 59, 0.95);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .web-header.scrolled {
   background: rgba(30, 41, 59, 0.98);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .header-container {
@@ -1214,31 +1223,34 @@ body {
 .logo-section {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   text-decoration: none;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 4px;
+  border-radius: 12px;
 }
 
 .logo-section:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
+  background: rgba(59, 130, 246, 0.05);
 }
 
 .logo-icon {
   width: 48px;
   height: 48px;
-  background: #3b82f6;
-  border-radius: 24px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
-  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .logo-section:hover .logo-icon {
-  transform: scale(1.05) rotate(5deg);
-  box-shadow: 0 12px 24px rgba(59, 130, 246, 0.4);
+  transform: scale(1.08) rotate(5deg);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.15);
 }
 
 .logo-text {
@@ -1276,10 +1288,19 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  background: rgba(255, 193, 7, 0.1);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 193, 7, 0.2);
+  padding: 10px 18px;
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.12) 0%, rgba(245, 158, 11, 0.08) 100%);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 193, 7, 0.25);
+  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
+}
+
+.header-xp-display:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(255, 193, 7, 0.2);
+  border-color: rgba(255, 193, 7, 0.35);
 }
 
 .header-xp-value {
@@ -1301,10 +1322,18 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 16px;
-  background: rgba(59, 130, 246, 0.05);
-  border-radius: 12px;
-  border: 1px solid rgba(59, 130, 246, 0.1);
+  padding: 10px 18px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.05) 100%);
+  border-radius: 14px;
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.proof-of-usage:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.25);
 }
 
 .proof-section {
@@ -1389,21 +1418,23 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
-  background: rgba(59, 130, 246, 0.1);
+  padding: 10px 18px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(37, 99, 235, 0.08) 100%);
   color: #3b82f6;
   text-decoration: none;
-  border-radius: 10px;
+  border-radius: 12px;
   font-weight: 600;
   font-size: 14px;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid rgba(59, 130, 246, 0.2);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
 }
 
 .nav-button:hover {
-  background: rgba(59, 130, 246, 0.2);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.15) 100%);
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.3);
 }
 
 .network-status {
@@ -1757,9 +1788,7 @@ body {
 /* Mobile browser optimizations for web-app (not Farcaster) */
 @media (max-width: 768px) {
   /* Mobile sidebar is hidden by default, shown via toggle button */
-  .web-app .web-bottom-nav {
-    /* Sidebar visibility controlled by component state */
-  }
+  /* Sidebar visibility controlled by component state */
   
   /* Remove left padding from container - sidebar is hidden */
   .web-app main.container,
@@ -1988,23 +2017,31 @@ body {
 }
 
 .btn-primary {
-  background: #3b82f6;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(59, 130, 246, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.08) 100%);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.15) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .btn-disabled {
@@ -2014,12 +2051,20 @@ body {
 
 /* Card styles */
 .card {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.95) 100%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #e5e7eb;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 /* Loading spinner */
@@ -2098,19 +2143,40 @@ body {
 }
 
 .game-card {
-  background: rgba(30, 41, 59, 0.95);
-  border-radius: 16px;
-  padding: 20px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.95) 100%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 20px;
+  padding: 24px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: #e5e7eb;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.5), transparent);
+  opacity: 0;
+  transition: opacity 0.4s ease;
 }
 
 .game-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.game-card:hover::before {
+  opacity: 1;
 }
 
 .game-icon {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useAccount, useChainId, useSwitchChain } from 'wagmi'
+import { useAccount, useChainId } from 'wagmi'
+import { useRainbowKitSwitchChain } from '../hooks/useRainbowKitSwitchChain'
 import { getLeaderboard } from '../utils/xpUtils'
 import { useTransactions } from '../hooks/useTransactions'
 import { useX402Payment } from '../hooks/useX402Payment'
@@ -15,7 +16,7 @@ import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, 
 const Home = () => {
   const { isConnected } = useAccount()
   const chainId = useChainId()
-  const { switchChain } = useSwitchChain()
+  const { switchChain } = useRainbowKitSwitchChain()
   const { sendGMTransaction, sendGNTransaction, isLoading: transactionLoading } = useTransactions()
   
   // x402 Payment hook - uses x402-fetch (handles wallet UI automatically)
