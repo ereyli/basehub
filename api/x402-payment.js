@@ -14,7 +14,7 @@ const app = new Hono()
 const RECEIVING_ADDRESS = process.env.X402_RECEIVING_ADDRESS || '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
 
 // Payment configuration
-const PRICE = '$0.10' // 0.1 USDC
+const PRICE = '$0.05' // 0.05 USDC (wheel spin cost)
 const NETWORK = process.env.X402_NETWORK || 'base' // 'base' for mainnet, 'base-sepolia' for testnet
 
 // Configure facilitator
