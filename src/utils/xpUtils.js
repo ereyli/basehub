@@ -118,17 +118,28 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
   let nftCount = 0
   let multiplier = 1
   
+  // Maximum NFT count for multiplier (cap at 10 NFTs)
+  const MAX_NFT_FOR_MULTIPLIER = 10
+  
   // Skip NFT bonus for certain game types (like NFT Wheel)
   if (!skipNFTBonus) {
     try {
       nftCount = await getNFTCount(walletAddress)
       if (nftCount > 0) {
-        // Multiplier formula: nftCount + 1
-        // 1 NFT = 2x, 2 NFT = 3x, 3 NFT = 4x, etc.
-        multiplier = nftCount + 1
+        // Cap NFT count at MAX_NFT_FOR_MULTIPLIER for multiplier calculation
+        // Multiplier formula: min(nftCount, MAX_NFT_FOR_MULTIPLIER) + 1
+        // 1 NFT = 2x, 2 NFT = 3x, ..., 10 NFT = 11x (max)
+        // 11+ NFT = still 11x (capped)
+        const effectiveNFTCount = Math.min(nftCount, MAX_NFT_FOR_MULTIPLIER)
+        multiplier = effectiveNFTCount + 1
         bonusXP = xpAmount * (multiplier - 1) // Bonus is the extra XP beyond base
         finalXP = xpAmount * multiplier
-        console.log(`🎁 ${nftCount} NFT${nftCount > 1 ? 's' : ''} detected, applying ${multiplier}x XP: ${xpAmount} -> ${finalXP}`)
+        
+        if (nftCount > MAX_NFT_FOR_MULTIPLIER) {
+          console.log(`🎁 ${nftCount} NFT${nftCount > 1 ? 's' : ''} detected (capped at ${MAX_NFT_FOR_MULTIPLIER} for multiplier), applying ${multiplier}x XP: ${xpAmount} -> ${finalXP}`)
+        } else {
+          console.log(`🎁 ${nftCount} NFT${nftCount > 1 ? 's' : ''} detected, applying ${multiplier}x XP: ${xpAmount} -> ${finalXP}`)
+        }
         showXPToast(multiplier, nftCount, finalXP, xpAmount)
       }
     } catch (err) {
