@@ -212,36 +212,24 @@ const NFTWheelGame = () => {
       {/* Header */}
       <div style={{
         textAlign: 'center',
-        marginBottom: '40px'
+        marginBottom: '48px'
       }}>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '12px',
-          background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(124, 58, 237, 0.2) 100%)',
-          padding: '16px 32px',
-          borderRadius: '20px',
-          border: '2px solid rgba(139, 92, 246, 0.3)',
-          marginBottom: '16px'
+        <h1 style={{
+          fontSize: '42px',
+          fontWeight: '800',
+          color: '#f1f5f9',
+          margin: '0 0 12px 0',
+          letterSpacing: '-1px'
         }}>
-          <Sparkles size={32} color="#8b5cf6" />
-          <h1 style={{
-            fontSize: '32px',
-            fontWeight: 'bold',
-            background: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            margin: 0
-          }}>
-            NFT Wheel of Fortune
-          </h1>
-        </div>
+          Wheel of Fortune
+        </h1>
         <p style={{
-          color: '#94a3b8',
-          fontSize: '18px',
-          margin: '8px 0 0'
+          color: '#64748b',
+          fontSize: '16px',
+          margin: 0,
+          fontWeight: '500'
         }}>
-          Spin to win massive XP rewards! 🎰
+          Exclusive rewards for NFT holders
         </p>
       </div>
 
@@ -299,61 +287,107 @@ const NFTWheelGame = () => {
         </div>
       ) : (
         <>
-          {/* Spin Info Card */}
+          {/* Stats Bar */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '16px',
-            marginBottom: '40px'
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '12px',
+            marginBottom: '48px',
+            flexWrap: 'wrap'
           }}>
-            {/* Spins Remaining */}
+            {/* Spins */}
             <div style={{
-              padding: '20px',
-              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%)',
-              borderRadius: '16px',
-              border: '2px solid rgba(59, 130, 246, 0.3)',
-              textAlign: 'center'
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '14px 24px',
+              background: 'rgba(15, 23, 42, 0.6)',
+              backdropFilter: 'blur(12px)',
+              borderRadius: '14px',
+              border: '1px solid rgba(71, 85, 105, 0.4)'
             }}>
-              <RotateCw size={24} color="#3b82f6" style={{ marginBottom: '8px' }} />
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#3b82f6', marginBottom: '4px' }}>
-                {spinsRemaining}
+              <div style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <RotateCw size={18} color="white" />
               </div>
-              <div style={{ color: '#94a3b8', fontSize: '14px' }}>
-                {spinsRemaining === 1 ? 'Spin Remaining' : 'Spins Remaining'}
+              <div>
+                <div style={{ fontSize: '20px', fontWeight: '700', color: '#f1f5f9', lineHeight: 1 }}>
+                  {spinsRemaining}/3
+                </div>
+                <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>
+                  Daily Spins
+                </div>
               </div>
             </div>
 
-            {/* Next Reset */}
+            {/* Timer */}
             <div style={{
-              padding: '20px',
-              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(124, 58, 237, 0.15) 100%)',
-              borderRadius: '16px',
-              border: '2px solid rgba(139, 92, 246, 0.3)',
-              textAlign: 'center'
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '14px 24px',
+              background: 'rgba(15, 23, 42, 0.6)',
+              backdropFilter: 'blur(12px)',
+              borderRadius: '14px',
+              border: '1px solid rgba(71, 85, 105, 0.4)'
             }}>
-              <Clock size={24} color="#8b5cf6" style={{ marginBottom: '8px' }} />
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#8b5cf6', marginBottom: '4px', fontFamily: 'monospace' }}>
-                {timeUntilReset || '--:--:--'}
+              <div style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Clock size={18} color="white" />
               </div>
-              <div style={{ color: '#94a3b8', fontSize: '14px' }}>
-                Until Reset
+              <div>
+                <div style={{ fontSize: '20px', fontWeight: '700', color: '#f1f5f9', lineHeight: 1, fontFamily: 'ui-monospace, monospace' }}>
+                  {timeUntilReset || '--:--:--'}
+                </div>
+                <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>
+                  Reset Timer
+                </div>
               </div>
             </div>
 
             {/* NFT Status */}
             <div style={{
-              padding: '20px',
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)',
-              borderRadius: '16px',
-              border: '2px solid rgba(16, 185, 129, 0.3)',
-              textAlign: 'center'
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '14px 24px',
+              background: 'rgba(15, 23, 42, 0.6)',
+              backdropFilter: 'blur(12px)',
+              borderRadius: '14px',
+              border: '1px solid rgba(71, 85, 105, 0.4)'
             }}>
-              <CheckCircle size={24} color="#10b981" style={{ marginBottom: '8px' }} />
-              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#10b981', marginBottom: '4px' }}>
-                NFT Verified
+              <div style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <CheckCircle size={18} color="white" />
               </div>
-              <div style={{ color: '#94a3b8', fontSize: '14px' }}>
-                Ready to Spin!
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: '700', color: '#10b981', lineHeight: 1.2 }}>
+                  Verified
+                </div>
+                <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>
+                  NFT Holder
+                </div>
               </div>
             </div>
           </div>
