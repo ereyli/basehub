@@ -80,66 +80,63 @@ const NFTWheelGame = () => {
   }, [winningSegment])
 
   // Load recent winners from Supabase
-  useEffect(() => {
-    const loadRecentWinners = async () => {
-      console.log('🔄 Loading recent winners...', { supabase: !!supabase, hasFrom: !!(supabase?.from) })
-      
-      if (!supabase || !supabase.from) {
-        console.log('⚠️ Supabase not available, skipping recent winners')
-        setRecentWinners([])
-        setLoadingWinners(false)
-        return
-      }
-
-      try {
-        setLoadingWinners(true)
-        
-        // Get recent winners from nft_wheel_spins table
-        console.log('📡 Querying Supabase for nft_wheel_spins...')
-        const { data, error } = await supabase
-          .from('nft_wheel_spins')
-          .select('wallet_address, final_xp, created_at')
-          .order('created_at', { ascending: false })
-          .limit(10)
-        
-        console.log('📊 nft_wheel_spins query result:', { 
-          data, 
-          error, 
-          dataLength: data?.length,
-          sample: data?.slice(0, 3)
-        })
-        
-        if (error) {
-          console.error('❌ Error loading recent winners:', error)
-          setRecentWinners([])
-          return
-        }
-        
-        if (data && data.length > 0) {
-          // Map to expected format
-          const winners = data.map(t => ({
-            wallet_address: t.wallet_address || '',
-            xp_earned: t.final_xp || 0,
-            created_at: t.created_at
-          }))
-          setRecentWinners(winners)
-          console.log('✅ Recent winners loaded:', winners.length, winners)
-        } else {
-          console.log('⚠️ No recent winners data found in nft_wheel_spins')
-          setRecentWinners([])
-        }
-      } catch (err) {
-        console.error('Failed to load recent winners:', err)
-      } finally {
-        setLoadingWinners(false)
-      }
+  const loadRecentWinners = async () => {
+    console.log('🔄 Loading recent winners...', { supabase: !!supabase, hasFrom: !!(supabase?.from) })
+    
+    if (!supabase || !supabase.from) {
+      console.log('⚠️ Supabase not available, skipping recent winners')
+      setRecentWinners([])
+      setLoadingWinners(false)
+      return
     }
 
+    try {
+      setLoadingWinners(true)
+      
+      // Get recent winners from nft_wheel_spins table
+      console.log('📡 Querying Supabase for nft_wheel_spins...')
+      const { data, error } = await supabase
+        .from('nft_wheel_spins')
+        .select('wallet_address, final_xp, created_at')
+        .order('created_at', { ascending: false })
+        .limit(10)
+      
+      console.log('📊 nft_wheel_spins query result:', { 
+        data, 
+        error, 
+        dataLength: data?.length,
+        sample: data?.slice(0, 3)
+      })
+      
+      if (error) {
+        console.error('❌ Error loading recent winners:', error)
+        setRecentWinners([])
+        return
+      }
+      
+      if (data && data.length > 0) {
+        // Map to expected format
+        const winners = data.map(t => ({
+          wallet_address: t.wallet_address || '',
+          xp_earned: t.final_xp || 0,
+          created_at: t.created_at
+        }))
+        setRecentWinners(winners)
+        console.log('✅ Recent winners loaded:', winners.length, winners)
+      } else {
+        console.log('⚠️ No recent winners data found in nft_wheel_spins')
+        setRecentWinners([])
+      }
+    } catch (err) {
+      console.error('Failed to load recent winners:', err)
+    } finally {
+      setLoadingWinners(false)
+    }
+  }
+
+  // Load winners on mount and when supabase changes
+  useEffect(() => {
     loadRecentWinners()
-    
-    // Refresh every 10 seconds
-    const interval = setInterval(loadRecentWinners, 10000)
-    return () => clearInterval(interval)
   }, [supabase])
 
   const handleSpin = async () => {
@@ -162,6 +159,11 @@ const NFTWheelGame = () => {
     } else {
       await completeSpin()
     }
+    
+    // Refresh recent winners after spin completes
+    setTimeout(() => {
+      loadRecentWinners()
+    }, 2000) // Wait 2 seconds for data to be saved to Supabase
   }
 
   const winningSegmentData = winningSegment !== null ? WHEEL_VISUAL_ORDER.find(s => s.id === winningSegment) : null
