@@ -321,20 +321,23 @@ export const useNFTWheel = () => {
 
   // Complete spin and award XP
   const completeSpin = async () => {
-    if (!address || winningSegment === null) {
+    // Store current winning segment before any state changes
+    const currentWinningSegment = winningSegment
+    
+    if (!address || currentWinningSegment === null) {
       setIsSpinning(false)
+      setWinningSegment(null)
       setLoading(false)
       return
     }
 
-    // Immediately stop spinning to prevent infinite rotation
-    setIsSpinning(false)
-
     try {
       // Find segment by id (not by index)
-      const segment = WHEEL_SEGMENTS.find(s => s.id === winningSegment)
+      const segment = WHEEL_SEGMENTS.find(s => s.id === currentWinningSegment)
       if (!segment) {
-        console.error('❌ Segment not found for id:', winningSegment)
+        console.error('❌ Segment not found for id:', currentWinningSegment)
+        setIsSpinning(false)
+        setWinningSegment(null)
         setLoading(false)
         return
       }
@@ -393,9 +396,19 @@ export const useNFTWheel = () => {
       setSpinsRemaining(prev => Math.max(0, prev - 1))
 
       console.log(`✅ Spin completed! ${finalXP} XP added to total XP`)
+      
+      // Reset states after a delay to allow result to be displayed
+      setTimeout(() => {
+        setIsSpinning(false)
+        setWinningSegment(null)
+        console.log('🔄 Wheel reset for next spin')
+      }, 3000)
+      
     } catch (err) {
       console.error('Error completing spin:', err)
       setError(err.message)
+      setIsSpinning(false)
+      setWinningSegment(null)
     } finally {
       setLoading(false)
     }

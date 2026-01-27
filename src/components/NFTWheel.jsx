@@ -181,9 +181,10 @@ const NFTWheel = ({
     }
   }, [isSpinning, winningSegment]) // Only depend on these two values
 
-  // Reset rotation when spin completes and result is shown
+  // Reset rotation when winningSegment becomes null (after result is shown)
   useEffect(() => {
-    if (!isSpinning && winningSegment === null) {
+    if (winningSegment === null && !isSpinning) {
+      console.log('🔄 NFTWheel: Resetting for next spin')
       setShowResult(false)
       // Reset rotation to 0 for next spin (with no transition)
       setIsResetting(true)
@@ -194,7 +195,7 @@ const NFTWheel = ({
       }, 50)
       return () => clearTimeout(resetTimer)
     }
-  }, [isSpinning, winningSegment])
+  }, [winningSegment, isSpinning])
 
   const winningSegmentData = winningSegment !== null 
     ? segments.find(s => s.id === winningSegment) 
