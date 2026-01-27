@@ -6,15 +6,15 @@ import { wrapFetchWithPayment } from 'x402-fetch'
 
 // XP reward segments with weighted probabilities and colors
 // Rewards: 5K, 10K, 20K, 40K, 80K, 160K, 320K (jackpot)
-// Balanced distribution for fair gameplay
+// Jackpot has 5% chance for exciting gameplay
 const WHEEL_SEGMENTS = [
-  { id: 0, xp: 5000, label: '5K', color: '#3b82f6', weight: 35 },       // 35% chance - blue
+  { id: 0, xp: 5000, label: '5K', color: '#3b82f6', weight: 30 },       // 30% chance - blue
   { id: 1, xp: 10000, label: '10K', color: '#10b981', weight: 25 },     // 25% chance - green
   { id: 2, xp: 20000, label: '20K', color: '#8b5cf6', weight: 18 },     // 18% chance - purple
   { id: 3, xp: 40000, label: '40K', color: '#ec4899', weight: 12 },     // 12% chance - pink
   { id: 4, xp: 80000, label: '80K', color: '#06b6d4', weight: 6 },      // 6% chance - cyan
-  { id: 5, xp: 160000, label: '160K', color: '#ef4444', weight: 3 },    // 3% chance - red
-  { id: 6, xp: 320000, label: '320K', color: '#fbbf24', weight: 1, isJackpot: true } // 1% chance - golden MEGA JACKPOT
+  { id: 5, xp: 160000, label: '160K', color: '#ef4444', weight: 4 },    // 4% chance - red
+  { id: 6, xp: 320000, label: '320K', color: '#fbbf24', weight: 5, isJackpot: true } // 5% chance - golden MEGA JACKPOT
 ]
 
 // Visual order for the wheel (320K jackpot at top, then clockwise)
