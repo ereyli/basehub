@@ -5,16 +5,16 @@ import { getNFTCount, addXP } from '../utils/xpUtils'
 import { wrapFetchWithPayment } from 'x402-fetch'
 
 // XP reward segments with weighted probabilities and colors
-// Lower rewards have higher chances, higher rewards have lower chances
-// Jackpot has 5% chance for exciting gameplay
+// Lower rewards have much higher chances, higher rewards are rare
+// Jackpot has 3% chance for exciting but rare wins
 const WHEEL_SEGMENTS = [
-  { id: 0, xp: 3500, label: '3.5K', color: '#3b82f6', weight: 35 },      // 35% chance - blue (most common)
-  { id: 1, xp: 7000, label: '7K', color: '#10b981', weight: 28 },        // 28% chance - green
-  { id: 2, xp: 14000, label: '14K', color: '#8b5cf6', weight: 18 },      // 18% chance - purple
-  { id: 3, xp: 28000, label: '28K', color: '#ec4899', weight: 8 },       // 8% chance - pink (reduced)
-  { id: 4, xp: 56000, label: '56K', color: '#06b6d4', weight: 4 },       // 4% chance - cyan (reduced)
-  { id: 5, xp: 112000, label: '112K', color: '#ef4444', weight: 2 },     // 2% chance - red (reduced)
-  { id: 6, xp: 224000, label: '224K', color: '#fbbf24', weight: 5, isJackpot: true } // 5% chance - golden MEGA JACKPOT
+  { id: 0, xp: 3500, label: '3.5K', color: '#3b82f6', weight: 40 },      // 40% chance - blue (most common)
+  { id: 1, xp: 7000, label: '7K', color: '#10b981', weight: 30 },        // 30% chance - green
+  { id: 2, xp: 14000, label: '14K', color: '#8b5cf6', weight: 15 },      // 15% chance - purple
+  { id: 3, xp: 28000, label: '28K', color: '#ec4899', weight: 7 },       // 7% chance - pink (reduced)
+  { id: 4, xp: 56000, label: '56K', color: '#06b6d4', weight: 3 },       // 3% chance - cyan (reduced)
+  { id: 5, xp: 112000, label: '112K', color: '#ef4444', weight: 2 },     // 2% chance - red (very rare)
+  { id: 6, xp: 224000, label: '224K', color: '#fbbf24', weight: 3, isJackpot: true } // 3% chance - golden MEGA JACKPOT
 ]
 
 // Visual order for the wheel (224K jackpot at top, then clockwise)

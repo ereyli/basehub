@@ -21,6 +21,7 @@ const NFTWheel = ({
 }) => {
   const [rotation, setRotation] = useState(0)
   const [showResult, setShowResult] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
   const canvasRef = useRef(null)
   const spinDuration = 4000
 
@@ -180,10 +181,18 @@ const NFTWheel = ({
     }
   }, [isSpinning, winningSegment]) // Only depend on these two values
 
-  // Reset rotation when idle
+  // Reset rotation when spin completes and result is shown
   useEffect(() => {
     if (!isSpinning && winningSegment === null) {
       setShowResult(false)
+      // Reset rotation to 0 for next spin (with no transition)
+      setIsResetting(true)
+      setRotation(0)
+      // Allow a brief moment for the reset before enabling transitions again
+      const resetTimer = setTimeout(() => {
+        setIsResetting(false)
+      }, 50)
+      return () => clearTimeout(resetTimer)
     }
   }, [isSpinning, winningSegment])
 
@@ -245,7 +254,7 @@ const NFTWheel = ({
             0 20px 50px rgba(0, 0, 0, 0.5)
           `,
           transform: `rotate(${rotation}deg)`,
-          transition: isSpinning 
+          transition: (isSpinning && !isResetting)
             ? `transform ${spinDuration}ms cubic-bezier(0.2, 0.8, 0.3, 1)` 
             : 'none',
           zIndex: 1
