@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Sparkles, Trophy, Gift } from 'lucide-react'
 
-// Wheel segments with their properties
+// Wheel segments with their properties (visual order - 100K jackpot at top)
 const DEFAULT_SEGMENTS = [
-  { id: 6, xp: 50000, label: '50K', color: '#fbbf24', isJackpot: true },
-  { id: 0, xp: 2000, label: '2K', color: '#3b82f6' },
-  { id: 1, xp: 3000, label: '3K', color: '#10b981' },
-  { id: 2, xp: 5000, label: '5K', color: '#8b5cf6' },
-  { id: 3, xp: 7500, label: '7.5K', color: '#ec4899' },
-  { id: 4, xp: 10000, label: '10K', color: '#06b6d4' },
-  { id: 5, xp: 15000, label: '15K', color: '#ef4444' }
+  { id: 6, xp: 100000, label: '100K', color: '#fbbf24', isJackpot: true },
+  { id: 0, xp: 5000, label: '5K', color: '#3b82f6' },
+  { id: 1, xp: 7500, label: '7.5K', color: '#10b981' },
+  { id: 2, xp: 10000, label: '10K', color: '#8b5cf6' },
+  { id: 3, xp: 15000, label: '15K', color: '#ec4899' },
+  { id: 4, xp: 25000, label: '25K', color: '#06b6d4' },
+  { id: 5, xp: 50000, label: '50K', color: '#ef4444' }
 ]
 
 const NFTWheel = ({ 
@@ -123,29 +123,39 @@ const NFTWheel = ({
   useEffect(() => {
     // Only start spinning when both conditions are met
     if (isSpinning && winningSegment !== null) {
-      console.log('🎰 NFTWheel: Starting spin animation for segment:', winningSegment)
+      console.log('🎰 NFTWheel: Starting spin animation for segment ID:', winningSegment)
       setShowResult(false)
       
-      // Find visual index of winning segment
+      // Find visual index of winning segment in the segments array
       const visualIndex = segments.findIndex(seg => seg.id === winningSegment)
       if (visualIndex === -1) {
         console.error('❌ NFTWheel: Winning segment not found:', winningSegment, 'in segments:', segments.map(s => s.id))
         return
       }
 
-      console.log('🎯 NFTWheel: Visual index:', visualIndex, 'Segment angle:', segmentAngle)
+      const winningSegmentData = segments[visualIndex]
+      console.log('🎯 NFTWheel: Winning segment:', winningSegmentData.label, 'at visual index:', visualIndex)
 
-      // Calculate rotation: multiple spins + land on winning segment
-      // The pointer is at top (12 o'clock), so we need to rotate to bring the winning segment there
-      const spins = 5
-      const targetAngle = spins * 360 + (360 - visualIndex * segmentAngle - segmentAngle / 2)
+      // Calculate rotation to land on the winning segment
+      // Wheel is drawn starting from -90 degrees (top), going clockwise
+      // Each segment spans segmentAngle degrees
+      // We want the CENTER of the winning segment to align with the pointer at top
       
-      console.log('🔄 NFTWheel: Rotating by', targetAngle, 'degrees')
-      setRotation(prev => prev + targetAngle)
+      const spins = 5 // Number of full rotations for dramatic effect
+      
+      // The first segment (index 0) starts at the top (0 degrees after -90 offset in drawing)
+      // To land on segment at visualIndex, we need to rotate so that segment's center is at top
+      // Segment center is at: visualIndex * segmentAngle + segmentAngle/2
+      // We need to rotate BACKWARDS (clockwise in CSS) to bring it to top
+      const segmentCenterAngle = visualIndex * segmentAngle + segmentAngle / 2
+      const targetRotation = spins * 360 + (360 - segmentCenterAngle)
+      
+      console.log('🔄 NFTWheel: Segment center at', segmentCenterAngle, 'degrees, rotating by', targetRotation, 'degrees')
+      setRotation(prev => prev + targetRotation)
 
       // Show result after spin animation completes (spinDuration = 4000ms)
       const resultTimer = setTimeout(() => {
-        console.log('✅ NFTWheel: Spin complete, showing result')
+        console.log('✅ NFTWheel: Spin complete, showing result:', winningSegmentData.label, winningSegmentData.xp, 'XP')
         setShowResult(true)
         
         // Call onSpinComplete callback after a brief delay to show the result

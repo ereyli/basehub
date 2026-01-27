@@ -5,25 +5,27 @@ import { getNFTCount, addXP } from '../utils/xpUtils'
 import { wrapFetchWithPayment } from 'x402-fetch'
 
 // XP reward segments with weighted probabilities and colors
+// Minimum 5K XP, balanced distribution
 const WHEEL_SEGMENTS = [
-  { id: 0, xp: 2000, label: '2K', color: '#3b82f6', weight: 30 },      // 30% chance - blue
-  { id: 1, xp: 3000, label: '3K', color: '#10b981', weight: 25 },      // 25% chance - green
-  { id: 2, xp: 5000, label: '5K', color: '#8b5cf6', weight: 20 },      // 20% chance - purple
-  { id: 3, xp: 7500, label: '7.5K', color: '#ec4899', weight: 12 },    // 12% chance - pink
-  { id: 4, xp: 10000, label: '10K', color: '#06b6d4', weight: 8 },     // 8% chance - cyan
-  { id: 5, xp: 15000, label: '15K', color: '#ef4444', weight: 4 },     // 4% chance - red
-  { id: 6, xp: 50000, label: '50K', color: '#fbbf24', weight: 1, isJackpot: true } // 1% chance - golden MEGA JACKPOT
+  { id: 0, xp: 5000, label: '5K', color: '#3b82f6', weight: 30 },       // 30% chance - blue
+  { id: 1, xp: 7500, label: '7.5K', color: '#10b981', weight: 25 },     // 25% chance - green
+  { id: 2, xp: 10000, label: '10K', color: '#8b5cf6', weight: 20 },     // 20% chance - purple
+  { id: 3, xp: 15000, label: '15K', color: '#ec4899', weight: 12 },     // 12% chance - pink
+  { id: 4, xp: 25000, label: '25K', color: '#06b6d4', weight: 8 },      // 8% chance - cyan
+  { id: 5, xp: 50000, label: '50K', color: '#ef4444', weight: 4 },      // 4% chance - red
+  { id: 6, xp: 100000, label: '100K', color: '#fbbf24', weight: 1, isJackpot: true } // 1% chance - golden MEGA JACKPOT
 ]
 
-// Visual order for the wheel (50K at top, then clockwise)
+// Visual order for the wheel (100K jackpot at top, then clockwise)
+// This MUST match the order segments are drawn on the wheel
 export const WHEEL_VISUAL_ORDER = [
-  { id: 6, xp: 50000, label: '50K', color: '#fbbf24', isJackpot: true },
-  { id: 0, xp: 2000, label: '2K', color: '#3b82f6' },
-  { id: 1, xp: 3000, label: '3K', color: '#10b981' },
-  { id: 2, xp: 5000, label: '5K', color: '#8b5cf6' },
-  { id: 3, xp: 7500, label: '7.5K', color: '#ec4899' },
-  { id: 4, xp: 10000, label: '10K', color: '#06b6d4' },
-  { id: 5, xp: 15000, label: '15K', color: '#ef4444' }
+  { id: 6, xp: 100000, label: '100K', color: '#fbbf24', isJackpot: true },
+  { id: 0, xp: 5000, label: '5K', color: '#3b82f6' },
+  { id: 1, xp: 7500, label: '7.5K', color: '#10b981' },
+  { id: 2, xp: 10000, label: '10K', color: '#8b5cf6' },
+  { id: 3, xp: 15000, label: '15K', color: '#ec4899' },
+  { id: 4, xp: 25000, label: '25K', color: '#06b6d4' },
+  { id: 5, xp: 50000, label: '50K', color: '#ef4444' }
 ]
 
 const DAILY_SPIN_LIMIT = 3
