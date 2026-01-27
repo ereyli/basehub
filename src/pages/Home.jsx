@@ -298,6 +298,18 @@ const Home = () => {
       networks: ['base']
     },
     {
+      id: 'nft-wheel',
+      title: 'NFT Wheel of Fortune',
+      description: 'Spin to win massive XP rewards (NFT holders only)',
+      icon: <Sparkles size={40} style={{ color: 'white' }} />,
+      path: '/nft-wheel',
+      color: '#8b5cf6',
+      xpReward: '2K-50K XP',
+      bonusXP: 'MEGA JACKPOT!',
+      networks: ['base'],
+      isNFTGated: true
+    },
+    {
       id: 'x402-premium',
       title: 'x402 test',
       description: 'Pay 0.1 USDC via x402',
@@ -792,6 +804,83 @@ const Home = () => {
                   {renderNetworkLogos(['base'])}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                  <Link
+                    to="/nft-wheel"
+                    className="game-card"
+                    style={{ 
+                      textDecoration: 'none',
+                      position: 'relative',
+                      display: 'block'
+                    }}
+                  >
+                    <div style={{
+                      background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                      padding: '24px',
+                      borderRadius: '16px',
+                      color: 'white',
+                      transition: 'all 0.3s ease',
+                      minHeight: '140px',
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+                        <Sparkles size={40} style={{ color: 'white', flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <h3 style={{ 
+                            fontSize: '20px', 
+                            fontWeight: '600', 
+                            margin: '0 0 8px 0', 
+                            color: 'white', 
+                            lineHeight: '1.2',
+                            fontFamily: 'Poppins, sans-serif'
+                          }}>
+                            NFT Wheel of Fortune
+                          </h3>
+                          <p style={{ 
+                            color: 'rgba(255, 255, 255, 0.9)', 
+                            fontSize: '14px', 
+                            margin: 0, 
+                            lineHeight: '1.4',
+                            fontFamily: 'Poppins, sans-serif',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            Spin to win 2K-50K XP daily! (NFT holders only)
+                          </p>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                        <div style={{
+                          background: 'rgba(30, 41, 59, 0.95)',
+                          borderRadius: '12px',
+                          padding: '4px 10px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          color: '#fbbf24',
+                          whiteSpace: 'nowrap',
+                          lineHeight: '1.2',
+                          fontFamily: 'Poppins, sans-serif'
+                        }}>
+                          2K-50K XP
+                        </div>
+                        <div style={{
+                          background: 'rgba(251, 191, 36, 0.2)',
+                          borderRadius: '12px',
+                          padding: '4px 10px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          color: '#fbbf24',
+                          whiteSpace: 'nowrap',
+                          lineHeight: '1.2',
+                          fontFamily: 'Poppins, sans-serif',
+                          border: '1px solid rgba(251, 191, 36, 0.3)'
+                        }}>
+                          🎰 MEGA JACKPOT
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
                   <Link
                     to="/early-access"
                     className="game-card"

@@ -48,24 +48,30 @@ const Confetti = ({ active, onComplete }) => {
         overflow: 'hidden'
       }}
     >
-      {particles.map((particle) => (
-        <div
-          key={particle.id}
-          style={{
-            position: 'absolute',
-            left: `${particle.x}%`,
-            top: `${particle.y}%`,
-            width: `${particle.size}px`,
-            height: `${particle.size}px`,
-            backgroundColor: particle.color,
-            borderRadius: '50%',
-            animation: `confettiFall ${2 + Math.random()}s ease-out forwards`,
-            animationDelay: `${particle.delay}s`,
-            transform: `rotate(${particle.rotation}deg)`,
-            boxShadow: `0 0 ${particle.size}px ${particle.color}`
-          }}
-        />
-      ))}
+      {particles.map((particle) => {
+        const duration = 2 + Math.random()
+        return (
+          <div
+            key={particle.id}
+            style={{
+              position: 'absolute',
+              left: `${particle.x}%`,
+              top: `${particle.y}%`,
+              width: `${particle.size}px`,
+              height: `${particle.size}px`,
+              backgroundColor: particle.color,
+              borderRadius: '50%',
+              animationName: 'confettiFall',
+              animationDuration: `${duration}s`,
+              animationTimingFunction: 'ease-out',
+              animationFillMode: 'forwards',
+              animationDelay: `${particle.delay}s`,
+              transform: `rotate(${particle.rotation}deg)`,
+              boxShadow: `0 0 ${particle.size}px ${particle.color}`
+            }}
+          />
+        )
+      })}
       <style>{`
         @keyframes confettiFall {
           0% {
