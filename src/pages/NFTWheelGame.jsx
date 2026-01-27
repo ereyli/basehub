@@ -82,8 +82,12 @@ const NFTWheelGame = () => {
   // Load recent winners from Supabase
   useEffect(() => {
     const loadRecentWinners = async () => {
+      console.log('🔄 Loading recent winners...', { supabase: !!supabase, hasFrom: !!(supabase?.from) })
+      
       if (!supabase || !supabase.from) {
         console.log('⚠️ Supabase not available, skipping recent winners')
+        setRecentWinners([])
+        setLoadingWinners(false)
         return
       }
 
@@ -91,6 +95,7 @@ const NFTWheelGame = () => {
         setLoadingWinners(true)
         
         // Get recent NFT_WHEEL transactions from Supabase
+        console.log('📡 Querying Supabase for NFT_WHEEL transactions...')
         const { data, error } = await supabase
           .from('transactions')
           .select('wallet_address, xp_earned, created_at')
@@ -103,22 +108,22 @@ const NFTWheelGame = () => {
           return
         }
 
+        console.log('📊 Supabase query result:', { data, error, dataLength: data?.length })
+        
+        if (error) {
+          console.error('❌ Error loading recent winners:', error)
+          setRecentWinners([])
+          return
+        }
+        
         if (data && data.length > 0) {
-          // Group by wallet and get latest win for each
-          const winnersMap = new Map()
-          data.forEach(transaction => {
-            const addr = transaction.wallet_address
-            if (!winnersMap.has(addr) || new Date(transaction.created_at) > new Date(winnersMap.get(addr).created_at)) {
-              winnersMap.set(addr, transaction)
-            }
-          })
-
-          const winners = Array.from(winnersMap.values())
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-            .slice(0, 8) // Show top 8 recent winners
-
+          // Show first 10 transactions directly (no grouping)
+          const winners = data.slice(0, 10)
           setRecentWinners(winners)
-          console.log('✅ Recent winners loaded:', winners.length)
+          console.log('✅ Recent winners loaded:', winners.length, winners)
+        } else {
+          console.log('⚠️ No recent winners data found')
+          setRecentWinners([])
         }
       } catch (err) {
         console.error('Failed to load recent winners:', err)
@@ -384,128 +389,171 @@ const NFTWheelGame = () => {
             </div>
           )}
 
-          {/* Wheel Component */}
-          <NFTWheel
-            isSpinning={isSpinning}
-            winningSegment={winningSegment}
-            onSpinComplete={handleSpinComplete}
-            segments={WHEEL_VISUAL_ORDER}
-          />
-
-          {/* Recent Winners */}
-          {recentWinners.length > 0 && (
-            <div style={{
-              marginTop: '60px',
-              padding: '32px',
-              background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.8) 100%)',
-              borderRadius: '24px',
-              border: '2px solid rgba(139, 92, 246, 0.3)',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
-            }}>
+          {/* Recent Winners - Top Right Corner - Transparent */}
+          <div style={{
+            position: 'fixed',
+            top: '120px',
+            right: '180px',
+            width: '280px',
+            padding: '16px',
+            background: 'rgba(15, 23, 42, 0.15)',
+            backdropFilter: 'blur(10px)',
+            maxHeight: 'calc(100vh - 140px)',
+            overflowY: 'auto',
+            zIndex: 10
+          }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                gap: '12px',
-                marginBottom: '24px'
+                gap: '8px',
+                marginBottom: '16px'
               }}>
-                <TrendingUp size={24} color="#8b5cf6" />
+                <TrendingUp size={20} color="#8b5cf6" />
                 <h3 style={{
-                  color: '#e2e8f0',
-                  fontSize: '24px',
-                  fontWeight: '700',
-                  margin: 0,
-                  letterSpacing: '0.5px'
+                  color: '#cbd5e1',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  margin: 0
                 }}>
                   Recent Winners
                 </h3>
               </div>
               
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                gap: '12px'
-              }}>
-                {recentWinners.map((winner, index) => {
-                  const shortAddress = `${winner.wallet_address.slice(0, 6)}...${winner.wallet_address.slice(-4)}`
-                  const timeAgo = getTimeAgo(new Date(winner.created_at))
-                  
-                  return (
-                    <div
-                      key={`${winner.wallet_address}-${winner.created_at}`}
-                      style={{
-                        padding: '16px',
-                        background: 'rgba(139, 92, 246, 0.1)',
-                        borderRadius: '12px',
-                        border: '1px solid rgba(139, 92, 246, 0.2)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)'
-                        e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)'
-                        e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)'
-                      }}
-                    >
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '10px',
-                        background: index < 3 
-                          ? 'linear-gradient(135deg, #fbbf24, #f59e0b)'
-                          : 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: '700',
-                        color: 'white',
-                        fontSize: '16px'
-                      }}>
-                        {index < 3 ? '🏆' : `#${index + 1}`}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{
-                          color: '#cbd5e1',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          marginBottom: '4px',
-                          fontFamily: 'ui-monospace, monospace'
-                        }}>
-                          {shortAddress}
-                        </div>
-                        <div style={{
+              {loadingWinners ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '20px',
+                  color: '#94a3b8',
+                  fontSize: '14px'
+                }}>
+                  Loading...
+                </div>
+              ) : recentWinners.length > 0 ? (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}>
+                  {recentWinners.map((winner, index) => {
+                    const shortAddress = `${winner.wallet_address.slice(0, 6)}...${winner.wallet_address.slice(-4)}`
+                    const timeAgo = getTimeAgo(new Date(winner.created_at))
+                    
+                    return (
+                      <div
+                        key={`${winner.wallet_address}-${winner.created_at}`}
+                        style={{
+                          padding: '10px',
+                          background: 'rgba(139, 92, 246, 0.05)',
+                          borderRadius: '8px',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '6px',
-                          color: '#10b981',
-                          fontSize: '13px',
-                          fontWeight: '600'
-                        }}>
-                          <Zap size={12} />
-                          <span>+{Number(winner.xp_earned || 0).toLocaleString()} XP</span>
-                        </div>
+                          gap: '10px',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(139, 92, 246, 0.12)'
+                          e.currentTarget.style.transform = 'translateX(2px)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(139, 92, 246, 0.05)'
+                          e.currentTarget.style.transform = 'translateX(0)'
+                        }}
+                      >
                         <div style={{
-                          color: '#64748b',
-                          fontSize: '11px',
-                          marginTop: '2px'
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          background: index < 3 
+                            ? 'linear-gradient(135deg, #fbbf24, #f59e0b)'
+                            : 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: '700',
+                          color: 'white',
+                          fontSize: '14px',
+                          flexShrink: 0
                         }}>
-                          {timeAgo}
+                          {index < 3 ? '🏆' : `#${index + 1}`}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            color: '#cbd5e1',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            marginBottom: '4px',
+                            fontFamily: 'ui-monospace, monospace',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {shortAddress}
+                          </div>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            color: '#10b981',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            marginBottom: '2px'
+                          }}>
+                            <Zap size={10} />
+                            <span>+{Number(winner.xp_earned || 0).toLocaleString()} XP</span>
+                          </div>
+                          <div style={{
+                            color: '#64748b',
+                            fontSize: '10px'
+                          }}>
+                            {timeAgo}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )
-                })}
-              </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '30px 20px',
+                  color: '#64748b',
+                  fontSize: '13px'
+                }}>
+                  <Trophy size={32} color="#64748b" style={{ marginBottom: '12px', opacity: 0.5 }} />
+                  <div style={{ fontWeight: '600', marginBottom: '4px', color: '#94a3b8' }}>
+                    No winners yet
+                  </div>
+                  <div style={{ fontSize: '11px' }}>
+                    Be the first to spin!
+                  </div>
+                </div>
+              )}
             </div>
-          )}
 
-          {/* Spin Button */}
-          <div style={{ textAlign: 'center', marginTop: '40px' }}>
+          {/* Wheel Component - Centered */}
+          <div style={{ 
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            maxWidth: '600px',
+            margin: '0 auto'
+          }}>
+            <NFTWheel
+              isSpinning={isSpinning}
+              winningSegment={winningSegment}
+              onSpinComplete={handleSpinComplete}
+              segments={WHEEL_VISUAL_ORDER}
+            />
+          </div>
+
+          {/* Spin Button - Centered with Wheel */}
+          <div style={{ 
+            textAlign: 'center', 
+            marginTop: '40px',
+            maxWidth: '600px',
+            margin: '0 auto'
+          }}>
             
             {/* NFT Required Warning - show if no NFT */}
             {!hasNFT && (
