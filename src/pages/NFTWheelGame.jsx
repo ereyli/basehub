@@ -318,23 +318,6 @@ const NFTWheelGame = () => {
 
           {/* Spin Button */}
           <div style={{ textAlign: 'center', marginTop: '40px' }}>
-            {/* Cost Info - only show if has NFT */}
-            {hasNFT && (
-              <div style={{
-                marginBottom: '16px',
-                padding: '12px 24px',
-                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
-                borderRadius: '12px',
-                border: '1px solid rgba(59, 130, 246, 0.3)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}>
-                <Coins size={20} style={{ color: '#3b82f6' }} />
-                <span style={{ color: '#94a3b8', fontSize: '14px' }}>Cost per spin:</span>
-                <span style={{ color: '#3b82f6', fontSize: '18px', fontWeight: '700' }}>{spinCost}</span>
-              </div>
-            )}
             
             {/* NFT Required Warning - show if no NFT */}
             {!hasNFT && (
