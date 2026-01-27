@@ -2128,7 +2128,37 @@ export default function SwapInterface() {
                   if (displayBalance) {
                     // Use original balance value (not formatted) to avoid scientific notation issues
                     const maxAmount = parseFloat(formatUnits(displayBalance.value, displayBalance.decimals));
-                    const calculatedAmount = maxAmount * percent / 100;
+                    
+                    // For Max (100%), leave a tiny amount in wallet to avoid errors
+                    // Calculate a small buffer based on token decimals
+                    let calculatedAmount: number;
+                    if (percent === 100) {
+                      const decimals = displayBalance.decimals || 18;
+                      // Leave a small buffer to avoid rounding errors and transaction failures
+                      // For USDC (6 decimals): leave 0.01 USDC (10000 micro-units)
+                      // For ETH (18 decimals): leave 0.0001 ETH (100000000000000 wei)
+                      // For other tokens: leave 0.01% of balance or a minimum amount
+                      let buffer: number;
+                      if (decimals === 6) {
+                        // USDC/USDT: leave 0.01 (10000 micro-units)
+                        buffer = 0.01;
+                      } else if (decimals === 18) {
+                        // ETH/WETH: leave 0.0001 ETH
+                        buffer = 0.0001;
+                      } else if (decimals === 8) {
+                        // BTC-like: leave 0.00001
+                        buffer = 0.00001;
+                      } else {
+                        // Other tokens: leave 0.01% of balance or minimum 0.0001
+                        buffer = Math.max(maxAmount * 0.0001, 0.0001);
+                      }
+                      // Ensure buffer doesn't exceed 1% of balance
+                      const maxBuffer = maxAmount * 0.01;
+                      const finalBuffer = Math.min(buffer, maxBuffer);
+                      calculatedAmount = Math.max(0, maxAmount - finalBuffer);
+                    } else {
+                      calculatedAmount = maxAmount * percent / 100;
+                    }
                     
                     // Convert to string with proper precision (avoid scientific notation)
                     // Use enough decimals to preserve precision
@@ -2138,15 +2168,13 @@ export default function SwapInterface() {
                     
                     if (calculatedAmount === 0) {
                       newAmount = '0';
-                    } else if (calculatedAmount < 0.0001) {
-                      // For very small numbers, use toFixed with enough precision
-                      // Don't use parseFloat().toString() as it converts back to scientific notation
-                      newAmount = calculatedAmount.toFixed(precision);
-                      // Remove trailing zeros manually (don't use parseFloat)
-                      newAmount = newAmount.replace(/\.?0+$/, '');
                     } else {
-                      // For normal numbers, use formatNumber for display
-                      newAmount = formatNumber(calculatedAmount);
+                      // Always use toFixed with full precision to avoid rounding errors
+                      // Don't use formatNumber as it may truncate decimals
+                      // This ensures we use the exact calculated amount
+                      newAmount = calculatedAmount.toFixed(precision);
+                      // Remove trailing zeros manually (don't use parseFloat to avoid scientific notation)
+                      newAmount = newAmount.replace(/\.?0+$/, '');
                     }
                     
                     setAmountIn(newAmount);
