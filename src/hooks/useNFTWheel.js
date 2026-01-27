@@ -95,26 +95,43 @@ export const useNFTWheel = () => {
       
       setNextResetTime(tomorrow)
 
-      // Count spins today
-      const { data: spins, error: spinsError } = await supabase
-        .from('nft_wheel_spins')
-        .select('*')
-        .eq('wallet_address', address)
-        .gte('created_at', today.toISOString())
-        .lt('created_at', tomorrow.toISOString())
+      // Count spins today (if table exists)
+      try {
+        const { data: spins, error: spinsError } = await supabase
+          .from('nft_wheel_spins')
+          .select('*')
+          .eq('wallet_address', address)
+          .gte('created_at', today.toISOString())
+          .lt('created_at', tomorrow.toISOString())
 
-      if (spinsError && spinsError.code !== 'PGRST116') {
-        throw spinsError
+        if (spinsError) {
+          // Check if error is due to missing table
+          if (spinsError.message?.includes('does not exist') || spinsError.code === '42P01' || spinsError.code === 'PGRST116') {
+            console.warn('⚠️ nft_wheel_spins table not found. Using default spin limit.')
+            setSpinsRemaining(DAILY_SPIN_LIMIT)
+            return
+          } else {
+            throw spinsError
+          }
+        }
+
+        const spinsCount = spins?.length || 0
+        const remaining = Math.max(0, DAILY_SPIN_LIMIT - spinsCount)
+        setSpinsRemaining(remaining)
+
+        console.log(`✅ Loaded spin data: ${spinsCount} spins today, ${remaining} remaining`)
+      } catch (tableError) {
+        // Table might not exist yet - use default values
+        console.warn('⚠️ Could not load spin data (table may not exist):', tableError.message)
+        setSpinsRemaining(DAILY_SPIN_LIMIT)
       }
-
-      const spinsCount = spins?.length || 0
-      const remaining = Math.max(0, DAILY_SPIN_LIMIT - spinsCount)
-      setSpinsRemaining(remaining)
-
-      console.log(`✅ Loaded spin data: ${spinsCount} spins today, ${remaining} remaining`)
     } catch (err) {
       console.error('Error loading spin data:', err)
-      setError(err.message)
+      // Don't set error for missing table - just use defaults
+      if (!err.message?.includes('does not exist') && err.code !== '42P01' && err.code !== 'PGRST116') {
+        setError(err.message)
+      }
+      setSpinsRemaining(DAILY_SPIN_LIMIT)
     } finally {
       setLoading(false)
     }
@@ -249,12 +266,24 @@ export const useNFTWheel = () => {
 
   // Complete spin and award XP
   const completeSpin = async () => {
-    if (!address || !supabase || winningSegment === null) {
+    if (!address || winningSegment === null) {
+      setIsSpinning(false)
+      setLoading(false)
       return
     }
 
+    // Immediately stop spinning to prevent infinite rotation
+    setIsSpinning(false)
+
     try {
-      const segment = WHEEL_SEGMENTS[winningSegment]
+      // Find segment by id (not by index)
+      const segment = WHEEL_SEGMENTS.find(s => s.id === winningSegment)
+      if (!segment) {
+        console.error('❌ Segment not found for id:', winningSegment)
+        setLoading(false)
+        return
+      }
+      
       const baseXP = segment.xp
 
       // Get NFT count for multiplier
@@ -264,37 +293,55 @@ export const useNFTWheel = () => {
 
       console.log(`🎰 Wheel spin complete: ${baseXP} XP (${multiplier}x multiplier) = ${finalXP} XP`)
 
-      // Save spin to Supabase
-      const { error: spinError } = await supabase
-        .from('nft_wheel_spins')
-        .insert({
-          wallet_address: address,
-          segment_id: segment.id,
-          base_xp: baseXP,
-          multiplier: multiplier,
-          final_xp: finalXP,
-          nft_count: nftCount
-        })
+      // Save spin to Supabase nft_wheel_spins table (for tracking daily limits)
+      if (supabase) {
+        try {
+          // Normalize wallet address to lowercase
+          const normalizedAddress = address.toLowerCase()
+          
+          const { error: spinError } = await supabase
+            .from('nft_wheel_spins')
+            .insert({
+              wallet_address: normalizedAddress,
+              segment_id: segment.id,
+              base_xp: baseXP,
+              multiplier: multiplier,
+              final_xp: finalXP,
+              nft_count: nftCount
+            })
 
-      if (spinError) {
-        console.error('Error saving spin:', spinError)
-        // Continue anyway - don't block XP award
+          if (spinError) {
+            // Check if error is due to missing table
+            if (spinError.message?.includes('does not exist') || 
+                spinError.message?.includes('schema cache') ||
+                spinError.code === '42P01' ||
+                spinError.code === 'PGRST204') {
+              console.warn('⚠️ nft_wheel_spins table not found. Please run the SQL script in Supabase.')
+              console.warn('📝 SQL script location: supabase-nft-wheel-table.sql')
+            } else {
+              console.error('Error saving spin:', spinError)
+            }
+            // Continue anyway - don't block XP award
+          } else {
+            console.log('✅ Spin saved to nft_wheel_spins table')
+          }
+        } catch (tableError) {
+          // Table might not exist yet - this is okay during development
+          console.warn('⚠️ Could not save spin to database (table may not exist):', tableError.message)
+        }
       }
 
-      // Award XP directly to main XP
+      // Award XP directly to main XP (players.total_xp)
+      // This uses the existing addXP function which updates the players table
       await addXP(address, finalXP, 'NFT_WHEEL')
 
-      // Update spins remaining
+      // Update spins remaining locally
       setSpinsRemaining(prev => Math.max(0, prev - 1))
 
-      // Reset spinning state
-      setIsSpinning(false)
-
-      console.log(`✅ Spin completed and XP awarded: ${finalXP} XP`)
+      console.log(`✅ Spin completed! ${finalXP} XP added to total XP`)
     } catch (err) {
       console.error('Error completing spin:', err)
       setError(err.message)
-      setIsSpinning(false)
     } finally {
       setLoading(false)
     }

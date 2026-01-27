@@ -86,15 +86,16 @@ const NFTWheelGame = () => {
   }
 
   const handleSpinComplete = async () => {
+    // Call completeSpin immediately - it will handle stopping the spin
     const segmentData = winningSegment !== null ? WHEEL_VISUAL_ORDER.find(s => s.id === winningSegment) : null
     if (segmentData?.isJackpot) {
       // Keep confetti longer for jackpot
+      await completeSpin()
       setTimeout(() => {
         setShowConfetti(false)
-        completeSpin()
       }, 2000)
     } else {
-      completeSpin()
+      await completeSpin()
     }
   }
 

@@ -126,7 +126,10 @@ const NFTWheel = ({
       
       // Find visual index of winning segment
       const visualIndex = segments.findIndex(seg => seg.id === winningSegment)
-      if (visualIndex === -1) return
+      if (visualIndex === -1) {
+        console.warn('Winning segment not found:', winningSegment)
+        return
+      }
 
       // Calculate rotation: multiple spins + land on winning segment
       const spins = 5
@@ -134,17 +137,26 @@ const NFTWheel = ({
       
       setRotation(prev => prev + targetAngle)
 
-      // Show result after spin
+      // Show result after spin completes
       const timer = setTimeout(() => {
         setShowResult(true)
+        // Call onSpinComplete callback after showing result
         if (onSpinComplete) {
-          setTimeout(onSpinComplete, 500)
+          // Small delay to ensure animation is fully visible
+          setTimeout(() => {
+            onSpinComplete()
+          }, 500)
         }
       }, spinDuration)
 
-      return () => clearTimeout(timer)
+      return () => {
+        clearTimeout(timer)
+      }
+    } else if (!isSpinning && winningSegment === null) {
+      // Reset when not spinning
+      setShowResult(false)
     }
-  }, [isSpinning, winningSegment, segments, segmentAngle, onSpinComplete])
+  }, [isSpinning, winningSegment, segments, segmentAngle, onSpinComplete, spinDuration])
 
   // Reset rotation when idle
   useEffect(() => {

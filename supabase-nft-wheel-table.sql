@@ -2,6 +2,9 @@
 -- This table stores all wheel spins for NFT holders
 -- Run this SQL in your Supabase SQL Editor
 
+-- ============================================
+-- STEP 1: Create the nft_wheel_spins table
+-- ============================================
 CREATE TABLE IF NOT EXISTS nft_wheel_spins (
   id BIGSERIAL PRIMARY KEY,
   wallet_address TEXT NOT NULL,
@@ -13,20 +16,49 @@ CREATE TABLE IF NOT EXISTS nft_wheel_spins (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Create index on wallet_address for faster queries
+-- ============================================
+-- STEP 2: Create indexes for faster queries
+-- ============================================
 CREATE INDEX IF NOT EXISTS idx_nft_wheel_spins_wallet_address ON nft_wheel_spins(wallet_address);
-
--- Create index on created_at for daily spin limit queries
 CREATE INDEX IF NOT EXISTS idx_nft_wheel_spins_created_at ON nft_wheel_spins(created_at);
-
--- Create index on wallet_address and created_at for combined queries
 CREATE INDEX IF NOT EXISTS idx_nft_wheel_spins_wallet_created ON nft_wheel_spins(wallet_address, created_at);
 
--- Add comment to table
-COMMENT ON TABLE nft_wheel_spins IS 'Stores all NFT Wheel spins with XP rewards and multipliers';
+-- ============================================
+-- STEP 3: Enable Row Level Security (RLS)
+-- ============================================
+ALTER TABLE nft_wheel_spins ENABLE ROW LEVEL SECURITY;
 
--- Add comments to columns
-COMMENT ON COLUMN nft_wheel_spins.wallet_address IS 'Wallet address of the spinner';
+-- ============================================
+-- STEP 4: Create RLS Policies (if not exists)
+-- ============================================
+DO $$ 
+BEGIN
+  -- Create read policy if it doesn't exist
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'nft_wheel_spins' 
+    AND policyname = 'Allow public read access'
+  ) THEN
+    CREATE POLICY "Allow public read access" ON nft_wheel_spins
+      FOR SELECT USING (true);
+  END IF;
+
+  -- Create insert policy if it doesn't exist
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'nft_wheel_spins' 
+    AND policyname = 'Allow public insert access'
+  ) THEN
+    CREATE POLICY "Allow public insert access" ON nft_wheel_spins
+      FOR INSERT WITH CHECK (true);
+  END IF;
+END $$;
+
+-- ============================================
+-- STEP 5: Add table and column comments
+-- ============================================
+COMMENT ON TABLE nft_wheel_spins IS 'Stores all NFT Wheel spins with XP rewards. Daily limit: 3 spins per wallet.';
+COMMENT ON COLUMN nft_wheel_spins.wallet_address IS 'Wallet address of the spinner (lowercase)';
 COMMENT ON COLUMN nft_wheel_spins.segment_id IS 'ID of the winning segment (0-6)';
 COMMENT ON COLUMN nft_wheel_spins.base_xp IS 'Base XP reward before multiplier';
 COMMENT ON COLUMN nft_wheel_spins.multiplier IS 'NFT multiplier applied (1.0 = no multiplier)';
