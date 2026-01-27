@@ -14,17 +14,13 @@ import {
   ArrowLeft,
   AlertCircle,
   CheckCircle,
-  Coins
+  Coins,
+  Ticket
 } from 'lucide-react'
-
-// Admin wallet address (development only - will be removed for public release)
-const ADMIN_WALLET = '0xa7A9B7E0c4B36d9dE8A94c6388449d06F2C5952f'
 
 const NFTWheelGame = () => {
   const { address, isConnected } = useAccount()
   
-  // Check if user is admin
-  const isAdmin = address?.toLowerCase() === ADMIN_WALLET.toLowerCase()
   const {
     isSpinning,
     isPaying,
@@ -101,83 +97,6 @@ const NFTWheelGame = () => {
 
   const winningSegmentData = winningSegment !== null ? WHEEL_VISUAL_ORDER.find(s => s.id === winningSegment) : null
 
-  // Show access restricted message if not admin
-  if (!isAdmin) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
-        padding: '20px',
-        paddingTop: '100px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{
-          maxWidth: '600px',
-          padding: '40px',
-          background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-          borderRadius: '30px',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)',
-          border: '2px solid rgba(239, 68, 68, 0.3)',
-          textAlign: 'center'
-        }}>
-          <Lock size={64} color="#ef4444" style={{ marginBottom: '20px' }} />
-          <h2 style={{
-            fontSize: '32px',
-            fontWeight: '800',
-            color: '#ef4444',
-            marginBottom: '16px'
-          }}>
-            Access Restricted
-          </h2>
-          <p style={{
-            fontSize: '18px',
-            color: '#94a3b8',
-            lineHeight: '1.6',
-            marginBottom: '8px'
-          }}>
-            This feature is currently in development and only available to authorized users.
-          </p>
-          {isConnected && (
-            <p style={{
-              fontSize: '14px',
-              color: '#64748b',
-              marginTop: '16px'
-            }}>
-              Connected wallet: {address?.slice(0, 6)}...{address?.slice(-4)}
-            </p>
-          )}
-          <Link 
-            to="/" 
-            style={{
-              display: 'inline-block',
-              marginTop: '24px',
-              padding: '12px 24px',
-              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-              color: 'white',
-              textDecoration: 'none',
-              borderRadius: '12px',
-              fontWeight: '600',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow = '0 10px 30px rgba(139, 92, 246, 0.4)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = 'none'
-            }}
-          >
-            <ArrowLeft size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />
-            Back to Home
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div style={{
       minHeight: '100vh',
@@ -233,7 +152,7 @@ const NFTWheelGame = () => {
         </p>
       </div>
 
-      {/* NFT Check */}
+      {/* Wallet Connection Check */}
       {!isConnected ? (
         <div style={{
           textAlign: 'center',
@@ -247,44 +166,6 @@ const NFTWheelGame = () => {
           <h2 style={{ color: '#cbd5e1', marginBottom: '8px' }}>Connect Your Wallet</h2>
           <p style={{ color: '#94a3b8' }}>Connect your wallet to spin the NFT Wheel!</p>
         </div>
-      ) : !hasNFT ? (
-        <div style={{
-          textAlign: 'center',
-          padding: '40px',
-          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%)',
-          borderRadius: '20px',
-          border: '2px solid rgba(239, 68, 68, 0.3)',
-          marginBottom: '40px'
-        }}>
-          <Lock size={48} color="#ef4444" style={{ marginBottom: '16px' }} />
-          <h2 style={{ color: '#cbd5e1', marginBottom: '8px' }}>NFT Required</h2>
-          <p style={{ color: '#94a3b8', marginBottom: '20px' }}>
-            You need to own an Early Access NFT to spin the wheel!
-          </p>
-          <Link
-            to="/early-access"
-            style={{
-              display: 'inline-block',
-              padding: '12px 24px',
-              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-              color: 'white',
-              borderRadius: '12px',
-              textDecoration: 'none',
-              fontWeight: '600',
-              transition: 'transform 0.2s, box-shadow 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-2px)'
-              e.target.style.boxShadow = '0 10px 30px rgba(139, 92, 246, 0.4)'
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0)'
-              e.target.style.boxShadow = 'none'
-            }}
-          >
-            Get Early Access NFT
-          </Link>
-        </div>
       ) : (
         <>
           {/* Stats Bar */}
@@ -295,69 +176,73 @@ const NFTWheelGame = () => {
             marginBottom: '48px',
             flexWrap: 'wrap'
           }}>
-            {/* Spins */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '14px 24px',
-              background: 'rgba(15, 23, 42, 0.6)',
-              backdropFilter: 'blur(12px)',
-              borderRadius: '14px',
-              border: '1px solid rgba(71, 85, 105, 0.4)'
-            }}>
+            {/* Spins - only show if has NFT */}
+            {hasNFT && (
               <div style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                gap: '10px',
+                padding: '14px 24px',
+                background: 'rgba(15, 23, 42, 0.6)',
+                backdropFilter: 'blur(12px)',
+                borderRadius: '14px',
+                border: '1px solid rgba(71, 85, 105, 0.4)'
               }}>
-                <RotateCw size={18} color="white" />
-              </div>
-              <div>
-                <div style={{ fontSize: '20px', fontWeight: '700', color: '#f1f5f9', lineHeight: 1 }}>
-                  {spinsRemaining}/3
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <RotateCw size={18} color="white" />
                 </div>
-                <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>
-                  Daily Spins
+                <div>
+                  <div style={{ fontSize: '20px', fontWeight: '700', color: '#f1f5f9', lineHeight: 1 }}>
+                    {spinsRemaining}/3
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>
+                    Daily Spins
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Timer */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '14px 24px',
-              background: 'rgba(15, 23, 42, 0.6)',
-              backdropFilter: 'blur(12px)',
-              borderRadius: '14px',
-              border: '1px solid rgba(71, 85, 105, 0.4)'
-            }}>
+            {/* Timer - only show if has NFT */}
+            {hasNFT && (
               <div style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                gap: '10px',
+                padding: '14px 24px',
+                background: 'rgba(15, 23, 42, 0.6)',
+                backdropFilter: 'blur(12px)',
+                borderRadius: '14px',
+                border: '1px solid rgba(71, 85, 105, 0.4)'
               }}>
-                <Clock size={18} color="white" />
-              </div>
-              <div>
-                <div style={{ fontSize: '20px', fontWeight: '700', color: '#f1f5f9', lineHeight: 1, fontFamily: 'ui-monospace, monospace' }}>
-                  {timeUntilReset || '--:--:--'}
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Clock size={18} color="white" />
                 </div>
-                <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>
-                  Reset Timer
+                <div>
+                  <div style={{ fontSize: '20px', fontWeight: '700', color: '#f1f5f9', lineHeight: 1, fontFamily: 'ui-monospace, monospace' }}>
+                    {timeUntilReset || '--:--:--'}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>
+                    Reset Timer
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* NFT Status */}
             <div style={{
@@ -368,25 +253,38 @@ const NFTWheelGame = () => {
               background: 'rgba(15, 23, 42, 0.6)',
               backdropFilter: 'blur(12px)',
               borderRadius: '14px',
-              border: '1px solid rgba(71, 85, 105, 0.4)'
+              border: hasNFT 
+                ? '1px solid rgba(71, 85, 105, 0.4)' 
+                : '2px solid rgba(251, 191, 36, 0.4)'
             }}>
               <div style={{
                 width: '36px',
                 height: '36px',
                 borderRadius: '10px',
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                background: hasNFT 
+                  ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                  : 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <CheckCircle size={18} color="white" />
+                {hasNFT ? (
+                  <CheckCircle size={18} color="white" />
+                ) : (
+                  <Ticket size={18} color="white" />
+                )}
               </div>
               <div>
-                <div style={{ fontSize: '14px', fontWeight: '700', color: '#10b981', lineHeight: 1.2 }}>
-                  Verified
+                <div style={{ 
+                  fontSize: '14px', 
+                  fontWeight: '700', 
+                  color: hasNFT ? '#10b981' : '#fbbf24', 
+                  lineHeight: 1.2 
+                }}>
+                  {hasNFT ? 'Verified' : 'Not Found'}
                 </div>
                 <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>
-                  NFT Holder
+                  {hasNFT ? 'NFT Holder' : 'NFT Required'}
                 </div>
               </div>
             </div>
@@ -420,81 +318,136 @@ const NFTWheelGame = () => {
 
           {/* Spin Button */}
           <div style={{ textAlign: 'center', marginTop: '40px' }}>
-            {/* Cost Info */}
-            <div style={{
-              marginBottom: '16px',
-              padding: '12px 24px',
-              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
-              borderRadius: '12px',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '10px'
-            }}>
-              <Coins size={20} style={{ color: '#3b82f6' }} />
-              <span style={{ color: '#94a3b8', fontSize: '14px' }}>Cost per spin:</span>
-              <span style={{ color: '#3b82f6', fontSize: '18px', fontWeight: '700' }}>{spinCost}</span>
-            </div>
+            {/* Cost Info - only show if has NFT */}
+            {hasNFT && (
+              <div style={{
+                marginBottom: '16px',
+                padding: '12px 24px',
+                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
+                borderRadius: '12px',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                <Coins size={20} style={{ color: '#3b82f6' }} />
+                <span style={{ color: '#94a3b8', fontSize: '14px' }}>Cost per spin:</span>
+                <span style={{ color: '#3b82f6', fontSize: '18px', fontWeight: '700' }}>{spinCost}</span>
+              </div>
+            )}
+            
+            {/* NFT Required Warning - show if no NFT */}
+            {!hasNFT && (
+              <div style={{
+                marginBottom: '20px',
+                padding: '16px 24px',
+                background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%)',
+                borderRadius: '12px',
+                border: '2px solid rgba(251, 191, 36, 0.3)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <Ticket size={24} style={{ color: '#fbbf24' }} />
+                <span style={{ color: '#fbbf24', fontSize: '16px', fontWeight: '600' }}>
+                  Early Access NFT required to spin!
+                </span>
+              </div>
+            )}
             
             <div>
-              <button
-                onClick={handleSpin}
-                disabled={isSpinning || isPaying || spinsRemaining <= 0 || loading}
-                style={{
-                  padding: '18px 48px',
-                  fontSize: '20px',
-                  fontWeight: 'bold',
-                  background: isSpinning || isPaying || spinsRemaining <= 0
-                    ? 'linear-gradient(135deg, #475569 0%, #334155 100%)'
-                    : 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '16px',
-                  cursor: isSpinning || isPaying || spinsRemaining <= 0 ? 'not-allowed' : 'pointer',
-                  boxShadow: isSpinning || isPaying || spinsRemaining <= 0
-                    ? 'none'
-                    : '0 10px 30px rgba(139, 92, 246, 0.4)',
-                  transition: 'all 0.3s ease',
-                  opacity: isSpinning || isPaying || spinsRemaining <= 0 ? 0.6 : 1,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isSpinning && !isPaying && spinsRemaining > 0) {
-                    e.target.style.transform = 'translateY(-2px)'
-                    e.target.style.boxShadow = '0 15px 40px rgba(139, 92, 246, 0.5)'
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = 'translateY(0)'
-                  if (!isSpinning && !isPaying && spinsRemaining > 0) {
-                    e.target.style.boxShadow = '0 10px 30px rgba(139, 92, 246, 0.4)'
-                  }
-                }}
-              >
-                {isPaying ? (
-                  <>
-                    <RotateCw size={24} style={{ animation: 'spin 1s linear infinite' }} />
-                    <span>Processing Payment...</span>
-                  </>
-                ) : isSpinning ? (
-                  <>
-                    <RotateCw size={24} style={{ animation: 'spin 1s linear infinite' }} />
-                    <span>Spinning...</span>
-                  </>
-                ) : spinsRemaining <= 0 ? (
-                  <>
-                    <Lock size={24} />
-                    <span>Daily Limit Reached</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={24} />
-                    <span>Pay {spinCost} & Spin!</span>
-                  </>
-                )}
-              </button>
+              {/* Show Mint NFT button if no NFT, otherwise show Spin button */}
+              {!hasNFT ? (
+                <Link
+                  to="/early-access"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '18px 48px',
+                    fontSize: '20px',
+                    fontWeight: 'bold',
+                    background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                    color: '#1e293b',
+                    border: 'none',
+                    borderRadius: '16px',
+                    cursor: 'pointer',
+                    boxShadow: '0 10px 30px rgba(251, 191, 36, 0.4)',
+                    transition: 'all 0.3s ease',
+                    textDecoration: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                    e.currentTarget.style.boxShadow = '0 15px 40px rgba(251, 191, 36, 0.5)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)'
+                    e.currentTarget.style.boxShadow = '0 10px 30px rgba(251, 191, 36, 0.4)'
+                  }}
+                >
+                  <Ticket size={24} />
+                  <span>Mint Early Access NFT</span>
+                </Link>
+              ) : (
+                <button
+                  onClick={handleSpin}
+                  disabled={isSpinning || isPaying || spinsRemaining <= 0 || loading}
+                  style={{
+                    padding: '18px 48px',
+                    fontSize: '20px',
+                    fontWeight: 'bold',
+                    background: isSpinning || isPaying || spinsRemaining <= 0
+                      ? 'linear-gradient(135deg, #475569 0%, #334155 100%)'
+                      : 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '16px',
+                    cursor: isSpinning || isPaying || spinsRemaining <= 0 ? 'not-allowed' : 'pointer',
+                    boxShadow: isSpinning || isPaying || spinsRemaining <= 0
+                      ? 'none'
+                      : '0 10px 30px rgba(139, 92, 246, 0.4)',
+                    transition: 'all 0.3s ease',
+                    opacity: isSpinning || isPaying || spinsRemaining <= 0 ? 0.6 : 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '12px'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSpinning && !isPaying && spinsRemaining > 0) {
+                      e.currentTarget.style.transform = 'translateY(-2px)'
+                      e.currentTarget.style.boxShadow = '0 15px 40px rgba(139, 92, 246, 0.5)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)'
+                    if (!isSpinning && !isPaying && spinsRemaining > 0) {
+                      e.currentTarget.style.boxShadow = '0 10px 30px rgba(139, 92, 246, 0.4)'
+                    }
+                  }}
+                >
+                  {isPaying ? (
+                    <>
+                      <RotateCw size={24} style={{ animation: 'spin 1s linear infinite' }} />
+                      <span>Processing Payment...</span>
+                    </>
+                  ) : isSpinning ? (
+                    <>
+                      <RotateCw size={24} style={{ animation: 'spin 1s linear infinite' }} />
+                      <span>Spinning...</span>
+                    </>
+                  ) : spinsRemaining <= 0 ? (
+                    <>
+                      <Lock size={24} />
+                      <span>Daily Limit Reached</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={24} />
+                      <span>Pay {spinCost} & Spin!</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
 
