@@ -98,7 +98,7 @@ const NFTWheelGame = () => {
         console.log('📡 Querying Supabase for nft_wheel_spins...')
         const { data, error } = await supabase
           .from('nft_wheel_spins')
-          .select('vallet_address, final_xp, created_at')
+          .select('wallet_address, final_xp, created_at')
           .order('created_at', { ascending: false })
           .limit(10)
         
@@ -116,9 +116,9 @@ const NFTWheelGame = () => {
         }
         
         if (data && data.length > 0) {
-          // Map to expected format (note: column is vallet_address, not wallet_address)
+          // Map to expected format
           const winners = data.map(t => ({
-            wallet_address: t.vallet_address || t.wallet_address || '',
+            wallet_address: t.wallet_address || '',
             xp_earned: t.final_xp || 0,
             created_at: t.created_at
           }))
