@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Sparkles, Trophy, Gift } from 'lucide-react'
 
-// Wheel segments with their properties (visual order - 100K jackpot at top)
+// Wheel segments with their properties (visual order - 320K jackpot at top)
 const DEFAULT_SEGMENTS = [
-  { id: 6, xp: 100000, label: '100K', color: '#fbbf24', isJackpot: true },
+  { id: 6, xp: 320000, label: '320K', color: '#fbbf24', isJackpot: true },
   { id: 0, xp: 5000, label: '5K', color: '#3b82f6' },
-  { id: 1, xp: 7500, label: '7.5K', color: '#10b981' },
-  { id: 2, xp: 10000, label: '10K', color: '#8b5cf6' },
-  { id: 3, xp: 15000, label: '15K', color: '#ec4899' },
-  { id: 4, xp: 25000, label: '25K', color: '#06b6d4' },
-  { id: 5, xp: 50000, label: '50K', color: '#ef4444' }
+  { id: 1, xp: 10000, label: '10K', color: '#10b981' },
+  { id: 2, xp: 20000, label: '20K', color: '#8b5cf6' },
+  { id: 3, xp: 40000, label: '40K', color: '#ec4899' },
+  { id: 4, xp: 80000, label: '80K', color: '#06b6d4' },
+  { id: 5, xp: 160000, label: '160K', color: '#ef4444' }
 ]
 
 const NFTWheel = ({ 
