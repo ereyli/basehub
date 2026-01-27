@@ -29,8 +29,8 @@ export const WHEEL_VISUAL_ORDER = [
 const DAILY_SPIN_LIMIT = 3
 
 // x402 Payment cost per spin
-const SPIN_COST = '0.1 USDC'
-const SPIN_COST_AMOUNT = BigInt(100000) // 0.1 USDC (6 decimals)
+const SPIN_COST = '0.05 USDC'
+const SPIN_COST_AMOUNT = BigInt(50000) // 0.05 USDC (6 decimals)
 
 // Admin wallet address (development only - will be removed for public release)
 const ADMIN_WALLET = '0xa7A9B7E0c4B36d9dE8A94c6388449d06F2C5952f'
