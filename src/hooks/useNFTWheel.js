@@ -5,15 +5,15 @@ import { getNFTCount, addXP } from '../utils/xpUtils'
 import { wrapFetchWithPayment } from 'x402-fetch'
 
 // XP reward segments with weighted probabilities and colors
-// Rewards reduced by 30%: 3.5K, 7K, 14K, 28K, 56K, 112K, 224K (jackpot)
+// Lower rewards have higher chances, higher rewards have lower chances
 // Jackpot has 5% chance for exciting gameplay
 const WHEEL_SEGMENTS = [
-  { id: 0, xp: 3500, label: '3.5K', color: '#3b82f6', weight: 30 },      // 30% chance - blue
-  { id: 1, xp: 7000, label: '7K', color: '#10b981', weight: 25 },        // 25% chance - green
+  { id: 0, xp: 3500, label: '3.5K', color: '#3b82f6', weight: 35 },      // 35% chance - blue (most common)
+  { id: 1, xp: 7000, label: '7K', color: '#10b981', weight: 28 },        // 28% chance - green
   { id: 2, xp: 14000, label: '14K', color: '#8b5cf6', weight: 18 },      // 18% chance - purple
-  { id: 3, xp: 28000, label: '28K', color: '#ec4899', weight: 12 },      // 12% chance - pink
-  { id: 4, xp: 56000, label: '56K', color: '#06b6d4', weight: 6 },       // 6% chance - cyan
-  { id: 5, xp: 112000, label: '112K', color: '#ef4444', weight: 4 },     // 4% chance - red
+  { id: 3, xp: 28000, label: '28K', color: '#ec4899', weight: 8 },       // 8% chance - pink (reduced)
+  { id: 4, xp: 56000, label: '56K', color: '#06b6d4', weight: 4 },       // 4% chance - cyan (reduced)
+  { id: 5, xp: 112000, label: '112K', color: '#ef4444', weight: 2 },     // 2% chance - red (reduced)
   { id: 6, xp: 224000, label: '224K', color: '#fbbf24', weight: 5, isJackpot: true } // 5% chance - golden MEGA JACKPOT
 ]
 
@@ -341,12 +341,10 @@ export const useNFTWheel = () => {
       
       const baseXP = segment.xp
 
-      // Get NFT count for multiplier
-      const nftCount = await getNFTCount(address)
-      const multiplier = nftCount > 0 ? 1 + (nftCount * 0.1) : 1 // 10% per NFT, max 2x for 10 NFTs
-      const finalXP = Math.floor(baseXP * multiplier)
+      // No NFT bonus for wheel spins - XP is awarded as-is
+      const finalXP = baseXP
 
-      console.log(`🎰 Wheel spin complete: ${baseXP} XP (${multiplier}x multiplier) = ${finalXP} XP`)
+      console.log(`🎰 Wheel spin complete: ${finalXP} XP (no NFT bonus for wheel)`)
 
       // Save spin to Supabase nft_wheel_spins table (for tracking daily limits)
       if (supabase) {
@@ -360,9 +358,9 @@ export const useNFTWheel = () => {
               wallet_address: normalizedAddress,
               segment_id: segment.id,
               base_xp: baseXP,
-              multiplier: multiplier,
+              multiplier: 1.0, // No multiplier for wheel
               final_xp: finalXP,
-              nft_count: nftCount
+              nft_count: 0 // Not tracking for wheel
             })
 
           if (spinError) {
