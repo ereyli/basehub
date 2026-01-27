@@ -103,13 +103,14 @@ export const getNFTCount = async (walletAddress) => {
 }
 
 // Add XP to user's wallet address (every game gives XP)
-export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chainId = null) => {
+// skipNFTBonus: if true, NFT multiplier will not be applied (used for NFT Wheel)
+export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chainId = null, skipNFTBonus = false) => {
   if (!walletAddress || !xpAmount) {
     console.log('❌ Missing walletAddress or xpAmount:', { walletAddress, xpAmount })
     return
   }
 
-  console.log('🎯 Adding XP:', { walletAddress, xpAmount, gameType, chainId })
+  console.log('🎯 Adding XP:', { walletAddress, xpAmount, gameType, chainId, skipNFTBonus })
 
   // Get NFT count and calculate multiplier
   let finalXP = xpAmount
@@ -117,19 +118,24 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
   let nftCount = 0
   let multiplier = 1
   
-  try {
-    nftCount = await getNFTCount(walletAddress)
-    if (nftCount > 0) {
-      // Multiplier formula: nftCount + 1
-      // 1 NFT = 2x, 2 NFT = 3x, 3 NFT = 4x, etc.
-      multiplier = nftCount + 1
-      bonusXP = xpAmount * (multiplier - 1) // Bonus is the extra XP beyond base
-      finalXP = xpAmount * multiplier
-      console.log(`🎁 ${nftCount} NFT${nftCount > 1 ? 's' : ''} detected, applying ${multiplier}x XP: ${xpAmount} -> ${finalXP}`)
-      showXPToast(multiplier, nftCount, finalXP, xpAmount)
+  // Skip NFT bonus for certain game types (like NFT Wheel)
+  if (!skipNFTBonus) {
+    try {
+      nftCount = await getNFTCount(walletAddress)
+      if (nftCount > 0) {
+        // Multiplier formula: nftCount + 1
+        // 1 NFT = 2x, 2 NFT = 3x, 3 NFT = 4x, etc.
+        multiplier = nftCount + 1
+        bonusXP = xpAmount * (multiplier - 1) // Bonus is the extra XP beyond base
+        finalXP = xpAmount * multiplier
+        console.log(`🎁 ${nftCount} NFT${nftCount > 1 ? 's' : ''} detected, applying ${multiplier}x XP: ${xpAmount} -> ${finalXP}`)
+        showXPToast(multiplier, nftCount, finalXP, xpAmount)
+      }
+    } catch (err) {
+      console.warn('⚠️ NFT check error, using base XP:', err)
     }
-  } catch (err) {
-    console.warn('⚠️ NFT check error, using base XP:', err)
+  } else {
+    console.log('🎰 NFT bonus skipped for this XP award')
   }
 
   // Check if Supabase is available

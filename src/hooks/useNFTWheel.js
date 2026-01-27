@@ -386,7 +386,8 @@ export const useNFTWheel = () => {
 
       // Award XP directly to main XP (players.total_xp)
       // This uses the existing addXP function which updates the players table
-      await addXP(address, finalXP, 'NFT_WHEEL')
+      // skipNFTBonus = true to prevent NFT multiplier for wheel spins
+      await addXP(address, finalXP, 'NFT_WHEEL', null, true)
 
       // Update spins remaining locally
       setSpinsRemaining(prev => Math.max(0, prev - 1))
