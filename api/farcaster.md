@@ -2,7 +2,7 @@ When your app is opened it can access information about the session from sdk.con
 
 
 export type MiniAppPlatformType = 'web' | 'mobile';
- 
+  
 export type MiniAppContext = {
   user: {
     fid: number;
