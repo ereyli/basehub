@@ -94,21 +94,20 @@ const NFTWheelGame = () => {
       try {
         setLoadingWinners(true)
         
-        // Get recent NFT_WHEEL transactions from Supabase
-        console.log('📡 Querying Supabase for NFT_WHEEL transactions...')
+        // Get recent winners from nft_wheel_spins table
+        console.log('📡 Querying Supabase for nft_wheel_spins...')
         const { data, error } = await supabase
-          .from('transactions')
-          .select('wallet_address, xp_earned, created_at')
-          .eq('game_type', 'NFT_WHEEL')
+          .from('nft_wheel_spins')
+          .select('vallet_address, final_xp, created_at')
           .order('created_at', { ascending: false })
           .limit(10)
-
-        if (error) {
-          console.error('Error loading recent winners:', error)
-          return
-        }
-
-        console.log('📊 Supabase query result:', { data, error, dataLength: data?.length })
+        
+        console.log('📊 nft_wheel_spins query result:', { 
+          data, 
+          error, 
+          dataLength: data?.length,
+          sample: data?.slice(0, 3)
+        })
         
         if (error) {
           console.error('❌ Error loading recent winners:', error)
@@ -117,12 +116,16 @@ const NFTWheelGame = () => {
         }
         
         if (data && data.length > 0) {
-          // Show first 10 transactions directly (no grouping)
-          const winners = data.slice(0, 10)
+          // Map to expected format (note: column is vallet_address, not wallet_address)
+          const winners = data.map(t => ({
+            wallet_address: t.vallet_address || t.wallet_address || '',
+            xp_earned: t.final_xp || 0,
+            created_at: t.created_at
+          }))
           setRecentWinners(winners)
           console.log('✅ Recent winners loaded:', winners.length, winners)
         } else {
-          console.log('⚠️ No recent winners data found')
+          console.log('⚠️ No recent winners data found in nft_wheel_spins')
           setRecentWinners([])
         }
       } catch (err) {
