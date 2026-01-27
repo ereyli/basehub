@@ -86,6 +86,10 @@ export const useNFTWheel = () => {
       return
     }
 
+    // Normalize wallet address to lowercase (must match how we save it)
+    const normalizedAddress = address.toLowerCase()
+    console.log('🔄 Loading spin data for:', normalizedAddress)
+
     try {
       setLoading(true)
       
@@ -96,46 +100,79 @@ export const useNFTWheel = () => {
       tomorrow.setUTCDate(tomorrow.getUTCDate() + 1)
       
       setNextResetTime(tomorrow)
+      
+      console.log('📅 Checking spins between:', today.toISOString(), 'and', tomorrow.toISOString())
 
-      // Count spins today (if table exists)
-      try {
-        const { data: spins, error: spinsError } = await supabase
-          .from('nft_wheel_spins')
-          .select('*')
-          .eq('wallet_address', address)
-          .gte('created_at', today.toISOString())
-          .lt('created_at', tomorrow.toISOString())
+      // Count spins today from nft_wheel_spins table
+      const { data: spins, error: spinsError } = await supabase
+        .from('nft_wheel_spins')
+        .select('id, created_at, final_xp')
+        .eq('wallet_address', normalizedAddress)
+        .gte('created_at', today.toISOString())
+        .lt('created_at', tomorrow.toISOString())
 
-        if (spinsError) {
-          // Check if error is due to missing table
-          if (spinsError.message?.includes('does not exist') || spinsError.code === '42P01' || spinsError.code === 'PGRST116') {
-            console.warn('⚠️ nft_wheel_spins table not found. Using default spin limit.')
-            setSpinsRemaining(DAILY_SPIN_LIMIT)
-            return
-          } else {
-            throw spinsError
-          }
+      if (spinsError) {
+        // Check if error is due to missing table or schema cache
+        const errorMsg = spinsError.message || ''
+        if (errorMsg.includes('does not exist') || 
+            errorMsg.includes('schema cache') ||
+            spinsError.code === '42P01' || 
+            spinsError.code === 'PGRST116' ||
+            spinsError.code === 'PGRST204') {
+          console.warn('⚠️ nft_wheel_spins table not found or schema issue. Run SQL script in Supabase!')
+          console.warn('📝 SQL script: supabase-nft-wheel-table.sql')
+          setSpinsRemaining(DAILY_SPIN_LIMIT)
+          return
         }
+        throw spinsError
+      }
 
-        const spinsCount = spins?.length || 0
-        const remaining = Math.max(0, DAILY_SPIN_LIMIT - spinsCount)
-        setSpinsRemaining(remaining)
+      const spinsCount = spins?.length || 0
+      const remaining = Math.max(0, DAILY_SPIN_LIMIT - spinsCount)
+      setSpinsRemaining(remaining)
 
-        console.log(`✅ Loaded spin data: ${spinsCount} spins today, ${remaining} remaining`)
-      } catch (tableError) {
-        // Table might not exist yet - use default values
-        console.warn('⚠️ Could not load spin data (table may not exist):', tableError.message)
-        setSpinsRemaining(DAILY_SPIN_LIMIT)
+      console.log(`✅ Spin data loaded: ${spinsCount} spins today, ${remaining} remaining`)
+      if (spins && spins.length > 0) {
+        console.log('📊 Today\'s spins:', spins.map(s => ({ id: s.id, xp: s.final_xp, time: s.created_at })))
       }
     } catch (err) {
-      console.error('Error loading spin data:', err)
-      // Don't set error for missing table - just use defaults
-      if (!err.message?.includes('does not exist') && err.code !== '42P01' && err.code !== 'PGRST116') {
-        setError(err.message)
-      }
+      console.error('❌ Error loading spin data:', err)
+      // On error, be conservative and allow spins (better UX than blocking)
       setSpinsRemaining(DAILY_SPIN_LIMIT)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Get spin count directly from database (for security check before spin)
+  const getSpinCountFromDB = async () => {
+    if (!address || !supabase) return 0
+    
+    const normalizedAddress = address.toLowerCase()
+    
+    try {
+      // Get today's date range in UTC
+      const now = new Date()
+      const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+      const tomorrow = new Date(today)
+      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1)
+      
+      const { data: spins, error } = await supabase
+        .from('nft_wheel_spins')
+        .select('id')
+        .eq('wallet_address', normalizedAddress)
+        .gte('created_at', today.toISOString())
+        .lt('created_at', tomorrow.toISOString())
+      
+      if (error) {
+        console.error('❌ Error checking spin count:', error)
+        return 0 // On error, allow spin (will be validated on save)
+      }
+      
+      return spins?.length || 0
+    } catch (err) {
+      console.error('❌ Error in getSpinCountFromDB:', err)
+      return 0
     }
   }
 
@@ -229,11 +266,21 @@ export const useNFTWheel = () => {
       return
     }
 
-    // Check daily limit
-    if (spinsRemaining <= 0) {
-      setError(`Daily spin limit reached! Come back tomorrow for ${DAILY_SPIN_LIMIT} more spins.`)
+    // IMPORTANT: Check daily limit directly from database before allowing spin
+    // This prevents abuse from page refresh
+    const currentSpins = await getSpinCountFromDB()
+    const actualRemaining = Math.max(0, DAILY_SPIN_LIMIT - currentSpins)
+    
+    console.log(`🔒 Security check: ${currentSpins} spins today, ${actualRemaining} remaining`)
+    
+    if (actualRemaining <= 0) {
+      setSpinsRemaining(0)
+      setError(`Daily spin limit reached! You've used all ${DAILY_SPIN_LIMIT} spins today. Come back tomorrow!`)
       return
     }
+    
+    // Update local state to match database
+    setSpinsRemaining(actualRemaining)
 
     try {
       setLoading(true)
