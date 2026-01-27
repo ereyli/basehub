@@ -35,14 +35,8 @@ const DAILY_SPIN_LIMIT = 3
 const SPIN_COST = '0.05 USDC'
 const SPIN_COST_AMOUNT = BigInt(50000) // 0.05 USDC (6 decimals)
 
-// Admin wallet address (development only - will be removed for public release)
-const ADMIN_WALLET = '0xa7A9B7E0c4B36d9dE8A94c6388449d06F2C5952f'
-
 export const useNFTWheel = () => {
   const { address } = useAccount()
-  
-  // Check if user is admin
-  const isAdmin = address?.toLowerCase() === ADMIN_WALLET.toLowerCase()
   const { data: walletClient } = useWalletClient()
   const { supabase } = useSupabase()
   const [isSpinning, setIsSpinning] = useState(false)
@@ -62,17 +56,11 @@ export const useNFTWheel = () => {
       return false
     }
 
-    // Admin bypass - no NFT required for admin
-    if (isAdmin) {
-      setHasNFT(true)
-      return true
-    }
-
     try {
       const nftCount = await getNFTCount(address)
-      const hasNFT = nftCount > 0
-      setHasNFT(hasNFT)
-      return hasNFT
+      const ownsNFT = nftCount > 0
+      setHasNFT(ownsNFT)
+      return ownsNFT
     } catch (err) {
       console.error('Error checking NFT ownership:', err)
       setHasNFT(false)
@@ -250,17 +238,11 @@ export const useNFTWheel = () => {
       return
     }
 
-    // Admin check - only admin can access during development
-    if (!isAdmin) {
-      setError('Access restricted. This feature is in development.')
-      return
-    }
-
     if (isSpinning || isPaying) {
       return
     }
 
-    // Check NFT ownership (admin bypasses this)
+    // Check NFT ownership
     const hasNFT = await checkNFTOwnership()
     if (!hasNFT) {
       setError('You need to own an Early Access NFT to spin the wheel!')
