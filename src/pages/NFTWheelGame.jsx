@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import { Link } from 'react-router-dom'
 import { useNFTWheel, WHEEL_VISUAL_ORDER } from '../hooks/useNFTWheel'
+import { useSupabase } from '../hooks/useSupabase'
 import NFTWheel from '../components/NFTWheel'
 import Confetti from '../components/Confetti'
 import { 
@@ -15,11 +16,14 @@ import {
   AlertCircle,
   CheckCircle,
   Coins,
-  Ticket
+  Ticket,
+  Zap,
+  TrendingUp
 } from 'lucide-react'
 
 const NFTWheelGame = () => {
   const { address, isConnected } = useAccount()
+  const { supabase } = useSupabase()
   
   const {
     isSpinning,
@@ -37,6 +41,8 @@ const NFTWheelGame = () => {
 
   const [showConfetti, setShowConfetti] = useState(false)
   const [timeUntilReset, setTimeUntilReset] = useState('')
+  const [recentWinners, setRecentWinners] = useState([])
+  const [loadingWinners, setLoadingWinners] = useState(false)
 
   // Update countdown timer
   useEffect(() => {
@@ -73,6 +79,61 @@ const NFTWheelGame = () => {
     }
   }, [winningSegment])
 
+  // Load recent winners from Supabase
+  useEffect(() => {
+    const loadRecentWinners = async () => {
+      if (!supabase || !supabase.from) {
+        console.log('⚠️ Supabase not available, skipping recent winners')
+        return
+      }
+
+      try {
+        setLoadingWinners(true)
+        
+        // Get recent NFT_WHEEL transactions from Supabase
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('wallet_address, xp_earned, created_at')
+          .eq('game_type', 'NFT_WHEEL')
+          .order('created_at', { ascending: false })
+          .limit(10)
+
+        if (error) {
+          console.error('Error loading recent winners:', error)
+          return
+        }
+
+        if (data && data.length > 0) {
+          // Group by wallet and get latest win for each
+          const winnersMap = new Map()
+          data.forEach(transaction => {
+            const addr = transaction.wallet_address
+            if (!winnersMap.has(addr) || new Date(transaction.created_at) > new Date(winnersMap.get(addr).created_at)) {
+              winnersMap.set(addr, transaction)
+            }
+          })
+
+          const winners = Array.from(winnersMap.values())
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            .slice(0, 8) // Show top 8 recent winners
+
+          setRecentWinners(winners)
+          console.log('✅ Recent winners loaded:', winners.length)
+        }
+      } catch (err) {
+        console.error('Failed to load recent winners:', err)
+      } finally {
+        setLoadingWinners(false)
+      }
+    }
+
+    loadRecentWinners()
+    
+    // Refresh every 10 seconds
+    const interval = setInterval(loadRecentWinners, 10000)
+    return () => clearInterval(interval)
+  }, [supabase])
+
   const handleSpin = async () => {
     if (!isConnected) {
       return
@@ -96,6 +157,21 @@ const NFTWheelGame = () => {
   }
 
   const winningSegmentData = winningSegment !== null ? WHEEL_VISUAL_ORDER.find(s => s.id === winningSegment) : null
+
+  // Helper function to format time ago
+  const getTimeAgo = (date) => {
+    const now = new Date()
+    const diff = now - date
+    const seconds = Math.floor(diff / 1000)
+    const minutes = Math.floor(seconds / 60)
+    const hours = Math.floor(minutes / 60)
+    const days = Math.floor(hours / 24)
+
+    if (days > 0) return `${days}d ago`
+    if (hours > 0) return `${hours}h ago`
+    if (minutes > 0) return `${minutes}m ago`
+    return 'Just now'
+  }
 
   return (
     <div style={{
@@ -315,6 +391,118 @@ const NFTWheelGame = () => {
             onSpinComplete={handleSpinComplete}
             segments={WHEEL_VISUAL_ORDER}
           />
+
+          {/* Recent Winners */}
+          {recentWinners.length > 0 && (
+            <div style={{
+              marginTop: '60px',
+              padding: '32px',
+              background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.8) 100%)',
+              borderRadius: '24px',
+              border: '2px solid rgba(139, 92, 246, 0.3)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+                marginBottom: '24px'
+              }}>
+                <TrendingUp size={24} color="#8b5cf6" />
+                <h3 style={{
+                  color: '#e2e8f0',
+                  fontSize: '24px',
+                  fontWeight: '700',
+                  margin: 0,
+                  letterSpacing: '0.5px'
+                }}>
+                  Recent Winners
+                </h3>
+              </div>
+              
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                gap: '12px'
+              }}>
+                {recentWinners.map((winner, index) => {
+                  const shortAddress = `${winner.wallet_address.slice(0, 6)}...${winner.wallet_address.slice(-4)}`
+                  const timeAgo = getTimeAgo(new Date(winner.created_at))
+                  
+                  return (
+                    <div
+                      key={`${winner.wallet_address}-${winner.created_at}`}
+                      style={{
+                        padding: '16px',
+                        background: 'rgba(139, 92, 246, 0.1)',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(139, 92, 246, 0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)'
+                        e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)'
+                        e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)'
+                      }}
+                    >
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '10px',
+                        background: index < 3 
+                          ? 'linear-gradient(135deg, #fbbf24, #f59e0b)'
+                          : 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: '700',
+                        color: 'white',
+                        fontSize: '16px'
+                      }}>
+                        {index < 3 ? '🏆' : `#${index + 1}`}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          color: '#cbd5e1',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          marginBottom: '4px',
+                          fontFamily: 'ui-monospace, monospace'
+                        }}>
+                          {shortAddress}
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          color: '#10b981',
+                          fontSize: '13px',
+                          fontWeight: '600'
+                        }}>
+                          <Zap size={12} />
+                          <span>+{Number(winner.xp_earned || 0).toLocaleString()} XP</span>
+                        </div>
+                        <div style={{
+                          color: '#64748b',
+                          fontSize: '11px',
+                          marginTop: '2px'
+                        }}>
+                          {timeAgo}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Spin Button */}
           <div style={{ textAlign: 'center', marginTop: '40px' }}>
