@@ -243,16 +243,21 @@ export const useNFTWheel = () => {
       await makeSpinPayment()
       console.log('✅ Payment successful, starting wheel spin...')
 
-      setIsPaying(false)
-      setIsSpinning(true)
-      setWinningSegment(null)
-
-      // Get random winning segment
+      // Get random winning segment BEFORE setting spinning state
       const segment = getRandomSegment()
-      setWinningSegment(segment.id)
+      console.log('🎯 Winning segment:', segment)
 
-      // Wait for animation to complete (handled by component)
-      // The component will call onSpinComplete after animation
+      setIsPaying(false)
+      
+      // Set winning segment and spinning state together
+      // This ensures the wheel knows where to land
+      setWinningSegment(segment.id)
+      setIsSpinning(true)
+
+      console.log('🎰 Wheel spinning to segment:', segment.id, segment.label)
+      
+      // Animation is handled by NFTWheel component
+      // onSpinComplete callback will be called after animation finishes
       
     } catch (err) {
       console.error('Error spinning wheel:', err)

@@ -119,44 +119,49 @@ const NFTWheel = ({
 
   }, [segments, segmentAngle])
 
-  // Handle spinning
+  // Handle spinning - triggered when isSpinning becomes true with a valid winningSegment
   useEffect(() => {
+    // Only start spinning when both conditions are met
     if (isSpinning && winningSegment !== null) {
+      console.log('🎰 NFTWheel: Starting spin animation for segment:', winningSegment)
       setShowResult(false)
       
       // Find visual index of winning segment
       const visualIndex = segments.findIndex(seg => seg.id === winningSegment)
       if (visualIndex === -1) {
-        console.warn('Winning segment not found:', winningSegment)
+        console.error('❌ NFTWheel: Winning segment not found:', winningSegment, 'in segments:', segments.map(s => s.id))
         return
       }
 
+      console.log('🎯 NFTWheel: Visual index:', visualIndex, 'Segment angle:', segmentAngle)
+
       // Calculate rotation: multiple spins + land on winning segment
+      // The pointer is at top (12 o'clock), so we need to rotate to bring the winning segment there
       const spins = 5
       const targetAngle = spins * 360 + (360 - visualIndex * segmentAngle - segmentAngle / 2)
       
+      console.log('🔄 NFTWheel: Rotating by', targetAngle, 'degrees')
       setRotation(prev => prev + targetAngle)
 
-      // Show result after spin completes
-      const timer = setTimeout(() => {
+      // Show result after spin animation completes (spinDuration = 4000ms)
+      const resultTimer = setTimeout(() => {
+        console.log('✅ NFTWheel: Spin complete, showing result')
         setShowResult(true)
-        // Call onSpinComplete callback after showing result
+        
+        // Call onSpinComplete callback after a brief delay to show the result
         if (onSpinComplete) {
-          // Small delay to ensure animation is fully visible
           setTimeout(() => {
+            console.log('📞 NFTWheel: Calling onSpinComplete callback')
             onSpinComplete()
-          }, 500)
+          }, 800)
         }
-      }, spinDuration)
+      }, spinDuration + 100) // Add small buffer after CSS transition
 
       return () => {
-        clearTimeout(timer)
+        clearTimeout(resultTimer)
       }
-    } else if (!isSpinning && winningSegment === null) {
-      // Reset when not spinning
-      setShowResult(false)
     }
-  }, [isSpinning, winningSegment, segments, segmentAngle, onSpinComplete, spinDuration])
+  }, [isSpinning, winningSegment]) // Only depend on these two values
 
   // Reset rotation when idle
   useEffect(() => {
