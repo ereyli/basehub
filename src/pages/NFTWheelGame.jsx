@@ -43,6 +43,19 @@ const NFTWheelGame = () => {
   const [timeUntilReset, setTimeUntilReset] = useState('')
   const [recentWinners, setRecentWinners] = useState([])
   const [loadingWinners, setLoadingWinners] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Track viewport width for responsive layout (especially for Farcaster / mobile)
+  useEffect(() => {
+    const updateSize = () => {
+      if (typeof window !== 'undefined') {
+        setIsMobile(window.innerWidth <= 640)
+      }
+    }
+    updateSize()
+    window.addEventListener('resize', updateSize)
+    return () => window.removeEventListener('resize', updateSize)
+  }, [])
 
   // Update countdown timer
   useEffect(() => {
@@ -187,9 +200,9 @@ const NFTWheelGame = () => {
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
-      padding: '20px',
-      paddingTop: '100px',
-      paddingBottom: '120px'
+      padding: isMobile ? '14px' : '20px',
+      paddingTop: isMobile ? '70px' : '100px',
+      paddingBottom: isMobile ? '80px' : '120px'
     }}>
       <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
 
@@ -217,20 +230,20 @@ const NFTWheelGame = () => {
       {/* Header */}
       <div style={{
         textAlign: 'center',
-        marginBottom: '48px'
+        marginBottom: isMobile ? '28px' : '48px'
       }}>
         <h1 style={{
-          fontSize: '42px',
+          fontSize: isMobile ? '26px' : '42px',
           fontWeight: '800',
           color: '#f1f5f9',
-          margin: '0 0 12px 0',
-          letterSpacing: '-1px'
+          margin: '0 0 8px 0',
+          letterSpacing: '-0.5px'
         }}>
           Wheel of Fortune
         </h1>
         <p style={{
-          color: '#64748b',
-          fontSize: '16px',
+          color: '#9ca3af',
+          fontSize: isMobile ? '13px' : '16px',
           margin: 0,
           fontWeight: '500'
         }}>
