@@ -164,10 +164,20 @@ const Home = () => {
     }
   }
 
-  // Helper function to render network logos
+  // Helper: small inline logos used in category headers
   const renderNetworkLogos = (networks) => {
     if (!networks || networks.length === 0) return null
     
+    const size = 20
+    const baseStyle = {
+      width: `${size}px`,
+      height: `${size}px`,
+      borderRadius: '50%',
+      objectFit: 'cover',
+      border: '2px solid rgba(255, 255, 255, 0.3)',
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+    }
+
     return (
       <div style={{ 
         display: 'flex', 
@@ -178,56 +188,28 @@ const Home = () => {
           <img 
             src="/base-logo.jpg" 
             alt="Base" 
-            style={{ 
-              width: '24px', 
-              height: '24px', 
-              borderRadius: '50%',
-              objectFit: 'cover',
-              border: '2px solid rgba(255, 255, 255, 0.3)',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
-            }} 
+            style={baseStyle} 
           />
         )}
         {networks.includes('ink') && (
           <img 
             src="/ink-logo.jpg" 
             alt="InkChain" 
-            style={{ 
-              width: '24px', 
-              height: '24px', 
-              borderRadius: '50%',
-              objectFit: 'cover',
-              border: '2px solid rgba(255, 255, 255, 0.3)',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
-            }} 
+            style={baseStyle} 
           />
         )}
         {networks.includes('soneium') && (
           <img 
             src="/soneium-logo.jpg" 
             alt="Soneium" 
-            style={{ 
-              width: '24px', 
-              height: '24px', 
-              borderRadius: '50%',
-              objectFit: 'cover',
-              border: '2px solid rgba(255, 255, 255, 0.3)',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
-            }} 
+            style={baseStyle} 
           />
         )}
         {networks.includes('katana') && (
           <img 
             src="/katana-logo.jpg" 
             alt="Katana" 
-            style={{ 
-              width: '24px', 
-              height: '24px', 
-              borderRadius: '50%',
-              objectFit: 'cover',
-              border: '2px solid rgba(255, 255, 255, 0.3)',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
-            }} 
+            style={baseStyle} 
           />
         )}
       </div>
@@ -473,31 +455,113 @@ const Home = () => {
       <div className="welcome-section">
         <div className="card">
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div style={{ 
-              marginBottom: '16px',
-              display: 'flex',
-              justifyContent: 'center'
-            }}>
-              <Gamepad2 size={48} style={{ color: '#3b82f6' }} />
-            </div>
             <h1 style={{ 
-              fontSize: '32px', 
+              fontSize: '30px', 
               fontWeight: '700', 
-              marginBottom: '8px',
+              marginBottom: '6px',
               color: '#e5e7eb',
               fontFamily: 'Poppins, sans-serif'
             }}>
-              Welcome to BaseHub
+              BaseHub
             </h1>
             <p style={{ 
-              fontSize: '18px', 
-              color: '#6b7280',
-              marginBottom: '24px',
+              fontSize: '15px', 
+              color: '#9ca3af',
+              marginBottom: '20px',
               fontFamily: 'Poppins, sans-serif',
-              fontWeight: '400'
+              fontWeight: '400',
+              maxWidth: '720px',
+              marginLeft: 'auto',
+              marginRight: 'auto'
             }}>
-              Multi-chain Web3 platform. Deploy smart contracts, swap tokens, analyze wallets, and interact with blockchain to earn XP across multiple EVM networks. Available on Base and InkChain!
+              Games, tokens and XP on Base, InkChain and more — all in one Web3 hub.
             </p>
+
+            {/* Network Selector - large clickable logos */}
+            <div style={{ 
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '20px',
+              marginBottom: '28px',
+              flexWrap: 'wrap'
+            }}>
+              {[
+                { key: 'BASE',  label: 'Base',     logo: '/base-logo.jpg',   chainId: NETWORKS.BASE.chainId },
+                { key: 'INK',   label: 'InkChain', logo: '/ink-logo.jpg',    chainId: NETWORKS.INKCHAIN.chainId },
+                { key: 'SONE',  label: 'Soneium',  logo: '/soneium-logo.jpg', chainId: NETWORKS.SONEIUM.chainId },
+                { key: 'KAT',   label: 'Katana',   logo: '/katana-logo.jpg', chainId: NETWORKS.KATANA.chainId },
+              ].map((net) => {
+                const isActive = chainId === net.chainId
+                return (
+                  <button
+                    key={net.key}
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await switchChain({ chainId: net.chainId })
+                      } catch (err) {
+                        console.error('Network switch failed:', err)
+                      }
+                    }}
+                    style={{
+                      border: 'none',
+                      background: isActive 
+                        ? 'linear-gradient(135deg, rgba(59,130,246,0.25), rgba(37,99,235,0.35))'
+                        : 'rgba(15,23,42,0.9)',
+                      borderRadius: '18px',
+                      padding: '10px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      cursor: 'pointer',
+                      boxShadow: isActive 
+                        ? '0 10px 30px rgba(59,130,246,0.35)'
+                        : '0 4px 16px rgba(15,23,42,0.8)',
+                      transform: isActive ? 'translateY(-1px)' : 'translateY(0)',
+                      transition: 'all 0.2s ease',
+                      minWidth: '140px',
+                      justifyContent: 'flex-start'
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        overflow: 'hidden',
+                        border: isActive
+                          ? '2px solid rgba(248,250,252,0.9)'
+                          : '2px solid rgba(148,163,184,0.5)',
+                        boxShadow: '0 4px 12px rgba(15,23,42,0.8)',
+                        background: '#020617'
+                      }}
+                    >
+                      <img
+                        src={net.logo}
+                        alt={net.label}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    </div>
+                    <div style={{ textAlign: 'left' }}>
+                      <div style={{ 
+                        fontSize: '14px', 
+                        fontWeight: 600, 
+                        color: '#e5e7eb',
+                        fontFamily: 'Poppins, sans-serif'
+                      }}>
+                        {net.label}
+                      </div>
+                      <div style={{ 
+                        fontSize: '11px', 
+                        color: isActive ? '#a5b4fc' : '#6b7280'
+                      }}>
+                        {isActive ? 'Connected' : 'Switch network'}
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
             
             {/* Twitter Share Button for Web Users */}
             <div style={{ 
@@ -507,8 +571,8 @@ const Home = () => {
             }}>
               <TwitterShareButton 
                 title="BaseHub"
-                description="Multi-chain Web3 platform. Deploy contracts, swap tokens, analyze wallets, and earn XP!"
-                hashtags={["BaseHub", "BaseNetwork", "Web3", "DeFi", "XP", "MultiChain"]}
+                description="Playing on-chain games, launching tokens and earning XP on Base, InkChain and more with BaseHub."
+                hashtags={["BaseHub", "Base", "InkChain", "Web3Gaming", "DEX", "XP"]}
               />
             </div>
             
@@ -957,6 +1021,210 @@ const Home = () => {
                       </div>
                     </div>
                   </Link>
+                </div>
+              </div>
+
+              {/* PumpHub - Token Launchpad Category */}
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 82, 255, 0.1))',
+                borderRadius: '20px',
+                padding: '32px',
+                boxShadow: '0 8px 32px rgba(0, 212, 255, 0.15)',
+                border: '2px solid rgba(0, 212, 255, 0.3)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                  <div style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '10px',
+                    background: 'rgba(0, 212, 255, 0.15)',
+                    border: '1px solid rgba(0, 212, 255, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#00d4ff'
+                  }}>
+                    <Rocket size={22} />
+                  </div>
+                  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
+                    PUMPHUB
+                  </h2>
+                  {renderNetworkLogos(['base'])}
+                </div>
+                <p style={{ 
+                  color: '#9ca3af', 
+                  fontSize: '15px', 
+                  marginBottom: '24px',
+                  lineHeight: '1.6',
+                  fontFamily: 'Poppins, sans-serif'
+                }}>
+                  Launch your own token with bonding curve. Fair launch, no presale. 0.3% trade fee goes to creator. Auto-graduates to Uniswap at 5 ETH with permanently locked liquidity.
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                  <Link
+                    to="/launchpad"
+                    className="game-card"
+                    style={{ 
+                      textDecoration: 'none',
+                      position: 'relative',
+                      display: 'block'
+                    }}
+                  >
+                    <div style={{
+                      background: 'linear-gradient(135deg, #00d4ff, #0052ff)',
+                      padding: '24px',
+                      borderRadius: '16px',
+                      color: 'white',
+                      transition: 'all 0.3s ease',
+                      height: '100%'
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '140px' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                          <div style={{ flexShrink: 0 }}>
+                            <Rocket size={40} style={{ color: 'white' }} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <h3 style={{ 
+                              fontSize: '20px', 
+                              fontWeight: '600', 
+                              margin: '0 0 8px 0', 
+                              color: 'white', 
+                              lineHeight: '1.2',
+                              fontFamily: 'Poppins, sans-serif'
+                            }}>
+                              Token Launchpad
+                            </h3>
+                            <p style={{ 
+                              color: 'rgba(255, 255, 255, 0.9)', 
+                              fontSize: '14px', 
+                              margin: 0, 
+                              lineHeight: '1.4',
+                              fontFamily: 'Poppins, sans-serif'
+                            }}>
+                              Browse and trade launched tokens
+                            </p>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                          <div style={{
+                            background: 'rgba(30, 41, 59, 0.95)',
+                            borderRadius: '12px',
+                            padding: '4px 10px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: '#10b981',
+                            whiteSpace: 'nowrap',
+                            lineHeight: '1.2',
+                            fontFamily: 'Poppins, sans-serif'
+                          }}>
+                            100 XP
+                          </div>
+                          <div style={{
+                            background: 'rgba(255, 215, 0, 0.95)',
+                            borderRadius: '12px',
+                            padding: '4px 10px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: '#92400e',
+                            whiteSpace: 'nowrap',
+                            lineHeight: '1.2',
+                            fontFamily: 'Poppins, sans-serif'
+                          }}>
+                            +0.3% Trade Fee
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                  <Link
+                    to="/launchpad/create"
+                    className="game-card"
+                    style={{ 
+                      textDecoration: 'none',
+                      position: 'relative',
+                      display: 'block'
+                    }}
+                  >
+                    <div style={{
+                      background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+                      padding: '24px',
+                      borderRadius: '16px',
+                      color: 'white',
+                      transition: 'all 0.3s ease',
+                      height: '100%'
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '140px' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                          <div style={{ flexShrink: 0 }}>
+                            <Factory size={40} style={{ color: 'white' }} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <h3 style={{ 
+                              fontSize: '20px', 
+                              fontWeight: '600', 
+                              margin: '0 0 8px 0', 
+                              color: 'white', 
+                              lineHeight: '1.2',
+                              fontFamily: 'Poppins, sans-serif'
+                            }}>
+                              Create Token
+                            </h3>
+                            <p style={{ 
+                              color: 'rgba(255, 255, 255, 0.9)', 
+                              fontSize: '14px', 
+                              margin: 0, 
+                              lineHeight: '1.4',
+                              fontFamily: 'Poppins, sans-serif'
+                            }}>
+                              Launch your own token (0.001 ETH)
+                            </p>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                          <div style={{
+                            background: 'rgba(30, 41, 59, 0.95)',
+                            borderRadius: '12px',
+                            padding: '4px 10px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: '#10b981',
+                            whiteSpace: 'nowrap',
+                            lineHeight: '1.2',
+                            fontFamily: 'Poppins, sans-serif'
+                          }}>
+                            100 XP
+                          </div>
+                          <div style={{
+                            background: 'rgba(255, 215, 0, 0.95)',
+                            borderRadius: '12px',
+                            padding: '4px 10px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: '#92400e',
+                            whiteSpace: 'nowrap',
+                            lineHeight: '1.2',
+                            fontFamily: 'Poppins, sans-serif'
+                          }}>
+                            Up to 10% Allocation
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+                <div style={{
+                  marginTop: '20px',
+                  padding: '16px',
+                  background: 'rgba(0, 0, 0, 0.2)',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}>
+                  <TrendingUp size={20} style={{ color: '#00d4ff' }} />
+                  <span style={{ color: '#9ca3af', fontSize: '13px', fontFamily: 'Poppins, sans-serif' }}>
+                    Bonding curve • LP locked forever • 0.001 ETH to create • 5 ETH graduation to Uniswap
+                  </span>
                 </div>
               </div>
 
