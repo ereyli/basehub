@@ -1062,7 +1062,7 @@ const Home = () => {
                 </p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
                   <Link
-                    to="/launchpad"
+                    to="#"
                     className="game-card"
                     style={{ 
                       textDecoration: 'none',
@@ -1078,7 +1078,7 @@ const Home = () => {
                       transition: 'all 0.3s ease',
                       height: '100%'
                     }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '140px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '140px', opacity: 0.45 }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                           <div style={{ flexShrink: 0 }}>
                             <Rocket size={40} style={{ color: 'white' }} />
@@ -1134,10 +1134,41 @@ const Home = () => {
                           </div>
                         </div>
                       </div>
+                      {/* Coming Soon overlay */}
+                      <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: '16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        color: '#e5e7eb',
+                        fontFamily: 'Poppins, sans-serif',
+                        textAlign: 'center',
+                        pointerEvents: 'none',
+                        background: 'linear-gradient(135deg, rgba(15,23,42,0.85), rgba(15,23,42,0.65))'
+                      }}>
+                        <span style={{ 
+                          fontSize: '13px',
+                          letterSpacing: '0.18em',
+                          textTransform: 'uppercase',
+                          color: '#9ca3af'
+                        }}>
+                          Coming soon
+                        </span>
+                        <span style={{ 
+                          fontSize: '16px',
+                          fontWeight: 600
+                        }}>
+                          PumpHub Token Launchpad
+                        </span>
+                      </div>
                     </div>
                   </Link>
                   <Link
-                    to="/launchpad/create"
+                    to="#"
                     className="game-card"
                     style={{ 
                       textDecoration: 'none',
@@ -1153,7 +1184,7 @@ const Home = () => {
                       transition: 'all 0.3s ease',
                       height: '100%'
                     }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '140px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '140px', opacity: 0.45 }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                           <div style={{ flexShrink: 0 }}>
                             <Factory size={40} style={{ color: 'white' }} />
@@ -1208,6 +1239,37 @@ const Home = () => {
                             Up to 10% Allocation
                           </div>
                         </div>
+                      </div>
+                      {/* Coming Soon overlay */}
+                      <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: '16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        color: '#e5e7eb',
+                        fontFamily: 'Poppins, sans-serif',
+                        textAlign: 'center',
+                        pointerEvents: 'none',
+                        background: 'linear-gradient(135deg, rgba(15,23,42,0.85), rgba(15,23,42,0.65))'
+                      }}>
+                        <span style={{ 
+                          fontSize: '13px',
+                          letterSpacing: '0.18em',
+                          textTransform: 'uppercase',
+                          color: '#9ca3af'
+                        }}>
+                          Coming soon
+                        </span>
+                        <span style={{ 
+                          fontSize: '16px',
+                          fontWeight: 600
+                        }}>
+                          Create & Launch Tokens
+                        </span>
                       </div>
                     </div>
                   </Link>
