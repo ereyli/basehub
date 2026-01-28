@@ -37,6 +37,7 @@ export const TOKEN_ADDRESSES = {
   BENJI: '0xbc45647ea894030a4e9801ec03479739fa2485f0', // Basenji (BENJI) Token
   TYBG: '0x0d97f261b1e88845184f678e2d1e7a98d9fd38de', // Base God (TYBG) Token
   BOMET: '0x33e7F871Ce502ec77A0D96fDcd02C9219f95E944', // Bomet Token
+  CLAWD: '0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07', // CLAWD Token
 };
 
 // SDK Token instances
@@ -61,6 +62,7 @@ const MIGGLES_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.MIGGLES, 18, 'MIG
 const BENJI_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.BENJI, 18, 'BENJI', 'Benji');
 const TYBG_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.TYBG, 18, 'TYBG', 'TYBG');
 const BOMET_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.BOMET, 18, 'BOMET', 'Bomet');
+const CLAWD_TOKEN = new Token(BASE_CHAIN_ID, TOKEN_ADDRESSES.CLAWD, 18, 'CLAWD', 'CLAWD');
 
 // Default token list
 export const DEFAULT_TOKENS: Record<string, AppToken> = {
@@ -244,6 +246,16 @@ export const DEFAULT_TOKENS: Record<string, AppToken> = {
     logoURI: 'https://coin-images.coingecko.com/coins/images/68659/small/logo-128.png',
     isNative: false,
     sdkToken: BOMET_TOKEN
+  },
+  CLAWD: {
+    address: TOKEN_ADDRESSES.CLAWD,
+    symbol: 'CLAWD',
+    name: 'CLAWD',
+    decimals: 18,
+    // TrustWallet-style URL for Base chain assets
+    logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/base/assets/0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07/logo.png',
+    isNative: false,
+    sdkToken: CLAWD_TOKEN
   }
 };
 
@@ -251,7 +263,7 @@ export const DEFAULT_TOKENS: Record<string, AppToken> = {
 export const POPULAR_TOKENS = ['ETH', 'USDC', 'JESSE', 'VIRTUAL', 'BHUB'];
 
 // Meme tokens category
-export const MEME_TOKENS = ['TOSHI', 'MOCHI', 'DOGINME', 'KEYCAT', 'NORMIE', 'MIGGLES', 'BENJI', 'TYBG', 'BOMET'];
+export const MEME_TOKENS = ['TOSHI', 'MOCHI', 'DOGINME', 'KEYCAT', 'NORMIE', 'MIGGLES', 'BENJI', 'TYBG', 'BOMET', 'CLAWD'];
 
 // Fee tiers for Uniswap V3 pools
 export const FEE_TIERS = {
