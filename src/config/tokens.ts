@@ -252,8 +252,8 @@ export const DEFAULT_TOKENS: Record<string, AppToken> = {
     symbol: 'CLAWD',
     name: 'CLAWD',
     decimals: 18,
-    // TrustWallet-style URL for Base chain assets
-    logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/base/assets/0x9f86dB9fc6f7c9408e8Fda3Ff8ce4e78ac7a6b07/logo.png',
+    // Leave undefined so logo can be auto-fetched via fetchTokenLogo (TrustWallet/CoinGecko/Uniswap list)
+    logoURI: undefined,
     isNative: false,
     sdkToken: CLAWD_TOKEN
   }
