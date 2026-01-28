@@ -2107,7 +2107,16 @@ export default function SwapInterface() {
               onClick={() => setShowTokenSelect('in')}
               style={getStyle(styles.tokenButton, mobileOverrides.tokenButton)}
             >
-              {tokenIn.logoURI && <img src={tokenIn.logoURI} alt={tokenIn.symbol} style={getStyle(styles.tokenButtonLogo, mobileOverrides.tokenButtonLogo)} />}
+              {(tokenIn.logoURI || tokenLogos[tokenIn.symbol]) && (
+                <img
+                  src={tokenIn.logoURI || tokenLogos[tokenIn.symbol]}
+                  alt={tokenIn.symbol}
+                  style={getStyle(styles.tokenButtonLogo, mobileOverrides.tokenButtonLogo)}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              )}
               {tokenIn.symbol}
               <span style={styles.chevron}>▼</span>
             </button>
@@ -2214,7 +2223,16 @@ export default function SwapInterface() {
               onClick={() => setShowTokenSelect('out')}
               style={getStyle(styles.tokenButton, mobileOverrides.tokenButton)}
             >
-              {tokenOut.logoURI && <img src={tokenOut.logoURI} alt={tokenOut.symbol} style={getStyle(styles.tokenButtonLogo, mobileOverrides.tokenButtonLogo)} />}
+              {(tokenOut.logoURI || tokenLogos[tokenOut.symbol]) && (
+                <img
+                  src={tokenOut.logoURI || tokenLogos[tokenOut.symbol]}
+                  alt={tokenOut.symbol}
+                  style={getStyle(styles.tokenButtonLogo, mobileOverrides.tokenButtonLogo)}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              )}
               {tokenOut.symbol}
               <span style={styles.chevron}>▼</span>
             </button>
