@@ -407,19 +407,20 @@ const NFTWheelGame = () => {
             </div>
           )}
 
-          {/* Recent Winners - Top Right Corner - Transparent */}
-          <div style={{
-            position: 'fixed',
-            top: '120px',
-            right: '180px',
-            width: '280px',
-            padding: '16px',
-            background: 'rgba(15, 23, 42, 0.15)',
-            backdropFilter: 'blur(10px)',
-            maxHeight: 'calc(100vh - 140px)',
-            overflowY: 'auto',
-            zIndex: 10
-          }}>
+          {/* Recent Winners - Desktop: Top Right Corner - Transparent */}
+          {!isMobile && (
+            <div style={{
+              position: 'fixed',
+              top: '120px',
+              right: '180px',
+              width: '280px',
+              padding: '16px',
+              background: 'rgba(15, 23, 42, 0.15)',
+              backdropFilter: 'blur(10px)',
+              maxHeight: 'calc(100vh - 140px)',
+              overflowY: 'auto',
+              zIndex: 10
+            }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -547,6 +548,7 @@ const NFTWheelGame = () => {
                 </div>
               )}
             </div>
+          )}
 
           {/* Wheel Component - Centered */}
           <div style={{ 
@@ -687,6 +689,139 @@ const NFTWheelGame = () => {
               )}
             </div>
           </div>
+
+          {/* Recent Winners - Mobile: Below Wheel */}
+          {isMobile && (
+            <div style={{
+              width: '100%',
+              padding: '16px',
+              background: 'rgba(15, 23, 42, 0.4)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '16px',
+              marginTop: '32px',
+              border: '1px solid rgba(139, 92, 246, 0.2)'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '16px'
+              }}>
+                <TrendingUp size={18} color="#8b5cf6" />
+                <h3 style={{
+                  color: '#cbd5e1',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  margin: 0
+                }}>
+                  Recent Winners
+                </h3>
+              </div>
+              
+              {loadingWinners ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '20px',
+                  color: '#94a3b8',
+                  fontSize: '14px'
+                }}>
+                  Loading...
+                </div>
+              ) : recentWinners.length > 0 ? (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  maxHeight: '300px',
+                  overflowY: 'auto'
+                }}>
+                  {recentWinners.map((winner, index) => {
+                    const shortAddress = `${winner.wallet_address.slice(0, 6)}...${winner.wallet_address.slice(-4)}`
+                    const timeAgo = getTimeAgo(new Date(winner.created_at))
+                    
+                    return (
+                      <div
+                        key={`${winner.wallet_address}-${winner.created_at}`}
+                        style={{
+                          padding: '10px',
+                          background: 'rgba(139, 92, 246, 0.08)',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px'
+                        }}
+                      >
+                        <div style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '8px',
+                          background: index < 3 
+                            ? 'linear-gradient(135deg, #fbbf24, #f59e0b)'
+                            : 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: '700',
+                          color: 'white',
+                          fontSize: '12px',
+                          flexShrink: 0
+                        }}>
+                          {index < 3 ? '🏆' : `#${index + 1}`}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            color: '#cbd5e1',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            marginBottom: '3px',
+                            fontFamily: 'ui-monospace, monospace',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {shortAddress}
+                          </div>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            color: '#10b981',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            marginBottom: '2px'
+                          }}>
+                            <Zap size={10} />
+                            <span>+{Number(winner.xp_earned || 0).toLocaleString()} XP</span>
+                          </div>
+                          <div style={{
+                            color: '#64748b',
+                            fontSize: '10px'
+                          }}>
+                            {timeAgo}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '20px',
+                  color: '#64748b',
+                  fontSize: '12px'
+                }}>
+                  <Trophy size={24} color="#64748b" style={{ marginBottom: '8px', opacity: 0.5 }} />
+                  <div style={{ fontWeight: '600', marginBottom: '4px', color: '#94a3b8' }}>
+                    No winners yet
+                  </div>
+                  <div style={{ fontSize: '10px' }}>
+                    Be the first to spin!
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Prize Pool */}
           <div style={{
