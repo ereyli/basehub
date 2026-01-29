@@ -61,60 +61,79 @@ export const RainbowKitChainInterceptor = () => {
     }
   }, [isConnected, chainId, switchToNetwork, isWeb])
 
-  // Also intercept wagmi's switchChain calls
+  // Also intercept wagmi's switchChain calls - Safely wrapped
   useEffect(() => {
-    if (typeof window.ethereum === 'undefined') {
+    if (typeof window === 'undefined' || typeof window.ethereum === 'undefined') {
       return
     }
 
-    // Store original request method
-    const originalRequest = window.ethereum.request.bind(window.ethereum)
-    let isIntercepting = false
+    try {
+      // Store original request method safely
+      if (!window.ethereum.request) {
+        return
+      }
 
-    window.ethereum.request = async function(...args) {
-      // Only intercept wallet_switchEthereumChain calls
-      if (args[0]?.method === 'wallet_switchEthereumChain' && !isIntercepting) {
+      const originalRequest = window.ethereum.request.bind(window.ethereum)
+      let isIntercepting = false
+
+      window.ethereum.request = async function(...args) {
         try {
-          return await originalRequest(...args)
-        } catch (error) {
-          // If chain not added (error 4902), add it automatically
-          if (
-            error.code === 4902 || 
-            error.message?.includes('not been added') || 
-            error.message?.includes('Unrecognized chain ID')
-          ) {
-            const chainIdHex = args[0]?.params?.[0]?.chainId
-            if (chainIdHex) {
-              const targetChainId = parseInt(chainIdHex, 16)
-              console.log('🔄 Auto-adding network:', targetChainId)
-              isIntercepting = true
-              try {
-                await switchToNetwork(targetChainId)
-                console.log('✅ Network auto-added, retrying switch...')
-                // Retry the original request
-                const result = await originalRequest(...args)
-                isIntercepting = false
-                return result
-              } catch (addError) {
-                isIntercepting = false
-                console.error('❌ Failed to auto-add network:', addError)
-                throw addError
+          // Only intercept wallet_switchEthereumChain calls
+          if (args[0]?.method === 'wallet_switchEthereumChain' && !isIntercepting) {
+            try {
+              return await originalRequest(...args)
+            } catch (error) {
+              // If chain not added (error 4902), add it automatically
+              if (
+                error.code === 4902 || 
+                error.message?.includes('not been added') || 
+                error.message?.includes('Unrecognized chain ID')
+              ) {
+                const chainIdHex = args[0]?.params?.[0]?.chainId
+                if (chainIdHex) {
+                  const targetChainId = parseInt(chainIdHex, 16)
+                  console.log('🔄 Auto-adding network:', targetChainId)
+                  isIntercepting = true
+                  try {
+                    await switchToNetwork(targetChainId)
+                    console.log('✅ Network auto-added, retrying switch...')
+                    // Retry the original request
+                    const result = await originalRequest(...args)
+                    isIntercepting = false
+                    return result
+                  } catch (addError) {
+                    isIntercepting = false
+                    console.error('❌ Failed to auto-add network:', addError)
+                    throw addError
+                  }
+                }
               }
+              throw error
             }
           }
-          throw error
+          
+          // For all other requests, use original method
+          return await originalRequest(...args)
+        } catch (error) {
+          // If override fails, fallback to original
+          console.warn('⚠️ Request override failed, using original:', error)
+          return await originalRequest(...args)
         }
       }
-      
-      // For all other requests, use original method
-      return await originalRequest(...args)
-    }
 
-    return () => {
-      // Restore original request on unmount
-      if (window.ethereum && originalRequest) {
-        window.ethereum.request = originalRequest
+      return () => {
+        // Restore original request on unmount safely
+        try {
+          if (window.ethereum && originalRequest) {
+            window.ethereum.request = originalRequest
+          }
+        } catch (cleanupError) {
+          console.warn('⚠️ Failed to restore original request:', cleanupError)
+        }
       }
+    } catch (error) {
+      console.error('❌ Failed to setup request interceptor:', error)
+      // Don't throw - let the app continue without interceptor
     }
   }, [switchToNetwork, isWeb])
 
