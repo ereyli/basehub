@@ -14,8 +14,16 @@ export const RainbowKitChainInterceptor = () => {
   const { switchToNetwork } = useNetworkCheck()
   const isWeb = shouldUseRainbowKit()
 
-  // Only run on web, not in Farcaster
-  if (!isWeb) {
+  // Detect mobile browsers
+  const isMobile = typeof window !== 'undefined' && 
+    (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(window.navigator?.userAgent || '') ||
+     (window.navigator?.maxTouchPoints && window.navigator.maxTouchPoints > 2))
+
+  // Only run on desktop web, not in Farcaster or mobile browsers
+  if (!isWeb || isMobile) {
+    if (isMobile) {
+      console.warn('⚠️ RainbowKitChainInterceptor disabled for mobile browsers to prevent crashes.')
+    }
     return null
   }
 

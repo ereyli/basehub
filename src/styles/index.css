@@ -18,6 +18,16 @@ body {
   transform-origin: top left;
 }
 
+/* Disable zoom on mobile browsers to prevent crashes */
+@media (max-width: 768px) {
+  html, body, #root, .App, .web-app, .farcaster-app {
+    zoom: 1 !important;
+    transform: none !important;
+    transform-origin: initial !important;
+    -webkit-transform: none !important;
+  }
+}
+
 #root {
   min-height: 100vh;
 }
