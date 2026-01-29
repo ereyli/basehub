@@ -2700,3 +2700,277 @@ textarea {
     opacity: 0.7;
   }
 }
+
+/* ========================================
+   FARCASTER MOBILE COMPACT STYLES
+   All inner pages (cards) - compact for mobile
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* Main card container - compact */
+  .farcaster-app .card {
+    padding: 12px !important;
+    margin: 8px !important;
+    border-radius: 16px !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Page titles - smaller */
+  .farcaster-app .card h1 {
+    font-size: 20px !important;
+    margin-bottom: 8px !important;
+    margin-top: 8px !important;
+    padding-top: 8px !important;
+  }
+
+  .farcaster-app .card h2 {
+    font-size: 16px !important;
+    margin-bottom: 8px !important;
+    margin-top: 8px !important;
+    padding-top: 8px !important;
+  }
+
+  .farcaster-app .card h3 {
+    font-size: 14px !important;
+    margin-bottom: 6px !important;
+  }
+
+  /* Paragraphs - smaller */
+  .farcaster-app .card p {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* Icons - smaller */
+  .farcaster-app .card svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .farcaster-app .card svg.large-icon {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  /* Profile images - smaller */
+  .farcaster-app .card img[style*="border-radius: 50%"],
+  .farcaster-app .card img[style*="borderRadius"] {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  /* Buttons - compact */
+  .farcaster-app .card button {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    border-radius: 10px !important;
+  }
+
+  /* Form inputs - compact */
+  .farcaster-app .card input,
+  .farcaster-app .card textarea,
+  .farcaster-app .card select {
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+    border-radius: 8px !important;
+  }
+
+  /* Inner containers - less padding */
+  .farcaster-app .card > div {
+    padding: 8px !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* Flex gaps - smaller */
+  .farcaster-app .card [style*="gap: 16px"],
+  .farcaster-app .card [style*="gap: '16px'"] {
+    gap: 8px !important;
+  }
+
+  .farcaster-app .card [style*="gap: 12px"],
+  .farcaster-app .card [style*="gap: '12px'"] {
+    gap: 6px !important;
+  }
+
+  .farcaster-app .card [style*="gap: 24px"],
+  .farcaster-app .card [style*="gap: '24px'"] {
+    gap: 10px !important;
+  }
+
+  /* Margins - smaller */
+  .farcaster-app .card [style*="marginBottom: 32px"],
+  .farcaster-app .card [style*="marginBottom: '32px'"] {
+    margin-bottom: 12px !important;
+  }
+
+  .farcaster-app .card [style*="marginBottom: 24px"],
+  .farcaster-app .card [style*="marginBottom: '24px'"] {
+    margin-bottom: 10px !important;
+  }
+
+  .farcaster-app .card [style*="marginBottom: 16px"],
+  .farcaster-app .card [style*="marginBottom: '16px'"] {
+    margin-bottom: 8px !important;
+  }
+
+  /* Paddings - smaller */
+  .farcaster-app .card [style*="padding: 24px"],
+  .farcaster-app .card [style*="padding: '24px'"] {
+    padding: 12px !important;
+  }
+
+  .farcaster-app .card [style*="padding: 16px"],
+  .farcaster-app .card [style*="padding: '16px'"] {
+    padding: 10px !important;
+  }
+
+  /* Profile cards in Featured Profiles */
+  .farcaster-app .card [style*="borderRadius: '12px'"],
+  .farcaster-app .card [style*="borderRadius: '16px'"] {
+    border-radius: 10px !important;
+    padding: 10px !important;
+  }
+
+  /* Badges and tags - smaller */
+  .farcaster-app .card [style*="borderRadius: '20px'"],
+  .farcaster-app .card [style*="borderRadius: '12px'"][style*="padding: '4px"] {
+    padding: 3px 8px !important;
+    font-size: 10px !important;
+    border-radius: 8px !important;
+  }
+
+  /* Star/Featured icons */
+  .farcaster-app .card [style*="color: '#fbbf24'"] svg,
+  .farcaster-app .card [style*="color: 'rgb(251, 191, 36)'"] svg {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  /* Alert boxes - compact */
+  .farcaster-app .card [style*="background: 'rgba(59, 130, 246"],
+  .farcaster-app .card [style*="background: 'rgba(239, 68, 68"],
+  .farcaster-app .card [style*="background: 'rgba(16, 185, 129"] {
+    padding: 10px !important;
+    border-radius: 10px !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Grid layouts - 2 columns max */
+  .farcaster-app .card [style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  /* Subscription options - stack vertically */
+  .farcaster-app .card [style*="display: 'flex'"][style*="gap: '16px'"] {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  /* Back button - compact */
+  .farcaster-app .back-button,
+  .farcaster-app [class*="BackButton"] {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* Loader - smaller */
+  .farcaster-app .card .spin,
+  .farcaster-app .card [class*="Loader"] {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  /* Text truncation for long content */
+  .farcaster-app .card [style*="overflow: 'hidden'"] {
+    max-width: 100% !important;
+  }
+
+  /* Profile list items */
+  .farcaster-app .card [style*="border: '2px solid'"],
+  .farcaster-app .card [style*="border: '1px solid'"] {
+    padding: 10px !important;
+    margin-bottom: 8px !important;
+    border-radius: 10px !important;
+  }
+
+  /* Follow/Unfollow buttons */
+  .farcaster-app .card button[style*="background: '#10b981'"],
+  .farcaster-app .card button[style*="background: '#6b7280'"],
+  .farcaster-app .card button[style*="background: '#3b82f6'"] {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    min-width: auto !important;
+  }
+
+  /* Featured badge */
+  .farcaster-app .card [style*="background: '#fbbf24'"],
+  .farcaster-app .card [style*="background: 'rgb(251, 191, 36)'"] {
+    padding: 3px 8px !important;
+    font-size: 10px !important;
+    border-radius: 6px !important;
+  }
+
+  /* Description text areas */
+  .farcaster-app .card textarea {
+    min-height: 60px !important;
+    font-size: 12px !important;
+  }
+
+  /* Stats display */
+  .farcaster-app .card [style*="fontSize: '14px'"] {
+    font-size: 12px !important;
+  }
+
+  .farcaster-app .card [style*="fontSize: '16px'"] {
+    font-size: 13px !important;
+  }
+
+  .farcaster-app .card [style*="fontSize: '18px'"] {
+    font-size: 14px !important;
+  }
+
+  .farcaster-app .card [style*="fontSize: '20px'"] {
+    font-size: 15px !important;
+  }
+
+  .farcaster-app .card [style*="fontSize: '24px'"] {
+    font-size: 16px !important;
+  }
+
+  .farcaster-app .card [style*="fontSize: '28px'"] {
+    font-size: 18px !important;
+  }
+
+  .farcaster-app .card [style*="fontSize: '32px'"] {
+    font-size: 20px !important;
+  }
+
+  /* Icon containers */
+  .farcaster-app .card [style*="width: '64px'"],
+  .farcaster-app .card [style*="width: '80px'"] {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .farcaster-app .card [style*="width: '48px'"],
+  .farcaster-app .card [style*="width: '44px'"] {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .farcaster-app .card [style*="width: '40px'"] {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  /* Max width adjustments */
+  .farcaster-app .card[style*="maxWidth: '1000px'"],
+  .farcaster-app .card[style*="maxWidth: '800px'"],
+  .farcaster-app .card[style*="maxWidth: '600px'"] {
+    max-width: 100% !important;
+    margin: 8px !important;
+  }
+}
