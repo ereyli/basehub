@@ -1,27 +1,62 @@
 import React from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useChainId } from 'wagmi'
-import { Gamepad2, Home, Users, Zap } from 'lucide-react'
+import { Gamepad2, Home, Users, Zap, Sun, Moon, Repeat, Coins, Dice1, TrendingUp, Rocket, Loader2 } from 'lucide-react'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { getCurrentConfig } from '../config/base'
 import { useProofOfUsage } from '../hooks/useProofOfUsage'
 import { getXP, getNFTCount } from '../utils/xpUtils'
 import { useSupabase } from '../hooks/useSupabase'
+import { useTransactions } from '../hooks/useTransactions'
 import UserProfile from './UserProfile'
 
 const WebHeader = () => {
   const location = useLocation()
+  const navigate = useNavigate()
   const { isConnected, address } = useAccount()
   const chainId = useChainId()
   const { isCorrectNetwork } = useNetworkCheck()
   const baseConfig = getCurrentConfig()
   const { totalUsers, loading: proofLoading } = useProofOfUsage()
   const { supabase } = useSupabase()
+  const { sendGMTransaction, sendGNTransaction } = useTransactions()
   const [isScrolled, setIsScrolled] = React.useState(false)
   const [totalXP, setTotalXP] = React.useState(0)
   const [nftCount, setNftCount] = React.useState(0)
   const [multiplier, setMultiplier] = React.useState(1)
+  const [isLoadingGM, setIsLoadingGM] = React.useState(false)
+  const [isLoadingGN, setIsLoadingGN] = React.useState(false)
+  const [quickActionMessage, setQuickActionMessage] = React.useState('')
+
+  // Quick Action handlers
+  const handleQuickGM = async () => {
+    if (!isConnected) return
+    setIsLoadingGM(true)
+    try {
+      await sendGMTransaction('GM from BaseHub! 🎮')
+      setQuickActionMessage('GM sent! +30 XP')
+      setTimeout(() => setQuickActionMessage(''), 2000)
+    } catch (error) {
+      console.error('GM failed:', error)
+    } finally {
+      setIsLoadingGM(false)
+    }
+  }
+
+  const handleQuickGN = async () => {
+    if (!isConnected) return
+    setIsLoadingGN(true)
+    try {
+      await sendGNTransaction('GN from BaseHub! 🌙')
+      setQuickActionMessage('GN sent! +30 XP')
+      setTimeout(() => setQuickActionMessage(''), 2000)
+    } catch (error) {
+      console.error('GN failed:', error)
+    } finally {
+      setIsLoadingGN(false)
+    }
+  }
 
   // Handle scroll detection
   React.useEffect(() => {
@@ -101,6 +136,17 @@ const WebHeader = () => {
   }, [isConnected, address, supabase])
 
 
+  // Quick action buttons config
+  const quickActions = [
+    { id: 'gm', label: 'GM', icon: Sun, color: '#10b981', onClick: handleQuickGM, loading: isLoadingGM },
+    { id: 'gn', label: 'GN', icon: Moon, color: '#3b82f6', onClick: handleQuickGN, loading: isLoadingGN },
+    { id: 'swap', label: 'Swap', icon: Repeat, color: '#667eea', path: '/swap' },
+    { id: 'flip', label: 'Flip', icon: Coins, color: '#f59e0b', path: '/flip' },
+    { id: 'dice', label: 'Dice', icon: Dice1, color: '#10b981', path: '/dice' },
+    { id: 'analysis', label: 'Analysis', icon: TrendingUp, color: '#8b5cf6', path: '/wallet-analysis' },
+    { id: 'deploy', label: 'Deploy', icon: Rocket, color: '#ec4899', path: '/deploy' },
+  ]
+
   return (
     <header className={`web-header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="header-container">
@@ -115,6 +161,43 @@ const WebHeader = () => {
               <span className="logo-subtitle">Gamified smart contracts</span>
             </div>
           </Link>
+
+          {/* Quick Actions Bar - Center */}
+          <div className="quick-actions-bar">
+            {quickActions.map((action) => {
+              const IconComponent = action.icon
+              if (action.path) {
+                return (
+                  <Link
+                    key={action.id}
+                    to={action.path}
+                    className="quick-action-btn"
+                    style={{ '--action-color': action.color }}
+                  >
+                    <IconComponent size={16} />
+                    <span>{action.label}</span>
+                  </Link>
+                )
+              }
+              return (
+                <button
+                  key={action.id}
+                  onClick={action.onClick}
+                  disabled={!isConnected || action.loading}
+                  className="quick-action-btn"
+                  style={{ '--action-color': action.color }}
+                >
+                  {action.loading ? <Loader2 size={16} className="spinning" /> : <IconComponent size={16} />}
+                  <span>{action.label}</span>
+                </button>
+              )
+            })}
+            {quickActionMessage && (
+              <div className="quick-action-message">
+                {quickActionMessage}
+              </div>
+            )}
+          </div>
           
           {/* Navigation & Status */}
           <div className="header-right">
@@ -144,7 +227,7 @@ const WebHeader = () => {
             <div className="proof-of-usage">
               <div className="proof-metric">
                 <Users size={14} />
-                <span className="proof-label">Total Users:</span>
+                <span className="proof-label">Users:</span>
                 <span className="proof-value">{proofLoading ? '...' : totalUsers.toLocaleString()}</span>
               </div>
             </div>

@@ -1288,6 +1288,123 @@ body {
   letter-spacing: 0.5px;
 }
 
+/* Quick Actions Bar - Web Dashboard */
+.quick-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+.quick-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #e5e7eb;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.quick-action-btn:hover {
+  background: linear-gradient(135deg, var(--action-color, #3b82f6) 0%, var(--action-color, #3b82f6)dd 100%);
+  border-color: var(--action-color, #3b82f6);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.quick-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.quick-action-btn svg {
+  flex-shrink: 0;
+}
+
+.quick-action-message {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  animation: fadeInOut 2s ease;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  20% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+}
+
+/* Hide quick actions on mobile */
+@media (max-width: 1024px) {
+  .quick-actions-bar {
+    display: none;
+  }
+}
+
+/* Spinning animation for loading state */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+/* Web Dashboard Styles */
+.web-app .home {
+  padding: 0;
+}
+
+.web-app .welcome-section {
+  margin-bottom: 0;
+}
+
+.web-app .welcome-section .card {
+  padding: 20px 24px;
+  margin-bottom: 0;
+}
+
+.web-app .welcome-section h1 {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.web-app .welcome-section p {
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+/* Web Dashboard - Compact Network Selector */
+.web-app .welcome-section button[style*="minWidth"] {
+  min-width: 120px !important;
+  padding: 8px 12px !important;
+}
+
 .header-right {
   display: flex;
   align-items: center;
