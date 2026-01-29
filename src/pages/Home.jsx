@@ -40,6 +40,198 @@ const Home = () => {
   // Check if we're on web (not Farcaster)
   const isWeb = shouldUseRainbowKit()
   
+  // Check if mobile (for Farcaster compact layout)
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
+  const isCompactMode = isInFarcaster && isMobile
+  
+  // Compact styles for Farcaster mobile
+  const compactStyles = {
+    // Category container
+    categoryContainer: isCompactMode ? {
+      background: 'rgba(30, 41, 59, 0.95)',
+      borderRadius: '12px',
+      padding: '10px',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
+      border: '1px solid rgba(59, 130, 246, 0.2)'
+    } : {
+      background: 'rgba(30, 41, 59, 0.95)',
+      borderRadius: '20px',
+      padding: '32px',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+      border: '2px solid rgba(59, 130, 246, 0.2)'
+    },
+    // Category header
+    categoryHeader: isCompactMode ? {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      marginBottom: '8px'
+    } : {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      marginBottom: '24px'
+    },
+    // Category icon box
+    categoryIconBox: isCompactMode ? {
+      width: '28px',
+      height: '28px',
+      borderRadius: '8px',
+      background: 'rgba(59, 130, 246, 0.15)',
+      border: '1px solid rgba(59, 130, 246, 0.3)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#3b82f6',
+      flexShrink: 0
+    } : {
+      width: '44px',
+      height: '44px',
+      borderRadius: '10px',
+      background: 'rgba(59, 130, 246, 0.15)',
+      border: '1px solid rgba(59, 130, 246, 0.3)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#3b82f6'
+    },
+    // Category title
+    categoryTitle: isCompactMode ? {
+      fontSize: '14px',
+      fontWeight: '700',
+      color: '#e5e7eb',
+      margin: 0,
+      fontFamily: 'Poppins, sans-serif'
+    } : {
+      fontSize: '28px',
+      fontWeight: '700',
+      color: '#e5e7eb',
+      margin: 0,
+      fontFamily: 'Poppins, sans-serif'
+    },
+    // Grid layout
+    cardGrid: isCompactMode ? {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(75px, 1fr))',
+      gap: '6px'
+    } : {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+      gap: '20px'
+    },
+    // Card style
+    card: (color) => isCompactMode ? {
+      textDecoration: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      position: 'relative',
+      background: color,
+      color: 'white',
+      padding: '8px',
+      borderRadius: '10px',
+      transition: 'all 0.2s ease',
+      minHeight: '70px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center'
+    } : {
+      textDecoration: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      position: 'relative',
+      background: color,
+      color: 'white',
+      padding: '24px',
+      borderRadius: '16px',
+      transition: 'all 0.3s ease'
+    },
+    // Card inner container
+    cardInner: isCompactMode ? {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '4px',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '100%'
+    } : {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px',
+      minHeight: '140px'
+    },
+    // Card title
+    cardTitle: isCompactMode ? {
+      fontSize: '10px',
+      fontWeight: '600',
+      margin: 0,
+      color: 'white',
+      lineHeight: '1.2',
+      fontFamily: 'Poppins, sans-serif',
+      textAlign: 'center',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      maxWidth: '100%'
+    } : {
+      fontSize: '20px',
+      fontWeight: '600',
+      margin: '0 0 8px 0',
+      color: 'white',
+      lineHeight: '1.2',
+      fontFamily: 'Poppins, sans-serif'
+    },
+    // Card description (hidden in compact mode)
+    cardDescription: isCompactMode ? {
+      display: 'none'
+    } : {
+      color: 'rgba(255, 255, 255, 0.9)',
+      fontSize: '14px',
+      margin: 0,
+      lineHeight: '1.4',
+      fontFamily: 'Poppins, sans-serif',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap'
+    },
+    // XP Badge
+    xpBadge: isCompactMode ? {
+      background: 'rgba(30, 41, 59, 0.95)',
+      borderRadius: '6px',
+      padding: '2px 6px',
+      fontSize: '8px',
+      fontWeight: '600',
+      color: '#10b981',
+      whiteSpace: 'nowrap',
+      lineHeight: '1.2',
+      fontFamily: 'Poppins, sans-serif'
+    } : {
+      background: 'rgba(30, 41, 59, 0.95)',
+      borderRadius: '12px',
+      padding: '4px 10px',
+      fontSize: '12px',
+      fontWeight: '600',
+      color: '#10b981',
+      whiteSpace: 'nowrap',
+      lineHeight: '1.2',
+      fontFamily: 'Poppins, sans-serif'
+    },
+    // Main layout gap
+    mainLayoutGap: isCompactMode ? {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
+      marginTop: '8px'
+    } : {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '40px',
+      marginTop: '40px'
+    },
+    // Icon size
+    iconSize: isCompactMode ? 14 : 22
+  }
+
   const [leaderboard, setLeaderboard] = useState([])
   const [leaderboardLoading, setLeaderboardLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
@@ -243,6 +435,120 @@ const Home = () => {
         block: 'start'
       })
     }
+  }
+
+  // Render a compact card for Farcaster mobile
+  const renderCompactCard = (game, onClick = null, linkTo = null) => {
+    const cardContent = (
+      <div style={compactStyles.cardInner}>
+        {isCompactMode ? (
+          <>
+            <div style={{ flexShrink: 0 }}>
+              {game.icon}
+            </div>
+            <h3 style={compactStyles.cardTitle}>
+              {game.shortTitle || game.title.split(' ')[0]}
+            </h3>
+            <div style={compactStyles.xpBadge}>
+              {game.xpReward}
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+              <div style={{ flexShrink: 0 }}>
+                {game.icon}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h3 style={compactStyles.cardTitle}>
+                  {game.title}
+                </h3>
+                <p style={compactStyles.cardDescription}>
+                  {game.description}
+                </p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+              <div style={compactStyles.xpBadge}>
+                {game.xpReward}
+              </div>
+              {game.bonusXP && (
+                <div style={{
+                  background: 'rgba(255, 215, 0, 0.95)',
+                  borderRadius: '12px',
+                  padding: '4px 10px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: '#92400e',
+                  whiteSpace: 'nowrap',
+                  lineHeight: '1.2',
+                  fontFamily: 'Poppins, sans-serif'
+                }}>
+                  {game.bonusXP}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    )
+
+    if (linkTo) {
+      return (
+        <Link
+          key={game.id}
+          to={linkTo}
+          className="game-card"
+          style={{ textDecoration: 'none', display: 'block' }}
+        >
+          <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
+            {cardContent}
+          </div>
+        </Link>
+      )
+    }
+
+    return (
+      <button
+        key={game.id}
+        onClick={onClick}
+        className="game-card"
+        style={{ 
+          ...compactStyles.card(game.color),
+          border: 'none',
+          cursor: onClick ? 'pointer' : 'default'
+        }}
+      >
+        {cardContent}
+      </button>
+    )
+  }
+
+  // Render a category section
+  const renderCategory = (title, shortTitle, icon, iconColor, games, borderColor = 'rgba(59, 130, 246, 0.2)', networks = []) => {
+    const categoryIconBoxStyle = {
+      ...compactStyles.categoryIconBox,
+      background: `rgba(${iconColor}, 0.15)`,
+      border: `1px solid rgba(${iconColor}, 0.3)`,
+      color: iconColor.startsWith('#') ? iconColor : `rgb(${iconColor})`
+    }
+
+    return (
+      <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid ${borderColor}` }}>
+        <div style={compactStyles.categoryHeader}>
+          <div style={categoryIconBoxStyle}>
+            {icon}
+          </div>
+          <h2 style={compactStyles.categoryTitle}>
+            {isCompactMode ? shortTitle : title}
+          </h2>
+          {!isCompactMode && networks.length > 0 && renderNetworkLogos(networks)}
+        </div>
+        <div style={compactStyles.cardGrid}>
+          {games}
+        </div>
+      </div>
+    )
   }
 
   const games = [
@@ -619,35 +925,19 @@ const Home = () => {
 
           {/* Categorized Layout - Both Web and Farcaster */}
           {true ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', marginTop: '40px' }}>
+            <div style={compactStyles.mainLayoutGap}>
               {/* GM/GN Category */}
-              <div style={{
-                background: 'rgba(30, 41, 59, 0.95)',
-                borderRadius: '20px',
-                padding: '32px',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '2px solid rgba(59, 130, 246, 0.2)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                  <div style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '10px',
-                    background: 'rgba(59, 130, 246, 0.15)',
-                    border: '1px solid rgba(59, 130, 246, 0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#3b82f6'
-                  }}>
-                    <Sun size={22} />
+              <div style={compactStyles.categoryContainer}>
+                <div style={compactStyles.categoryHeader}>
+                  <div style={compactStyles.categoryIconBox}>
+                    <Sun size={compactStyles.iconSize} />
                   </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
+                  <h2 style={compactStyles.categoryTitle}>
                     GM / GN
                   </h2>
-                  {renderNetworkLogos(['base', 'ink', 'soneium', 'katana'])}
+                  {!isCompactMode && renderNetworkLogos(['base', 'ink', 'soneium', 'katana'])}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                <div style={compactStyles.cardGrid}>
                   {games.filter(g => g.id === 'gm' || g.id === 'gn').map((game) => (
                     <button
                       key={game.id}
@@ -655,980 +945,41 @@ const Home = () => {
                       disabled={!isConnected || (game.id === 'gm' ? isLoadingGM : isLoadingGN)}
                       className="game-card"
                       style={{ 
-                        textDecoration: 'none',
-                        border: 'none',
+                        ...compactStyles.card(game.color),
                         cursor: isConnected && !(game.id === 'gm' ? isLoadingGM : isLoadingGN) ? 'pointer' : 'not-allowed',
-                        opacity: isConnected && !(game.id === 'gm' ? isLoadingGM : isLoadingGN) ? 1 : 0.6,
-                        position: 'relative',
-                        background: game.color,
-                        color: 'white',
-                        padding: '24px',
-                        borderRadius: '16px',
-                        transition: 'all 0.3s ease'
+                        opacity: isConnected && !(game.id === 'gm' ? isLoadingGM : isLoadingGN) ? 1 : 0.6
                       }}
                     >
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '140px' }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                          <div style={{ flexShrink: 0 }}>
-                            {game.icon}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <h3 style={{ 
-                              fontSize: '20px', 
-                              fontWeight: '600', 
-                              margin: '0 0 8px 0', 
-                              color: 'white', 
-                              lineHeight: '1.2',
-                              fontFamily: 'Poppins, sans-serif'
-                            }}>
-                              {game.title}
-                            </h3>
-                            <p style={{ 
-                              color: 'rgba(255, 255, 255, 0.9)', 
-                              fontSize: '14px', 
-                              margin: 0, 
-                              lineHeight: '1.4',
-                              fontFamily: 'Poppins, sans-serif',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
-                            }}>
-                              {game.description}
-                            </p>
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                          <div style={{
-                            background: 'rgba(30, 41, 59, 0.95)',
-                            borderRadius: '12px',
-                            padding: '4px 10px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            color: '#10b981',
-                            whiteSpace: 'nowrap',
-                            lineHeight: '1.2',
-                            fontFamily: 'Poppins, sans-serif'
-                          }}>
-                            {game.xpReward}
-                          </div>
-                          {game.bonusXP && (
-                            <div style={{
-                              background: 'rgba(255, 215, 0, 0.95)',
-                              borderRadius: '12px',
-                              padding: '4px 10px',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              color: '#92400e',
-                              whiteSpace: 'nowrap',
-                              lineHeight: '1.2',
-                              fontFamily: 'Poppins, sans-serif'
-                            }}>
-                              {game.bonusXP}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* DEX Aggregator Category */}
-              <div style={{
-                background: 'rgba(30, 41, 59, 0.95)',
-                borderRadius: '20px',
-                padding: '32px',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '2px solid rgba(59, 130, 246, 0.2)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                  <div style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '10px',
-                    background: 'rgba(59, 130, 246, 0.15)',
-                    border: '1px solid rgba(59, 130, 246, 0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#3b82f6'
-                  }}>
-                    <Repeat size={22} />
-                  </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
-                    DEX AGGREGATOR
-                  </h2>
-                  {renderNetworkLogos(['base'])}
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                  {games.filter(g => g.id === 'swap').map((game) => (
-                    <Link
-                      key={game.id}
-                      to={game.path}
-                      className="game-card"
-                      style={{ 
-                        textDecoration: 'none',
-                        position: 'relative',
-                        display: 'block'
-                      }}
-                    >
-                      <div style={{
-                        background: game.color,
-                        padding: '24px',
-                        borderRadius: '16px',
-                        color: 'white',
-                        transition: 'all 0.3s ease',
-                        height: '100%'
-                      }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '140px' }}>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                      <div style={compactStyles.cardInner}>
+                        {isCompactMode ? (
+                          <>
                             <div style={{ flexShrink: 0 }}>
                               {game.icon}
                             </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <h3 style={{ 
-                                fontSize: '20px', 
-                                fontWeight: '600', 
-                                margin: '0 0 8px 0', 
-                                color: 'white', 
-                                lineHeight: '1.2',
-                                fontFamily: 'Poppins, sans-serif'
-                              }}>
-                                {game.title}
-                              </h3>
-                              <p style={{ 
-                                color: 'rgba(255, 255, 255, 0.9)', 
-                                fontSize: '14px', 
-                                margin: 0, 
-                                lineHeight: '1.4',
-                                fontFamily: 'Poppins, sans-serif',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
-                              }}>
-                                {game.description}
-                              </p>
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                            <div style={{
-                              background: 'rgba(30, 41, 59, 0.95)',
-                              borderRadius: '12px',
-                              padding: '4px 10px',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              color: '#10b981',
-                              whiteSpace: 'nowrap',
-                              lineHeight: '1.2',
-                              fontFamily: 'Poppins, sans-serif'
-                            }}>
+                            <h3 style={compactStyles.cardTitle}>
+                              {game.title.replace(' Game', '')}
+                            </h3>
+                            <div style={compactStyles.xpBadge}>
                               {game.xpReward}
                             </div>
-                            {game.bonusXP && (
-                              <div style={{
-                                background: 'rgba(255, 215, 0, 0.95)',
-                                borderRadius: '12px',
-                                padding: '4px 10px',
-                                fontSize: '12px',
-                                fontWeight: '600',
-                                color: '#92400e',
-                                whiteSpace: 'nowrap',
-                                lineHeight: '1.2',
-                                fontFamily: 'Poppins, sans-serif'
-                              }}>
-                                {game.bonusXP}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              {/* Early Access NFT Category */}
-              <div style={{
-                background: 'rgba(30, 41, 59, 0.95)',
-                borderRadius: '20px',
-                padding: '32px',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '2px solid rgba(245, 158, 11, 0.2)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                  <div style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '10px',
-                    background: 'rgba(245, 158, 11, 0.15)',
-                    border: '1px solid rgba(245, 158, 11, 0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#f59e0b'
-                  }}>
-                    <Rocket size={22} />
-                  </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
-                    EARLY ACCESS NFT
-                  </h2>
-                  {renderNetworkLogos(['base'])}
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                  <Link
-                    to="/nft-wheel"
-                    className="game-card"
-                    style={{ 
-                      textDecoration: 'none',
-                      position: 'relative',
-                      display: 'block'
-                    }}
-                  >
-                    <div style={{
-                      background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                      padding: '24px',
-                      borderRadius: '16px',
-                      color: 'white',
-                      transition: 'all 0.3s ease',
-                      minHeight: '140px',
-                      display: 'flex',
-                      flexDirection: 'column'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-                        <Sparkles size={40} style={{ color: 'white', flexShrink: 0 }} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <h3 style={{ 
-                            fontSize: '20px', 
-                            fontWeight: '600', 
-                            margin: '0 0 8px 0', 
-                            color: 'white', 
-                            lineHeight: '1.2',
-                            fontFamily: 'Poppins, sans-serif'
-                          }}>
-                            NFT Wheel of Fortune
-                          </h3>
-                          <p style={{ 
-                            color: 'rgba(255, 255, 255, 0.9)', 
-                            fontSize: '14px', 
-                            margin: 0, 
-                            lineHeight: '1.4',
-                            fontFamily: 'Poppins, sans-serif',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            Spin to win 2K-50K XP daily! (NFT holders only)
-                          </p>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                        <div style={{
-                          background: 'rgba(30, 41, 59, 0.95)',
-                          borderRadius: '12px',
-                          padding: '4px 10px',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          color: '#fbbf24',
-                          whiteSpace: 'nowrap',
-                          lineHeight: '1.2',
-                          fontFamily: 'Poppins, sans-serif'
-                        }}>
-                          2K-50K XP
-                        </div>
-                        <div style={{
-                          background: 'rgba(251, 191, 36, 0.2)',
-                          borderRadius: '12px',
-                          padding: '4px 10px',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          color: '#fbbf24',
-                          whiteSpace: 'nowrap',
-                          lineHeight: '1.2',
-                          fontFamily: 'Poppins, sans-serif',
-                          border: '1px solid rgba(251, 191, 36, 0.3)'
-                        }}>
-                          🎰 MEGA JACKPOT
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/early-access"
-                    className="game-card"
-                    style={{ 
-                      textDecoration: 'none',
-                      position: 'relative',
-                      display: 'block'
-                    }}
-                  >
-                    <div style={{
-                      background: '#f59e0b',
-                      padding: '24px',
-                      borderRadius: '16px',
-                      color: 'white',
-                      transition: 'all 0.3s ease',
-                      minHeight: '140px',
-                      display: 'flex',
-                      flexDirection: 'column'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-                        <Rocket size={40} style={{ color: 'white', flexShrink: 0 }} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <h3 style={{ 
-                            fontSize: '20px', 
-                            fontWeight: '600', 
-                            margin: '0 0 8px 0', 
-                            color: 'white', 
-                            lineHeight: '1.2',
-                            fontFamily: 'Poppins, sans-serif'
-                          }}>
-                            Early Access Pass
-                          </h3>
-                          <p style={{ 
-                            color: 'rgba(255, 255, 255, 0.9)', 
-                            fontSize: '14px', 
-                            margin: 0, 
-                            lineHeight: '1.4',
-                            fontFamily: 'Poppins, sans-serif',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            Mint your BaseHub Early Access Pass and unlock exclusive benefits
-                          </p>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                        <div style={{
-                          background: 'rgba(30, 41, 59, 0.95)',
-                          borderRadius: '12px',
-                          padding: '4px 10px',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          color: '#10b981',
-                          whiteSpace: 'nowrap',
-                          lineHeight: '1.2',
-                          fontFamily: 'Poppins, sans-serif'
-                        }}>
-                          3000 XP
-                        </div>
-                        <div style={{
-                          background: 'rgba(255, 215, 0, 0.95)',
-                          borderRadius: '12px',
-                          padding: '4px 10px',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          color: '#92400e',
-                          whiteSpace: 'nowrap',
-                          lineHeight: '1.2',
-                          fontFamily: 'Poppins, sans-serif'
-                        }}>
-                          0.001 ETH
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                </div>
-              </div>
-
-              {/* PumpHub - Token Launchpad Category */}
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 82, 255, 0.1))',
-                borderRadius: '20px',
-                padding: '32px',
-                boxShadow: '0 8px 32px rgba(0, 212, 255, 0.15)',
-                border: '2px solid rgba(0, 212, 255, 0.3)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                  <div style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '10px',
-                    background: 'rgba(0, 212, 255, 0.15)',
-                    border: '1px solid rgba(0, 212, 255, 0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#00d4ff'
-                  }}>
-                    <Rocket size={22} />
-                  </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
-                    PUMPHUB
-                  </h2>
-                  {renderNetworkLogos(['base'])}
-                </div>
-                <p style={{ 
-                  color: '#9ca3af', 
-                  fontSize: '15px', 
-                  marginBottom: '24px',
-                  lineHeight: '1.6',
-                  fontFamily: 'Poppins, sans-serif'
-                }}>
-                  Launch your own token with bonding curve. Fair launch, no presale. 0.3% trade fee goes to creator. Auto-graduates to Uniswap at 5 ETH with permanently locked liquidity.
-                </p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                  <Link
-                    to="#"
-                    className="game-card"
-                    style={{ 
-                      textDecoration: 'none',
-                      position: 'relative',
-                      display: 'block'
-                    }}
-                  >
-                    <div style={{
-                      background: 'linear-gradient(135deg, #00d4ff, #0052ff)',
-                      padding: '24px',
-                      borderRadius: '16px',
-                      color: 'white',
-                      transition: 'all 0.3s ease',
-                      height: '100%'
-                    }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '140px', opacity: 0.45 }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                          <div style={{ flexShrink: 0 }}>
-                            <Rocket size={40} style={{ color: 'white' }} />
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <h3 style={{ 
-                              fontSize: '20px', 
-                              fontWeight: '600', 
-                              margin: '0 0 8px 0', 
-                              color: 'white', 
-                              lineHeight: '1.2',
-                              fontFamily: 'Poppins, sans-serif'
-                            }}>
-                              Token Launchpad
-                            </h3>
-                            <p style={{ 
-                              color: 'rgba(255, 255, 255, 0.9)', 
-                              fontSize: '14px', 
-                              margin: 0, 
-                              lineHeight: '1.4',
-                              fontFamily: 'Poppins, sans-serif'
-                            }}>
-                              Browse and trade launched tokens
-                            </p>
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                          <div style={{
-                            background: 'rgba(30, 41, 59, 0.95)',
-                            borderRadius: '12px',
-                            padding: '4px 10px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            color: '#10b981',
-                            whiteSpace: 'nowrap',
-                            lineHeight: '1.2',
-                            fontFamily: 'Poppins, sans-serif'
-                          }}>
-                            100 XP
-                          </div>
-                          <div style={{
-                            background: 'rgba(255, 215, 0, 0.95)',
-                            borderRadius: '12px',
-                            padding: '4px 10px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            color: '#92400e',
-                            whiteSpace: 'nowrap',
-                            lineHeight: '1.2',
-                            fontFamily: 'Poppins, sans-serif'
-                          }}>
-                            +0.3% Trade Fee
-                          </div>
-                        </div>
-                      </div>
-                      {/* Coming Soon overlay */}
-                      <div style={{
-                        position: 'absolute',
-                        inset: 0,
-                        borderRadius: '16px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        color: '#e5e7eb',
-                        fontFamily: 'Poppins, sans-serif',
-                        textAlign: 'center',
-                        pointerEvents: 'none',
-                        background: 'linear-gradient(135deg, rgba(15,23,42,0.85), rgba(15,23,42,0.65))'
-                      }}>
-                        <span style={{ 
-                          fontSize: '13px',
-                          letterSpacing: '0.18em',
-                          textTransform: 'uppercase',
-                          color: '#9ca3af'
-                        }}>
-                          Coming soon
-                        </span>
-                        <span style={{ 
-                          fontSize: '16px',
-                          fontWeight: 600
-                        }}>
-                          PumpHub Token Launchpad
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                  <Link
-                    to="#"
-                    className="game-card"
-                    style={{ 
-                      textDecoration: 'none',
-                      position: 'relative',
-                      display: 'block'
-                    }}
-                  >
-                    <div style={{
-                      background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
-                      padding: '24px',
-                      borderRadius: '16px',
-                      color: 'white',
-                      transition: 'all 0.3s ease',
-                      height: '100%'
-                    }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '140px', opacity: 0.45 }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                          <div style={{ flexShrink: 0 }}>
-                            <Factory size={40} style={{ color: 'white' }} />
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <h3 style={{ 
-                              fontSize: '20px', 
-                              fontWeight: '600', 
-                              margin: '0 0 8px 0', 
-                              color: 'white', 
-                              lineHeight: '1.2',
-                              fontFamily: 'Poppins, sans-serif'
-                            }}>
-                              Create Token
-                            </h3>
-                            <p style={{ 
-                              color: 'rgba(255, 255, 255, 0.9)', 
-                              fontSize: '14px', 
-                              margin: 0, 
-                              lineHeight: '1.4',
-                              fontFamily: 'Poppins, sans-serif'
-                            }}>
-                              Launch your own token (0.001 ETH)
-                            </p>
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                          <div style={{
-                            background: 'rgba(30, 41, 59, 0.95)',
-                            borderRadius: '12px',
-                            padding: '4px 10px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            color: '#10b981',
-                            whiteSpace: 'nowrap',
-                            lineHeight: '1.2',
-                            fontFamily: 'Poppins, sans-serif'
-                          }}>
-                            100 XP
-                          </div>
-                          <div style={{
-                            background: 'rgba(255, 215, 0, 0.95)',
-                            borderRadius: '12px',
-                            padding: '4px 10px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            color: '#92400e',
-                            whiteSpace: 'nowrap',
-                            lineHeight: '1.2',
-                            fontFamily: 'Poppins, sans-serif'
-                          }}>
-                            Up to 10% Allocation
-                          </div>
-                        </div>
-                      </div>
-                      {/* Coming Soon overlay */}
-                      <div style={{
-                        position: 'absolute',
-                        inset: 0,
-                        borderRadius: '16px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        color: '#e5e7eb',
-                        fontFamily: 'Poppins, sans-serif',
-                        textAlign: 'center',
-                        pointerEvents: 'none',
-                        background: 'linear-gradient(135deg, rgba(15,23,42,0.85), rgba(15,23,42,0.65))'
-                      }}>
-                        <span style={{ 
-                          fontSize: '13px',
-                          letterSpacing: '0.18em',
-                          textTransform: 'uppercase',
-                          color: '#9ca3af'
-                        }}>
-                          Coming soon
-                        </span>
-                        <span style={{ 
-                          fontSize: '16px',
-                          fontWeight: 600
-                        }}>
-                          Create & Launch Tokens
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                </div>
-                <div style={{
-                  marginTop: '20px',
-                  padding: '16px',
-                  background: 'rgba(0, 0, 0, 0.2)',
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}>
-                  <TrendingUp size={20} style={{ color: '#00d4ff' }} />
-                  <span style={{ color: '#9ca3af', fontSize: '13px', fontFamily: 'Poppins, sans-serif' }}>
-                    Bonding curve • LP locked forever • 0.001 ETH to create • 5 ETH graduation to Uniswap
-                  </span>
-                </div>
-              </div>
-
-              {/* GAMING Category */}
-              <div style={{
-                background: 'rgba(30, 41, 59, 0.95)',
-                borderRadius: '20px',
-                padding: '32px',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '2px solid rgba(245, 158, 11, 0.2)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                  <div style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '10px',
-                    background: 'rgba(245, 158, 11, 0.15)',
-                    border: '1px solid rgba(245, 158, 11, 0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#f59e0b'
-                  }}>
-                    <Gamepad2 size={22} />
-                  </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
-                    GAMING
-                  </h2>
-                  {renderNetworkLogos(['base', 'ink', 'soneium', 'katana'])}
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                  {games.filter(g => ['flip', 'dice', 'slot', 'lucky'].includes(g.id)).map((game) => (
-                    <Link
-                      key={game.id}
-                      to={game.path}
-                      className="game-card"
-                      style={{ 
-                        textDecoration: 'none',
-                        position: 'relative',
-                        display: 'block'
-                      }}
-                    >
-                      <div style={{
-                        background: game.color,
-                        padding: '24px',
-                        borderRadius: '16px',
-                        color: 'white',
-                        transition: 'all 0.3s ease',
-                        minHeight: '140px',
-                        display: 'flex',
-                        flexDirection: 'column'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-                          <div style={{ flexShrink: 0 }}>
-                            {game.icon}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <h3 style={{ 
-                              fontSize: '20px', 
-                              fontWeight: '600', 
-                              margin: '0 0 8px 0', 
-                              color: 'white', 
-                              lineHeight: '1.2',
-                              fontFamily: 'Poppins, sans-serif'
-                            }}>
-                              {game.title}
-                            </h3>
-                            <p style={{ 
-                              color: 'rgba(255, 255, 255, 0.9)', 
-                              fontSize: '14px', 
-                              margin: 0, 
-                              lineHeight: '1.4',
-                              fontFamily: 'Poppins, sans-serif',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
-                            }}>
-                              {game.description}
-                            </p>
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                          <div style={{
-                            background: 'rgba(30, 41, 59, 0.95)',
-                            borderRadius: '12px',
-                            padding: '4px 10px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            color: '#10b981',
-                            whiteSpace: 'nowrap',
-                            lineHeight: '1.2',
-                            fontFamily: 'Poppins, sans-serif'
-                          }}>
-                            {game.xpReward}
-                          </div>
-                          {game.bonusXP && (
-                            <div style={{
-                              background: 'rgba(255, 215, 0, 0.95)',
-                              borderRadius: '12px',
-                              padding: '4px 10px',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              color: '#92400e',
-                              whiteSpace: 'nowrap',
-                              lineHeight: '1.2',
-                              fontFamily: 'Poppins, sans-serif'
-                            }}>
-                              {game.bonusXP}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              {/* ANALYSIS Category */}
-              <div style={{
-                background: 'rgba(30, 41, 59, 0.95)',
-                borderRadius: '20px',
-                padding: '32px',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '2px solid rgba(139, 92, 246, 0.2)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                  <div style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '10px',
-                    background: 'rgba(139, 92, 246, 0.15)',
-                    border: '1px solid rgba(139, 92, 246, 0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#8b5cf6'
-                  }}>
-                    <TrendingUp size={22} />
-                  </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
-                    ANALYSIS
-                  </h2>
-                  {renderMultiChainText()}
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                  {games.filter(g => ['wallet-analysis', 'contract-security', 'allowance-cleaner'].includes(g.id)).map((game) => (
-                    <Link
-                      key={game.id}
-                      to={game.path}
-                      className="game-card"
-                      style={{ 
-                        textDecoration: 'none',
-                        position: 'relative',
-                        display: 'block'
-                      }}
-                    >
-                      <div style={{
-                        background: game.color,
-                        padding: '24px',
-                        borderRadius: '16px',
-                        color: 'white',
-                        transition: 'all 0.3s ease',
-                        minHeight: '140px',
-                        display: 'flex',
-                        flexDirection: 'column'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-                          <div style={{ flexShrink: 0 }}>
-                            {game.icon}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <h3 style={{ 
-                              fontSize: '20px', 
-                              fontWeight: '600', 
-                              margin: '0 0 8px 0', 
-                              color: 'white', 
-                              lineHeight: '1.2',
-                              fontFamily: 'Poppins, sans-serif'
-                            }}>
-                              {game.title}
-                            </h3>
-                            <p style={{ 
-                              color: 'rgba(255, 255, 255, 0.9)', 
-                              fontSize: '14px', 
-                              margin: 0, 
-                              lineHeight: '1.4',
-                              fontFamily: 'Poppins, sans-serif',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
-                            }}>
-                              {game.description}
-                            </p>
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                          <div style={{
-                            background: 'rgba(30, 41, 59, 0.95)',
-                            borderRadius: '12px',
-                            padding: '4px 10px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            color: '#10b981',
-                            whiteSpace: 'nowrap',
-                            lineHeight: '1.2',
-                            fontFamily: 'Poppins, sans-serif'
-                          }}>
-                            {game.xpReward}
-                          </div>
-                          {game.bonusXP && (
-                            <div style={{
-                              background: 'rgba(255, 215, 0, 0.95)',
-                              borderRadius: '12px',
-                              padding: '4px 10px',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              color: '#92400e',
-                              whiteSpace: 'nowrap',
-                              lineHeight: '1.2',
-                              fontFamily: 'Poppins, sans-serif'
-                            }}>
-                              {game.bonusXP}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              {/* DEPLOY Category */}
-              <div style={{
-                background: 'rgba(30, 41, 59, 0.95)',
-                borderRadius: '20px',
-                padding: '32px',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '2px solid rgba(59, 130, 246, 0.2)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                  <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '12px',
-                    background: 'rgba(59, 130, 246, 0.15)',
-                    border: '1px solid rgba(59, 130, 246, 0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#3b82f6'
-                  }}>
-                    <Rocket size={24} />
-                  </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
-                    DEPLOY
-                  </h2>
-                  {renderNetworkLogos(['base', 'ink', 'soneium', 'katana'])}
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                  {games.filter(g => ['deploy', 'deploy-erc721', 'deploy-erc1155', 'x402-premium'].includes(g.id)).sort((a, b) => {
-                    const order = ['deploy', 'deploy-erc721', 'deploy-erc1155', 'x402-premium'];
-                    return order.indexOf(a.id) - order.indexOf(b.id);
-                  }).map((game) => {
-                    if (game.id === 'x402-premium') {
-                      return (
-                        <button
-                          key={game.id}
-                          onClick={handleX402Payment}
-                          disabled={isLoadingX402}
-                          className="game-card"
-                          style={{ 
-                            textDecoration: 'none',
-                            position: 'relative',
-                            display: 'block',
-                            border: 'none',
-                            outline: 'none',
-                            background: 'transparent',
-                            padding: 0,
-                            margin: 0,
-                            cursor: !isLoadingX402 ? 'pointer' : 'not-allowed',
-                            opacity: !isLoadingX402 ? 1 : 0.6,
-                            fontFamily: 'inherit',
-                            fontSize: 'inherit'
-                          }}
-                        >
-                          <div style={{
-                            background: game.color,
-                            padding: '20px',
-                            borderRadius: '16px',
-                            color: 'white',
-                            transition: 'all 0.3s ease',
-                            minHeight: '140px',
-                            display: 'flex',
-                            flexDirection: 'column'
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-                              <div style={{ flexShrink: 0, width: '40px', height: '40px' }}>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                              <div style={{ flexShrink: 0 }}>
+                                {game.icon}
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <h3 style={{ 
-                                  fontSize: '20px', 
-                                  fontWeight: '600', 
-                                  margin: '0 0 8px 0', 
-                                  color: 'white', 
-                                  lineHeight: '1.2',
-                                  fontFamily: 'Poppins, sans-serif'
-                                }}>
+                                <h3 style={compactStyles.cardTitle}>
                                   {game.title}
                                 </h3>
-                                <p style={{ 
-                                  color: 'rgba(255, 255, 255, 0.9)', 
-                                  fontSize: '14px', 
-                                  margin: 0, 
-                                  lineHeight: '1.4',
-                                  fontFamily: 'Poppins, sans-serif',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap'
-                                }}>
+                                <p style={compactStyles.cardDescription}>
                                   {game.description}
                                 </p>
                               </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                              <div style={{
-                                background: 'rgba(30, 41, 59, 0.95)',
-                                borderRadius: '12px',
-                                padding: '4px 10px',
-                                fontSize: '12px',
-                                fontWeight: '600',
-                                color: '#10b981',
-                                whiteSpace: 'nowrap',
-                                lineHeight: '1.2',
-                                fontFamily: 'Poppins, sans-serif'
-                              }}>
+                              <div style={compactStyles.xpBadge}>
                                 {game.xpReward}
                               </div>
                               {game.bonusXP && (
@@ -1647,126 +998,27 @@ const Home = () => {
                                 </div>
                               )}
                             </div>
-                          </div>
-                        </button>
-                      )
-                    }
-                    return (
-                      <Link
-                        key={game.id}
-                        to={game.path}
-                        className="game-card"
-                        style={{ 
-                          textDecoration: 'none',
-                          position: 'relative',
-                          display: 'block'
-                        }}
-                      >
-                        <div style={{
-                          background: game.color,
-                          padding: '24px',
-                          borderRadius: '16px',
-                          color: 'white',
-                          transition: 'all 0.3s ease',
-                          minHeight: '140px',
-                          display: 'flex',
-                          flexDirection: 'column'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-                            <div style={{ flexShrink: 0 }}>
-                              {game.icon}
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <h3 style={{ 
-                                fontSize: '20px', 
-                                fontWeight: '600', 
-                                margin: '0 0 8px 0', 
-                                color: 'white', 
-                                lineHeight: '1.2',
-                                fontFamily: 'Poppins, sans-serif'
-                              }}>
-                                {game.title}
-                              </h3>
-                              <p style={{ 
-                                color: 'rgba(255, 255, 255, 0.9)', 
-                                fontSize: '14px', 
-                                margin: 0, 
-                                lineHeight: '1.4',
-                                fontFamily: 'Poppins, sans-serif',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
-                              }}>
-                                {game.description}
-                              </p>
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                            <div style={{
-                              background: 'rgba(30, 41, 59, 0.95)',
-                              borderRadius: '12px',
-                              padding: '4px 10px',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              color: '#10b981',
-                              whiteSpace: 'nowrap',
-                              lineHeight: '1.2',
-                              fontFamily: 'Poppins, sans-serif'
-                            }}>
-                              {game.xpReward}
-                            </div>
-                            {game.bonusXP && (
-                              <div style={{
-                                background: 'rgba(255, 215, 0, 0.95)',
-                                borderRadius: '12px',
-                                padding: '4px 10px',
-                                fontSize: '12px',
-                                fontWeight: '600',
-                                color: '#92400e',
-                                whiteSpace: 'nowrap',
-                                lineHeight: '1.2',
-                                fontFamily: 'Poppins, sans-serif'
-                              }}>
-                                {game.bonusXP}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </Link>
-                    )
-                  })}
+                          </>
+                        )}
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* SOCIAL Category */}
-              <div style={{
-                background: 'rgba(30, 41, 59, 0.95)',
-                borderRadius: '20px',
-                padding: '32px',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '2px solid rgba(245, 158, 11, 0.2)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                  <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '12px',
-                    background: 'rgba(245, 158, 11, 0.15)',
-                    border: '1px solid rgba(245, 158, 11, 0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#f59e0b'
-                  }}>
-                    <Users size={24} />
+              {/* DEX Aggregator Category */}
+              <div style={compactStyles.categoryContainer}>
+                <div style={compactStyles.categoryHeader}>
+                  <div style={compactStyles.categoryIconBox}>
+                    <Repeat size={compactStyles.iconSize} />
                   </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
-                    SOCIAL
+                  <h2 style={compactStyles.categoryTitle}>
+                    {isCompactMode ? 'DEX' : 'DEX AGGREGATOR'}
                   </h2>
-                  {renderNetworkLogos(['base'])}
+                  {!isCompactMode && renderNetworkLogos(['base'])}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                  {games.filter(g => ['featured-profiles'].includes(g.id)).map((game) => (
+                <div style={compactStyles.cardGrid}>
+                  {games.filter(g => g.id === 'swap').map((game) => (
                     <Link
                       key={game.id}
                       to={game.path}
@@ -1778,72 +1030,392 @@ const Home = () => {
                       }}
                     >
                       <div style={{
-                        background: game.color,
-                        padding: '24px',
-                        borderRadius: '16px',
-                        color: 'white',
-                        transition: 'all 0.3s ease',
-                        minHeight: '140px',
-                        display: 'flex',
-                        flexDirection: 'column'
+                        ...compactStyles.card(game.color),
+                        height: '100%'
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-                          <div style={{ flexShrink: 0 }}>
-                            {game.icon}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <h3 style={{ 
-                              fontSize: '20px', 
-                              fontWeight: '600', 
-                              margin: '0 0 8px 0', 
-                              color: 'white', 
-                              lineHeight: '1.2',
-                              fontFamily: 'Poppins, sans-serif'
-                            }}>
-                              {game.title}
-                            </h3>
-                            <p style={{ 
-                              color: 'rgba(255, 255, 255, 0.9)', 
-                              fontSize: '14px', 
-                              margin: 0, 
-                              lineHeight: '1.4',
-                              fontFamily: 'Poppins, sans-serif',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
-                            }}>
-                              {game.description}
-                            </p>
-                          </div>
+                        <div style={compactStyles.cardInner}>
+                          {isCompactMode ? (
+                            <>
+                              <div style={{ flexShrink: 0 }}>
+                                {game.icon}
+                              </div>
+                              <h3 style={compactStyles.cardTitle}>
+                                Swap
+                              </h3>
+                              <div style={compactStyles.xpBadge}>
+                                {game.xpReward}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                                <div style={{ flexShrink: 0 }}>
+                                  {game.icon}
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <h3 style={compactStyles.cardTitle}>
+                                    {game.title}
+                                  </h3>
+                                  <p style={compactStyles.cardDescription}>
+                                    {game.description}
+                                  </p>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                                <div style={compactStyles.xpBadge}>
+                                  {game.xpReward}
+                                </div>
+                                {game.bonusXP && (
+                                  <div style={{
+                                    background: 'rgba(255, 215, 0, 0.95)',
+                                    borderRadius: '12px',
+                                    padding: '4px 10px',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    color: '#92400e',
+                                    whiteSpace: 'nowrap',
+                                    lineHeight: '1.2',
+                                    fontFamily: 'Poppins, sans-serif'
+                                  }}>
+                                    {game.bonusXP}
+                                  </div>
+                                )}
+                              </div>
+                            </>
+                          )}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                          <div style={{
-                            background: 'rgba(30, 41, 59, 0.95)',
-                            borderRadius: '12px',
-                            padding: '4px 10px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            color: '#10b981',
-                            whiteSpace: 'nowrap',
-                            lineHeight: '1.2',
-                            fontFamily: 'Poppins, sans-serif'
-                          }}>
-                            {game.xpReward}
-                          </div>
-                          {game.bonusXP && (
-                            <div style={{
-                              background: 'rgba(255, 215, 0, 0.95)',
-                              borderRadius: '12px',
-                              padding: '4px 10px',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              color: '#92400e',
-                              whiteSpace: 'nowrap',
-                              lineHeight: '1.2',
-                              fontFamily: 'Poppins, sans-serif'
-                            }}>
-                              {game.bonusXP}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* Early Access NFT Category */}
+              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(245, 158, 11, 0.2)` }}>
+                <div style={compactStyles.categoryHeader}>
+                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b' }}>
+                    <Rocket size={compactStyles.iconSize} />
+                  </div>
+                  <h2 style={compactStyles.categoryTitle}>
+                    {isCompactMode ? 'NFT PASS' : 'EARLY ACCESS NFT'}
+                  </h2>
+                  {!isCompactMode && renderNetworkLogos(['base'])}
+                </div>
+                <div style={compactStyles.cardGrid}>
+                  <Link to="/nft-wheel" className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
+                    <div style={{ ...compactStyles.card('linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'), height: '100%' }}>
+                      <div style={compactStyles.cardInner}>
+                        {isCompactMode ? (
+                          <>
+                            <Sparkles size={24} style={{ color: 'white' }} />
+                            <h3 style={compactStyles.cardTitle}>Wheel</h3>
+                            <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-50K</div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                              <Sparkles size={40} style={{ color: 'white', flexShrink: 0 }} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <h3 style={compactStyles.cardTitle}>NFT Wheel of Fortune</h3>
+                                <p style={compactStyles.cardDescription}>Spin to win 2K-50K XP daily! (NFT holders only)</p>
+                              </div>
                             </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                              <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-50K XP</div>
+                              <div style={{ background: 'rgba(251, 191, 36, 0.2)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#fbbf24', border: '1px solid rgba(251, 191, 36, 0.3)' }}>🎰 MEGA JACKPOT</div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                  <Link to="/early-access" className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
+                    <div style={{ ...compactStyles.card('#f59e0b'), height: '100%' }}>
+                      <div style={compactStyles.cardInner}>
+                        {isCompactMode ? (
+                          <>
+                            <Rocket size={24} style={{ color: 'white' }} />
+                            <h3 style={compactStyles.cardTitle}>Pass</h3>
+                            <div style={compactStyles.xpBadge}>3000 XP</div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                              <Rocket size={40} style={{ color: 'white', flexShrink: 0 }} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <h3 style={compactStyles.cardTitle}>Early Access Pass</h3>
+                                <p style={compactStyles.cardDescription}>Mint your BaseHub Early Access Pass and unlock exclusive benefits</p>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                              <div style={compactStyles.xpBadge}>3000 XP</div>
+                              <div style={{ background: 'rgba(255, 215, 0, 0.95)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#92400e' }}>0.001 ETH</div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              </div>
+
+              {/* PumpHub - Token Launchpad Category */}
+              <div style={{ 
+                ...compactStyles.categoryContainer, 
+                background: isCompactMode ? 'rgba(30, 41, 59, 0.95)' : 'linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 82, 255, 0.1))',
+                border: `${isCompactMode ? '1px' : '2px'} solid rgba(0, 212, 255, 0.3)`,
+                boxShadow: isCompactMode ? compactStyles.categoryContainer.boxShadow : '0 8px 32px rgba(0, 212, 255, 0.15)'
+              }}>
+                <div style={compactStyles.categoryHeader}>
+                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(0, 212, 255, 0.15)', border: '1px solid rgba(0, 212, 255, 0.3)', color: '#00d4ff' }}>
+                    <Rocket size={compactStyles.iconSize} />
+                  </div>
+                  <h2 style={compactStyles.categoryTitle}>PUMPHUB</h2>
+                  {!isCompactMode && renderNetworkLogos(['base'])}
+                </div>
+                {!isCompactMode && (
+                  <p style={{ color: '#9ca3af', fontSize: '15px', marginBottom: '24px', lineHeight: '1.6', fontFamily: 'Poppins, sans-serif' }}>
+                    Launch your own token with bonding curve. Fair launch, no presale. 0.3% trade fee goes to creator.
+                  </p>
+                )}
+                <div style={compactStyles.cardGrid}>
+                  <Link to="#" className="game-card" style={{ textDecoration: 'none', display: 'block', position: 'relative' }}>
+                    <div style={{ ...compactStyles.card('linear-gradient(135deg, #00d4ff, #0052ff)'), height: '100%', opacity: 0.6 }}>
+                      <div style={compactStyles.cardInner}>
+                        {isCompactMode ? (
+                          <>
+                            <Rocket size={24} style={{ color: 'white' }} />
+                            <h3 style={compactStyles.cardTitle}>Launch</h3>
+                            <div style={{ ...compactStyles.xpBadge, fontSize: '7px' }}>Soon</div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                              <Rocket size={40} style={{ color: 'white' }} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <h3 style={compactStyles.cardTitle}>Token Launchpad</h3>
+                                <p style={compactStyles.cardDescription}>Browse and trade launched tokens</p>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: 'auto' }}>
+                              <div style={compactStyles.xpBadge}>100 XP</div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                  <Link to="#" className="game-card" style={{ textDecoration: 'none', display: 'block', position: 'relative' }}>
+                    <div style={{ ...compactStyles.card('linear-gradient(135deg, #8b5cf6, #6366f1)'), height: '100%', opacity: 0.6 }}>
+                      <div style={compactStyles.cardInner}>
+                        {isCompactMode ? (
+                          <>
+                            <Factory size={24} style={{ color: 'white' }} />
+                            <h3 style={compactStyles.cardTitle}>Create</h3>
+                            <div style={{ ...compactStyles.xpBadge, fontSize: '7px' }}>Soon</div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                              <Factory size={40} style={{ color: 'white' }} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <h3 style={compactStyles.cardTitle}>Create Token</h3>
+                                <p style={compactStyles.cardDescription}>Launch your own token (0.001 ETH)</p>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: 'auto' }}>
+                              <div style={compactStyles.xpBadge}>100 XP</div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+                {!isCompactMode && (
+                  <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(0, 0, 0, 0.2)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <TrendingUp size={20} style={{ color: '#00d4ff' }} />
+                    <span style={{ color: '#9ca3af', fontSize: '13px', fontFamily: 'Poppins, sans-serif' }}>
+                      Bonding curve • LP locked forever • 0.001 ETH to create • 5 ETH graduation to Uniswap
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* GAMING Category */}
+              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(245, 158, 11, 0.2)` }}>
+                <div style={compactStyles.categoryHeader}>
+                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b' }}>
+                    <Gamepad2 size={compactStyles.iconSize} />
+                  </div>
+                  <h2 style={compactStyles.categoryTitle}>GAMING</h2>
+                  {!isCompactMode && renderNetworkLogos(['base', 'ink', 'soneium', 'katana'])}
+                </div>
+                <div style={compactStyles.cardGrid}>
+                  {games.filter(g => ['flip', 'dice', 'slot', 'lucky'].includes(g.id)).map((game) => (
+                    <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
+                      <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
+                        <div style={compactStyles.cardInner}>
+                          {isCompactMode ? (
+                            <>
+                              <div style={{ flexShrink: 0 }}>{game.icon}</div>
+                              <h3 style={compactStyles.cardTitle}>{game.title.split(' ')[0]}</h3>
+                              <div style={compactStyles.xpBadge}>{game.xpReward}</div>
+                            </>
+                          ) : (
+                            <>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                                <div style={{ flexShrink: 0 }}>{game.icon}</div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <h3 style={compactStyles.cardTitle}>{game.title}</h3>
+                                  <p style={compactStyles.cardDescription}>{game.description}</p>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                                <div style={compactStyles.xpBadge}>{game.xpReward}</div>
+                                {game.bonusXP && (
+                                  <div style={{ background: 'rgba(255, 215, 0, 0.95)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#92400e' }}>
+                                    {game.bonusXP}
+                                  </div>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* ANALYSIS Category */}
+              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(139, 92, 246, 0.2)` }}>
+                <div style={compactStyles.categoryHeader}>
+                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(139, 92, 246, 0.15)', border: '1px solid rgba(139, 92, 246, 0.3)', color: '#8b5cf6' }}>
+                    <TrendingUp size={compactStyles.iconSize} />
+                  </div>
+                  <h2 style={compactStyles.categoryTitle}>ANALYSIS</h2>
+                  {!isCompactMode && renderMultiChainText()}
+                </div>
+                <div style={compactStyles.cardGrid}>
+                  {games.filter(g => ['wallet-analysis', 'contract-security', 'allowance-cleaner'].includes(g.id)).map((game) => (
+                    <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
+                      <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
+                        <div style={compactStyles.cardInner}>
+                          {isCompactMode ? (
+                            <>
+                              <div style={{ flexShrink: 0 }}>{game.icon}</div>
+                              <h3 style={compactStyles.cardTitle}>{game.title.split(' ')[0]}</h3>
+                              <div style={compactStyles.xpBadge}>{game.xpReward}</div>
+                            </>
+                          ) : (
+                            <>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                                <div style={{ flexShrink: 0 }}>{game.icon}</div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <h3 style={compactStyles.cardTitle}>{game.title}</h3>
+                                  <p style={compactStyles.cardDescription}>{game.description}</p>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                                <div style={compactStyles.xpBadge}>{game.xpReward}</div>
+                                {game.bonusXP && (
+                                  <div style={{ background: 'rgba(255, 215, 0, 0.95)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#92400e' }}>
+                                    {game.bonusXP}
+                                  </div>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* DEPLOY Category */}
+              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(59, 130, 246, 0.2)` }}>
+                <div style={compactStyles.categoryHeader}>
+                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.3)', color: '#3b82f6' }}>
+                    <Rocket size={compactStyles.iconSize} />
+                  </div>
+                  <h2 style={compactStyles.categoryTitle}>DEPLOY</h2>
+                  {!isCompactMode && renderNetworkLogos(['base', 'ink', 'soneium', 'katana'])}
+                </div>
+                <div style={compactStyles.cardGrid}>
+                  {games.filter(g => ['deploy', 'deploy-erc721', 'deploy-erc1155'].includes(g.id)).sort((a, b) => {
+                    const order = ['deploy', 'deploy-erc721', 'deploy-erc1155'];
+                    return order.indexOf(a.id) - order.indexOf(b.id);
+                  }).map((game) => (
+                    <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
+                      <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
+                        <div style={compactStyles.cardInner}>
+                          {isCompactMode ? (
+                            <>
+                              <div style={{ flexShrink: 0 }}>{game.icon}</div>
+                              <h3 style={compactStyles.cardTitle}>{game.title.replace('Deploy ', '')}</h3>
+                              <div style={compactStyles.xpBadge}>{game.xpReward}</div>
+                            </>
+                          ) : (
+                            <>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                                <div style={{ flexShrink: 0 }}>{game.icon}</div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <h3 style={compactStyles.cardTitle}>{game.title}</h3>
+                                  <p style={compactStyles.cardDescription}>{game.description}</p>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                                <div style={compactStyles.xpBadge}>{game.xpReward}</div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* SOCIAL Category */}
+              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(245, 158, 11, 0.2)` }}>
+                <div style={compactStyles.categoryHeader}>
+                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b' }}>
+                    <Users size={compactStyles.iconSize} />
+                  </div>
+                  <h2 style={compactStyles.categoryTitle}>SOCIAL</h2>
+                  {!isCompactMode && renderNetworkLogos(['base'])}
+                </div>
+                <div style={compactStyles.cardGrid}>
+                  {games.filter(g => ['featured-profiles'].includes(g.id)).map((game) => (
+                    <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
+                      <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
+                        <div style={compactStyles.cardInner}>
+                          {isCompactMode ? (
+                            <>
+                              <div style={{ flexShrink: 0 }}>{game.icon}</div>
+                              <h3 style={compactStyles.cardTitle}>Profiles</h3>
+                              <div style={compactStyles.xpBadge}>{game.xpReward}</div>
+                            </>
+                          ) : (
+                            <>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                                <div style={{ flexShrink: 0 }}>{game.icon}</div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <h3 style={compactStyles.cardTitle}>{game.title}</h3>
+                                  <p style={compactStyles.cardDescription}>{game.description}</p>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                                <div style={compactStyles.xpBadge}>{game.xpReward}</div>
+                                {game.bonusXP && (
+                                  <div style={{ background: 'rgba(255, 215, 0, 0.95)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#92400e' }}>
+                                    {game.bonusXP}
+                                  </div>
+                                )}
+                              </div>
+                            </>
                           )}
                         </div>
                       </div>
@@ -1853,111 +1425,38 @@ const Home = () => {
               </div>
 
               {/* NFT Category */}
-              <div style={{
-                background: 'rgba(30, 41, 59, 0.95)',
-                borderRadius: '20px',
-                padding: '32px',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '2px solid rgba(245, 158, 11, 0.2)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                  <div style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '10px',
-                    background: 'rgba(245, 158, 11, 0.15)',
-                    border: '1px solid rgba(245, 158, 11, 0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#f59e0b'
-                  }}>
-                    <Image size={22} />
+              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(245, 158, 11, 0.2)` }}>
+                <div style={compactStyles.categoryHeader}>
+                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b' }}>
+                    <Image size={compactStyles.iconSize} />
                   </div>
-                  <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#e5e7eb', margin: 0, fontFamily: 'Poppins, sans-serif' }}>
-                    NFT
-                  </h2>
-                  {renderNetworkLogos(['base'])}
+                  <h2 style={compactStyles.categoryTitle}>NFT</h2>
+                  {!isCompactMode && renderNetworkLogos(['base'])}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                <div style={compactStyles.cardGrid}>
                   {games.filter(g => ['ai-nft'].includes(g.id)).map((game) => (
-                    <Link
-                      key={game.id}
-                      to={game.path}
-                      className="game-card"
-                      style={{ 
-                        textDecoration: 'none',
-                        position: 'relative',
-                        display: 'block'
-                      }}
-                    >
-                      <div style={{
-                        background: game.color,
-                        padding: '24px',
-                        borderRadius: '16px',
-                        color: 'white',
-                        transition: 'all 0.3s ease',
-                        minHeight: '140px',
-                        display: 'flex',
-                        flexDirection: 'column'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-                          <div style={{ flexShrink: 0 }}>
-                            {game.icon}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <h3 style={{ 
-                              fontSize: '20px', 
-                              fontWeight: '600', 
-                              margin: '0 0 8px 0', 
-                              color: 'white', 
-                              lineHeight: '1.2',
-                              fontFamily: 'Poppins, sans-serif'
-                            }}>
-                              {game.title}
-                            </h3>
-                            <p style={{ 
-                              color: 'rgba(255, 255, 255, 0.9)', 
-                              fontSize: '14px', 
-                              margin: 0, 
-                              lineHeight: '1.4',
-                              fontFamily: 'Poppins, sans-serif',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
-                            }}>
-                              {game.description}
-                            </p>
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                          <div style={{
-                            background: 'rgba(30, 41, 59, 0.95)',
-                            borderRadius: '12px',
-                            padding: '4px 10px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            color: '#10b981',
-                            whiteSpace: 'nowrap',
-                            lineHeight: '1.2',
-                            fontFamily: 'Poppins, sans-serif'
-                          }}>
-                            {game.xpReward}
-                          </div>
-                          {game.bonusXP && (
-                            <div style={{
-                              background: 'rgba(255, 215, 0, 0.95)',
-                              borderRadius: '12px',
-                              padding: '4px 10px',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              color: '#92400e',
-                              whiteSpace: 'nowrap',
-                              lineHeight: '1.2',
-                              fontFamily: 'Poppins, sans-serif'
-                            }}>
-                              {game.bonusXP}
-                            </div>
+                    <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
+                      <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
+                        <div style={compactStyles.cardInner}>
+                          {isCompactMode ? (
+                            <>
+                              <div style={{ flexShrink: 0 }}>{game.icon}</div>
+                              <h3 style={compactStyles.cardTitle}>AI NFT</h3>
+                              <div style={compactStyles.xpBadge}>{game.xpReward}</div>
+                            </>
+                          ) : (
+                            <>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                                <div style={{ flexShrink: 0 }}>{game.icon}</div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <h3 style={compactStyles.cardTitle}>{game.title}</h3>
+                                  <p style={compactStyles.cardDescription}>{game.description}</p>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                                <div style={compactStyles.xpBadge}>{game.xpReward}</div>
+                              </div>
+                            </>
                           )}
                         </div>
                       </div>
@@ -2837,105 +2336,201 @@ const styles = `
   }
 
   @media (max-width: 768px) {
-    /* Only apply mobile styles in Farcaster app (not web) */
+    /* ========================================
+       FARCASTER MOBILE COMPACT LAYOUT
+       ======================================== */
+    
+    /* Main container */
     .farcaster-app .home {
-      padding: 12px 12px 80px 12px !important;
+      padding: 8px 8px 80px 8px !important;
       max-width: 100vw;
       overflow-x: hidden;
       box-sizing: border-box;
     }
 
+    /* Welcome section - more compact */
     .farcaster-app .welcome-section {
       padding: 0;
-      margin-bottom: 20px;
+      margin-bottom: 8px;
     }
 
     .farcaster-app .card {
-      padding: 16px;
+      padding: 10px;
       margin: 0;
-      border-radius: 16px;
+      border-radius: 12px;
     }
 
-    .farcaster-app .games-grid {
-      grid-template-columns: 1fr;
-      gap: 12px;
+    /* Hide welcome text on mobile for more space */
+    .farcaster-app .welcome-section h1 {
+      font-size: 18px !important;
+      margin-bottom: 4px !important;
     }
+
+    .farcaster-app .welcome-section p {
+      font-size: 11px !important;
+      margin-bottom: 8px !important;
+    }
+
+    /* ========================================
+       CATEGORY SECTIONS - COMPACT
+       ======================================== */
+    
+    /* Category container - minimal padding */
+    .farcaster-app .category-section,
+    .farcaster-app [style*="padding: '32px'"] {
+      padding: 10px !important;
+      border-radius: 12px !important;
+      margin-bottom: 8px !important;
+    }
+
+    /* Category header - compact */
+    .farcaster-app .category-header,
+    .farcaster-app [style*="marginBottom: '24px'"] {
+      margin-bottom: 8px !important;
+      gap: 6px !important;
+    }
+
+    /* Category title - smaller */
+    .farcaster-app .category-header h2,
+    .farcaster-app [style*="fontSize: '28px'"] {
+      font-size: 14px !important;
+    }
+
+    /* Category icon - smaller */
+    .farcaster-app .category-icon,
+    .farcaster-app [style*="width: '44px'"] {
+      width: 28px !important;
+      height: 28px !important;
+    }
+
+    .farcaster-app .category-icon svg,
+    .farcaster-app [style*="width: '44px'"] svg {
+      width: 14px !important;
+      height: 14px !important;
+    }
+
+    /* Gap between categories */
+    .farcaster-app [style*="gap: '40px'"] {
+      gap: 8px !important;
+      margin-top: 8px !important;
+    }
+
+    /* ========================================
+       GAME CARDS GRID - COMPACT 2-4 COLUMNS
+       ======================================== */
+    
+    .farcaster-app .games-grid,
+    .farcaster-app [style*="gridTemplateColumns"] {
+      grid-template-columns: repeat(auto-fit, minmax(75px, 1fr)) !important;
+      gap: 6px !important;
+    }
+
+    /* ========================================
+       GAME CARDS - COMPACT STYLE
+       ======================================== */
     
     .farcaster-app .game-card {
-      padding: 16px !important;
-      border-radius: 12px;
+      padding: 8px !important;
+      border-radius: 10px !important;
       min-height: auto !important;
     }
 
+    /* Card inner container */
     .farcaster-app .game-card > div {
-      min-height: 100px !important;
-      gap: 8px !important;
+      min-height: 60px !important;
+      gap: 4px !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
     }
 
+    /* Card content row - stack vertically */
+    .farcaster-app .game-card > div > div:first-child {
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 4px !important;
+    }
+
+    /* Icon container - compact for Farcaster mobile */
+    .farcaster-app .game-card img,
+    .farcaster-app .game-card svg {
+      width: 22px !important;
+      height: 22px !important;
+      border-radius: 6px !important;
+    }
+
+    /* Card title - compact */
     .farcaster-app .game-card h3 {
-      font-size: 16px !important;
-      margin-bottom: 6px !important;
+      font-size: 10px !important;
+      margin: 0 !important;
+      text-align: center !important;
+      line-height: 1.2 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      max-width: 100% !important;
     }
 
+    /* Hide description on mobile */
     .farcaster-app .game-card p {
-      font-size: 12px !important;
-      line-height: 1.3;
+      display: none !important;
     }
 
-    /* Category sections - reduce padding and spacing */
-    .farcaster-app [style*="padding: '32px'"] {
-      padding: 16px !important;
-      border-radius: 16px !important;
-      margin-bottom: 20px !important;
+    /* XP Badge - compact */
+    .farcaster-app .game-card [style*="background: 'rgba(30, 41, 59"],
+    .farcaster-app .game-card > div > div:last-child {
+      margin-top: 2px !important;
+      justify-content: center !important;
     }
 
-    .farcaster-app [style*="fontSize: '28px'"] {
-      font-size: 20px !important;
+    .farcaster-app .game-card [style*="padding: '4px 10px'"] {
+      padding: 2px 6px !important;
+      font-size: 8px !important;
+      border-radius: 6px !important;
     }
 
-    .farcaster-app [style*="gap: '40px'"] {
-      gap: 20px !important;
-      margin-top: 20px !important;
+    /* Hide bonus XP badge on mobile to save space */
+    .farcaster-app .game-card > div > div:last-child > div:nth-child(2) {
+      display: none !important;
     }
 
-    .farcaster-app [style*="gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))'"] {
-      grid-template-columns: 1fr !important;
-      gap: 12px !important;
+    /* ========================================
+       NETWORK LOGOS - SMALLER
+       ======================================== */
+    
+    .farcaster-app [style*="borderRadius: '50%'"] {
+      width: 14px !important;
+      height: 14px !important;
     }
 
-    /* Reduce icon sizes in category headers */
-    .farcaster-app [style*="width: '44px'"] {
-      width: 36px !important;
-      height: 36px !important;
-    }
-
-    /* Reduce game card icon sizes */
-    .farcaster-app .game-card img {
-      width: 32px !important;
-      height: 32px !important;
-    }
-
-    /* Reduce spacing in category headers */
-    .farcaster-app [style*="marginBottom: '24px'"] {
-      margin-bottom: 16px !important;
-    }
-
-    .farcaster-app [style*="gap: '12px'"] {
-      gap: 8px !important;
-    }
-
+    /* ========================================
+       SOCIAL LINKS - COMPACT
+       ======================================== */
+    
     .farcaster-app .social-link-card {
-      min-width: 150px;
-      padding: 12px 16px;
+      min-width: 100px;
+      padding: 8px 12px;
+      font-size: 11px;
     }
 
-    /* Prevent horizontal overflow */
+    /* ========================================
+       LEADERBOARD - COMPACT
+       ======================================== */
+    
+    .farcaster-app .leaderboard-item {
+      padding: 8px;
+      margin-bottom: 6px;
+    }
+
+    /* ========================================
+       PREVENT OVERFLOW
+       ======================================== */
+    
     .farcaster-app * {
       max-width: 100%;
       box-sizing: border-box;
     }
 
-    /* Ensure main container doesn't overflow */
     .farcaster-app {
       overflow-x: hidden;
       width: 100%;
