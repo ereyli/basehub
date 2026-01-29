@@ -443,7 +443,14 @@ const Home = () => {
   ]
 
   return (
-    <div className="home">
+    <div className="home" style={{ 
+      maxWidth: '100vw', 
+      overflowX: 'hidden',
+      boxSizing: 'border-box',
+      ...(isInFarcaster && typeof window !== 'undefined' && window.innerWidth <= 768 ? { 
+        padding: '12px 12px 80px 12px' 
+      } : {})
+    }}>
       <EmbedMeta 
         title="BaseHub - Web3 Tools & Interactions"
         description="Multi-chain Web3 platform. Deploy smart contracts, swap tokens, analyze wallets, and interact with blockchain to earn XP across multiple EVM networks. Available on Base and InkChain!"
@@ -2830,22 +2837,109 @@ const styles = `
   }
 
   @media (max-width: 768px) {
-    .games-grid {
-      grid-template-columns: 1fr;
-      gap: 16px;
-    }
-    
-    .card {
-      padding: 20px;
-    }
-    
-    .game-card {
-      padding: 20px;
+    /* Only apply mobile styles in Farcaster app (not web) */
+    .farcaster-app .home {
+      padding: 12px 12px 80px 12px !important;
+      max-width: 100vw;
+      overflow-x: hidden;
+      box-sizing: border-box;
     }
 
-    .social-link-card {
+    .farcaster-app .welcome-section {
+      padding: 0;
+      margin-bottom: 20px;
+    }
+
+    .farcaster-app .card {
+      padding: 16px;
+      margin: 0;
+      border-radius: 16px;
+    }
+
+    .farcaster-app .games-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    
+    .farcaster-app .game-card {
+      padding: 16px !important;
+      border-radius: 12px;
+      min-height: auto !important;
+    }
+
+    .farcaster-app .game-card > div {
+      min-height: 100px !important;
+      gap: 8px !important;
+    }
+
+    .farcaster-app .game-card h3 {
+      font-size: 16px !important;
+      margin-bottom: 6px !important;
+    }
+
+    .farcaster-app .game-card p {
+      font-size: 12px !important;
+      line-height: 1.3;
+    }
+
+    /* Category sections - reduce padding and spacing */
+    .farcaster-app [style*="padding: '32px'"] {
+      padding: 16px !important;
+      border-radius: 16px !important;
+      margin-bottom: 20px !important;
+    }
+
+    .farcaster-app [style*="fontSize: '28px'"] {
+      font-size: 20px !important;
+    }
+
+    .farcaster-app [style*="gap: '40px'"] {
+      gap: 20px !important;
+      margin-top: 20px !important;
+    }
+
+    .farcaster-app [style*="gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))'"] {
+      grid-template-columns: 1fr !important;
+      gap: 12px !important;
+    }
+
+    /* Reduce icon sizes in category headers */
+    .farcaster-app [style*="width: '44px'"] {
+      width: 36px !important;
+      height: 36px !important;
+    }
+
+    /* Reduce game card icon sizes */
+    .farcaster-app .game-card img {
+      width: 32px !important;
+      height: 32px !important;
+    }
+
+    /* Reduce spacing in category headers */
+    .farcaster-app [style*="marginBottom: '24px'"] {
+      margin-bottom: 16px !important;
+    }
+
+    .farcaster-app [style*="gap: '12px'"] {
+      gap: 8px !important;
+    }
+
+    .farcaster-app .social-link-card {
       min-width: 150px;
       padding: 12px 16px;
+    }
+
+    /* Prevent horizontal overflow */
+    .farcaster-app * {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* Ensure main container doesn't overflow */
+    .farcaster-app {
+      overflow-x: hidden;
+      width: 100%;
+      max-width: 100vw;
     }
   }
 `

@@ -114,45 +114,51 @@ const FarcasterBottomNav = () => {
         backdropFilter: 'blur(20px)',
         borderTop: '1px solid rgba(255, 255, 255, 0.1)',
         zIndex: 9999,
-        padding: '12px 8px',
+        padding: '8px 4px',
         boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.1)',
         display: 'flex',
         justifyContent: 'space-around',
         alignItems: 'center',
-        gap: '4px'
+        gap: '2px',
+        maxWidth: '100vw',
+        overflowX: 'hidden',
+        boxSizing: 'border-box'
       }}>
         {/* GM/GN Tab */}
         <button
           onClick={() => handleTabClick('gmgn')}
           style={{
             flex: 1,
-            padding: '12px 8px',
+            padding: '8px 4px',
             border: 'none',
-            borderRadius: '12px',
+            borderRadius: '10px',
             background: activeTab === 'gmgn' 
               ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
               : 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)',
             color: activeTab === 'gmgn' ? 'white' : '#10b981',
-            fontSize: '12px',
+            fontSize: '10px',
             fontWeight: '700',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '6px',
+            gap: '3px',
             transition: 'all 0.2s ease',
-            minHeight: '64px',
+            minHeight: '56px',
             justifyContent: 'center',
             boxShadow: activeTab === 'gmgn' 
               ? '0 4px 12px rgba(16, 185, 129, 0.3)' 
-              : '0 2px 4px rgba(16, 185, 129, 0.1)'
+              : '0 2px 4px rgba(16, 185, 129, 0.1)',
+            minWidth: 0,
+            maxWidth: '100%',
+            boxSizing: 'border-box'
           }}
         >
-          <div style={{ display: 'flex', gap: '4px' }}>
-            <Sun size={18} />
-            <Moon size={18} />
+          <div style={{ display: 'flex', gap: '2px' }}>
+            <Sun size={14} />
+            <Moon size={14} />
           </div>
-          <span>GM/GN</span>
+          <span style={{ fontSize: '9px', lineHeight: '1.1' }}>GM/GN</span>
         </button>
 
         {/* DEX Tab */}
@@ -160,30 +166,33 @@ const FarcasterBottomNav = () => {
           onClick={() => handleTabClick('dex')}
           style={{
             flex: 1,
-            padding: '12px 8px',
+            padding: '8px 4px',
             border: 'none',
-            borderRadius: '12px',
+            borderRadius: '10px',
             background: activeTab === 'dex' 
               ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
               : 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)',
             color: activeTab === 'dex' ? 'white' : '#667eea',
-            fontSize: '12px',
+            fontSize: '10px',
             fontWeight: '700',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '6px',
+            gap: '3px',
             transition: 'all 0.2s ease',
-            minHeight: '64px',
+            minHeight: '56px',
             justifyContent: 'center',
             boxShadow: activeTab === 'dex' 
               ? '0 4px 12px rgba(102, 126, 234, 0.3)' 
-              : '0 2px 4px rgba(102, 126, 234, 0.1)'
+              : '0 2px 4px rgba(102, 126, 234, 0.1)',
+            minWidth: 0,
+            maxWidth: '100%',
+            boxSizing: 'border-box'
           }}
         >
-          <Repeat size={18} />
-          <span>DEX</span>
+          <Repeat size={14} />
+          <span style={{ fontSize: '9px', lineHeight: '1.1' }}>DEX</span>
         </button>
 
         {/* GAMING Tab */}
@@ -191,30 +200,33 @@ const FarcasterBottomNav = () => {
           onClick={() => handleTabClick('gaming')}
           style={{
             flex: 1,
-            padding: '12px 8px',
+            padding: '8px 4px',
             border: 'none',
-            borderRadius: '12px',
+            borderRadius: '10px',
             background: activeTab === 'gaming' 
               ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' 
               : 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.15) 100%)',
             color: activeTab === 'gaming' ? 'white' : '#f59e0b',
-            fontSize: '12px',
+            fontSize: '10px',
             fontWeight: '700',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '6px',
+            gap: '3px',
             transition: 'all 0.2s ease',
-            minHeight: '64px',
+            minHeight: '56px',
             justifyContent: 'center',
             boxShadow: activeTab === 'gaming' 
               ? '0 4px 12px rgba(245, 158, 11, 0.3)' 
-              : '0 2px 4px rgba(245, 158, 11, 0.1)'
+              : '0 2px 4px rgba(245, 158, 11, 0.1)',
+            minWidth: 0,
+            maxWidth: '100%',
+            boxSizing: 'border-box'
           }}
         >
-          <Gamepad2 size={18} />
-          <span>GAMING</span>
+          <Gamepad2 size={14} />
+          <span style={{ fontSize: '9px', lineHeight: '1.1' }}>GAMING</span>
         </button>
 
         {/* NFT Tab */}
@@ -222,30 +234,33 @@ const FarcasterBottomNav = () => {
           onClick={() => handleTabClick('nft')}
           style={{
             flex: 1,
-            padding: '12px 8px',
+            padding: '8px 4px',
             border: 'none',
-            borderRadius: '12px',
+            borderRadius: '10px',
             background: activeTab === 'nft' 
               ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' 
               : 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(124, 58, 237, 0.15) 100%)',
             color: activeTab === 'nft' ? 'white' : '#8b5cf6',
-            fontSize: '12px',
+            fontSize: '10px',
             fontWeight: '700',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '6px',
+            gap: '3px',
             transition: 'all 0.2s ease',
-            minHeight: '64px',
+            minHeight: '56px',
             justifyContent: 'center',
             boxShadow: activeTab === 'nft' 
               ? '0 4px 12px rgba(139, 92, 246, 0.3)' 
-              : '0 2px 4px rgba(139, 92, 246, 0.1)'
+              : '0 2px 4px rgba(139, 92, 246, 0.1)',
+            minWidth: 0,
+            maxWidth: '100%',
+            boxSizing: 'border-box'
           }}
         >
-          <Image size={18} />
-          <span>NFT</span>
+          <Image size={14} />
+          <span style={{ fontSize: '9px', lineHeight: '1.1' }}>NFT</span>
         </button>
 
         {/* ANALYSIS Tab */}
@@ -253,30 +268,33 @@ const FarcasterBottomNav = () => {
           onClick={() => handleTabClick('analysis')}
           style={{
             flex: 1,
-            padding: '12px 8px',
+            padding: '8px 4px',
             border: 'none',
-            borderRadius: '12px',
+            borderRadius: '10px',
             background: activeTab === 'analysis' 
               ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' 
               : 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(29, 78, 216, 0.15) 100%)',
             color: activeTab === 'analysis' ? 'white' : '#3b82f6',
-            fontSize: '12px',
+            fontSize: '10px',
             fontWeight: '700',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '6px',
+            gap: '3px',
             transition: 'all 0.2s ease',
-            minHeight: '64px',
+            minHeight: '56px',
             justifyContent: 'center',
             boxShadow: activeTab === 'analysis' 
               ? '0 4px 12px rgba(59, 130, 246, 0.3)' 
-              : '0 2px 4px rgba(59, 130, 246, 0.1)'
+              : '0 2px 4px rgba(59, 130, 246, 0.1)',
+            minWidth: 0,
+            maxWidth: '100%',
+            boxSizing: 'border-box'
           }}
         >
-          <TrendingUp size={18} />
-          <span>ANALYSIS</span>
+          <TrendingUp size={14} />
+          <span style={{ fontSize: '9px', lineHeight: '1.1' }}>ANALYSIS</span>
         </button>
 
         {/* DEPLOY Tab */}
@@ -284,30 +302,33 @@ const FarcasterBottomNav = () => {
           onClick={() => handleTabClick('deploy')}
           style={{
             flex: 1,
-            padding: '12px 8px',
+            padding: '8px 4px',
             border: 'none',
-            borderRadius: '12px',
+            borderRadius: '10px',
             background: activeTab === 'deploy' 
               ? 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)' 
               : 'linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(219, 39, 119, 0.15) 100%)',
             color: activeTab === 'deploy' ? 'white' : '#ec4899',
-            fontSize: '12px',
+            fontSize: '10px',
             fontWeight: '700',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '6px',
+            gap: '3px',
             transition: 'all 0.2s ease',
-            minHeight: '64px',
+            minHeight: '56px',
             justifyContent: 'center',
             boxShadow: activeTab === 'deploy' 
               ? '0 4px 12px rgba(236, 72, 153, 0.3)' 
-              : '0 2px 4px rgba(236, 72, 153, 0.1)'
+              : '0 2px 4px rgba(236, 72, 153, 0.1)',
+            minWidth: 0,
+            maxWidth: '100%',
+            boxSizing: 'border-box'
           }}
         >
-          <Rocket size={18} />
-          <span>DEPLOY</span>
+          <Rocket size={14} />
+          <span style={{ fontSize: '9px', lineHeight: '1.1' }}>DEPLOY</span>
         </button>
 
         {/* SOCIAL Tab */}
@@ -315,30 +336,33 @@ const FarcasterBottomNav = () => {
           onClick={() => handleTabClick('social')}
           style={{
             flex: 1,
-            padding: '12px 8px',
+            padding: '8px 4px',
             border: 'none',
-            borderRadius: '12px',
+            borderRadius: '10px',
             background: activeTab === 'social' 
               ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' 
               : 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)',
             color: activeTab === 'social' ? 'white' : '#fbbf24',
-            fontSize: '12px',
+            fontSize: '10px',
             fontWeight: '700',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '6px',
+            gap: '3px',
             transition: 'all 0.2s ease',
-            minHeight: '64px',
+            minHeight: '56px',
             justifyContent: 'center',
             boxShadow: activeTab === 'social' 
               ? '0 4px 12px rgba(251, 191, 36, 0.3)' 
-              : '0 2px 4px rgba(251, 191, 36, 0.1)'
+              : '0 2px 4px rgba(251, 191, 36, 0.1)',
+            minWidth: 0,
+            maxWidth: '100%',
+            boxSizing: 'border-box'
           }}
         >
-          <Users size={18} />
-          <span>SOCIAL</span>
+          <Users size={14} />
+          <span style={{ fontSize: '9px', lineHeight: '1.1' }}>SOCIAL</span>
         </button>
       </div>
 
@@ -363,19 +387,22 @@ const FarcasterBottomNav = () => {
           {/* Content Panel */}
           <div style={{
             position: 'fixed',
-            bottom: '64px',
+            bottom: '56px',
             left: '0',
             right: '0',
             background: 'rgba(30, 41, 59, 0.98)',
             backdropFilter: 'blur(20px)',
             borderTop: '1px solid rgba(255, 255, 255, 0.1)',
             zIndex: 9999,
-            padding: '16px',
+            padding: '12px',
             maxHeight: '60vh',
             overflowY: 'auto',
+            overflowX: 'hidden',
             boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.1)',
             animation: 'slideUp 0.3s ease',
-            borderRadius: '16px 16px 0 0'
+            borderRadius: '16px 16px 0 0',
+            maxWidth: '100vw',
+            boxSizing: 'border-box'
           }}>
             {/* Success Message */}
             {successMessage && (
