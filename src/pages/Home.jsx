@@ -766,36 +766,36 @@ const Home = () => {
 
 
       <div className="welcome-section">
-        <div className="card">
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+        <div className="card" style={isCompactMode ? { padding: '12px', marginBottom: '8px' } : {}}>
+          <div style={{ textAlign: 'center', marginBottom: isCompactMode ? '12px' : '32px' }}>
             <h1 style={{ 
-              fontSize: '30px', 
+              fontSize: isCompactMode ? '18px' : '30px', 
               fontWeight: '700', 
-              marginBottom: '6px',
+              marginBottom: isCompactMode ? '4px' : '6px',
               color: '#e5e7eb',
               fontFamily: 'Poppins, sans-serif'
             }}>
               BaseHub
             </h1>
             <p style={{ 
-              fontSize: '15px', 
+              fontSize: isCompactMode ? '11px' : '15px', 
               color: '#9ca3af',
-              marginBottom: '20px',
+              marginBottom: isCompactMode ? '10px' : '20px',
               fontFamily: 'Poppins, sans-serif',
               fontWeight: '400',
               maxWidth: '720px',
               marginLeft: 'auto',
               marginRight: 'auto'
             }}>
-              Games, tokens and XP on Base, InkChain and more — all in one Web3 hub.
+              {isCompactMode ? 'Web3 hub for Base, InkChain & more' : 'Games, tokens and XP on Base, InkChain and more — all in one Web3 hub.'}
             </p>
 
-            {/* Network Selector - large clickable logos */}
+            {/* Network Selector - compact for Farcaster mobile */}
             <div style={{ 
               display: 'flex',
               justifyContent: 'center',
-              gap: '20px',
-              marginBottom: '28px',
+              gap: isCompactMode ? '6px' : '20px',
+              marginBottom: isCompactMode ? '12px' : '28px',
               flexWrap: 'wrap'
             }}>
               {[
@@ -821,32 +821,35 @@ const Home = () => {
                       background: isActive 
                         ? 'linear-gradient(135deg, rgba(59,130,246,0.25), rgba(37,99,235,0.35))'
                         : 'rgba(15,23,42,0.9)',
-                      borderRadius: '18px',
-                      padding: '10px 16px',
+                      borderRadius: isCompactMode ? '10px' : '18px',
+                      padding: isCompactMode ? '6px 8px' : '10px 16px',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '10px',
+                      gap: isCompactMode ? '4px' : '10px',
                       cursor: 'pointer',
                       boxShadow: isActive 
-                        ? '0 10px 30px rgba(59,130,246,0.35)'
-                        : '0 4px 16px rgba(15,23,42,0.8)',
+                        ? '0 4px 12px rgba(59,130,246,0.25)'
+                        : '0 2px 8px rgba(15,23,42,0.6)',
                       transform: isActive ? 'translateY(-1px)' : 'translateY(0)',
                       transition: 'all 0.2s ease',
-                      minWidth: '140px',
-                      justifyContent: 'flex-start'
+                      minWidth: isCompactMode ? 'auto' : '140px',
+                      justifyContent: isCompactMode ? 'center' : 'flex-start',
+                      flex: isCompactMode ? '1' : 'none',
+                      maxWidth: isCompactMode ? '80px' : 'none'
                     }}
                   >
                     <div
                       style={{
-                        width: '40px',
-                        height: '40px',
+                        width: isCompactMode ? '24px' : '40px',
+                        height: isCompactMode ? '24px' : '40px',
                         borderRadius: '50%',
                         overflow: 'hidden',
                         border: isActive
                           ? '2px solid rgba(248,250,252,0.9)'
-                          : '2px solid rgba(148,163,184,0.5)',
-                        boxShadow: '0 4px 12px rgba(15,23,42,0.8)',
-                        background: '#020617'
+                          : '1px solid rgba(148,163,184,0.4)',
+                        boxShadow: '0 2px 6px rgba(15,23,42,0.6)',
+                        background: '#020617',
+                        flexShrink: 0
                       }}
                     >
                       <img
@@ -855,50 +858,61 @@ const Home = () => {
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     </div>
-                    <div style={{ textAlign: 'left' }}>
-                      <div style={{ 
-                        fontSize: '14px', 
-                        fontWeight: 600, 
-                        color: '#e5e7eb',
-                        fontFamily: 'Poppins, sans-serif'
-                      }}>
-                        {net.label}
+                    {!isCompactMode && (
+                      <div style={{ textAlign: 'left' }}>
+                        <div style={{ 
+                          fontSize: '14px', 
+                          fontWeight: 600, 
+                          color: '#e5e7eb',
+                          fontFamily: 'Poppins, sans-serif'
+                        }}>
+                          {net.label}
+                        </div>
+                        <div style={{ 
+                          fontSize: '11px', 
+                          color: isActive ? '#a5b4fc' : '#6b7280'
+                        }}>
+                          {isActive ? 'Connected' : 'Switch network'}
+                        </div>
                       </div>
-                      <div style={{ 
-                        fontSize: '11px', 
-                        color: isActive ? '#a5b4fc' : '#6b7280'
-                      }}>
-                        {isActive ? 'Connected' : 'Switch network'}
-                      </div>
-                    </div>
+                    )}
                   </button>
                 )
               })}
             </div>
             
-            {/* Twitter Share Button for Web Users */}
-            <div style={{ 
-              marginBottom: '24px',
-              display: 'flex',
-              justifyContent: 'center'
-            }}>
-              <TwitterShareButton 
-                title="BaseHub"
-                description="Playing on-chain games, launching tokens and earning XP on Base, InkChain and more with BaseHub."
-                hashtags={["BaseHub", "Base", "InkChain", "Web3Gaming", "DEX", "XP"]}
-              />
-            </div>
+            {/* Twitter Share Button for Web Users - hide on Farcaster mobile */}
+            {!isCompactMode && (
+              <div style={{ 
+                marginBottom: '24px',
+                display: 'flex',
+                justifyContent: 'center'
+              }}>
+                <TwitterShareButton 
+                  title="BaseHub"
+                  description="Playing on-chain games, launching tokens and earning XP on Base, InkChain and more with BaseHub."
+                  hashtags={["BaseHub", "Base", "InkChain", "Web3Gaming", "DEX", "XP"]}
+                />
+              </div>
+            )}
             
             {!isConnected && (
               <div style={{
                 background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
                 border: '1px solid #f59e0b',
-                borderRadius: '12px',
-                padding: '16px',
-                marginBottom: '24px'
+                borderRadius: isCompactMode ? '8px' : '12px',
+                padding: isCompactMode ? '8px 10px' : '16px',
+                marginBottom: isCompactMode ? '8px' : '24px'
               }}>
-                <p style={{ color: '#92400e', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Zap size={16} /> Connect your wallet to start playing and earning XP
+                <p style={{ 
+                  color: '#92400e', 
+                  margin: 0, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px',
+                  fontSize: isCompactMode ? '11px' : '14px'
+                }}>
+                  <Zap size={isCompactMode ? 12 : 16} /> {isCompactMode ? 'Connect wallet to earn XP' : 'Connect your wallet to start playing and earning XP'}
                 </p>
               </div>
             )}
