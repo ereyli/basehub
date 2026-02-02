@@ -5,6 +5,57 @@ import { AI_NFT_CONFIG } from '../config/aiNFT';
 const genAI = new GoogleGenerativeAI(AI_NFT_CONFIG.GOOGLE_STUDIO_API_KEY);
 
 /**
+ * Generate image using MiniMax Image Generation API
+ * @param {string} prompt - Text prompt for image generation
+ * @returns {Promise<string>} - Base64 encoded image data
+ */
+async function generateWithMiniMax(prompt) {
+  const apiKey = AI_NFT_CONFIG.MINIMAX_API_KEY;
+  
+  if (!apiKey || apiKey === 'YOUR_MINIMAX_API_KEY') {
+    throw new Error('MiniMax API key not configured');
+  }
+  
+  console.log('🎨 Generating image with MiniMax Image Generation API...');
+  
+  try {
+    const response = await fetch('https://api.minimax.io/v1/image_generation', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'image-01',
+        prompt: prompt,
+        aspect_ratio: '1:1', // Square for NFT
+        response_format: 'base64'
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`MiniMax API error: ${response.status} - ${errorText}`);
+    }
+    
+    const result = await response.json();
+    
+    if (result.data && result.data.image_base64 && result.data.image_base64.length > 0) {
+      const base64Image = result.data.image_base64[0];
+      const imageDataUrl = `data:image/jpeg;base64,${base64Image}`;
+      
+      console.log('✅ Image generated with MiniMax!');
+      return imageDataUrl;
+    } else {
+      throw new Error('No image data in MiniMax response');
+    }
+  } catch (error) {
+    console.error('❌ MiniMax API error:', error.message);
+    throw error;
+  }
+}
+
+/**
  * Enhance uploaded image with AI processing
  * @param {string} uploadedImage - Base64 encoded uploaded image
  * @param {string} enhancementPrompt - Enhancement instructions
@@ -365,47 +416,79 @@ export async function generateAIImage(prompt, uploadedImage = null) {
       return uploadedImage;
     }
     
-    console.log('🎨 Generating REAL AI image with Google Gemini Image Generation...');
+    // Check which AI provider to use
+    const provider = AI_NFT_CONFIG.AI_PROVIDER || 'minimax';
     
-    // Use Gemini 2.5 Flash Image model for REAL image generation
-    console.log('🖼️ Using Gemini 2.5 Flash Image model...');
-    const imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image" });
-    
-    // Generate image directly from prompt
-    const result = await imageModel.generateContent(prompt);
-    
-    console.log('✅ Response received from Gemini Image API');
-    
-    // Extract image from response
-    if (result.response?.candidates?.[0]?.content?.parts) {
-      const parts = result.response.candidates[0].content.parts;
-      
-      // Find the image part (inline_data)
-      for (const part of parts) {
-        if (part.inlineData && part.inlineData.data) {
-          const imageData = part.inlineData.data;
-          const mimeType = part.inlineData.mimeType || 'image/png';
-          
-          console.log('✅ REAL AI IMAGE GENERATED with Gemini 2.5 Flash Image!');
-          console.log('📊 Original image size:', imageData.length, 'chars');
-          
-          // Optimize image for smaller file size
-          const optimizedImage = await optimizeImageSize(`data:${mimeType};base64,${imageData}`);
-          console.log('📊 Optimized image size:', optimizedImage.length, 'chars');
-          
-          return optimizedImage;
-        }
+    // Try MiniMax first (default, cheaper, better quotas)
+    if (provider === 'minimax' || provider === 'auto') {
+      try {
+        return await generateWithMiniMax(prompt);
+      } catch (minimaxError) {
+        console.warn('⚠️ MiniMax API failed, trying Gemini...', minimaxError.message);
+        // Fall through to Gemini
       }
     }
     
-    console.warn('⚠️ No image found in Gemini response, falling back...');
-    throw new Error('No image data in response');
+    // Try Gemini if MiniMax failed or provider is 'gemini'
+    if (provider === 'gemini' || provider === 'auto') {
+      console.log('🎨 Generating REAL AI image with Google Gemini Image Generation...');
+      
+      // Use Gemini 2.5 Flash Image model for REAL image generation
+      console.log('🖼️ Using Gemini 2.5 Flash Image model...');
+      const imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image" });
+      
+      // Generate image directly from prompt
+      const result = await imageModel.generateContent(prompt);
+      
+      console.log('✅ Response received from Gemini Image API');
+      
+      // Extract image from response
+      if (result.response?.candidates?.[0]?.content?.parts) {
+        const parts = result.response.candidates[0].content.parts;
+        
+        // Find the image part (inline_data)
+        for (const part of parts) {
+          if (part.inlineData && part.inlineData.data) {
+            const imageData = part.inlineData.data;
+            const mimeType = part.inlineData.mimeType || 'image/png';
+            
+            console.log('✅ REAL AI IMAGE GENERATED with Gemini 2.5 Flash Image!');
+            console.log('📊 Original image size:', imageData.length, 'chars');
+            
+            // Optimize image for smaller file size
+            const optimizedImage = await optimizeImageSize(`data:${mimeType};base64,${imageData}`);
+            console.log('📊 Optimized image size:', optimizedImage.length, 'chars');
+            
+            return optimizedImage;
+          }
+        }
+      }
+      
+      console.warn('⚠️ No image found in Gemini response, falling back...');
+      throw new Error('No image data in response');
+    }
+    
+    // If no provider worked, throw error to trigger canvas fallback
+    throw new Error('No AI provider available');
     
   } catch (error) {
+    const errorMessage = error.message || '';
+    const isQuotaError = errorMessage.includes('quota') || 
+                        errorMessage.includes('429') || 
+                        errorMessage.includes('rate limit') ||
+                        errorMessage.includes('Quota exceeded');
+    
+    if (isQuotaError) {
+      console.warn('⚠️ Gemini API quota exceeded. Using canvas-based image generation...');
+      console.log('💡 Tip: Upgrade your Gemini API plan or wait for quota reset');
+      // Direct fallback to canvas - don't try text model if quota is exceeded
+      return createEnhancedVisualImage(prompt, prompt);
+    }
+    
     console.error('❌ Error generating with Gemini Image:', error.message);
     console.log('🔄 Falling back to enhanced canvas visualization...');
     
-    // Fallback: Use text model to enhance prompt, then canvas
+    // Fallback: Try text model to enhance prompt, then canvas
     try {
       const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       const enhancedPromptResult = await textModel.generateContent(
@@ -425,7 +508,16 @@ export async function generateAIImage(prompt, uploadedImage = null) {
       console.log('✨ Enhanced with text model:', enhancedPrompt.substring(0, 100) + '...');
       return createEnhancedVisualImage(prompt, enhancedPrompt);
     } catch (fallbackError) {
-      console.error('❌ Fallback also failed:', fallbackError.message);
+      const fallbackErrorMessage = fallbackError.message || '';
+      const isFallbackQuotaError = fallbackErrorMessage.includes('quota') || 
+                                   fallbackErrorMessage.includes('429') || 
+                                   fallbackErrorMessage.includes('rate limit');
+      
+      if (isFallbackQuotaError) {
+        console.warn('⚠️ Text model also quota exceeded. Using basic canvas generation...');
+      } else {
+        console.error('❌ Fallback also failed:', fallbackError.message);
+      }
       return createEnhancedVisualImage(prompt, prompt);
     }
   }

@@ -170,7 +170,12 @@ export function useAINFTMinting(quantity = 1) {
       
     } catch (err) {
       console.error('Error generating image:', err);
-      setError('Failed to generate image. Please try again.');
+      const errorMessage = err.message || '';
+      if (errorMessage.includes('quota') || errorMessage.includes('429')) {
+        setError('Gemini API quota exceeded. Using canvas-based image generation instead. Your NFT will still be created!');
+      } else {
+        setError('Failed to generate image. Please try again.');
+      }
     } finally {
       setIsGenerating(false);
     }
