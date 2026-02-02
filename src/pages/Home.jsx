@@ -1238,7 +1238,7 @@ const Home = () => {
                           <>
                             <Factory size={24} style={{ color: 'white' }} />
                             <h3 style={compactStyles.cardTitle}>Create</h3>
-                            <div style={compactStyles.xpBadge}>100 XP</div>
+                            <div style={compactStyles.xpBadge}>2000 XP</div>
                           </>
                         ) : (
                           <>
@@ -1250,7 +1250,7 @@ const Home = () => {
                               </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: 'auto' }}>
-                              <div style={compactStyles.xpBadge}>100 XP</div>
+                              <div style={compactStyles.xpBadge}>2000 XP</div>
                             </div>
                           </>
                         )}
