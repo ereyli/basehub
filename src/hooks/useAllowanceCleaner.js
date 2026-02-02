@@ -92,6 +92,8 @@ const BASE_TOKENS = [
 export const useAllowanceCleaner = () => {
   const { data: walletClient } = useWalletClient()
   const { address } = useAccount()
+  const chainId = useChainId()
+  const { switchChain } = useSwitchChain()
   const { writeContractAsync } = useWriteContract()
   const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)

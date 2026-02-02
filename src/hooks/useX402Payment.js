@@ -65,8 +65,8 @@ export const useX402Payment = () => {
       
       // x402-fetch automatically reads payment requirements from 402 response
       // We only need to specify maxValue (optional, defaults to 0.1 USDC)
-      // 0.05 USDC = 50000 base units (6 decimals)
-      const MAX_PAYMENT_AMOUNT = BigInt(50000) // 0.05 USDC max
+      // 0.1 USDC = 100000 base units (6 decimals)
+      const MAX_PAYMENT_AMOUNT = BigInt(100000) // 0.1 USDC max
       
       console.log('💰 Payment config:', {
         maxAmount: MAX_PAYMENT_AMOUNT.toString(),
