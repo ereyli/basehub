@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { parseEther } from 'viem'
 import { useNetworkCheck } from './useNetworkCheck'
@@ -10,6 +10,10 @@ export const useEarlyAccessMint = () => {
   const { isCorrectNetwork, switchToBaseNetwork } = useNetworkCheck()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
+  
+  // Use ref to prevent double popup - more reliable than state
+  const isTransactionPendingRef = useRef(false)
+  const lastErrorRef = useRef(null)
 
   const contractAddress = EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS
 
@@ -82,10 +86,14 @@ export const useEarlyAccessMint = () => {
     }
   })
 
-  const { writeContract, data: hash, isPending } = useWriteContract()
+  const { writeContractAsync, data: hash, isPending } = useWriteContract()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   })
+
+  // NOTE: We intentionally don't use useEffect for writeError anymore
+  // Error handling is done in catch block of mint function
+  // This prevents the double popup issue caused by useEffect re-triggers
 
   const mint = async () => {
     if (!isConnected || !address) {
@@ -96,12 +104,20 @@ export const useEarlyAccessMint = () => {
       throw new Error('Contract not deployed yet. Please check configuration.')
     }
 
+    // Prevent double popup using ref
+    if (isTransactionPendingRef.current) {
+      console.log('⚠️ Transaction already in progress')
+      return
+    }
+
     if (!isCorrectNetwork) {
       await switchToBaseNetwork()
       await new Promise(resolve => setTimeout(resolve, 1000))
     }
 
     setIsLoading(true)
+    lastErrorRef.current = null
+    isTransactionPendingRef.current = true
     setError(null)
 
     try {
@@ -115,7 +131,7 @@ export const useEarlyAccessMint = () => {
 
       const price = mintPrice || parseEther(EARLY_ACCESS_CONFIG.MINT_PRICE)
 
-      writeContract({
+      await writeContractAsync({
         address: contractAddress,
         abi: EARLY_ACCESS_ABI,
         functionName: 'mint',
@@ -123,7 +139,14 @@ export const useEarlyAccessMint = () => {
       })
     } catch (err) {
       console.error('Mint error:', err)
-      setError(err.message || 'Mint failed')
+      isTransactionPendingRef.current = false
+      // Don't show error for user cancellation
+      if (err.message?.includes('User rejected') || err.message?.includes('user rejected')) {
+        console.log('ℹ️ User cancelled the transaction')
+        setError(null)
+      } else {
+        setError(err.message || 'Mint failed')
+      }
       setIsLoading(false)
     }
   }
@@ -131,6 +154,7 @@ export const useEarlyAccessMint = () => {
   useEffect(() => {
     if (isSuccess && hash && address) {
       setIsLoading(false)
+      isTransactionPendingRef.current = false
       refetchTotalMinted()
       refetchUniqueMinters()
       

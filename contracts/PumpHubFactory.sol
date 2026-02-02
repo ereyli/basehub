@@ -13,7 +13,7 @@ contract PumpHubFactory is Ownable, ReentrancyGuard {
     uint256 constant TS = 1e27;
     uint256 constant CF = 1e15;
     uint256 constant GT = 5e18;
-    uint256 constant TF = 30;
+    uint256 constant TF = 60; // 0.6% total trading fee (0.3% platform + 0.3% creator)
     uint256 constant MA = 1000;
     uint256 constant BP = 10000;
     uint256 constant IVE = 1e18;
@@ -91,6 +91,8 @@ contract PumpHubFactory is Ownable, ReentrancyGuard {
         if (c.graduated) { _buyUni(t, min); return; }
         
         uint256 fee = (msg.value * TF) / BP;
+        uint256 platformFee = fee / 2; // 50% to platform
+        uint256 creatorFee = fee - platformFee; // 50% to creator
         uint256 eth = msg.value - fee;
         uint256 out = (c.virtualTokens * eth) / (c.virtualETH + eth);
         
@@ -107,7 +109,9 @@ contract PumpHubFactory is Ownable, ReentrancyGuard {
         
         if (!_hold[t][msg.sender]) { _hold[t][msg.sender] = true; st.holders++; }
         
-        if (fee > 0) fees[c.creator] += fee;
+        // Split fee: 50% to platform, 50% to creator
+        if (platformFee > 0) _snd(owner(), platformFee);
+        if (creatorFee > 0) fees[c.creator] += creatorFee;
         ERC20(t).transfer(msg.sender, out);
         emit TB(t, msg.sender, msg.value, out, fee);
         
@@ -124,6 +128,8 @@ contract PumpHubFactory is Ownable, ReentrancyGuard {
         if (eth > c.realETH) revert E();
         
         uint256 fee = (eth * TF) / BP;
+        uint256 platformFee = fee / 2; // 50% to platform
+        uint256 creatorFee = fee - platformFee; // 50% to creator
         uint256 out = eth - fee;
         if (out < min) revert E();
         
@@ -142,7 +148,9 @@ contract PumpHubFactory is Ownable, ReentrancyGuard {
             if (st.holders > 0) st.holders--;
         }
         
-        if (fee > 0) fees[c.creator] += fee;
+        // Split fee: 50% to platform, 50% to creator
+        if (platformFee > 0) _snd(owner(), platformFee);
+        if (creatorFee > 0) fees[c.creator] += creatorFee;
         _snd(msg.sender, out);
         emit TS2(t, msg.sender, amt, out, fee);
     }
@@ -173,6 +181,14 @@ contract PumpHubFactory is Ownable, ReentrancyGuard {
         if (a == 0) revert E();
         refunds[msg.sender] = 0;
         _snd(msg.sender, a);
+    }
+    
+    // Emergency withdrawal - Owner can withdraw all ETH for security purposes
+    // Use this only in case of exploit/hack to protect user funds
+    function emergencyWithdrawAll() external onlyOwner {
+        uint256 balance = address(this).balance;
+        if (balance == 0) revert E();
+        _snd(owner(), balance);
     }
     
     function _snd(address to, uint256 a) internal {

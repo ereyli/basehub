@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useAccount, useWriteContract, useChainId } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { useFarcaster } from '../contexts/FarcasterContext'
@@ -32,6 +32,9 @@ export const useTransactions = () => {
   const { isCorrectNetwork, networkName, currentNetworkConfig, switchToNetwork, supportedNetworks } = useNetworkCheck()
   const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)
+  
+  // Use ref to prevent double popup - more reliable than state
+  const isTransactionPendingRef = useRef(false)
 
   // Helper function to wait for transaction receipt with optimized polling for InkChain
   const waitForTxReceipt = async (txHash, timeoutDuration = 60000) => {
@@ -107,9 +110,15 @@ export const useTransactions = () => {
     return isOnBase ? parseEther('0.000005') : parseEther('0.00002')
   }
 
-  const sendGMTransaction = async (message = 'GM!') => {
+  const sendGMTransaction = useCallback(async (message = 'GM!') => {
     if (!address) {
       throw new Error('Wallet not connected')
+    }
+
+    // Prevent double popup using ref
+    if (isTransactionPendingRef.current) {
+      console.log('⚠️ Transaction already in progress, ignoring duplicate request')
+      return null
     }
 
     // Validate and auto-switch network before proceeding
@@ -117,6 +126,7 @@ export const useTransactions = () => {
 
     setIsLoading(true)
     setError(null)
+    isTransactionPendingRef.current = true
 
     try {
       console.log('🔍 GM Transaction - Network Info:', { 
@@ -211,20 +221,41 @@ export const useTransactions = () => {
         xpEarned: 30 
       }
     } catch (err) {
-      console.error('❌ Transaction failed:', err)
+      isTransactionPendingRef.current = false
+      setIsLoading(false)
+      
+      // Check for user cancellation - case insensitive and multiple patterns
+      const errorMsg = err.message?.toLowerCase() || ''
+      const isUserRejection = errorMsg.includes('user rejected') || 
+                              errorMsg.includes('user denied') || 
+                              errorMsg.includes('rejected the request') ||
+                              errorMsg.includes('denied transaction') ||
+                              err.code === 4001 // MetaMask user rejection code
+      
+      if (isUserRejection) {
+        console.log('ℹ️ User cancelled the GM transaction')
+        setError(null)
+        return null // Don't throw, just return null
+      }
+      
+      console.error('❌ GM Transaction failed:', err)
       // Only set error for actual transaction failures, not confirmation timeouts
-      if (!err.message?.includes('confirmation timeout') && !err.message?.includes('Confirmation timeout')) {
+      if (!errorMsg.includes('confirmation timeout')) {
         setError(err.message)
       }
       throw err
-    } finally {
-      setIsLoading(false)
     }
-  }
+  }, [address, chainId, currentNetworkConfig, isCorrectNetwork, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
 
-  const sendGNTransaction = async (message = 'GN!') => {
+  const sendGNTransaction = useCallback(async (message = 'GN!') => {
     if (!address) {
       throw new Error('Wallet not connected')
+    }
+
+    // Prevent double popup using ref
+    if (isTransactionPendingRef.current) {
+      console.log('⚠️ Transaction already in progress, ignoring duplicate request')
+      return null
     }
 
     // Validate and auto-switch network before proceeding
@@ -232,6 +263,7 @@ export const useTransactions = () => {
 
     setIsLoading(true)
     setError(null)
+    isTransactionPendingRef.current = true
 
     try {
       const contractAddress = getContractAddressForCurrentNetwork('GN_GAME')
@@ -311,20 +343,41 @@ export const useTransactions = () => {
         xpEarned: 30 
       }
     } catch (err) {
-      console.error('❌ Transaction failed:', err)
+      isTransactionPendingRef.current = false
+      setIsLoading(false)
+      
+      // Check for user cancellation - case insensitive and multiple patterns
+      const errorMsg = err.message?.toLowerCase() || ''
+      const isUserRejection = errorMsg.includes('user rejected') || 
+                              errorMsg.includes('user denied') || 
+                              errorMsg.includes('rejected the request') ||
+                              errorMsg.includes('denied transaction') ||
+                              err.code === 4001 // MetaMask user rejection code
+      
+      if (isUserRejection) {
+        console.log('ℹ️ User cancelled the GN transaction')
+        setError(null)
+        return null // Don't throw, just return null
+      }
+      
+      console.error('❌ GN Transaction failed:', err)
       // Only set error for actual transaction failures, not confirmation timeouts
-      if (!err.message?.includes('confirmation timeout') && !err.message?.includes('Confirmation timeout')) {
+      if (!errorMsg.includes('confirmation timeout')) {
         setError(err.message)
       }
       throw err
-    } finally {
-      setIsLoading(false)
     }
-  }
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
 
-  const sendFlipTransaction = async (selectedSide) => {
+  const sendFlipTransaction = useCallback(async (selectedSide) => {
     if (!address) {
       throw new Error('Wallet not connected')
+    }
+
+    // Prevent double popup using ref
+    if (isTransactionPendingRef.current) {
+      console.log('⚠️ Transaction already in progress, ignoring duplicate request')
+      return null
     }
 
     // Validate and auto-switch network before proceeding
@@ -332,6 +385,7 @@ export const useTransactions = () => {
 
     setIsLoading(true)
     setError(null)
+    isTransactionPendingRef.current = true
 
     try {
 
@@ -427,20 +481,41 @@ export const useTransactions = () => {
         xpEarned: playerWon ? 560 : 60
       }
     } catch (err) {
-      // Only set error for actual transaction failures, not confirmation timeouts
-      if (!err.message?.includes('confirmation timeout') && !err.message?.includes('Confirmation timeout')) {
+      isTransactionPendingRef.current = false
+      setIsLoading(false)
+      
+      // Check for user cancellation - case insensitive and multiple patterns
+      const errorMsg = err.message?.toLowerCase() || ''
+      const isUserRejection = errorMsg.includes('user rejected') || 
+                              errorMsg.includes('user denied') || 
+                              errorMsg.includes('rejected the request') ||
+                              errorMsg.includes('denied transaction') ||
+                              err.code === 4001
+      
+      if (isUserRejection) {
+        console.log('ℹ️ User cancelled the Flip transaction')
+        setError(null)
+        return null
+      }
+      
+      console.error('❌ Flip Transaction failed:', err)
+      if (!errorMsg.includes('confirmation timeout')) {
         setError(err.message)
       }
       throw err
-    } finally {
-      setIsLoading(false)
     }
-  }
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
 
 
-  const sendLuckyNumberTransaction = async (guess) => {
+  const sendLuckyNumberTransaction = useCallback(async (guess) => {
     if (!address) {
       throw new Error('Wallet not connected')
+    }
+
+    // Prevent double popup using ref
+    if (isTransactionPendingRef.current) {
+      console.log('⚠️ Transaction already in progress, ignoring duplicate request')
+      return null
     }
 
     // Validate and auto-switch network before proceeding
@@ -448,6 +523,7 @@ export const useTransactions = () => {
 
     setIsLoading(true)
     setError(null)
+    isTransactionPendingRef.current = true
 
     try {
 
@@ -539,19 +615,40 @@ export const useTransactions = () => {
         xpEarned: playerWon ? 1060 : 60
       }
     } catch (err) {
-      // Only set error for actual transaction failures, not confirmation timeouts
-      if (!err.message?.includes('confirmation timeout') && !err.message?.includes('Confirmation timeout')) {
+      isTransactionPendingRef.current = false
+      setIsLoading(false)
+      
+      // Check for user cancellation - case insensitive and multiple patterns
+      const errorMsg = err.message?.toLowerCase() || ''
+      const isUserRejection = errorMsg.includes('user rejected') || 
+                              errorMsg.includes('user denied') || 
+                              errorMsg.includes('rejected the request') ||
+                              errorMsg.includes('denied transaction') ||
+                              err.code === 4001
+      
+      if (isUserRejection) {
+        console.log('ℹ️ User cancelled the Lucky Number transaction')
+        setError(null)
+        return null
+      }
+      
+      console.error('❌ Lucky Number Transaction failed:', err)
+      if (!errorMsg.includes('confirmation timeout')) {
         setError(err.message)
       }
       throw err
-    } finally {
-      setIsLoading(false)
     }
-  }
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
 
-  const sendDiceRollTransaction = async (guess) => {
+  const sendDiceRollTransaction = useCallback(async (guess) => {
     if (!address) {
       throw new Error('Wallet not connected')
+    }
+
+    // Prevent double popup using ref
+    if (isTransactionPendingRef.current) {
+      console.log('⚠️ Transaction already in progress, ignoring duplicate request')
+      return null
     }
 
     // Validate and auto-switch network before proceeding
@@ -559,6 +656,7 @@ export const useTransactions = () => {
 
     setIsLoading(true)
     setError(null)
+    isTransactionPendingRef.current = true
 
     try {
 
@@ -654,19 +752,40 @@ export const useTransactions = () => {
         xpEarned: playerWon ? 1560 : 60
       }
     } catch (err) {
-      // Only set error for actual transaction failures, not confirmation timeouts
-      if (!err.message?.includes('confirmation timeout') && !err.message?.includes('Confirmation timeout')) {
+      isTransactionPendingRef.current = false
+      setIsLoading(false)
+      
+      // Check for user cancellation - case insensitive and multiple patterns
+      const errorMsg = err.message?.toLowerCase() || ''
+      const isUserRejection = errorMsg.includes('user rejected') || 
+                              errorMsg.includes('user denied') || 
+                              errorMsg.includes('rejected the request') ||
+                              errorMsg.includes('denied transaction') ||
+                              err.code === 4001
+      
+      if (isUserRejection) {
+        console.log('ℹ️ User cancelled the Dice Roll transaction')
+        setError(null)
+        return null
+      }
+      
+      console.error('❌ Dice Roll Transaction failed:', err)
+      if (!errorMsg.includes('confirmation timeout')) {
         setError(err.message)
       }
       throw err
-    } finally {
-      setIsLoading(false)
     }
-  }
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
 
-  const sendSlotTransaction = async (action, params = {}) => {
+  const sendSlotTransaction = useCallback(async (action, params = {}) => {
     if (!address) {
       throw new Error('Wallet not connected. Please connect your wallet first.')
+    }
+
+    // Prevent double popup using ref
+    if (isTransactionPendingRef.current) {
+      console.log('⚠️ Transaction already in progress, ignoring duplicate request')
+      return null
     }
 
     // Validate and auto-switch network before proceeding
@@ -674,6 +793,7 @@ export const useTransactions = () => {
 
     setIsLoading(true)
     setError(null)
+    isTransactionPendingRef.current = true
 
     try {
       const contractAddress = getContractAddressForCurrentNetwork('SLOT_GAME')
@@ -881,19 +1001,40 @@ export const useTransactions = () => {
         }
       }
     } catch (err) {
-      // Only set error for actual transaction failures, not confirmation timeouts
-      if (!err.message?.includes('confirmation timeout') && !err.message?.includes('Confirmation timeout')) {
+      isTransactionPendingRef.current = false
+      setIsLoading(false)
+      
+      // Check for user cancellation - case insensitive and multiple patterns
+      const errorMsg = err.message?.toLowerCase() || ''
+      const isUserRejection = errorMsg.includes('user rejected') || 
+                              errorMsg.includes('user denied') || 
+                              errorMsg.includes('rejected the request') ||
+                              errorMsg.includes('denied transaction') ||
+                              err.code === 4001
+      
+      if (isUserRejection) {
+        console.log('ℹ️ User cancelled the Slot transaction')
+        setError(null)
+        return null
+      }
+      
+      console.error('❌ Slot Transaction failed:', err)
+      if (!errorMsg.includes('confirmation timeout')) {
         setError(err.message)
       }
       throw err
-    } finally {
-      setIsLoading(false)
     }
-  }
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getSlotCreditPrice])
 
-  const sendCustomTransaction = async (contractAddress, functionData, value = '0') => {
+  const sendCustomTransaction = useCallback(async (contractAddressParam, functionData, value = '0') => {
     if (!address) {
       throw new Error('Wallet not connected')
+    }
+
+    // Prevent double popup using ref
+    if (isTransactionPendingRef.current) {
+      console.log('⚠️ Transaction already in progress, ignoring duplicate request')
+      return null
     }
 
     // Validate and auto-switch network before proceeding
@@ -901,6 +1042,7 @@ export const useTransactions = () => {
 
     setIsLoading(true)
     setError(null)
+    isTransactionPendingRef.current = true
 
     try {
       
@@ -910,7 +1052,7 @@ export const useTransactions = () => {
       const { config } = await import('../config/wagmi')
       
       const result = await sendTransaction(config, {
-        to: contractAddress,
+        to: contractAddressParam,
         data: functionData,
         value: BigInt(value),
       })
@@ -920,12 +1062,28 @@ export const useTransactions = () => {
 
       return result
     } catch (err) {
+      isTransactionPendingRef.current = false
+      setIsLoading(false)
+      
+      // Check for user cancellation - case insensitive and multiple patterns
+      const errorMsg = err.message?.toLowerCase() || ''
+      const isUserRejection = errorMsg.includes('user rejected') || 
+                              errorMsg.includes('user denied') || 
+                              errorMsg.includes('rejected the request') ||
+                              errorMsg.includes('denied transaction') ||
+                              err.code === 4001
+      
+      if (isUserRejection) {
+        console.log('ℹ️ User cancelled the Custom transaction')
+        setError(null)
+        return null
+      }
+      
+      console.error('❌ Custom Transaction failed:', err)
       setError(err.message)
       throw err
-    } finally {
-      setIsLoading(false)
     }
-  }
+  }, [address, validateAndSwitchNetwork])
 
   return {
     isLoading,

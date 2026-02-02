@@ -407,7 +407,7 @@ export async function generateAIImage(prompt, uploadedImage = null) {
     
     // Fallback: Use text model to enhance prompt, then canvas
     try {
-      const textModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+      const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       const enhancedPromptResult = await textModel.generateContent(
         `Transform this short prompt into a detailed, professional art description: "${prompt}"
 

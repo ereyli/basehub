@@ -125,12 +125,20 @@ export function useAINFTMinting(quantity = 1) {
   const [metadataURI, setMetadataURI] = useState(null);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  
+  // Use ref to prevent double popup - more reliable than state
+  const isTransactionPendingRef = React.useRef(false);
+  const lastErrorRef = React.useRef(null);
 
-  const { writeContract, data: hash, isPending, error: contractError } = useWriteContract();
+  const { writeContractAsync, data: hash, isPending } = useWriteContract();
   
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash,
   });
+
+  // NOTE: We intentionally don't use useEffect for contractError anymore
+  // Error handling is done in catch block of mintNFT function
+  // This prevents the double popup issue caused by useEffect re-triggers
 
   /**
    * Generate AI image from prompt or uploaded image
@@ -375,7 +383,15 @@ export function useAINFTMinting(quantity = 1) {
       return;
     }
 
+    // Prevent double popup using ref
+    if (isTransactionPendingRef.current) {
+      console.log('⚠️ Transaction already in progress');
+      return;
+    }
+
     setIsMinting(true);
+    lastErrorRef.current = null;
+    isTransactionPendingRef.current = true;
     setError(null);
 
     try {
@@ -390,7 +406,7 @@ export function useAINFTMinting(quantity = 1) {
       // Use batch minting if quantity > 1, otherwise single mint
       if (qty > 1) {
         console.log('🔄 Using batch mint for quantity:', qty);
-        await writeContract({
+        await writeContractAsync({
           address: AI_NFT_CONTRACT_ADDRESS,
           abi: AI_NFT_ABI,
           functionName: 'mintBatch',
@@ -399,7 +415,7 @@ export function useAINFTMinting(quantity = 1) {
         });
       } else {
         console.log('🎨 Using single mint');
-        await writeContract({
+        await writeContractAsync({
           address: AI_NFT_CONTRACT_ADDRESS,
           abi: AI_NFT_ABI,
           functionName: 'mintWithTokenURI',
@@ -410,7 +426,14 @@ export function useAINFTMinting(quantity = 1) {
       
     } catch (err) {
       console.error('❌ Error minting NFT:', err);
-      setError(`Failed to mint NFT: ${err.message || err.toString()}`);
+      isTransactionPendingRef.current = false;
+      // Don't show error for user cancellation
+      if (err.message?.includes('User rejected') || err.message?.includes('user rejected')) {
+        console.log('ℹ️ User cancelled the transaction');
+        setError(null);
+      } else {
+        setError(`Failed to mint NFT: ${err.message || err.toString()}`);
+      }
       setIsMinting(false);
     }
   };
@@ -461,6 +484,7 @@ export function useAINFTMinting(quantity = 1) {
         explorerUrl: `https://basescan.org/tx/${hash}`
       });
       setIsMinting(false);
+      isTransactionPendingRef.current = false;
       
       // Award XP and update quest progress
       const awardXPAndUpdateQuests = async () => {
@@ -493,13 +517,6 @@ export function useAINFTMinting(quantity = 1) {
     }
   }, [isConfirmed, hash, address, quantity]);
 
-  // Update error state when contract error occurs
-  React.useEffect(() => {
-    if (contractError) {
-      setError(`Contract error: ${contractError.message}`);
-      setIsMinting(false);
-    }
-  }, [contractError]);
 
   return {
     // State

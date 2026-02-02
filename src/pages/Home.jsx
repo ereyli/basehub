@@ -1113,6 +1113,18 @@ const Home = () => {
                   <h2 style={compactStyles.categoryTitle}>
                     {isCompactMode ? 'NFT PASS' : 'EARLY ACCESS NFT'}
                   </h2>
+                  <span style={{
+                    padding: '4px 10px',
+                    background: 'rgba(59, 130, 246, 0.2)',
+                    border: '1px solid rgba(59, 130, 246, 0.5)',
+                    borderRadius: '6px',
+                    color: '#3b82f6',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    letterSpacing: '0.5px'
+                  }}>
+                    BETA
+                  </span>
                   {!isCompactMode && renderNetworkLogos(['base'])}
                 </div>
                 <div style={compactStyles.cardGrid}>
@@ -1193,14 +1205,14 @@ const Home = () => {
                   </p>
                 )}
                 <div style={compactStyles.cardGrid}>
-                  <Link to="#" className="game-card" style={{ textDecoration: 'none', display: 'block', position: 'relative' }}>
-                    <div style={{ ...compactStyles.card('linear-gradient(135deg, #00d4ff, #0052ff)'), height: '100%', opacity: 0.6 }}>
+                  <Link to="/pumphub" className="game-card" style={{ textDecoration: 'none', display: 'block', position: 'relative' }}>
+                    <div style={{ ...compactStyles.card('linear-gradient(135deg, #00d4ff, #0052ff)'), height: '100%' }}>
                       <div style={compactStyles.cardInner}>
                         {isCompactMode ? (
                           <>
                             <Rocket size={24} style={{ color: 'white' }} />
                             <h3 style={compactStyles.cardTitle}>Launch</h3>
-                            <div style={{ ...compactStyles.xpBadge, fontSize: '7px' }}>Soon</div>
+                            <div style={compactStyles.xpBadge}>100 XP</div>
                           </>
                         ) : (
                           <>
@@ -1219,14 +1231,14 @@ const Home = () => {
                       </div>
                     </div>
                   </Link>
-                  <Link to="#" className="game-card" style={{ textDecoration: 'none', display: 'block', position: 'relative' }}>
-                    <div style={{ ...compactStyles.card('linear-gradient(135deg, #8b5cf6, #6366f1)'), height: '100%', opacity: 0.6 }}>
+                  <Link to="/pumphub?tab=create" className="game-card" style={{ textDecoration: 'none', display: 'block', position: 'relative' }}>
+                    <div style={{ ...compactStyles.card('linear-gradient(135deg, #8b5cf6, #6366f1)'), height: '100%' }}>
                       <div style={compactStyles.cardInner}>
                         {isCompactMode ? (
                           <>
                             <Factory size={24} style={{ color: 'white' }} />
                             <h3 style={compactStyles.cardTitle}>Create</h3>
-                            <div style={{ ...compactStyles.xpBadge, fontSize: '7px' }}>Soon</div>
+                            <div style={compactStyles.xpBadge}>100 XP</div>
                           </>
                         ) : (
                           <>
