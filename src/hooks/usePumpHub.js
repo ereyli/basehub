@@ -3,6 +3,7 @@ import { useAccount, useWriteContract, useReadContract, useWaitForTransactionRec
 import { parseEther, formatEther, formatUnits, parseUnits, decodeEventLog, maxUint256 } from 'viem'
 import { NETWORKS } from '../config/networks'
 import { supabase } from '../config/supabase'
+import { addXP, recordTransaction } from '../utils/xpUtils'
 
 // PumpHubFactory Contract ABI
 const PUMPHUB_FACTORY_ABI = [
@@ -494,6 +495,16 @@ export const usePumpHub = () => {
               })
               console.log('✅ Token created and saved:', tokenAddress)
               
+              // Award XP for token creation (2000 XP)
+              try {
+                console.log('🎁 Awarding 2000 XP for token creation...')
+                await addXP(address, 2000, 'PUMPHUB_TOKEN_CREATION')
+                await recordTransaction(address, 'PUMPHUB_TOKEN_CREATION', 2000, currentHash)
+                console.log('✅ XP awarded for token creation')
+              } catch (xpError) {
+                console.error('⚠️ Error awarding XP for token creation:', xpError)
+              }
+              
               // Update token stats
               setTimeout(() => {
                 updateTokenStats(tokenAddress).catch(err => 
@@ -521,6 +532,16 @@ export const usePumpHub = () => {
               blockNumber: receipt.blockNumber?.toString()
             })
             
+            // Award XP for buy (100 XP)
+            try {
+              console.log('🎁 Awarding 100 XP for token buy...')
+              await addXP(address, 100, 'PUMPHUB_BUY')
+              await recordTransaction(address, 'PUMPHUB_BUY', 100, hash)
+              console.log('✅ XP awarded for token buy')
+            } catch (xpError) {
+              console.error('⚠️ Error awarding XP for buy:', xpError)
+            }
+            
             setTimeout(() => {
               updateTokenStats(tokenAddress).catch(err => 
                 console.error('Error updating token stats after buy:', err)
@@ -543,6 +564,16 @@ export const usePumpHub = () => {
               txHash: hash,
               blockNumber: receipt.blockNumber?.toString()
             })
+            
+            // Award XP for sell (100 XP)
+            try {
+              console.log('🎁 Awarding 100 XP for token sell...')
+              await addXP(address, 100, 'PUMPHUB_SELL')
+              await recordTransaction(address, 'PUMPHUB_SELL', 100, hash)
+              console.log('✅ XP awarded for token sell')
+            } catch (xpError) {
+              console.error('⚠️ Error awarding XP for sell:', xpError)
+            }
             
             setTimeout(() => {
               updateTokenStats(tokenAddress).catch(err => 
