@@ -76,11 +76,18 @@ export const useFeaturedProfiles = () => {
       })
 
       if (!response.ok) {
+        // Clone response before reading to avoid "body stream already read" error
+        const clonedResponse = response.clone()
         let errorData = {}
         try {
-          errorData = await response.json()
+          errorData = await clonedResponse.json()
         } catch (e) {
-          errorData = { error: await response.text() }
+          try {
+            const textData = await response.text()
+            errorData = { error: textData }
+          } catch (textError) {
+            errorData = { error: `HTTP ${response.status}: ${response.statusText}` }
+          }
         }
 
         if (response.status === 402) {

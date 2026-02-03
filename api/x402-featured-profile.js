@@ -285,14 +285,11 @@ export default async function handler(req, res) {
     let path = urlParts[0] || '/'
     const queryString = urlParts[1] || ''
     
-    // For Vercel API routes, preserve the route path
-    // /api/x402-featured-profile/daily -> /daily
-    // /api/x402-featured-profile/weekly -> /weekly
-    // /api/x402-featured-profile/monthly -> /monthly
-    // If path is just '/', it's the root endpoint (GET /)
-    // Otherwise, preserve the subscription type route
+    // For Vercel API routes, all requests to /api/x402-featured-profile map to '/'
+    // The path should always be '/' for this single endpoint
+    const normalizedPath = '/'
     
-    const fullUrl = `${protocol}://${host}${path}${queryString ? `?${queryString}` : ''}`
+    const fullUrl = `${protocol}://${host}${normalizedPath}${queryString ? `?${queryString}` : ''}`
     
     let body = undefined
     if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
