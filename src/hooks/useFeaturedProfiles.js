@@ -56,7 +56,7 @@ export const useFeaturedProfiles = () => {
         selectedPricing.maxPayment
       )
 
-      // Endpoint based on subscription type
+      // Endpoint based on subscription type (separate files for Vercel)
       const endpoint = `/api/x402-featured-profile/${subscriptionType}`
       console.log('🔐 Initiating x402 payment for:', { endpoint, subscriptionType, maxPayment: selectedPricing.maxPayment })
       
