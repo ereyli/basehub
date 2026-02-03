@@ -195,7 +195,7 @@ export const useNFTWheel = () => {
       SPIN_COST_AMOUNT
     )
 
-    const response = await fetchWithPayment('/api/x402-payment', {
+    const response = await fetchWithPayment('/api/x402-nft-wheel', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -208,7 +208,7 @@ export const useNFTWheel = () => {
         const errorData = await response.json()
         if (response.status === 402) {
           if (errorData.error === 'insufficient_funds' || errorData.error?.includes?.('insufficient_funds')) {
-            errorMessage = 'Insufficient USDC balance. Please ensure you have at least 0.1 USDC.'
+            errorMessage = 'Insufficient USDC balance. Please ensure you have at least 0.05 USDC.'
           } else if (errorData.error) {
             errorMessage = `Payment error: ${typeof errorData.error === 'object' ? JSON.stringify(errorData.error) : errorData.error}`
           }
