@@ -528,7 +528,7 @@ export const usePumpHub = () => {
               ethAmount: formatEther(ethAmount), // Convert wei to ETH string
               tokenAmount: formatUnits(tokenAmount, 18), // Convert wei to token string
               price: null,
-              txHash: hash,
+              txHash: currentHash,
               blockNumber: receipt.blockNumber?.toString()
             })
             
@@ -536,7 +536,7 @@ export const usePumpHub = () => {
             try {
               console.log('🎁 Awarding 100 XP for token buy...')
               await addXP(address, 100, 'PUMPHUB_BUY')
-              await recordTransaction(address, 'PUMPHUB_BUY', 100, hash)
+              await recordTransaction(address, 'PUMPHUB_BUY', 100, currentHash)
               console.log('✅ XP awarded for token buy')
             } catch (xpError) {
               console.error('⚠️ Error awarding XP for buy:', xpError)
@@ -561,7 +561,7 @@ export const usePumpHub = () => {
               ethAmount: formatEther(ethAmount), // Convert wei to ETH string
               tokenAmount: formatUnits(tokenAmount, 18), // Convert wei to token string
               price: null,
-              txHash: hash,
+              txHash: currentHash,
               blockNumber: receipt.blockNumber?.toString()
             })
             
@@ -569,7 +569,7 @@ export const usePumpHub = () => {
             try {
               console.log('🎁 Awarding 100 XP for token sell...')
               await addXP(address, 100, 'PUMPHUB_SELL')
-              await recordTransaction(address, 'PUMPHUB_SELL', 100, hash)
+              await recordTransaction(address, 'PUMPHUB_SELL', 100, currentHash)
               console.log('✅ XP awarded for token sell')
             } catch (xpError) {
               console.error('⚠️ Error awarding XP for sell:', xpError)
@@ -678,7 +678,7 @@ export const usePumpHub = () => {
               ethAmount: formatEther(ethAmount), // Convert wei to ETH string
               tokenAmount: formatUnits(tokenAmount, 18), // Convert wei to token string
               price: null,
-              txHash: hash,
+              txHash: currentHash,
               blockNumber: receipt.blockNumber?.toString()
             })
             
@@ -730,7 +730,7 @@ export const usePumpHub = () => {
               ethAmount: formatEther(ethAmount), // Convert wei to ETH string
               tokenAmount: formatUnits(tokenAmount, 18), // Convert wei to token string
               price: null,
-              txHash: hash,
+              txHash: currentHash,
               blockNumber: receipt.blockNumber?.toString()
             })
             
