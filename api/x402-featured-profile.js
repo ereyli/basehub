@@ -88,18 +88,36 @@ app.get('/', (c) => {
 })
 
 // ==========================================
-// Payment middleware - Single endpoint with dynamic pricing
+// Payment middleware - Separate routes for each subscription type
 // ==========================================
 
 app.use(
   paymentMiddleware(
     RECEIVING_ADDRESS,
     {
-      'POST /': {
-        price: '$0.20', // Minimum price (daily)
+      'POST /daily': {
+        price: PRICING.daily.price, // '$0.20'
         network: NETWORK,
         config: {
-          description: 'BaseHub Featured Profile Registration',
+          description: 'BaseHub Featured Profile - Daily',
+          mimeType: 'application/json',
+          maxTimeoutSeconds: 600,
+        },
+      },
+      'POST /weekly': {
+        price: PRICING.weekly.price, // '$1.00'
+        network: NETWORK,
+        config: {
+          description: 'BaseHub Featured Profile - Weekly',
+          mimeType: 'application/json',
+          maxTimeoutSeconds: 600,
+        },
+      },
+      'POST /monthly': {
+        price: PRICING.monthly.price, // '$6.00'
+        network: NETWORK,
+        config: {
+          description: 'BaseHub Featured Profile - Monthly',
           mimeType: 'application/json',
           maxTimeoutSeconds: 600,
         },
@@ -109,24 +127,42 @@ app.use(
   )
 )
 
-// Single POST endpoint that handles all subscription types
-app.post('/', async (c) => {
+// Daily subscription endpoint
+app.post('/daily', async (c) => {
   try {
-    const body = await c.req.json()
-    const { subscription_type } = body
-    
-    // Validate subscription type
-    if (!subscription_type || !PRICING[subscription_type]) {
-      return c.json({ 
-        success: false, 
-        error: 'Invalid subscription type. Must be: daily, weekly, or monthly' 
-      }, 400)
-    }
-    
-    const pricing = PRICING[subscription_type]
-    console.log(`💰 Processing ${subscription_type} subscription: ${pricing.price}`)
-    
-    return await handleProfileRegistration(c, subscription_type, pricing)
+    const pricing = PRICING.daily
+    console.log(`💰 Processing daily subscription: ${pricing.price}`)
+    return await handleProfileRegistration(c, 'daily', pricing)
+  } catch (err) {
+    console.error('❌ Request error:', err)
+    return c.json({ 
+      success: false, 
+      error: 'Invalid request body' 
+    }, 400)
+  }
+})
+
+// Weekly subscription endpoint
+app.post('/weekly', async (c) => {
+  try {
+    const pricing = PRICING.weekly
+    console.log(`💰 Processing weekly subscription: ${pricing.price}`)
+    return await handleProfileRegistration(c, 'weekly', pricing)
+  } catch (err) {
+    console.error('❌ Request error:', err)
+    return c.json({ 
+      success: false, 
+      error: 'Invalid request body' 
+    }, 400)
+  }
+})
+
+// Monthly subscription endpoint
+app.post('/monthly', async (c) => {
+  try {
+    const pricing = PRICING.monthly
+    console.log(`💰 Processing monthly subscription: ${pricing.price}`)
+    return await handleProfileRegistration(c, 'monthly', pricing)
   } catch (err) {
     console.error('❌ Request error:', err)
     return c.json({ 
@@ -289,14 +325,17 @@ export default async function handler(req, res) {
     
     // Parse query string if present
     const urlParts = url.split('?')
-    const path = urlParts[0] || '/'
+    let path = urlParts[0] || '/'
     const queryString = urlParts[1] || ''
     
-    // For Vercel API routes, the path should be relative to the function
-    // All requests to /api/x402-featured-profile should map to '/'
-    const normalizedPath = '/'
+    // For Vercel API routes, preserve the route path
+    // /api/x402-featured-profile/daily -> /daily
+    // /api/x402-featured-profile/weekly -> /weekly
+    // /api/x402-featured-profile/monthly -> /monthly
+    // If path is just '/', it's the root endpoint (GET /)
+    // Otherwise, preserve the subscription type route
     
-    const fullUrl = `${protocol}://${host}${normalizedPath}${queryString ? `?${queryString}` : ''}`
+    const fullUrl = `${protocol}://${host}${path}${queryString ? `?${queryString}` : ''}`
     
     let body = undefined
     if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
