@@ -38,11 +38,9 @@ export const useFeaturedProfiles = () => {
         }
       }
 
-      // Pricing map
+      // Pricing map - Only daily available
       const pricing = {
-        daily: { amount: '0.2', maxPayment: BigInt(200000) }, // 0.2 USDC = 200000 (6 decimals)
-        weekly: { amount: '1.0', maxPayment: BigInt(1000000) }, // 1.0 USDC
-        monthly: { amount: '6.0', maxPayment: BigInt(6000000) } // 6.0 USDC
+        daily: { amount: '0.2', maxPayment: BigInt(200000) } // 0.2 USDC = 200000 (6 decimals)
       }
 
       const selectedPricing = pricing[subscriptionType]

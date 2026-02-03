@@ -18,11 +18,9 @@ console.log('🚀 Featured Profile API loaded')
 const NETWORK = 'base' // Payment network (Base mainnet)
 const RECEIVING_ADDRESS = '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
 
-// Subscription pricing
+// Subscription pricing - Only daily available
 const PRICING = {
-  daily: { price: '$0.20', amount: '0.2', days: 1 },
-  weekly: { price: '$1.00', amount: '1.0', days: 7 },
-  monthly: { price: '$6.00', amount: '6.0', days: 30 }
+  daily: { price: '$0.20', amount: '0.2', days: 1 }
 }
 
 // Supabase client
@@ -88,36 +86,22 @@ app.get('/', (c) => {
 })
 
 // ==========================================
-// Payment middleware - Separate routes for each subscription type
+// Payment middleware - Dynamic pricing based on query parameter
 // ==========================================
+// Note: x402-hono middleware doesn't support dynamic pricing from query params
+// So we'll use the maximum price (monthly) and verify the amount in the handler
+// OR we can create separate middleware for each subscription type
 
+// Apply middleware for all POST requests (will use maximum price)
 app.use(
   paymentMiddleware(
     RECEIVING_ADDRESS,
     {
-      'POST /daily': {
-        price: PRICING.daily.price, // '$0.20'
+      'POST /': {
+        price: PRICING.daily.price, // '$0.20' - daily price
         network: NETWORK,
         config: {
-          description: 'BaseHub Featured Profile - Daily',
-          mimeType: 'application/json',
-          maxTimeoutSeconds: 600,
-        },
-      },
-      'POST /weekly': {
-        price: PRICING.weekly.price, // '$1.00'
-        network: NETWORK,
-        config: {
-          description: 'BaseHub Featured Profile - Weekly',
-          mimeType: 'application/json',
-          maxTimeoutSeconds: 600,
-        },
-      },
-      'POST /monthly': {
-        price: PRICING.monthly.price, // '$6.00'
-        network: NETWORK,
-        config: {
-          description: 'BaseHub Featured Profile - Monthly',
+          description: 'BaseHub Featured Profile Registration - Daily',
           mimeType: 'application/json',
           maxTimeoutSeconds: 600,
         },
@@ -127,42 +111,15 @@ app.use(
   )
 )
 
-// Daily subscription endpoint
-app.post('/daily', async (c) => {
+// Single POST endpoint that handles all subscription types via query parameter
+app.post('/', async (c) => {
   try {
+    // Only daily subscription is available
+    const subscriptionType = 'daily'
     const pricing = PRICING.daily
     console.log(`💰 Processing daily subscription: ${pricing.price}`)
-    return await handleProfileRegistration(c, 'daily', pricing)
-  } catch (err) {
-    console.error('❌ Request error:', err)
-    return c.json({ 
-      success: false, 
-      error: 'Invalid request body' 
-    }, 400)
-  }
-})
-
-// Weekly subscription endpoint
-app.post('/weekly', async (c) => {
-  try {
-    const pricing = PRICING.weekly
-    console.log(`💰 Processing weekly subscription: ${pricing.price}`)
-    return await handleProfileRegistration(c, 'weekly', pricing)
-  } catch (err) {
-    console.error('❌ Request error:', err)
-    return c.json({ 
-      success: false, 
-      error: 'Invalid request body' 
-    }, 400)
-  }
-})
-
-// Monthly subscription endpoint
-app.post('/monthly', async (c) => {
-  try {
-    const pricing = PRICING.monthly
-    console.log(`💰 Processing monthly subscription: ${pricing.price}`)
-    return await handleProfileRegistration(c, 'monthly', pricing)
+    
+    return await handleProfileRegistration(c, subscriptionType, pricing)
   } catch (err) {
     console.error('❌ Request error:', err)
     return c.json({ 

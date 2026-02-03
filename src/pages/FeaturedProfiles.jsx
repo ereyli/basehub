@@ -23,18 +23,6 @@ const SUBSCRIPTION_OPTIONS = {
     price: '0.2 USDC', 
     days: 1,
     description: 'Featured for 1 day'
-  },
-  weekly: { 
-    label: 'Weekly', 
-    price: '1.0 USDC', 
-    days: 7,
-    description: 'Featured for 7 days'
-  },
-  monthly: { 
-    label: 'Monthly', 
-    price: '6.0 USDC', 
-    days: 30,
-    description: 'Featured for 30 days'
   }
 }
 
@@ -184,7 +172,7 @@ export default function FeaturedProfiles() {
     try {
       await registerProfile(
         { description: description.trim() || '' },
-        selectedSubscription
+        'daily'
       )
       alert('Profile registered successfully! You are now at the top of the list!')
       setShowRegisterForm(false)
@@ -720,50 +708,22 @@ export default function FeaturedProfiles() {
                       Register Your Profile
                     </h3>
 
-                    {/* Subscription Type Selection */}
-                    <div style={{ marginBottom: '20px' }}>
-                      <label style={{ 
-                        color: '#9ca3af', 
-                        fontSize: '14px', 
-                        marginBottom: '8px',
-                        display: 'block'
-                      }}>
-                        Select Duration
-                      </label>
-                      <div style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: 'repeat(3, 1fr)', 
-                        gap: '12px' 
-                      }}>
-                        {Object.entries(SUBSCRIPTION_OPTIONS).map(([key, option]) => (
-                          <button
-                            key={key}
-                            onClick={() => setSelectedSubscription(key)}
-                            style={{
-                              padding: '16px',
-                              borderRadius: '12px',
-                              border: selectedSubscription === key 
-                                ? '2px solid #fbbf24' 
-                                : '2px solid rgba(255, 255, 255, 0.1)',
-                              background: selectedSubscription === key
-                                ? 'rgba(251, 191, 36, 0.1)'
-                                : 'rgba(30, 41, 59, 0.6)',
-                              color: '#e5e7eb',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            <div style={{ fontWeight: '700', marginBottom: '4px' }}>
-                              {option.label}
-                            </div>
-                            <div style={{ fontSize: '18px', color: '#fbbf24', marginBottom: '4px' }}>
-                              {option.price}
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#9ca3af' }}>
-                              {option.description}
-                            </div>
-                          </button>
-                        ))}
+                    {/* Pricing Info - Only Daily Available */}
+                    <div style={{ 
+                      marginBottom: '20px',
+                      padding: '16px',
+                      borderRadius: '12px',
+                      background: 'rgba(251, 191, 36, 0.1)',
+                      border: '2px solid rgba(251, 191, 36, 0.3)'
+                    }}>
+                      <div style={{ fontWeight: '700', marginBottom: '4px', color: '#e5e7eb' }}>
+                        {SUBSCRIPTION_OPTIONS.daily.label}
+                      </div>
+                      <div style={{ fontSize: '18px', color: '#fbbf24', marginBottom: '4px' }}>
+                        {SUBSCRIPTION_OPTIONS.daily.price}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#9ca3af' }}>
+                        {SUBSCRIPTION_OPTIONS.daily.description}
                       </div>
                     </div>
 
@@ -838,7 +798,7 @@ export default function FeaturedProfiles() {
                       ) : (
                         <>
                           <Star size={20} />
-                          Register for {SUBSCRIPTION_OPTIONS[selectedSubscription].price}
+                          Register for {SUBSCRIPTION_OPTIONS.daily.price}
                         </>
                       )}
                     </button>
