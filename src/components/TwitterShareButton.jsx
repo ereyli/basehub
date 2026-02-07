@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Twitter, Share2, Copy, Check, ChevronDown } from 'lucide-react'
+import { Twitter, Copy, Check, ChevronDown } from 'lucide-react'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 
 const TwitterShareButton = ({ 
   title = "BaseHub",
-  description = "Multi-chain Web3 platform. Deploy contracts, swap tokens, analyze wallets, and earn XP!",
-  hashtags = ["BaseHub", "BaseNetwork", "Web3", "DeFi", "XP"],
+  description = "Your all-in-one Web3 hub on Base & InkChain. Play games, launch tokens, earn XP.",
+  hashtags = ["BaseHub", "Base", "InkChain", "Web3Gaming", "DEX", "XP"],
   style = {} 
 }) => {
   const [isCopied, setIsCopied] = useState(false)
@@ -20,7 +20,7 @@ const TwitterShareButton = ({
   }
 
   const generateTwitterContent = () => {
-    const tweetText = `🚀 ${title} - ${description}\n\n🔧 Deploy smart contracts\n💱 Swap tokens with DEX aggregator\n🔍 Analyze wallets and contracts\n🎯 Gamified interactions with XP rewards\n🌐 Available on Base and InkChain\n\n#${hashtags.join(' #')}\n\n`
+    const tweetText = `🚀 ${title} – ${description}\n\n✨ Launch tokens with PumpHub (fair launch, no presale)\n🎮 Play on-chain games & spin the NFT Wheel\n💱 Swap with DEX aggregator on Base\n🔍 Analyze wallets & contract security\n🎯 Earn XP on everything – level up & unlock rewards\n🌐 Base, InkChain, Soneium, Katana\n\n#${hashtags.join(' #')}\n\n`
     return tweetText
   }
 
@@ -55,7 +55,7 @@ const TwitterShareButton = ({
   const handleTwitterShare = (e) => {
     e.stopPropagation()
     const twitterUrl = generateTwitterUrl()
-    window.open(twitterUrl, '_blank', 'width=550,height=420')
+    window.open(twitterUrl, '_blank')
     setShowDropdown(false)
   }
 
@@ -83,32 +83,6 @@ const TwitterShareButton = ({
       setIsCopied(true)
       setTimeout(() => setIsCopied(false), 3000)
       setShowDropdown(false)
-    }
-  }
-
-  const handleWebShare = async (e) => {
-    e.stopPropagation()
-    const tweetText = generateTwitterContent()
-    const webUrl = 'https://www.basehub.fun/'
-    const farcasterUrl = 'https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub'
-    const fullText = `${tweetText}🌐 Web: ${webUrl}\n🎭 Farcaster: ${farcasterUrl}`
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: title,
-          text: fullText,
-          url: webUrl
-        })
-        setShowDropdown(false)
-      } catch (error) {
-        if (error.name !== 'AbortError') {
-          console.error('Error sharing:', error)
-          handleCopyTweet(e)
-        }
-      }
-    } else {
-      handleCopyTweet(e)
     }
   }
 
@@ -240,34 +214,6 @@ const TwitterShareButton = ({
           >
             {isCopied ? <Check size={16} /> : <Copy size={16} />}
             <span>{isCopied ? 'Copied!' : 'Copy Tweet'}</span>
-          </button>
-          
-          <button
-            onClick={handleWebShare}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              border: 'none',
-              background: 'transparent',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px',
-              color: '#374151',
-              transition: 'background 0.2s ease',
-              marginTop: '4px'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(0, 0, 0, 0.05)'
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = 'transparent'
-            }}
-          >
-            <Share2 size={16} />
-            <span>Share Anywhere</span>
           </button>
         </div>
       )}

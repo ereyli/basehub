@@ -63,15 +63,16 @@ const EarlyAccessNFT = () => {
       const remainingSupply = maxSupply - totalMinted
       let castText = ''
       
+      const appLinks = '\n\n🌐 Web: https://www.basehub.fun/early-access\n🎭 Farcaster: https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub'
       if (isAfterMint) {
-        castText = `🎉 Just minted my BaseHub Early Access Pass! 🚀\n\n✨ Unlock exclusive benefits:\n• Dynamic XP multiplier: (NFT Count + 1)x on ALL activities\n• 1 NFT = 2x, 2 NFTs = 3x, 10 NFTs = 11x!\n• Priority access to airdrops\n• Exclusive quests & rewards\n• Early feature access\n\n🔥 Only ${remainingSupply} passes left!\n\nJoin the BaseHub community and level up faster! 💎\n\n#BaseHub #BaseNetwork #NFT #EarlyAccess`
+        castText = `🎉 Just minted my BaseHub Early Access Pass! 🚀\n\n✨ Unlock exclusive benefits:\n• Dynamic XP multiplier: (NFT Count + 1)x on ALL activities\n• 1 NFT = 2x, 2 NFTs = 3x, 10 NFTs = 11x!\n• Priority access to airdrops\n• Exclusive quests & rewards\n• Early feature access\n\n🔥 Only ${remainingSupply} passes left!\n\nJoin the BaseHub community and level up faster! 💎\n\n#BaseHub #BaseNetwork #NFT #EarlyAccess${appLinks}`
       } else {
-        castText = `🚀 BaseHub Early Access Pass is LIVE! 🎉\n\n✨ Exclusive benefits for holders:\n• Dynamic XP multiplier: (NFT Count + 1)x on ALL activities\n• 1 NFT = 2x, 2 NFTs = 3x, 10 NFTs = 11x!\n• Priority access to airdrops\n• Exclusive quests & rewards\n• Early feature access\n\n🔥 Only ${remainingSupply} of ${maxSupply} passes remaining!\n\nMint yours now and join the BaseHub community! 💎\n\n#BaseHub #BaseNetwork #NFT #EarlyAccess`
+        castText = `🚀 BaseHub Early Access Pass is LIVE! 🎉\n\n✨ Exclusive benefits for holders:\n• Dynamic XP multiplier: (NFT Count + 1)x on ALL activities\n• 1 NFT = 2x, 2 NFTs = 3x, 10 NFTs = 11x!\n• Priority access to airdrops\n• Exclusive quests & rewards\n• Early feature access\n\n🔥 Only ${remainingSupply} of ${maxSupply} passes remaining!\n\nMint yours now and join the BaseHub community! 💎\n\n#BaseHub #BaseNetwork #NFT #EarlyAccess${appLinks}`
       }
       
       await farcasterContext.sdk.actions.composeCast({
         text: castText,
-        embeds: ['https://basehub.fun/early-access']
+        embeds: ['https://www.basehub.fun/early-access']
       })
       
       console.log('✅ Cast shared successfully!')

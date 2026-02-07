@@ -40,7 +40,9 @@ export default function WalletAnalysis() {
     parts.push(`Tx: ${analysis.totalTransactions || 0}, Tokens: ${analysis.tokenDiversity || 0}`)
     if (analysis.favoriteToken) parts.push(`Fav token: ${analysis.favoriteToken}`)
     if (analysis.mostActiveDay) parts.push(`Most active: ${analysis.mostActiveDay}`)
-    parts.push('Powered by BaseHub x402 🔗 https://www.basehub.fun/wallet-analysis')
+    parts.push('Powered by BaseHub x402')
+    parts.push('Web: https://www.basehub.fun/wallet-analysis')
+    parts.push('Farcaster: https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub')
     return parts.join(' • ')
   }
 

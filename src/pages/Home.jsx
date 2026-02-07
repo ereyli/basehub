@@ -697,15 +697,6 @@ const Home = () => {
       <div className="welcome-section">
         <div className="card" style={isCompactMode ? { padding: '12px', marginBottom: '8px' } : {}}>
           <div style={{ textAlign: 'center', marginBottom: isCompactMode ? '12px' : '32px' }}>
-            <h1 style={{ 
-              fontSize: isCompactMode ? '18px' : '30px', 
-              fontWeight: '700', 
-              marginBottom: isCompactMode ? '4px' : '6px',
-              color: '#e5e7eb',
-              fontFamily: 'Poppins, sans-serif'
-            }}>
-              BaseHub
-            </h1>
             <p style={{ 
               fontSize: isCompactMode ? '11px' : '15px', 
               color: '#9ca3af',
@@ -819,7 +810,7 @@ const Home = () => {
               }}>
                 <TwitterShareButton 
                   title="BaseHub"
-                  description="Playing on-chain games, launching tokens and earning XP on Base, InkChain and more with BaseHub."
+                  description="Your all-in-one Web3 hub on Base & InkChain. Play games, launch tokens, earn XP."
                   hashtags={["BaseHub", "Base", "InkChain", "Web3Gaming", "DEX", "XP"]}
                 />
               </div>

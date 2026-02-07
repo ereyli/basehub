@@ -109,10 +109,11 @@ const XPShareButton = ({
         if (sdk && sdk.actions && sdk.actions.composeCast) {
           const shareText = generateXPContent()
           const shareUrl = generateShareUrl()
+          const castText = `${shareText}\n\n🌐 Web: https://www.basehub.fun/\n🎭 Farcaster: https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub`
           
-          console.log('🎮 Composing XP cast with text:', shareText)
+          console.log('🎮 Composing XP cast with text:', castText)
           await sdk.actions.composeCast({
-            text: shareText,
+            text: castText,
             embeds: [shareUrl]
           })
           console.log('✅ XP cast composed successfully!')

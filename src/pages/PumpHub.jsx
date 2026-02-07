@@ -5,12 +5,13 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { 
   Rocket, TrendingUp, Users, Zap, Search, Filter, Plus, ArrowLeft, 
   ExternalLink, Copy, Check, Flame, Clock, BarChart3, Globe, Star,
-  ChevronDown, ChevronUp, RefreshCw, Wallet, AlertCircle, X, ArrowUpRight
+  ChevronDown, ChevronUp, RefreshCw, Wallet, AlertCircle, X, ArrowUpRight, Share2
 } from 'lucide-react'
 import ReactApexChart from 'react-apexcharts'
 import NetworkGuard from '../components/NetworkGuard'
 import BackButton from '../components/BackButton'
 import { usePumpHub, usePumpHubData } from '../hooks/usePumpHub'
+import { useFarcaster } from '../contexts/FarcasterContext'
 import { supabase } from '../config/supabase'
 import { NETWORKS } from '../config/networks'
 
@@ -1310,6 +1311,27 @@ const PumpHub = () => {
   const [logoFile, setLogoFile] = useState(null)
   const [logoPreview, setLogoPreview] = useState(null)
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
+  const [isSharingCast, setIsSharingCast] = useState(false)
+  
+  const farcaster = useFarcaster()
+  const isInFarcaster = farcaster?.isInFarcaster ?? false
+  const sdk = farcaster?.sdk ?? null
+  
+  const handleShareCast = async () => {
+    if (!sdk?.actions?.composeCast) return
+    setIsSharingCast(true)
+    try {
+      const castText = `🚀 PumpHub on BaseHub – Launch & trade meme tokens! 🔥\n\n✨ Fair launch, no presale\n💎 Create token with 0.001 ETH\n📈 Bonding curve → graduate to DEX\n🎯 Earn 2000 XP for creating, 100 XP per trade\n\nTry it on Base 👇\n\n#BaseHub #PumpHub #Base #Memecoin\n\n🌐 Web: https://www.basehub.fun/pumphub\n🎭 Farcaster: https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub`
+      await sdk.actions.composeCast({
+        text: castText,
+        embeds: ['https://www.basehub.fun/pumphub']
+      })
+    } catch (err) {
+      console.error('PumpHub cast failed:', err)
+    } finally {
+      setIsSharingCast(false)
+    }
+  }
   
   const { 
     createToken, 
@@ -1632,6 +1654,33 @@ const PumpHub = () => {
                 Launch and trade meme tokens on Base
               </p>
             </div>
+            {isInFarcaster && sdk?.actions?.composeCast && (
+              <button
+                type="button"
+                onClick={handleShareCast}
+                disabled={isSharingCast}
+                style={{
+                  marginLeft: 'auto',
+                  padding: isMobile ? '10px 14px' : '12px 18px',
+                  fontSize: isMobile ? '13px' : '14px',
+                  fontWeight: '600',
+                  background: isSharingCast
+                    ? 'rgba(59, 130, 246, 0.4)'
+                    : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '12px',
+                  cursor: isSharingCast ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: isSharingCast ? 'none' : '0 4px 12px rgba(59, 130, 246, 0.3)'
+                }}
+              >
+                <Share2 size={18} />
+                {isSharingCast ? 'Sharing...' : 'Share on Farcaster'}
+              </button>
+            )}
           </div>
           
           {/* Platform Stats */}
