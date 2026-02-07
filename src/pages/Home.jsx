@@ -893,33 +893,6 @@ const Home = () => {
                   {!isCompactMode && renderNetworkLogos(['base'])}
                 </div>
                 <div style={compactStyles.cardGrid}>
-                  <Link to="/nft-wheel" className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
-                    <div style={{ ...compactStyles.card('linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'), height: '100%' }}>
-                      <div style={compactStyles.cardInner}>
-                        {isCompactMode ? (
-                          <>
-                            <Sparkles size={24} style={{ color: 'white' }} />
-                            <h3 style={compactStyles.cardTitle}>Wheel</h3>
-                            <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-50K</div>
-                          </>
-                        ) : (
-                          <>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                              <Sparkles size={40} style={{ color: 'white', flexShrink: 0 }} />
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <h3 style={compactStyles.cardTitle}>NFT Wheel of Fortune</h3>
-                                <p style={compactStyles.cardDescription}>Spin to win 2K-50K XP daily! (NFT holders only)</p>
-                              </div>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                              <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-50K XP</div>
-                              <div style={{ background: 'rgba(251, 191, 36, 0.2)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#fbbf24', border: '1px solid rgba(251, 191, 36, 0.3)' }}>🎰 MEGA JACKPOT</div>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
                   <Link to="/early-access" className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
                     <div style={{ ...compactStyles.card('#f59e0b'), height: '100%' }}>
                       <div style={compactStyles.cardInner}>
@@ -941,6 +914,33 @@ const Home = () => {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
                               <div style={compactStyles.xpBadge}>3000 XP</div>
                               <div style={{ background: 'rgba(255, 215, 0, 0.95)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#92400e' }}>0.001 ETH</div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                  <Link to="/nft-wheel" className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
+                    <div style={{ ...compactStyles.card('linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'), height: '100%' }}>
+                      <div style={compactStyles.cardInner}>
+                        {isCompactMode ? (
+                          <>
+                            <Sparkles size={24} style={{ color: 'white' }} />
+                            <h3 style={compactStyles.cardTitle}>Wheel</h3>
+                            <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-50K</div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                              <Sparkles size={40} style={{ color: 'white', flexShrink: 0 }} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <h3 style={compactStyles.cardTitle}>NFT Wheel of Fortune</h3>
+                                <p style={compactStyles.cardDescription}>Spin to win 2K-50K XP daily! (NFT holders only)</p>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                              <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-50K XP</div>
+                              <div style={{ background: 'rgba(251, 191, 36, 0.2)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#fbbf24', border: '1px solid rgba(251, 191, 36, 0.3)' }}>🎰 MEGA JACKPOT</div>
                             </div>
                           </>
                         )}
