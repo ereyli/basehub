@@ -56,7 +56,9 @@ const Header = () => {
         <div className="header-content">
           {/* Logo Section */}
           <Link to="/" className="logo-section">
-            <img src="/icon.png" alt="BaseHub" className="header-logo-img" />
+            <div className="header-logo-wrap">
+              <img src="/icon.png" alt="BaseHub" className="header-logo-img" />
+            </div>
             <span className="logo-subtitle">Gamified smart contracts</span>
           </Link>
           
@@ -181,17 +183,30 @@ const headerStyles = `
     transition: all 0.3s ease;
     margin-left: -4px;
     padding-left: 0;
+    height: 100%;
+    min-height: 0;
   }
 
   .logo-section:hover {
     transform: translateY(-2px);
   }
 
-  .header-logo-img {
+  .header-logo-wrap {
     height: 96px;
-    width: auto;
-    max-height: 100%;
-    object-fit: contain;
+    width: 120px;
+    flex-shrink: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+  }
+
+  .header-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
     display: block;
     transition: transform 0.3s ease;
   }
@@ -497,8 +512,9 @@ const headerStyles = `
       font-weight: 700;
     }
 
-    .header-logo-img {
-      height: 77px;
+    .header-logo-wrap {
+      height: 84px;
+      width: 105px;
     }
 
     .logo-subtitle {
