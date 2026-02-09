@@ -1748,7 +1748,7 @@ const Home = () => {
             flexWrap: 'wrap'
           }}>
             <a 
-              href="https://x.com/Basehub__fun" 
+              href="https://x.com/Basehubfun" 
               target="_blank" 
               rel="noopener noreferrer"
               className="social-link-card twitter"
@@ -1756,7 +1756,7 @@ const Home = () => {
               <Twitter size={24} />
               <div>
                 <span className="social-title">Follow on X</span>
-                <span className="social-subtitle">@Basehub__fun</span>
+                <span className="social-subtitle">@Basehubfun</span>
               </div>
             </a>
             {isInFarcaster && (
