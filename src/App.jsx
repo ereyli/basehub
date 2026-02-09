@@ -229,37 +229,18 @@ function FarcasterAppContent() {
             textAlign: 'center',
             padding: '20px'
           }}>
-            {/* Logo with animation */}
-            <div style={{
-              width: '100px',
-              height: '100px',
-              background: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '30px',
-              border: '2px solid rgba(255, 255, 255, 0.2)',
-              animation: 'pulse 2s infinite'
-            }}>
-              <div style={{
-                fontSize: '32px',
-                fontWeight: 'bold',
-                color: 'white'
-              }}>
-                🎮
-              </div>
-            </div>
-
-            {/* App Title */}
-            <h1 style={{ 
-              fontSize: '28px', 
-              marginBottom: '10px', 
-              fontWeight: '700',
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-            }}>
-              BaseHub
-            </h1>
+            {/* Logo */}
+            <img 
+              src="/icon.png" 
+              alt="BaseHub" 
+              style={{
+                height: '120px',
+                width: 'auto',
+                objectFit: 'contain',
+                marginBottom: '24px',
+                animation: 'pulse 2s infinite'
+              }}
+            />
 
             {/* Loading Text */}
             <p style={{ 

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAccount } from 'wagmi'
 import { useTransactions } from '../hooks/useTransactions'
-import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, ChevronRight, ChevronLeft, Trash2, Star, Users, Repeat } from 'lucide-react'
+import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, ChevronRight, ChevronLeft, Trash2, Star, Users, Repeat, Zap } from 'lucide-react'
 
 const WebBottomNav = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { isConnected, address } = useAccount()
   const { sendGMTransaction, sendGNTransaction, isLoading: transactionLoading } = useTransactions()
   const [activeTab, setActiveTab] = useState(null) // null = hidden, 'gmgn' | 'gaming' | 'nft' | 'analysis' | 'deploy' | 'social' | 'dex' | 'dex'
@@ -105,10 +106,6 @@ const WebBottomNav = () => {
     { id: 'featured-profiles', title: 'Featured Profiles', icon: <Star size={20} />, path: '/featured-profiles', color: '#fbbf24' },
   ]
 
-  const dexTools = [
-    { id: 'swap', title: 'SwapHub', icon: <Repeat size={20} />, path: '/swap', color: '#667eea' },
-  ]
-
   return (
     <>
       {/* Toggle Button for Mobile */}
@@ -117,7 +114,7 @@ const WebBottomNav = () => {
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           style={{
             position: 'fixed',
-            top: '80px',
+            top: '96px',
             left: isSidebarOpen ? '80px' : '0',
             zIndex: 1001,
             width: '40px',
@@ -145,7 +142,7 @@ const WebBottomNav = () => {
       {/* Left Sidebar Navigation */}
       <div style={{
         position: 'fixed',
-        top: '80px',
+        top: '96px',
         left: isMobile && !isSidebarOpen ? '-80px' : '0',
         bottom: '0',
         width: '80px',
@@ -197,18 +194,18 @@ const WebBottomNav = () => {
           <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>GM/GN</span>
         </button>
 
-        {/* DEX Tab */}
+        {/* Swaphub - direct link to swap */}
         <button
-          onClick={() => handleTabClick('dex')}
+          onClick={() => navigate('/swap')}
           style={{
             width: '100%',
             padding: '12px 8px',
             border: 'none',
             borderRadius: '12px',
-            background: activeTab === 'dex' 
-              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+            background: location.pathname === '/swap'
+              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
               : 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)',
-            color: activeTab === 'dex' ? 'white' : '#667eea',
+            color: location.pathname === '/swap' ? 'white' : '#667eea',
             fontSize: '10px',
             fontWeight: '700',
             cursor: 'pointer',
@@ -219,13 +216,44 @@ const WebBottomNav = () => {
             transition: 'all 0.2s ease',
             minHeight: '70px',
             justifyContent: 'center',
-            boxShadow: activeTab === 'dex' 
-              ? '0 4px 12px rgba(102, 126, 234, 0.3)' 
+            boxShadow: location.pathname === '/swap'
+              ? '0 4px 12px rgba(102, 126, 234, 0.3)'
               : '0 2px 4px rgba(102, 126, 234, 0.1)'
           }}
         >
           <Repeat size={20} />
-          <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>DEX</span>
+          <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>Swaphub</span>
+        </button>
+
+        {/* Pumphub */}
+        <button
+          onClick={() => navigate('/pumphub')}
+          style={{
+            width: '100%',
+            padding: '12px 8px',
+            border: 'none',
+            borderRadius: '12px',
+            background: location.pathname === '/pumphub'
+              ? 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)'
+              : 'linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(8, 145, 178, 0.15) 100%)',
+            color: location.pathname === '/pumphub' ? 'white' : '#06b6d4',
+            fontSize: '10px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '4px',
+            transition: 'all 0.2s ease',
+            minHeight: '70px',
+            justifyContent: 'center',
+            boxShadow: location.pathname === '/pumphub'
+              ? '0 4px 12px rgba(6, 182, 212, 0.3)'
+              : '0 2px 4px rgba(6, 182, 212, 0.1)'
+          }}
+        >
+          <Zap size={20} />
+          <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>Pumphub</span>
         </button>
 
         {/* GAMING Tab */}
@@ -392,7 +420,7 @@ const WebBottomNav = () => {
             onClick={() => setActiveTab(null)}
             style={{
               position: 'fixed',
-              top: '80px',
+              top: '96px',
               left: '80px',
               right: '0',
               bottom: '0',
@@ -405,7 +433,7 @@ const WebBottomNav = () => {
           {/* Content Panel */}
           <div style={{
             position: 'fixed',
-            top: '80px',
+            top: '96px',
             left: '80px',
             bottom: '0',
             background: 'rgba(30, 41, 59, 0.98)',
@@ -732,51 +760,6 @@ const WebBottomNav = () => {
               </div>
             )}
 
-            {/* DEX Content */}
-            {activeTab === 'dex' && (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px'
-              }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#e5e7eb' }}>
-                  DEX Aggregator
-                </h3>
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(2, 1fr)', 
-                  gap: '12px' 
-                }}>
-                  {dexTools.map((tool) => (
-                    <button
-                      key={tool.id}
-                      onClick={() => {
-                        navigate(tool.path)
-                        setActiveTab(null)
-                      }}
-                      style={{
-                        padding: '16px',
-                        border: 'none',
-                        borderRadius: '12px',
-                        background: `linear-gradient(135deg, ${tool.color} 0%, ${tool.color}dd 100%)`,
-                        color: 'white',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '8px',
-                        boxShadow: `0 4px 12px ${tool.color}40`
-                      }}
-                    >
-                      {tool.icon}
-                      <span>{tool.title}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </>
       )}

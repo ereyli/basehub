@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAccount, useChainId } from 'wagmi'
-import { Wallet, Home, Wifi, WifiOff, Gamepad2, Zap, Shield, ExternalLink, Twitter, RefreshCw, Users } from 'lucide-react'
+import { Wallet, Home, Wifi, WifiOff, Zap, Shield, ExternalLink, Twitter, RefreshCw, Users } from 'lucide-react'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { getCurrentConfig } from '../config/base'
@@ -56,13 +56,8 @@ const Header = () => {
         <div className="header-content">
           {/* Logo Section */}
           <Link to="/" className="logo-section">
-            <div className="logo-icon">
-              <Gamepad2 size={24} />
-            </div>
-            <div className="logo-text">
-              <span className="logo-title">BaseHub</span>
-              <span className="logo-subtitle">Gamified smart contracts</span>
-            </div>
+            <img src="/icon.png" alt="BaseHub" className="header-logo-img" />
+            <span className="logo-subtitle">Gamified smart contracts</span>
           </Link>
           
           {/* Navigation & Status */}
@@ -167,14 +162,14 @@ const headerStyles = `
   .header-container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 0 24px;
+    padding: 0 24px 0 8px;
   }
 
   .header-content {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 80px;
+    height: 96px;
     gap: 24px;
   }
 
@@ -184,45 +179,25 @@ const headerStyles = `
     gap: 12px;
     text-decoration: none;
     transition: all 0.3s ease;
+    margin-left: -4px;
+    padding-left: 0;
   }
 
   .logo-section:hover {
     transform: translateY(-2px);
   }
 
-  .logo-icon {
-    width: 48px;
-    height: 48px;
-    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
-    transition: all 0.3s ease;
+  .header-logo-img {
+    height: 96px;
+    width: auto;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+    transition: transform 0.3s ease;
   }
 
-  .logo-section:hover .logo-icon {
-    transform: scale(1.05) rotate(5deg);
-    box-shadow: 0 12px 24px rgba(59, 130, 246, 0.4);
-  }
-
-  .logo-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .logo-title {
-    font-size: 24px;
-    font-weight: 800;
-    color: #e5e7eb;
-    line-height: 1;
-    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .logo-section:hover .header-logo-img {
+    transform: scale(1.05);
   }
 
   .logo-subtitle {
@@ -493,11 +468,11 @@ const headerStyles = `
 
   @media (max-width: 768px) {
     .header-container {
-      padding: 0 16px;
+      padding: 0 16px 0 8px;
     }
 
     .header-content {
-      height: 70px;
+      height: 84px;
       gap: 16px;
     }
 
@@ -522,13 +497,8 @@ const headerStyles = `
       font-weight: 700;
     }
 
-    .logo-icon {
-      width: 40px;
-      height: 40px;
-    }
-
-    .logo-title {
-      font-size: 20px;
+    .header-logo-img {
+      height: 77px;
     }
 
     .logo-subtitle {

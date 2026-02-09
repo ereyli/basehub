@@ -2,7 +2,7 @@ import React from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useChainId } from 'wagmi'
-import { Gamepad2, Home, Users, Zap, Sun, Moon, Repeat, Coins, Dice1, TrendingUp, Rocket, Loader2 } from 'lucide-react'
+import { Home, Users, Zap, Sun, Moon, Repeat, Coins, Dice1, TrendingUp, Rocket, Loader2 } from 'lucide-react'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { getCurrentConfig } from '../config/base'
 import { useProofOfUsage } from '../hooks/useProofOfUsage'
@@ -153,13 +153,8 @@ const WebHeader = () => {
         <div className="header-content">
           {/* Logo Section */}
           <Link to="/" className="logo-section">
-            <div className="logo-icon">
-              <Gamepad2 size={24} />
-            </div>
-            <div className="logo-text">
-              <span className="logo-title">BaseHub</span>
-              <span className="logo-subtitle">Gamified smart contracts</span>
-            </div>
+            <img src="/icon.png" alt="BaseHub" className="header-logo-img" />
+            <span className="logo-subtitle">Gamified smart contracts</span>
           </Link>
 
           {/* Quick Actions Bar - Center */}

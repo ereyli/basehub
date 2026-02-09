@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Twitter, ExternalLink, Zap } from 'lucide-react'
+import { Twitter, ExternalLink } from 'lucide-react'
 
 const Footer = () => {
   // Check if we're in Farcaster environment (safe check without hook)
@@ -18,8 +18,7 @@ const Footer = () => {
           {/* Logo and Slogan */}
           <div className="footer-brand">
             <div className="footer-logo">
-              <Zap size={20} style={{ color: '#3b82f6' }} />
-              <span className="footer-brand-name">BaseHub</span>
+              <img src="/icon.png" alt="BaseHub" className="footer-logo-img" />
             </div>
             <p className="footer-slogan">
               Gamified smart contracts on the Base network. Play, earn, and build the future of Web3.
