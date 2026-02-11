@@ -2,7 +2,10 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAccount } from 'wagmi'
 import { useTransactions } from '../hooks/useTransactions'
-import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, Trash2, Star, Users, Repeat } from 'lucide-react'
+import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, Trash2, Star, Users, Repeat, ArrowLeftRight } from 'lucide-react'
+import { getNavItems } from '../config/products'
+
+const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Rocket, Trash2, Star, Users, Repeat, ArrowLeftRight }
 
 const FarcasterBottomNav = () => {
   const navigate = useNavigate()
@@ -65,42 +68,17 @@ const FarcasterBottomNav = () => {
     }
   }
 
-  const gamingGames = [
-    { id: 'flip', title: 'Coinflip', icon: <Coins size={20} />, path: '/flip', color: '#f59e0b' },
-    { id: 'dice', title: 'Dice Roll', icon: <Dice1 size={20} />, path: '/dice', color: '#10b981' },
-    { id: 'slot', title: 'Slots', icon: <Gift size={20} />, path: '/slot', color: '#dc2626' },
-    { id: 'lucky', title: 'Lucky Number', icon: <RotateCcw size={20} />, path: '/lucky', color: '#3b82f6' },
-  ]
+  const gamingGames = getNavItems('gaming')
+  const nftTools = getNavItems('nft')
+  const analysisTools = getNavItems('analysis')
+  const deployTools = getNavItems('deploy')
+  const socialTools = getNavItems('social')
+  const dexTools = getNavItems('dex')
 
-  const nftTools = [
-    { id: 'early-access', title: 'Early Access', icon: <Rocket size={20} />, path: '/early-access', color: '#fbbf24' },
-    { id: 'deploy-nft', title: 'Deploy NFT', icon: <Image size={20} />, path: '/deploy-nft', color: '#8b5cf6' },
-    { id: 'ai-nft', title: 'AI NFT', icon: <Layers size={20} />, path: '/ai-nft', color: '#ec4899' },
-    { id: 'erc721', title: 'ERC721', icon: <Package size={20} />, path: '/deploy-erc721', color: '#06b6d4' },
-    { id: 'erc1155', title: 'ERC1155', icon: <Factory size={20} />, path: '/deploy-erc1155', color: '#f97316' },
-  ]
-
-  const analysisTools = [
-    { id: 'wallet-analysis', title: 'Wallet Analysis', icon: <TrendingUp size={20} />, path: '/wallet-analysis', color: '#3b82f6' },
-    { id: 'contract-security', title: 'Contract Security', icon: <Shield size={20} />, path: '/contract-security', color: '#10b981' },
-    { id: 'allowance-cleaner', title: 'Allowance Cleaner', icon: <Trash2 size={20} />, path: '/allowance-cleaner', color: '#ef4444' },
-  ]
-
-  const deployTools = [
-    { id: 'deploy', title: 'Deploy Token', icon: <Coins size={20} />, path: '/deploy', color: '#f59e0b' },
-    { id: 'deploy-nft', title: 'Deploy NFT', icon: <Image size={20} />, path: '/deploy-nft', color: '#8b5cf6' },
-    { id: 'erc721', title: 'ERC721', icon: <Package size={20} />, path: '/deploy-erc721', color: '#06b6d4' },
-    { id: 'erc1155', title: 'ERC1155', icon: <Factory size={20} />, path: '/deploy-erc1155', color: '#f97316' },
-    { id: 'ai-nft', title: 'AI NFT', icon: <Layers size={20} />, path: '/ai-nft', color: '#ec4899' },
-  ]
-
-  const socialTools = [
-    { id: 'featured-profiles', title: 'Featured Profiles', icon: <Star size={20} />, path: '/featured-profiles', color: '#fbbf24' },
-  ]
-
-  const dexTools = [
-    { id: 'swap', title: 'SwapHub', icon: <Repeat size={20} />, path: '/swap', color: '#667eea' },
-  ]
+  const renderNavIcon = (iconName) => {
+    const Icon = LUCIDE_ICONS[iconName]
+    return Icon ? <Icon size={20} /> : null
+  }
 
   return (
     <>
@@ -525,8 +503,8 @@ const FarcasterBottomNav = () => {
                         boxShadow: `0 4px 12px ${game.color}40`
                       }}
                     >
-                      {game.icon}
-                      <span>{game.title}</span>
+                      {renderNavIcon(game.icon)}
+                      <span>{game.label}</span>
                     </button>
                   ))}
                 </div>
@@ -571,8 +549,8 @@ const FarcasterBottomNav = () => {
                         boxShadow: `0 4px 12px ${tool.color}40`
                       }}
                     >
-                      {tool.icon}
-                      <span>{tool.title}</span>
+                      {renderNavIcon(tool.icon)}
+                      <span>{tool.label}</span>
                     </button>
                   ))}
                 </div>
@@ -617,8 +595,8 @@ const FarcasterBottomNav = () => {
                         boxShadow: `0 4px 12px ${tool.color}40`
                       }}
                     >
-                      {tool.icon}
-                      <span>{tool.title}</span>
+                      {renderNavIcon(tool.icon)}
+                      <span>{tool.label}</span>
                     </button>
                   ))}
                 </div>
@@ -663,8 +641,8 @@ const FarcasterBottomNav = () => {
                         boxShadow: `0 4px 12px ${tool.color}40`
                       }}
                     >
-                      {tool.icon}
-                      <span>{tool.title}</span>
+                      {renderNavIcon(tool.icon)}
+                      <span>{tool.label}</span>
                     </button>
                   ))}
                 </div>
@@ -709,8 +687,8 @@ const FarcasterBottomNav = () => {
                         boxShadow: `0 4px 12px ${tool.color}40`
                       }}
                     >
-                      {tool.icon}
-                      <span>{tool.title}</span>
+                      {renderNavIcon(tool.icon)}
+                      <span>{tool.label}</span>
                     </button>
                   ))}
                 </div>
@@ -755,8 +733,8 @@ const FarcasterBottomNav = () => {
                         boxShadow: `0 4px 12px ${tool.color}40`
                       }}
                     >
-                      {tool.icon}
-                      <span>{tool.title}</span>
+                      {renderNavIcon(tool.icon)}
+                      <span>{tool.label}</span>
                     </button>
                   ))}
                 </div>

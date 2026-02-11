@@ -104,12 +104,6 @@ export const useEarlyAccessMint = () => {
       throw new Error('Contract not deployed yet. Please check configuration.')
     }
 
-    // Prevent double popup using ref
-    if (isTransactionPendingRef.current) {
-      console.log('⚠️ Transaction already in progress')
-      return
-    }
-
     if (!isCorrectNetwork) {
       await switchToBaseNetwork()
       await new Promise(resolve => setTimeout(resolve, 1000))

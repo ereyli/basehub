@@ -383,12 +383,6 @@ export const usePumpHub = () => {
       throw new Error('Please switch to Base network')
     }
 
-    // Prevent double popup using ref (more reliable)
-    if (isTransactionPendingRef.current) {
-      console.log('⚠️ Transaction already in progress, ignoring duplicate request')
-      return null
-    }
-
     try {
       setError(null)
       lastErrorRef.current = null
@@ -602,12 +596,6 @@ export const usePumpHub = () => {
       throw new Error('Please switch to Base network')
     }
 
-    // Prevent double popup using ref
-    if (isTransactionPendingRef.current) {
-      console.log('⚠️ Transaction already in progress, ignoring duplicate request')
-      return null
-    }
-
     try {
       setError(null)
       lastErrorRef.current = null
@@ -768,12 +756,6 @@ export const usePumpHub = () => {
       throw new Error('Public client or address not available')
     }
 
-    // Prevent double popup using ref
-    if (isTransactionPendingRef.current) {
-      console.log('⚠️ Transaction already in progress, ignoring duplicate request')
-      return null
-    }
-
     try {
       setError(null)
       lastErrorRef.current = null
@@ -919,11 +901,6 @@ export const usePumpHub = () => {
       throw new Error('Please connect your wallet')
     }
 
-    if (isTransactionPendingRef.current) {
-      console.log('⚠️ Transaction already in progress')
-      return null
-    }
-
     try {
       setError(null)
       lastErrorRef.current = null
@@ -964,11 +941,6 @@ export const usePumpHub = () => {
   const claimRefund = useCallback(async () => {
     if (!isConnected) {
       throw new Error('Please connect your wallet')
-    }
-
-    if (isTransactionPendingRef.current) {
-      console.log('⚠️ Transaction already in progress')
-      return null
     }
 
     try {

@@ -388,12 +388,6 @@ export function useAINFTMinting(quantity = 1) {
       return;
     }
 
-    // Prevent double popup using ref
-    if (isTransactionPendingRef.current) {
-      console.log('⚠️ Transaction already in progress');
-      return;
-    }
-
     setIsMinting(true);
     lastErrorRef.current = null;
     isTransactionPendingRef.current = true;

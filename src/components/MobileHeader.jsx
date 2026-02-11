@@ -3,7 +3,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount } from 'wagmi'
 import { Menu, X, Zap, Home, Users, User, Wallet, Repeat, Rocket, TrendingUp, Coins, Dice1, Award } from 'lucide-react'
+import { getMobileMenuItems } from '../config/products'
 import { useProofOfUsage } from '../hooks/useProofOfUsage'
+
+const LUCIDE_ICONS = { Home, Repeat, Zap, Rocket, Coins, Dice1, TrendingUp, Award, User }
 import { getXP, getNFTCount } from '../utils/xpUtils'
 import { useSupabase } from '../hooks/useSupabase'
 
@@ -81,18 +84,7 @@ const MobileHeader = () => {
     return () => clearInterval(interval)
   }, [isConnected, address, supabase])
 
-  // Menu items
-  const menuItems = [
-    { icon: Home, label: 'Ana Sayfa', path: '/', color: '#3b82f6' },
-    { icon: Repeat, label: 'Swaphub', path: '/swap', color: '#8b5cf6' },
-    { icon: Rocket, label: 'Pumphub', path: '/pumphub', color: '#06b6d4' },
-    { icon: Coins, label: 'Flip', path: '/flip', color: '#f59e0b' },
-    { icon: Dice1, label: 'Dice', path: '/dice', color: '#10b981' },
-    { icon: TrendingUp, label: 'Analysis', path: '/wallet-analysis', color: '#ec4899' },
-    { icon: Rocket, label: 'Deploy', path: '/deploy', color: '#6366f1' },
-    { icon: Award, label: 'Rozetler', path: '/badges', color: '#eab308' },
-    { icon: User, label: 'Profil', path: '/profile', color: '#14b8a6' },
-  ]
+  const menuItems = getMobileMenuItems()
 
   return (
     <>
@@ -182,7 +174,7 @@ const MobileHeader = () => {
         {/* Menu Items */}
         <nav className="mobile-menu-nav">
           {menuItems.map((item) => {
-            const Icon = item.icon
+            const Icon = LUCIDE_ICONS[item.icon]
             const isActive = location.pathname === item.path
             return (
               <button
@@ -194,7 +186,7 @@ const MobileHeader = () => {
                 }}
                 style={{ '--item-color': item.color }}
               >
-                <Icon size={20} style={{ color: item.color }} />
+                {Icon && <Icon size={20} style={{ color: item.color }} />}
                 <span>{item.label}</span>
                 {isActive && <div className="mobile-menu-active-dot" />}
               </button>

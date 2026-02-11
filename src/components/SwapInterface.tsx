@@ -734,6 +734,7 @@ export default function SwapInterface() {
   const [tokenOut, setTokenOut] = useState<AppToken>(DEFAULT_TOKENS.USDC);
   const [amountIn, setAmountIn] = useState('');
   const [amountOut, setAmountOut] = useState('0');
+  const [transactionStep, setTransactionStep] = useState<'idle' | 'approving' | 'approved' | 'swapping' | 'success'>('idle');
 
   useEffect(() => {
     const checkMobile = () => {
@@ -766,9 +767,9 @@ export default function SwapInterface() {
     return () => clearInterval(interval);
   }, []);
 
-  // Award XP on successful swap
+  // Award XP only on successful swap (not on approve)
   useEffect(() => {
-    if (isSuccess && address && hash && amountIn && tokenIn) {
+    if (isSuccess && address && hash && amountIn && tokenIn && transactionStep === 'swapping') {
       try {
         // Calculate swap amount in USD
         let swapAmountUSD = 0;
@@ -823,7 +824,7 @@ export default function SwapInterface() {
         console.error('❌ Error in swap success handler:', error);
       }
     }
-  }, [isSuccess, address, hash, amountIn, tokenIn, amountOut, tokenOut, ethPriceUsd]);
+  }, [isSuccess, address, hash, amountIn, tokenIn, amountOut, tokenOut, ethPriceUsd, transactionStep]);
   const [showTokenSelect, setShowTokenSelect] = useState<'in' | 'out' | null>(null);
   const [tokenSearchQuery, setTokenSearchQuery] = useState('');
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
@@ -852,20 +853,19 @@ export default function SwapInterface() {
   const [dontShowWarning, setDontShowWarning] = useState(false);
   const [needsApproval, setNeedsApproval] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [transactionStep, setTransactionStep] = useState<'idle' | 'approving' | 'approved' | 'swapping' | 'success'>('idle');
   const [approvalSuccess, setApprovalSuccess] = useState(false);
   const [showMemeTokens, setShowMemeTokens] = useState(true); // Default to open
 
 
   // Get balance for tokenIn (native ETH or ERC20 token)
-  const { data: displayBalance } = useBalance({
+  const { data: displayBalance, refetch: refetchBalanceIn } = useBalance({
     address: address,
     token: tokenIn.isNative ? undefined : (tokenIn.address as `0x${string}`),
     chainId: base.id
   });
 
   // Get balance for tokenOut
-  const { data: tokenOutBalance } = useBalance({
+  const { data: tokenOutBalance, refetch: refetchBalanceOut } = useBalance({
     address: address,
     token: tokenOut.isNative ? undefined : (tokenOut.address as `0x${string}`),
     chainId: base.id
@@ -1820,8 +1820,10 @@ export default function SwapInterface() {
         }, 1500);
         return () => clearTimeout(swapTimer);
       } else if (transactionStep === 'swapping') {
-        // Swap was successful
+        // Swap was successful – refresh balances so UI updates without page reload
         console.log('✅ Swap confirmed!');
+        refetchBalanceIn();
+        refetchBalanceOut();
         setTransactionStep('success');
         
         // Clear after 3 seconds
@@ -1833,7 +1835,7 @@ export default function SwapInterface() {
         return () => clearTimeout(timer);
       }
     }
-  }, [isSuccess, hash, isConfirming, transactionStep, refetchAllowance]);
+  }, [isSuccess, hash, isConfirming, transactionStep, refetchAllowance, refetchBalanceIn, refetchBalanceOut]);
 
   // IMPORTANT: Reset swapping state when transaction completes (success or failure)
   useEffect(() => {

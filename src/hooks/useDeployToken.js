@@ -394,7 +394,7 @@ export const useDeployToken = () => {
       const feeTxHash = await walletClient.sendTransaction({
         to: feeWallet,
         value: parseEther('0.0002'),
-        gas: 21000n, // 21000 gas for simple transfer
+        chainId: chainId,
       })
       
       console.log('✅ Fee transaction sent:', feeTxHash)

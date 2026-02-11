@@ -115,12 +115,6 @@ export const useTransactions = () => {
       throw new Error('Wallet not connected')
     }
 
-    // Prevent double popup using ref
-    if (isTransactionPendingRef.current) {
-      console.log('⚠️ Transaction already in progress, ignoring duplicate request')
-      return null
-    }
-
     // Validate and auto-switch network before proceeding
     await validateAndSwitchNetwork()
 
@@ -221,9 +215,6 @@ export const useTransactions = () => {
         xpEarned: 30 
       }
     } catch (err) {
-      isTransactionPendingRef.current = false
-      setIsLoading(false)
-      
       // Check for user cancellation - case insensitive and multiple patterns
       const errorMsg = err.message?.toLowerCase() || ''
       const isUserRejection = errorMsg.includes('user rejected') || 
@@ -244,18 +235,15 @@ export const useTransactions = () => {
         setError(err.message)
       }
       throw err
+    } finally {
+      isTransactionPendingRef.current = false
+      setIsLoading(false)
     }
   }, [address, chainId, currentNetworkConfig, isCorrectNetwork, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
 
   const sendGNTransaction = useCallback(async (message = 'GN!') => {
     if (!address) {
       throw new Error('Wallet not connected')
-    }
-
-    // Prevent double popup using ref
-    if (isTransactionPendingRef.current) {
-      console.log('⚠️ Transaction already in progress, ignoring duplicate request')
-      return null
     }
 
     // Validate and auto-switch network before proceeding
@@ -343,9 +331,6 @@ export const useTransactions = () => {
         xpEarned: 30 
       }
     } catch (err) {
-      isTransactionPendingRef.current = false
-      setIsLoading(false)
-      
       // Check for user cancellation - case insensitive and multiple patterns
       const errorMsg = err.message?.toLowerCase() || ''
       const isUserRejection = errorMsg.includes('user rejected') || 
@@ -366,18 +351,15 @@ export const useTransactions = () => {
         setError(err.message)
       }
       throw err
+    } finally {
+      isTransactionPendingRef.current = false
+      setIsLoading(false)
     }
   }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
 
   const sendFlipTransaction = useCallback(async (selectedSide) => {
     if (!address) {
       throw new Error('Wallet not connected')
-    }
-
-    // Prevent double popup using ref
-    if (isTransactionPendingRef.current) {
-      console.log('⚠️ Transaction already in progress, ignoring duplicate request')
-      return null
     }
 
     // Validate and auto-switch network before proceeding
@@ -481,9 +463,6 @@ export const useTransactions = () => {
         xpEarned: playerWon ? 560 : 60
       }
     } catch (err) {
-      isTransactionPendingRef.current = false
-      setIsLoading(false)
-      
       // Check for user cancellation - case insensitive and multiple patterns
       const errorMsg = err.message?.toLowerCase() || ''
       const isUserRejection = errorMsg.includes('user rejected') || 
@@ -503,6 +482,9 @@ export const useTransactions = () => {
         setError(err.message)
       }
       throw err
+    } finally {
+      isTransactionPendingRef.current = false
+      setIsLoading(false)
     }
   }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
 
@@ -510,12 +492,6 @@ export const useTransactions = () => {
   const sendLuckyNumberTransaction = useCallback(async (guess) => {
     if (!address) {
       throw new Error('Wallet not connected')
-    }
-
-    // Prevent double popup using ref
-    if (isTransactionPendingRef.current) {
-      console.log('⚠️ Transaction already in progress, ignoring duplicate request')
-      return null
     }
 
     // Validate and auto-switch network before proceeding
@@ -615,9 +591,6 @@ export const useTransactions = () => {
         xpEarned: playerWon ? 1060 : 60
       }
     } catch (err) {
-      isTransactionPendingRef.current = false
-      setIsLoading(false)
-      
       // Check for user cancellation - case insensitive and multiple patterns
       const errorMsg = err.message?.toLowerCase() || ''
       const isUserRejection = errorMsg.includes('user rejected') || 
@@ -637,18 +610,15 @@ export const useTransactions = () => {
         setError(err.message)
       }
       throw err
+    } finally {
+      isTransactionPendingRef.current = false
+      setIsLoading(false)
     }
   }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
 
   const sendDiceRollTransaction = useCallback(async (guess) => {
     if (!address) {
       throw new Error('Wallet not connected')
-    }
-
-    // Prevent double popup using ref
-    if (isTransactionPendingRef.current) {
-      console.log('⚠️ Transaction already in progress, ignoring duplicate request')
-      return null
     }
 
     // Validate and auto-switch network before proceeding
@@ -752,9 +722,6 @@ export const useTransactions = () => {
         xpEarned: playerWon ? 1560 : 60
       }
     } catch (err) {
-      isTransactionPendingRef.current = false
-      setIsLoading(false)
-      
       // Check for user cancellation - case insensitive and multiple patterns
       const errorMsg = err.message?.toLowerCase() || ''
       const isUserRejection = errorMsg.includes('user rejected') || 
@@ -774,18 +741,15 @@ export const useTransactions = () => {
         setError(err.message)
       }
       throw err
+    } finally {
+      isTransactionPendingRef.current = false
+      setIsLoading(false)
     }
   }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
 
   const sendSlotTransaction = useCallback(async (action, params = {}) => {
     if (!address) {
       throw new Error('Wallet not connected. Please connect your wallet first.')
-    }
-
-    // Prevent double popup using ref
-    if (isTransactionPendingRef.current) {
-      console.log('⚠️ Transaction already in progress, ignoring duplicate request')
-      return null
     }
 
     // Validate and auto-switch network before proceeding
@@ -1001,9 +965,6 @@ export const useTransactions = () => {
         }
       }
     } catch (err) {
-      isTransactionPendingRef.current = false
-      setIsLoading(false)
-      
       // Check for user cancellation - case insensitive and multiple patterns
       const errorMsg = err.message?.toLowerCase() || ''
       const isUserRejection = errorMsg.includes('user rejected') || 
@@ -1023,18 +984,15 @@ export const useTransactions = () => {
         setError(err.message)
       }
       throw err
+    } finally {
+      isTransactionPendingRef.current = false
+      setIsLoading(false)
     }
   }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getSlotCreditPrice])
 
   const sendCustomTransaction = useCallback(async (contractAddressParam, functionData, value = '0') => {
     if (!address) {
       throw new Error('Wallet not connected')
-    }
-
-    // Prevent double popup using ref
-    if (isTransactionPendingRef.current) {
-      console.log('⚠️ Transaction already in progress, ignoring duplicate request')
-      return null
     }
 
     // Validate and auto-switch network before proceeding
@@ -1062,9 +1020,6 @@ export const useTransactions = () => {
 
       return result
     } catch (err) {
-      isTransactionPendingRef.current = false
-      setIsLoading(false)
-      
       // Check for user cancellation - case insensitive and multiple patterns
       const errorMsg = err.message?.toLowerCase() || ''
       const isUserRejection = errorMsg.includes('user rejected') || 
@@ -1082,6 +1037,9 @@ export const useTransactions = () => {
       console.error('❌ Custom Transaction failed:', err)
       setError(err.message)
       throw err
+    } finally {
+      isTransactionPendingRef.current = false
+      setIsLoading(false)
     }
   }, [address, validateAndSwitchNetwork])
 

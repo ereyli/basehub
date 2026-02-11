@@ -10,7 +10,10 @@ import DailyQuestSystem from '../components/DailyQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { NETWORKS } from '../config/networks'
-import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat, Sparkles } from 'lucide-react'
+import { getProductsForHome } from '../config/products'
+import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat, Sparkles, RotateCcw, Gift } from 'lucide-react'
+
+const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Search, Shield, Trash2, Star, Layers, Package, Factory, Rocket, Image, Sparkles, ArrowLeftRight, Repeat }
 
 const Home = () => {
   const { isConnected } = useAccount()
@@ -502,180 +505,28 @@ const Home = () => {
     )
   }
 
-  const games = [
-    {
-      id: 'ai-nft',
-      title: 'AI NFT Launchpad',
-      description: 'Generate AI art and mint as NFT',
-      icon: <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />,
-      path: '/ai-nft',
-      color: '#f59e0b',
-      xpReward: '500 XP',
-      bonusXP: null,
-      networks: ['base']
-    },
-    {
-      id: 'nft-wheel',
-      title: 'NFT Wheel of Fortune',
-      description: 'Spin to win massive XP rewards (NFT holders only)',
-      icon: <Sparkles size={40} style={{ color: 'white' }} />,
-      path: '/nft-wheel',
-      color: '#8b5cf6',
-      xpReward: '2K-50K XP',
-      bonusXP: 'MEGA JACKPOT!',
-      networks: ['base'],
-      isNFTGated: true
-    },
-    {
-      id: 'x402-premium',
-      title: 'x402 test',
-      description: 'Pay 0.1 USDC via x402',
-      icon: <Star size={40} style={{ color: 'white' }} />,
-      path: null, // Special handler
-      color: '#8b5cf6',
-      xpReward: '500 XP',
-      bonusXP: '0.1 USDC',
-      isPayment: true, // Mark as payment button
-      networks: ['base'],
-      isX402: true
-    },
-    {
-      id: 'wallet-analysis',
-      title: 'Wallet Analysis',
-      description: 'Get fun insights about any wallet',
-      icon: <Search size={40} style={{ color: 'white' }} />,
-      path: '/wallet-analysis',
-      color: '#8b5cf6',
-      xpReward: '400 XP',
-      bonusXP: '0.40 USDC',
-      isX402: true, // Mark as x402 payment
-      networks: ['base']
-    },
-    {
-      id: 'contract-security',
-      title: 'Contract Security',
-      description: 'Analyze smart contract security risks',
-      icon: <Shield size={40} style={{ color: 'white' }} />,
-      path: '/contract-security',
-      color: '#8b5cf6',
-      xpReward: '500 XP',
-      bonusXP: '0.50 USDC',
-      isX402: true, // Mark as x402 payment
-      networks: ['base']
-    },
-    {
-      id: 'allowance-cleaner',
-      title: 'Allowance Cleaner',
-      description: 'Scan and revoke risky token approvals',
-      icon: <Trash2 size={40} style={{ color: 'white' }} />,
-      path: '/allowance-cleaner',
-      color: '#8b5cf6',
-      xpReward: '300 XP',
-      bonusXP: '0.1 USDC',
-      isX402: true, // Mark as x402 payment
-      networks: ['base']
-    },
-    {
-      id: 'featured-profiles',
-      title: 'Featured Profiles',
-      description: 'Register your profile and connect through mutual follows',
-      icon: <Star size={40} style={{ color: 'white' }} />,
-      path: '/featured-profiles',
-      color: '#f59e0b',
-      xpReward: '200 XP',
-      bonusXP: '0.2-6.0 USDC',
-      isX402: true, // Mark as x402 payment
-      networks: ['base']
-    },
-    {
-      id: 'deploy-erc721',
-      title: 'Deploy ERC721',
-      description: 'Deploy your own NFT contract',
-      icon: <img src="/crypto-logos/basahub logo/ERC-721.png" alt="Deploy ERC721" loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />,
-      path: '/deploy-erc721',
-      color: '#8b5cf6',
-      xpReward: '100 XP',
-      bonusXP: null,
-      networks: ['base', 'ink', 'soneium', 'katana']
-    },
-    {
-      id: 'deploy',
-      title: 'Deploy Token',
-      description: 'Create your own ERC20 token',
-      icon: <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />,
-      path: '/deploy',
-      color: '#8b5cf6',
-      xpReward: '50 XP',
-      bonusXP: null,
-      networks: ['base', 'ink', 'soneium', 'katana']
-    },
-    {
-      id: 'deploy-erc1155',
-      title: 'Deploy ERC1155',
-      description: 'Deploy multi-token contract',
-      icon: <img src="/crypto-logos/basahub logo/ERC-1155.png" alt="Deploy ERC1155" loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />,
-      path: '/deploy-erc1155',
-      color: '#8b5cf6',
-      xpReward: '100 XP',
-      bonusXP: null,
-      networks: ['base', 'ink', 'soneium', 'katana']
-    },
-    {
-      id: 'flip',
-      title: 'Coin Flip',
-      description: 'Flip a coin and earn XP',
-      icon: <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="Coin Flip" loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />,
-      path: '/flip',
-      color: '#f59e0b',
-      xpReward: '60 XP',
-      bonusXP: '+500 XP (Win)',
-      networks: ['base', 'ink', 'soneium', 'katana']
-    },
-    {
-      id: 'lucky',
-      title: 'Lucky Number',
-      description: 'Guess 1-10 and earn XP',
-      icon: <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number" loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />,
-      path: '/lucky',
-      color: '#f59e0b',
-      xpReward: '60 XP',
-      bonusXP: '+1000 XP (Win)',
-      networks: ['base', 'ink', 'soneium', 'katana']
-    },
-    {
-      id: 'dice',
-      title: 'Dice Roll',
-      description: 'Roll dice and earn XP',
-      icon: <img src="/crypto-logos/basahub logo/DiceRoll.png" alt="Dice Roll" loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />,
-      path: '/dice',
-      color: '#f59e0b',
-      xpReward: '60 XP',
-      bonusXP: '+1500 XP (Win)',
-      networks: ['base', 'ink', 'soneium', 'katana']
-    },
-    {
-      id: 'slot',
-      title: 'Crypto Slots',
-      description: 'Spin the reels and win XP',
-      icon: <img src="/crypto-logos/basahub logo/CryptoSloth.png" alt="Crypto Slots" loading="lazy" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />,
-      path: '/slot',
-      color: '#f59e0b',
-      xpReward: '60 XP',
-      bonusXP: '+2000 XP (Combo)',
-      networks: ['base', 'ink', 'soneium', 'katana']
-    },
-    {
-      id: 'swap',
-      title: 'SwapHub',
-      description: 'DEX Aggregator - Swap tokens on Base',
-      icon: <ArrowLeftRight size={40} style={{ color: 'white' }} />,
-      path: '/swap',
-      color: '#3b82f6',
-      xpReward: '250 XP',
-      bonusXP: '5000 XP (Every $500)',
-      networks: ['base']
-    },
-  ]
+  const games = React.useMemo(() => {
+    const iconStyle = { width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }
+    return getProductsForHome().map(p => {
+      const icon = p.iconImage
+        ? <img src={p.iconImage} alt={p.title} loading="lazy" style={iconStyle} />
+        : (() => { const Icon = LUCIDE_ICONS[p.icon]; return Icon ? <Icon size={40} style={{ color: 'white' }} /> : null })()
+      return {
+        id: p.id,
+        title: p.title,
+        description: p.description,
+        icon,
+        path: p.path,
+        color: p.color,
+        xpReward: p.xpReward,
+        bonusXP: p.bonusXP ?? null,
+        networks: p.networks,
+        isNFTGated: p.isNFTGated ?? false,
+        isX402: p.isX402 ?? false,
+        isPayment: p.isPayment ?? false,
+      }
+    })
+  }, [])
 
   return (
     <div className="home" style={{ 
@@ -1210,8 +1061,8 @@ const Home = () => {
                   {!isCompactMode && renderNetworkLogos(['base', 'ink', 'soneium', 'katana'])}
                 </div>
                 <div style={compactStyles.cardGrid}>
-                  {games.filter(g => ['deploy', 'deploy-erc721', 'deploy-erc1155'].includes(g.id)).sort((a, b) => {
-                    const order = ['deploy', 'deploy-erc721', 'deploy-erc1155'];
+                  {games.filter(g => ['deploy', 'deploy-nft', 'deploy-erc721', 'deploy-erc1155'].includes(g.id)).sort((a, b) => {
+                    const order = ['deploy', 'deploy-nft', 'deploy-erc721', 'deploy-erc1155'];
                     return order.indexOf(a.id) - order.indexOf(b.id);
                   }).map((game) => (
                     <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
