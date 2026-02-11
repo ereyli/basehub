@@ -10,7 +10,7 @@ import { config } from './config/wagmi'
 import { rainbowkitConfig, shouldUseRainbowKit } from './config/rainbowkit'
 import FarcasterXPDisplay from './components/FarcasterXPDisplay'
 import FarcasterBottomNav from './components/FarcasterBottomNav'
-import WebHeader from './components/WebHeader'
+import ResponsiveHeader from './components/ResponsiveHeader'
 import WebBottomNav from './components/WebBottomNav'
 import Footer from './components/Footer'
 import SkeletonLoader from './components/SkeletonLoader'
@@ -358,7 +358,7 @@ function WebAppContent() {
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <GlobalErrorHandler />
         <div className="App web-app">
-          <WebHeader />
+          <ResponsiveHeader />
           <main className="container" style={{ paddingLeft: '80px', paddingBottom: '40px' }}>
           <Suspense fallback={<SkeletonLoader />}>
             <Routes>
