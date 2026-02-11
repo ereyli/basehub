@@ -32,7 +32,7 @@ const Footer = () => {
               <Link to="/" className="footer-link">Home</Link>
               <Link to="/leaderboard" className="footer-link">Leaderboard</Link>
               <a 
-                href="https://x.com/Basehubfun" 
+                href="https://x.com/BaseHubb" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="footer-link"
@@ -73,7 +73,7 @@ const Footer = () => {
           </div>
           <div className="footer-social">
             <a 
-              href="https://x.com/Basehubfun" 
+              href="https://x.com/BaseHubb" 
               target="_blank" 
               rel="noopener noreferrer"
               className="footer-social-link"
