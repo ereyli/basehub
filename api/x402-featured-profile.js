@@ -92,27 +92,20 @@ app.get('/', (c) => {
 // So we'll use the maximum price (monthly) and verify the amount in the handler
 // OR we can create separate middleware for each subscription type
 
-// Apply middleware for all POST requests (will use maximum price)
+// Path must match client request URL for x402 verify (web + Farcaster)
+const FEATURED_PROFILE_PATH = '/api/x402-featured-profile'
 app.use(
   paymentMiddleware(
     RECEIVING_ADDRESS,
     {
-      'POST /': {
-        price: PRICING.daily.price, // '$0.20' - daily price
-        network: NETWORK,
-        config: {
-          description: 'BaseHub Featured Profile Registration - Daily',
-          mimeType: 'application/json',
-          maxTimeoutSeconds: 600,
-        },
-      },
+      'POST /': { price: PRICING.daily.price, network: NETWORK, config: { description: 'BaseHub Featured Profile Registration - Daily', mimeType: 'application/json', maxTimeoutSeconds: 600 } },
+      [`POST ${FEATURED_PROFILE_PATH}`]: { price: PRICING.daily.price, network: NETWORK, config: { description: 'BaseHub Featured Profile Registration - Daily', mimeType: 'application/json', maxTimeoutSeconds: 600 } },
     },
     facilitatorConfig
   )
 )
 
-// Single POST endpoint that handles all subscription types via query parameter
-app.post('/', async (c) => {
+async function handlePost(c) {
   try {
     // Only daily subscription is available
     const subscriptionType = 'daily'
@@ -127,7 +120,9 @@ app.post('/', async (c) => {
       error: 'Invalid request body' 
     }, 400)
   }
-})
+}
+app.post('/', handlePost)
+app.post(FEATURED_PROFILE_PATH, handlePost)
 
 // ==========================================
 // Profile Registration Handler
@@ -273,23 +268,16 @@ async function handleProfileRegistration(c, subscriptionType, pricing) {
   }
 }
 
-// Vercel handler
+// Vercel handler - URL must match client for x402 verify
 export default async function handler(req, res) {
   try {
     const protocol = req.headers['x-forwarded-proto'] || 'https'
-    const host = req.headers.host || req.headers['x-forwarded-host']
+    const host = req.headers.host || req.headers['x-forwarded-host'] || ''
     const url = req.url || '/'
-    
-    // Parse query string if present
     const urlParts = url.split('?')
-    let path = urlParts[0] || '/'
+    const path = (urlParts[0] && urlParts[0].startsWith('/api')) ? urlParts[0] : FEATURED_PROFILE_PATH
     const queryString = urlParts[1] || ''
-    
-    // For Vercel API routes, all requests to /api/x402-featured-profile map to '/'
-    // The path should always be '/' for this single endpoint
-    const normalizedPath = '/'
-    
-    const fullUrl = `${protocol}://${host}${normalizedPath}${queryString ? `?${queryString}` : ''}`
+    const fullUrl = `${protocol}://${host}${path}${queryString ? `?${queryString}` : ''}`
     
     let body = undefined
     if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {

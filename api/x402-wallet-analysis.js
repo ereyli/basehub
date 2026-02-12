@@ -81,20 +81,15 @@ app.get('/', (c) => {
 
 // ==========================================
 // Apply x402 payment middleware (Base network)
+// Path must match client request URL for x402 verify (web + Farcaster)
 // ==========================================
+const WALLET_ANALYSIS_PATH = '/api/x402-wallet-analysis'
 app.use(
   paymentMiddleware(
     RECEIVING_ADDRESS,
     {
-      'POST /': {
-        price: PRICE,
-        network: NETWORK,
-        config: {
-          description: 'BaseHub Wallet Analysis - Pay 0.40 USDC on Base',
-          mimeType: 'application/json',
-          maxTimeoutSeconds: 600,
-        },
-      },
+      'POST /': { price: PRICE, network: NETWORK, config: { description: 'BaseHub Wallet Analysis - Pay 0.40 USDC on Base', mimeType: 'application/json', maxTimeoutSeconds: 600 } },
+      [`POST ${WALLET_ANALYSIS_PATH}`]: { price: PRICE, network: NETWORK, config: { description: 'BaseHub Wallet Analysis - Pay 0.40 USDC on Base', mimeType: 'application/json', maxTimeoutSeconds: 600 } },
     },
     facilitatorConfig
   )
@@ -462,8 +457,8 @@ async function performWalletAnalysis(walletAddress, selectedNetwork = 'ethereum'
 // ==========================================
 // Wallet Analysis endpoint - protected by middleware
 // ==========================================
-app.post('/', async (c) => {
-  console.log('✅ POST / endpoint called - payment verified by middleware')
+app.post('*', async (c) => {
+  console.log('✅ POST endpoint called - payment verified by middleware')
   console.log('📋 Request details:', {
     method: c.req.method,
     url: c.req.url,
@@ -552,7 +547,8 @@ export default async function handler(req, res) {
 
     const protocol = req.headers['x-forwarded-proto'] || 'https'
     const host = req.headers.host || req.headers['x-forwarded-host'] || 'localhost'
-    const fullUrl = `${protocol}://${host}/`
+    const path = (req.url && req.url.startsWith('/api')) ? req.url.split('?')[0] : WALLET_ANALYSIS_PATH
+    const fullUrl = `${protocol}://${host}${path}${(req.url && req.url.includes('?')) ? '?' + req.url.split('?')[1] : ''}`
 
     let body = undefined
     if (req.method !== 'GET' && req.method !== 'HEAD') {

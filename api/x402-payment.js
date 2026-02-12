@@ -78,51 +78,36 @@ app.get('/test', (c) => {
 // NOTE: Middleware performs settlement AFTER route handler returns
 // If settlement fails, middleware will override route handler's response with 402
 // Route configuration format: "METHOD /path" or "/path" (matches any method)
+const X402_PAYMENT_PATH = '/api/x402-payment'
 app.use(
   paymentMiddleware(
-    RECEIVING_ADDRESS, // your receiving wallet address
+    RECEIVING_ADDRESS,
     {
-      // Route configurations for protected endpoints
-      // Following working example format: "METHOD /path"
-      // Match POST requests to root path
       'POST /': {
-        price: PRICE, // '$0.10'
-        network: NETWORK, // 'base' for mainnet
+        price: PRICE,
+        network: NETWORK,
         config: {
           description: 'BaseHub x402 Payment - Pay 0.1 USDC',
           mimeType: 'application/json',
-          // Increase timeout for settlement verification (default is 60 seconds)
-          // Settlement may take time to verify on-chain transaction
-          // Farcaster transactions may take longer, so we set a higher timeout
-          maxTimeoutSeconds: 600, // 10 minutes (increased for Farcaster compatibility)
+          maxTimeoutSeconds: 600,
         },
       },
+      [`POST ${X402_PAYMENT_PATH}`]: { price: PRICE, network: NETWORK, config: { description: 'BaseHub x402 Payment - Pay 0.1 USDC', mimeType: 'application/json', maxTimeoutSeconds: 600 } },
     },
-    facilitatorConfig // facilitator configuration (CDP facilitator for mainnet)
+    facilitatorConfig
   )
 )
 
-// x402 Payment endpoint - protected by middleware above
-// Following working example pattern exactly
-// Route handler is called AFTER middleware verifies payment
-// Middleware performs settlement AFTER route handler returns
-// IMPORTANT: Keep route handler simple, just like working example
-app.post('/', (c) => {
-  console.log('✅ POST / endpoint called - payment verified by middleware')
-  
-  // Return simple JSON response matching working example pattern
-  // Minimal response - middleware handles settlement after this
+const paymentSuccess = (c) => {
+  console.log('✅ Payment verified by middleware')
   return c.json({
     success: true,
     message: 'Payment verified successfully!',
-    payment: {
-      amount: PRICE,
-      currency: 'USDC',
-      network: NETWORK,
-      recipient: RECEIVING_ADDRESS,
-    },
+    payment: { amount: PRICE, currency: 'USDC', network: NETWORK, recipient: RECEIVING_ADDRESS },
   })
-})
+}
+app.post('/', paymentSuccess)
+app.post(X402_PAYMENT_PATH, paymentSuccess)
 
 // Export for Vercel (serverless function)
 // Vercel serverless function handler format
@@ -143,19 +128,13 @@ export default async function handler(req, res) {
     // req.url will be '/' for requests to the function root
     // We need to normalize the path to '/' for Hono routes
     
-    // Parse query string if present
-    const urlParts = (req.url || '/').split('?')
-    const path = urlParts[0] || '/'
-    const queryString = urlParts[1] || ''
-    
-    // Normalize path: For Vercel API routes, always use '/' as the base path
-    // because Hono routes are defined relative to the function endpoint
-    const normalizedPath = '/' // Always use root for this function
-    
-    // Build full URL for Hono Request
+    // URL must match client request URL for x402 payment verification (web + Farcaster)
     const protocol = req.headers['x-forwarded-proto'] || 'https'
     const host = req.headers.host || req.headers['x-forwarded-host'] || 'localhost'
-    const fullUrl = `${protocol}://${host}${normalizedPath}${queryString ? `?${queryString}` : ''}`
+    const urlParts = (req.url || '/').split('?')
+    const path = (urlParts[0] && urlParts[0].startsWith('/api')) ? urlParts[0] : '/api/x402-payment'
+    const queryString = urlParts[1] || ''
+    const fullUrl = `${protocol}://${host}${path}${queryString ? `?${queryString}` : ''}`
     
     console.log('📤 Creating Hono Request:', {
       originalPath: path,

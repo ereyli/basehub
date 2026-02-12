@@ -49,48 +49,37 @@ app.get('/', (c) => {
   })
 })
 
-// Apply x402 payment middleware
+// Path must match client request URL for x402 verify (web + Farcaster)
+const NFT_WHEEL_PATH = '/api/x402-nft-wheel'
 app.use(
   paymentMiddleware(
     RECEIVING_ADDRESS,
     {
-      'POST /': {
-        price: PRICE, // '$0.05'
-        network: NETWORK,
-        config: {
-          description: 'BaseHub NFT Wheel - Pay 0.05 USDC',
-          mimeType: 'application/json',
-          maxTimeoutSeconds: 600,
-        },
-      },
+      'POST /': { price: PRICE, network: NETWORK, config: { description: 'BaseHub NFT Wheel - Pay 0.05 USDC', mimeType: 'application/json', maxTimeoutSeconds: 600 } },
+      [`POST ${NFT_WHEEL_PATH}`]: { price: PRICE, network: NETWORK, config: { description: 'BaseHub NFT Wheel - Pay 0.05 USDC', mimeType: 'application/json', maxTimeoutSeconds: 600 } },
     },
     facilitatorConfig
   )
 )
 
-// x402 Payment endpoint
-app.post('/', (c) => {
-  console.log('✅ POST / endpoint called - NFT Wheel payment verified by middleware')
-  
+const nftWheelSuccess = (c) => {
+  console.log('✅ NFT Wheel payment verified by middleware')
   return c.json({
     success: true,
     message: 'Payment verified successfully!',
-    payment: {
-      amount: PRICE,
-      currency: 'USDC',
-      network: NETWORK,
-      recipient: RECEIVING_ADDRESS,
-      service: 'NFT Wheel'
-    },
+    payment: { amount: PRICE, currency: 'USDC', network: NETWORK, recipient: RECEIVING_ADDRESS, service: 'NFT Wheel' },
   })
-})
+}
+app.post('/', nftWheelSuccess)
+app.post(NFT_WHEEL_PATH, nftWheelSuccess)
 
-// Export for Vercel (serverless function)
+// Export for Vercel (serverless function) - URL must match client for x402 verify
 export default async function handler(req, res) {
   try {
     const protocol = req.headers['x-forwarded-proto'] || 'https'
-    const host = req.headers.host || req.headers['x-forwarded-host']
-    const fullUrl = `${protocol}://${host}/`
+    const host = req.headers.host || req.headers['x-forwarded-host'] || ''
+    const path = (req.url && req.url.startsWith('/api')) ? req.url.split('?')[0] : NFT_WHEEL_PATH
+    const fullUrl = `${protocol}://${host}${path}${(req.url && req.url.includes('?')) ? '?' + req.url.split('?')[1] : ''}`
 
     let body = undefined
     if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {

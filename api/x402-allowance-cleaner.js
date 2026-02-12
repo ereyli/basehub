@@ -57,19 +57,14 @@ app.get('/', (c) => {
 // ==========================================
 // Apply x402 payment middleware (Base network)
 // ==========================================
+// Path must match client request URL for x402 verify (web + Farcaster)
+const ALLOWANCE_CLEANER_PATH = '/api/x402-allowance-cleaner'
 app.use(
   paymentMiddleware(
     RECEIVING_ADDRESS,
     {
-      'POST /': {
-        price: PRICE,
-        network: NETWORK,
-        config: {
-          description: 'BaseHub Allowance Cleaner - Pay 0.10 USDC on Base',
-          mimeType: 'application/json',
-          maxTimeoutSeconds: 600,
-        },
-      },
+      'POST /': { price: PRICE, network: NETWORK, config: { description: 'BaseHub Allowance Cleaner - Pay 0.10 USDC on Base', mimeType: 'application/json', maxTimeoutSeconds: 600 } },
+      [`POST ${ALLOWANCE_CLEANER_PATH}`]: { price: PRICE, network: NETWORK, config: { description: 'BaseHub Allowance Cleaner - Pay 0.10 USDC on Base', mimeType: 'application/json', maxTimeoutSeconds: 600 } },
     },
     facilitatorConfig
   )
@@ -802,7 +797,7 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
               riskLevel,
               reason,
               network: selectedNetwork, // Add network info for frontend
-              chainId: networkConfig.chainId // Add chainId for verification
+              chainId: network.chainId
             })
             
             console.log(`   ✅ Found approval: ${tokenInfo.symbol} -> ${spender.substring(0, 10)}... (${isUnlimited ? 'Unlimited' : allowance.toString()})`)
@@ -845,11 +840,29 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
   return allowances
 }
 
-// Endpoint
-app.post('/', async (c) => {
+// Handler for POST (shared for both route paths)
+async function handleAllowanceScanPost(c) {
   try {
-    const { walletAddress, network } = await c.req.json()
-    
+    let walletAddress, network
+    const bodyHeader = c.req.header('X-Body')
+    if (bodyHeader) {
+      try {
+        const parsed = JSON.parse(bodyHeader)
+        walletAddress = parsed.walletAddress
+        network = parsed.network
+      } catch (e) {
+        return c.json({ success: false, error: 'Invalid X-Body JSON' }, 400)
+      }
+    } else {
+      try {
+        const body = await c.req.json()
+        walletAddress = body.walletAddress
+        network = body.network
+      } catch (e) {
+        return c.json({ success: false, error: 'Invalid or missing request body', details: e.message }, 400)
+      }
+    }
+
     if (!walletAddress) {
       return c.json({ success: false, error: 'Wallet address required' }, 400)
     }
@@ -898,31 +911,39 @@ app.post('/', async (c) => {
     })
     
   } catch (error) {
-    console.error('❌ Error:', error)
-    return c.json({ 
-      success: false, 
-      error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    console.error('❌ Allowance scan error:', error)
+    return c.json({
+      success: false,
+      error: error.message || 'Internal Server Error',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     }, 500)
   }
-})
+}
+app.post('/', handleAllowanceScanPost)
+app.post(ALLOWANCE_CLEANER_PATH, handleAllowanceScanPost)
 
-// Vercel handler
+// Vercel handler - URL must match client request URL for x402 payment verification
 export default async function handler(req, res) {
   try {
     const protocol = req.headers['x-forwarded-proto'] || 'https'
-    const host = req.headers.host || req.headers['x-forwarded-host']
-    const fullUrl = `${protocol}://${host}/`
+    const host = req.headers.host || req.headers['x-forwarded-host'] || ''
+    const path = (req.url && req.url.startsWith('/api')) ? req.url.split('?')[0] : ALLOWANCE_CLEANER_PATH
+    const fullUrl = `${protocol}://${host}${path}${(req.url && req.url.includes('?')) ? '?' + req.url.split('?')[1] : ''}`
 
     let body = undefined
-    if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
-      body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body)
+    const bodyString = req.method !== 'GET' && req.method !== 'HEAD' && req.body
+      ? (typeof req.body === 'string' ? req.body : JSON.stringify(req.body))
+      : undefined
+
+    const headers = new Headers(req.headers || {})
+    if (bodyString) {
+      headers.set('X-Body', bodyString)
     }
 
     const request = new Request(fullUrl, {
       method: req.method || 'GET',
-      headers: new Headers(req.headers || {}),
-      body: body,
+      headers,
+      body: bodyString,
     })
 
     const response = await app.fetch(request)
