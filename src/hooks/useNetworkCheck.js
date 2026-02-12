@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useAccount, useChainId } from 'wagmi'
-import { NETWORKS, isNetworkSupported, getNetworkConfig } from '../config/networks'
+import { NETWORKS, isNetworkSupported, getNetworkConfig, getAddChainParams } from '../config/networks'
+
+/** Cüzdanlar bazen code'u string "4902" veya cause/error içinde döndürür. */
+function isChainNotAddedError(err) {
+  if (!err) return false
+  const code = err.code ?? err.cause?.code ?? err.error?.code
+  const msg = (err.message || err.cause?.message || err.error?.message || '').toLowerCase()
+  if (Number(code) === 4902 || String(code) === '4902') return true
+  return msg.includes('not been added') || msg.includes('unrecognized chain') || msg.includes('unknown chain')
+}
 
 export const useNetworkCheck = () => {
   const { isConnected } = useAccount()
@@ -66,96 +75,75 @@ export const useNetworkCheck = () => {
       // Continue anyway
     }
 
-    // Ensure rpcUrls is an array and has valid HTTPS URLs
-    const rpcUrls = Array.isArray(targetNetwork.rpcUrls) 
-      ? targetNetwork.rpcUrls.filter(url => url && typeof url === 'string' && url.startsWith('https://'))
-      : (targetNetwork.rpcUrls && typeof targetNetwork.rpcUrls === 'string' && targetNetwork.rpcUrls.startsWith('https://'))
-        ? [targetNetwork.rpcUrls]
-        : []
-    
-    if (rpcUrls.length === 0) {
-      throw new Error(`Invalid RPC URLs for ${targetNetwork.chainName}. Please check network configuration.`)
+    const chainIdHex = `0x${targetChainId.toString(16)}`
+    const rpcUrlFirst = Array.isArray(targetNetwork.rpcUrls) && targetNetwork.rpcUrls[0] && String(targetNetwork.rpcUrls[0]).startsWith('https://')
+      ? String(targetNetwork.rpcUrls[0])
+      : null
+    if (!rpcUrlFirst) {
+      throw new Error(`Invalid RPC URL for ${targetNetwork.chainName}.`)
     }
 
-    // Ensure blockExplorerUrls is an array
-    const blockExplorerUrls = Array.isArray(targetNetwork.blockExplorerUrls)
-      ? targetNetwork.blockExplorerUrls.filter(Boolean)
-      : (targetNetwork.blockExplorerUrls ? [targetNetwork.blockExplorerUrls] : [])
+    // MetaMask kesinlikle rpcUrls = string[] ister; literal dizi ile tek URL gönderiyoruz
+    const addPayload = {
+      chainId: chainIdHex,
+      chainName: String(targetNetwork.chainName),
+      nativeCurrency: {
+        name: String(targetNetwork.nativeCurrency.name),
+        symbol: String(targetNetwork.nativeCurrency.symbol),
+        decimals: Number(targetNetwork.nativeCurrency.decimals),
+      },
+      rpcUrls: [rpcUrlFirst],
+    }
+    const blockExplorerFirst = targetNetwork.blockExplorerUrls?.[0] || (Array.isArray(targetNetwork.blockExplorerUrls) ? targetNetwork.blockExplorerUrls[0] : null)
+    if (blockExplorerFirst && String(blockExplorerFirst).startsWith('http')) {
+      addPayload.blockExplorerUrls = [String(blockExplorerFirst)]
+    }
+
+    // Tüm ağlar (mainnet + testnet): önce "Ağ ekle" isteği gönder; cüzdanda yoksa onay çıkar, varsa hata verir (yok sayarız)
+    console.log(`🔄 Ağ seçildi: önce ağ ekleme isteği gönderiliyor (${targetNetwork.chainName})...`)
+    try {
+      await window.ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [addPayload],
+      })
+      console.log(`✅ Ağ eklendi veya zaten vardı`)
+    } catch (addErr) {
+      if (Number(addErr?.code) === 4001 || String(addErr?.code) === '4001' || (addErr?.message || '').toLowerCase().includes('reject')) {
+        throw new Error('Network addition was cancelled')
+      }
+      // "Chain already added" veya benzeri: devam et, switch deneyeceğiz
+      console.log('ℹ️ Add chain result (devam ediliyor):', addErr?.message || addErr)
+    }
+    await new Promise(resolve => setTimeout(resolve, 300))
 
     try {
-      // Try to switch to target network
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: `0x${targetChainId.toString(16)}` }],
+        params: [{ chainId: chainIdHex }],
       })
-      console.log(`✅ Successfully switched to ${targetNetwork.chainName} network`)
+      console.log(`✅ ${targetNetwork.chainName} ağına geçildi`)
     } catch (switchError) {
-      console.log('❌ Switch failed, attempting to add network...', switchError)
-      
-      // If the chain hasn't been added to MetaMask, add it
-      if (switchError.code === 4902 || switchError.message?.includes('not been added') || switchError.message?.includes('Unrecognized chain ID')) {
+      if (isChainNotAddedError(switchError)) {
+        // Switch 4902 verdi (ağ eklenmemiş); add tekrar dene (kullanıcı ilk add'i reddetmiş olabilir)
         try {
-          console.log(`➕ Adding ${targetNetwork.chainName} network to wallet...`)
-          
-          const addChainParams = {
-            chainId: `0x${targetChainId.toString(16)}`,
-            chainName: targetNetwork.chainName,
-            nativeCurrency: targetNetwork.nativeCurrency,
-            rpcUrls: rpcUrls,
-          }
-          
-          // Only add blockExplorerUrls if we have them
-          if (blockExplorerUrls.length > 0) {
-            addChainParams.blockExplorerUrls = blockExplorerUrls
-          }
-          
-          console.log('Network config:', addChainParams)
-          
+          console.log(`➕ Ağ cüzdana ekleniyor: ${targetNetwork.chainName}...`)
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
-            params: [addChainParams],
+            params: [addPayload],
           })
-          console.log(`✅ Successfully added ${targetNetwork.chainName} network`)
-          
-          // Wait a bit for the network to be added
-          await new Promise(resolve => setTimeout(resolve, 1000))
-          
-          // After adding, automatically switch to the network
-          console.log(`🔄 Automatically switching to ${targetNetwork.chainName} network...`)
-          try {
-            await window.ethereum.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: `0x${targetChainId.toString(16)}` }],
-            })
-            console.log(`✅ Successfully switched to ${targetNetwork.chainName} network after adding`)
-          } catch (retrySwitchError) {
-            console.error(`❌ Failed to switch after adding network:`, retrySwitchError)
-            // Some wallets automatically switch after adding, so check if we're already on the network
-            const newChainId = await window.ethereum.request({ method: 'eth_chainId' })
-            const newChainIdDecimal = parseInt(newChainId, 16)
-            if (newChainIdDecimal === targetChainId) {
-              console.log(`✅ Already on ${targetNetwork.chainName} network (wallet auto-switched)`)
-              return
-            }
-            // If user rejected, don't throw error
-            if (retrySwitchError.code !== 4001) {
-              throw retrySwitchError
-            }
-          }
+          await new Promise(resolve => setTimeout(resolve, 500))
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: chainIdHex }],
+          })
+          console.log(`✅ Ağ eklendi ve geçiş yapıldı`)
         } catch (addError) {
-          console.error(`❌ Failed to add ${targetNetwork.chainName} network:`, addError)
-          if (addError.code === 4001) {
+          if (Number(addError?.code) === 4001 || String(addError?.code) === '4001') {
             throw new Error('Network addition was cancelled')
           }
-          // Check for RPC URL format error
-          if (addError.message?.includes('rpcUrls') || addError.code === -32602) {
-            throw new Error(`Invalid RPC URL format for ${targetNetwork.chainName}. RPC URLs must be valid HTTPS URLs.`)
-          }
-          throw new Error(`Failed to add ${targetNetwork.chainName} network to your wallet: ${addError.message || 'Unknown error'}`)
+          throw new Error(`Ağ eklenemedi: ${addError?.message || 'Unknown error'}`)
         }
-      } else if (switchError.code === 4001 || switchError.message?.includes('not been authorized') || switchError.message?.includes('cancelled')) {
-        // User rejected the request
-        console.log('ℹ️ Network switch request was rejected by user')
+      } else if (Number(switchError?.code) === 4001 || String(switchError?.code) === '4001' || (switchError?.message || '').toLowerCase().includes('reject')) {
         throw new Error('Network switch was cancelled')
       } else {
         throw switchError

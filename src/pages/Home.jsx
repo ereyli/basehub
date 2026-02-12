@@ -9,8 +9,8 @@ import TwitterShareButton from '../components/TwitterShareButton'
 import DailyQuestSystem from '../components/DailyQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
-import { NETWORKS } from '../config/networks'
-import { getProductsForHome } from '../config/products'
+import { NETWORKS, getNetworkKey } from '../config/networks'
+import { getProductsForHome, getProductsForHomeByNetwork } from '../config/products'
 import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat, Sparkles, RotateCcw, Gift } from 'lucide-react'
 
 const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Search, Shield, Trash2, Star, Layers, Package, Factory, Rocket, Image, Sparkles, ArrowLeftRight, Repeat }
@@ -358,6 +358,20 @@ const Home = () => {
             style={baseStyle} 
           />
         )}
+        {networks.includes('arc-restnet') && (
+          <img 
+            src="/arc-testnet-logo.jpg" 
+            alt="Arc Testnet" 
+            style={{ ...baseStyle, objectFit: 'contain' }} 
+          />
+        )}
+        {networks.includes('robinhood-testnet') && (
+          <img 
+            src="/robinhood-testnet-logo.png" 
+            alt="Robinhood Chain Testnet" 
+            style={{ ...baseStyle, objectFit: 'contain' }} 
+          />
+        )}
       </div>
     )
   }
@@ -507,7 +521,8 @@ const Home = () => {
 
   const games = React.useMemo(() => {
     const iconStyle = { width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }
-    return getProductsForHome().map(p => {
+    const products = getProductsForHomeByNetwork(chainId, getNetworkKey)
+    return products.map(p => {
       const icon = p.iconImage
         ? <img src={p.iconImage} alt={p.title} loading="lazy" style={iconStyle} />
         : (() => { const Icon = LUCIDE_ICONS[p.icon]; return Icon ? <Icon size={40} style={{ color: 'white' }} /> : null })()
@@ -526,7 +541,7 @@ const Home = () => {
         isPayment: p.isPayment ?? false,
       }
     })
-  }, [])
+  }, [chainId])
 
   return (
     <div className="home" style={{ 
@@ -574,6 +589,8 @@ const Home = () => {
                 { key: 'INK',   label: 'InkChain', logo: '/ink-logo.jpg',    chainId: NETWORKS.INKCHAIN.chainId },
                 { key: 'SONE',  label: 'Soneium',  logo: '/soneium-logo.jpg', chainId: NETWORKS.SONEIUM.chainId },
                 { key: 'KAT',   label: 'Katana',   logo: '/katana-logo.jpg', chainId: NETWORKS.KATANA.chainId },
+                ...(NETWORKS.ARC_RESTNET ? [{ key: 'ARC', label: 'Arc Testnet', logo: '/arc-testnet-logo.jpg', chainId: NETWORKS.ARC_RESTNET.chainId }] : []),
+                ...(NETWORKS.ROBINHOOD_TESTNET ? [{ key: 'RH', label: 'Robinhood Testnet', logo: '/robinhood-testnet-logo.png', chainId: NETWORKS.ROBINHOOD_TESTNET.chainId }] : []),
               ].map((net) => {
                 const isActive = chainId === net.chainId
                 return (
@@ -966,7 +983,7 @@ const Home = () => {
                     <Gamepad2 size={compactStyles.iconSize} />
                   </div>
                   <h2 style={compactStyles.categoryTitle}>GAMING</h2>
-                  {!isCompactMode && renderNetworkLogos(['base', 'ink', 'soneium', 'katana'])}
+                  {!isCompactMode && renderNetworkLogos(['base', 'ink', 'soneium', 'katana', 'arc-restnet', 'robinhood-testnet'])}
                 </div>
                 <div style={compactStyles.cardGrid}>
                   {games.filter(g => ['flip', 'dice', 'slot', 'lucky'].includes(g.id)).map((game) => (
@@ -1058,7 +1075,7 @@ const Home = () => {
                     <Rocket size={compactStyles.iconSize} />
                   </div>
                   <h2 style={compactStyles.categoryTitle}>DEPLOY</h2>
-                  {!isCompactMode && renderNetworkLogos(['base', 'ink', 'soneium', 'katana'])}
+                  {!isCompactMode && renderNetworkLogos(['base', 'ink', 'soneium', 'katana', 'arc-restnet', 'robinhood-testnet'])}
                 </div>
                 <div style={compactStyles.cardGrid}>
                   {games.filter(g => ['deploy', 'deploy-nft', 'deploy-erc721', 'deploy-erc1155'].includes(g.id)).sort((a, b) => {

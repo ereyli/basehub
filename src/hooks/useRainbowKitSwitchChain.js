@@ -3,6 +3,14 @@ import { useNetworkCheck } from './useNetworkCheck'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { useRef } from 'react'
 
+function isChainNotAddedError(err) {
+  if (!err) return false
+  const code = err.code ?? err.cause?.code ?? err.error?.code
+  const msg = (err.message || err.cause?.message || err.error?.message || '').toLowerCase()
+  if (Number(code) === 4902 || String(code) === '4902') return true
+  return msg.includes('not been added') || msg.includes('unrecognized chain') || msg.includes('unknown chain')
+}
+
 /**
  * Custom hook that wraps Wagmi's useSwitchChain to automatically add networks
  * when switching fails due to network not being added
@@ -38,14 +46,8 @@ export const useRainbowKitSwitchChain = () => {
     } catch (error) {
       console.log('🔄 RainbowKit switchChain failed, attempting auto-add network...', error)
       
-      // Check if error is due to network not being added
-      if (
-        error?.code === 4902 || 
-        error?.message?.includes('not been added') || 
-        error?.message?.includes('Unrecognized chain ID') ||
-        error?.cause?.code === 4902 ||
-        error?.cause?.message?.includes('not been added')
-      ) {
+      // Check if error is due to network not being added (4902 or equivalent)
+      if (isChainNotAddedError(error)) {
         console.log('➕ Network not added, attempting to add automatically...')
         try {
           // Use our switchToNetwork which automatically adds the network

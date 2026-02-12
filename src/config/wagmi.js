@@ -12,7 +12,7 @@ const inkChain = defineChain({
   nativeCurrency: NETWORKS.INKCHAIN.nativeCurrency,
   rpcUrls: {
     default: {
-      http: NETWORKS.INKCHAIN.rpcUrls[0], // Use first RPC URL
+      http: NETWORKS.INKCHAIN.rpcUrls,
     },
   },
   blockExplorers: {
@@ -30,7 +30,7 @@ const soneium = defineChain({
   nativeCurrency: NETWORKS.SONEIUM.nativeCurrency,
   rpcUrls: {
     default: {
-      http: NETWORKS.SONEIUM.rpcUrls[0], // Use first RPC URL
+      http: NETWORKS.SONEIUM.rpcUrls,
     },
   },
   blockExplorers: {
@@ -48,7 +48,7 @@ const katana = defineChain({
   nativeCurrency: NETWORKS.KATANA.nativeCurrency,
   rpcUrls: {
     default: {
-      http: NETWORKS.KATANA.rpcUrls[0], // Use first RPC URL
+      http: NETWORKS.KATANA.rpcUrls,
     },
   },
   blockExplorers: {
@@ -59,9 +59,45 @@ const katana = defineChain({
   },
 })
 
+// Arc Testnet - USDC as native/gas
+const arcRestnet = defineChain({
+  id: NETWORKS.ARC_RESTNET.chainId,
+  name: NETWORKS.ARC_RESTNET.chainName,
+  nativeCurrency: NETWORKS.ARC_RESTNET.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.ARC_RESTNET.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Arc Scan',
+      url: NETWORKS.ARC_RESTNET.blockExplorerUrls[0],
+    },
+  },
+})
+
+// Robinhood Chain Testnet
+const robinhoodTestnet = defineChain({
+  id: NETWORKS.ROBINHOOD_TESTNET.chainId,
+  name: NETWORKS.ROBINHOOD_TESTNET.chainName,
+  nativeCurrency: NETWORKS.ROBINHOOD_TESTNET.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.ROBINHOOD_TESTNET.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Robinhood Explorer',
+      url: NETWORKS.ROBINHOOD_TESTNET.blockExplorerUrls[0],
+    },
+  },
+})
+
 // Wagmi config with multiple wallet support
 export const config = createConfig({
-  chains: [base, inkChain, soneium, katana],
+  chains: [base, inkChain, soneium, katana, arcRestnet, robinhoodTestnet],
   transports: {
     [base.id]: http(),
     [inkChain.id]: http(NETWORKS.INKCHAIN.rpcUrls[0], {
@@ -76,6 +112,16 @@ export const config = createConfig({
     }),
     [katana.id]: http(NETWORKS.KATANA.rpcUrls[0], {
       timeout: 30000, // 30 seconds timeout
+      retryCount: 3,
+      retryDelay: 1000,
+    }),
+    [arcRestnet.id]: http(NETWORKS.ARC_RESTNET.rpcUrls[0], {
+      timeout: 30000,
+      retryCount: 3,
+      retryDelay: 1000,
+    }),
+    [robinhoodTestnet.id]: http(NETWORKS.ROBINHOOD_TESTNET.rpcUrls[0], {
+      timeout: 30000,
       retryCount: 3,
       retryDelay: 1000,
     }),

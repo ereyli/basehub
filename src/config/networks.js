@@ -1,10 +1,13 @@
 // Multi-network configuration
-// Base and InkChain network configs
+// Mainnet + Testnet. Testnet ağları ekledikçe CONTRACT_ADDRESSES'a da ekleyin.
+// product.networks içinde kullanılan key'ler: 'base', 'ink', 'soneium', 'katana' (+ testnet key'leri)
 
 export const NETWORKS = {
   BASE: {
     chainId: 8453,
+    networkKey: 'base', // product.networks ile eşleşir
     chainName: 'Base',
+    isTestnet: false,
     nativeCurrency: {
       name: 'Ethereum',
       symbol: 'ETH',
@@ -20,51 +23,87 @@ export const NETWORKS = {
     isFarcasterSupported: true, // Only Base supports Farcaster
   },
   INKCHAIN: {
-    chainId: 57073, // InkChain mainnet chain ID (update if different)
+    chainId: 57073,
+    networkKey: 'ink',
     chainName: 'InkChain',
+    isTestnet: false,
     nativeCurrency: {
       name: 'Ink',
       symbol: 'INK',
       decimals: 18,
     },
     rpcUrls: [
-      'https://rpc-gel.inkonchain.com', // Primary InkChain RPC endpoint
-      'https://rpc-qnd.inkonchain.com', // Backup InkChain RPC endpoint
+      'https://rpc-gel.inkonchain.com',
+      'https://rpc-qnd.inkonchain.com',
     ],
-    blockExplorerUrls: ['https://explorer.inkonchain.com'], // InkChain explorer
+    blockExplorerUrls: ['https://explorer.inkonchain.com'],
     iconUrls: [],
     isFarcasterSupported: false,
   },
   SONEIUM: {
-    chainId: 1868, // Soneium mainnet chain ID
+    chainId: 1868,
+    networkKey: 'soneium',
     chainName: 'Soneium',
+    isTestnet: false,
     nativeCurrency: {
       name: 'Ethereum',
       symbol: 'ETH',
       decimals: 18,
     },
-    rpcUrls: [
-      'https://rpc.soneium.org', // Primary Soneium RPC endpoint
-    ],
-    blockExplorerUrls: ['https://soneium.blockscout.com'], // Soneium explorer
+    rpcUrls: ['https://rpc.soneium.org'],
+    blockExplorerUrls: ['https://soneium.blockscout.com'],
     iconUrls: [],
     isFarcasterSupported: false,
   },
   KATANA: {
-    chainId: 747474, // Katana mainnet chain ID
+    chainId: 747474,
+    networkKey: 'katana',
     chainName: 'Katana',
+    isTestnet: false,
     nativeCurrency: {
       name: 'Ethereum',
       symbol: 'ETH',
       decimals: 18,
     },
-    rpcUrls: [
-      'https://rpc.katana.network', // Primary Katana RPC endpoint
-    ],
-    blockExplorerUrls: ['https://explorer.katanarpc.com'], // Katana explorer
+    rpcUrls: ['https://rpc.katana.network'],
+    blockExplorerUrls: ['https://explorer.katanarpc.com'],
     iconUrls: [],
     isFarcasterSupported: false,
-  }
+  },
+  // Arc Testnet - para birimi USDC, cüzdanda yoksa otomatik "Ağ ekle" onayı açılır
+  ARC_RESTNET: {
+    chainId: 5042002, // 0x4cef52
+    networkKey: 'arc-restnet',
+    chainName: 'Arc Testnet',
+    isTestnet: true,
+    nativeCurrency: {
+      name: 'USDC',
+      symbol: 'USDC',
+      decimals: 6,
+    },
+    rpcUrls: [
+      'https://arc-testnet.drpc.org',
+      'https://rpc.testnet.arc.network',
+    ],
+    blockExplorerUrls: ['https://testnet.arcscan.app'],
+    iconUrls: [],
+    isFarcasterSupported: false,
+  },
+  ROBINHOOD_TESTNET: {
+    chainId: 46630,
+    networkKey: 'robinhood-testnet',
+    chainName: 'Robinhood Chain Testnet',
+    isTestnet: true,
+    nativeCurrency: {
+      name: 'Ethereum',
+      symbol: 'ETH',
+      decimals: 18,
+    },
+    rpcUrls: ['https://rpc.testnet.chain.robinhood.com'],
+    blockExplorerUrls: ['https://explorer.testnet.chain.robinhood.com'],
+    iconUrls: [],
+    isFarcasterSupported: false,
+  },
 }
 
 // Contract addresses by network
@@ -105,7 +144,25 @@ export const CONTRACT_ADDRESSES = {
     DICE_ROLL: '0xCaA2a1FB271AE0a04415654e62FB26BDd1AdAC64',
     SLOT_GAME: '0xB2b2c587E51175a2aE4713d8Ea68A934a8527a4b',
     BASEHUB_DEPLOYER: '0x3Ce4AbC8c6921Cd84C76848200D35BA70609aB69',
-  }
+  },
+  ARC_RESTNET: {
+    DICE_ROLL: '0x5E86e9Cd50E7F64b692b90FaE1487d2F6ED1AbA9',
+    FLIP_GAME: '0x1fe43a182B2a4A5845B91bA29Cd7E7EEBC4b68Df',
+    GM_GAME: '0x74A2C6466d98253cA932fe6a6CcB811d4d7d5784',
+    GN_GAME: '0x933570b7A6B872e1be0A1585AACcDbf609C5F981',
+    LUCKY_NUMBER: '0xA15CE1eAdA8E34ec67d82f8D7aB242a42C767C2d',
+    SLOT_GAME: '0xB2b2c587E51175a2aE4713d8Ea68A934a8527a4b',
+    BASEHUB_DEPLOYER: '0x84e4dD821c8F848470Fc49Def3B14Fc870Fa97f0',
+  },
+  ROBINHOOD_TESTNET: {
+    DICE_ROLL: '0x5E86e9Cd50E7F64b692b90FaE1487d2F6ED1AbA9',
+    FLIP_GAME: '0x1fe43a182B2a4A5845B91bA29Cd7E7EEBC4b68Df',
+    GM_GAME: '0x74A2C6466d98253cA932fe6a6CcB811d4d7d5784',
+    GN_GAME: '0x933570b7A6B872e1be0A1585AACcDbf609C5F981',
+    LUCKY_NUMBER: '0xA15CE1eAdA8E34ec67d82f8D7aB242a42C767C2d',
+    SLOT_GAME: '0xB2b2c587E51175a2aE4713d8Ea68A934a8527a4b',
+    BASEHUB_DEPLOYER: '0x84e4dD821c8F848470Fc49Def3B14Fc870Fa97f0',
+  },
 }
 
 // Get network config by chain ID
@@ -113,18 +170,32 @@ export const getNetworkConfig = (chainId) => {
   return Object.values(NETWORKS).find(net => net.chainId === chainId) || NETWORKS.BASE
 }
 
+// NETWORKS objesindeki key (BASE, INKCHAIN, BASE_SEPOLIA vb.) - CONTRACT_ADDRESSES ile eşleşir
+export const getNetworkConfigKey = (chainId) => {
+  const entry = Object.entries(NETWORKS).find(([, net]) => net.chainId === chainId)
+  return entry ? entry[0] : 'BASE'
+}
+
+// product.networks ile kullanılan key: 'base', 'ink', 'base-sepolia' vb.
+export const getNetworkKey = (chainId) => {
+  const net = getNetworkConfig(chainId)
+  return net?.networkKey ?? 'base'
+}
+
+// Sadece mainnet ağları (NetworkSelector Mainnet grubu)
+export const getMainnetNetworks = () => {
+  return Object.values(NETWORKS).filter(net => net && net.isTestnet === false)
+}
+
+// Sadece testnet ağları (NetworkSelector Testnet grubu). Şu an boş; ekledikçe dolacak.
+export const getTestnetNetworks = () => {
+  return Object.values(NETWORKS).filter(net => net && net.isTestnet === true)
+}
+
 // Get contract address for current network
 export const getContractAddressByNetwork = (contractName, chainId) => {
-  const network = getNetworkConfig(chainId)
-  let networkKey = 'BASE'
-  if (network.chainId === NETWORKS.INKCHAIN.chainId) {
-    networkKey = 'INKCHAIN'
-  } else if (network.chainId === NETWORKS.SONEIUM.chainId) {
-    networkKey = 'SONEIUM'
-  } else if (network.chainId === NETWORKS.KATANA.chainId) {
-    networkKey = 'KATANA'
-  }
-  return CONTRACT_ADDRESSES[networkKey]?.[contractName] || null
+  const configKey = getNetworkConfigKey(chainId)
+  return CONTRACT_ADDRESSES[configKey]?.[contractName] ?? null
 }
 
 // Get all supported networks
@@ -153,4 +224,30 @@ export const getTransactionExplorerUrl = (chainId, txHash) => {
 export const getAddressExplorerUrl = (chainId, address) => {
   const explorerUrl = getExplorerUrl(chainId)
   return `${explorerUrl}/address/${address}`
+}
+
+/** EIP-3085 params for wallet_addEthereumChain. Returns null if chainId not supported. MetaMask requires rpcUrls to be string[]. */
+export const getAddChainParams = (chainId) => {
+  const network = getNetworkConfig(chainId)
+  if (!network) return null
+  const firstRpc = Array.isArray(network.rpcUrls) && network.rpcUrls[0] && String(network.rpcUrls[0]).startsWith('https://')
+    ? String(network.rpcUrls[0])
+    : null
+  if (!firstRpc) return null
+
+  const params = {
+    chainId: `0x${Number(chainId).toString(16)}`,
+    chainName: String(network.chainName),
+    nativeCurrency: {
+      name: String(network.nativeCurrency.name),
+      symbol: String(network.nativeCurrency.symbol),
+      decimals: Number(network.nativeCurrency.decimals),
+    },
+    rpcUrls: [firstRpc],
+  }
+  const firstExplorer = network.blockExplorerUrls?.[0] || (Array.isArray(network.blockExplorerUrls) ? network.blockExplorerUrls[0] : null)
+  if (firstExplorer && String(firstExplorer).startsWith('http')) {
+    params.blockExplorerUrls = [String(firstExplorer)]
+  }
+  return params
 }

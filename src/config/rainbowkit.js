@@ -10,7 +10,7 @@ const inkChain = defineChain({
   nativeCurrency: NETWORKS.INKCHAIN.nativeCurrency,
   rpcUrls: {
     default: {
-      http: NETWORKS.INKCHAIN.rpcUrls[0], // Use first (primary) RPC URL
+      http: NETWORKS.INKCHAIN.rpcUrls,
     },
   },
   blockExplorers: {
@@ -30,7 +30,7 @@ const soneium = defineChain({
   nativeCurrency: NETWORKS.SONEIUM.nativeCurrency,
   rpcUrls: {
     default: {
-      http: NETWORKS.SONEIUM.rpcUrls[0], // Use first (primary) RPC URL
+      http: NETWORKS.SONEIUM.rpcUrls,
     },
   },
   blockExplorers: {
@@ -50,7 +50,7 @@ const katana = defineChain({
   nativeCurrency: NETWORKS.KATANA.nativeCurrency,
   rpcUrls: {
     default: {
-      http: NETWORKS.KATANA.rpcUrls[0], // Use first (primary) RPC URL
+      http: NETWORKS.KATANA.rpcUrls,
     },
   },
   blockExplorers: {
@@ -63,11 +63,51 @@ const katana = defineChain({
   iconBackground: '#ffffff',
 })
 
+// Arc Testnet for RainbowKit
+const arcRestnet = defineChain({
+  id: NETWORKS.ARC_RESTNET.chainId,
+  name: NETWORKS.ARC_RESTNET.chainName,
+  nativeCurrency: NETWORKS.ARC_RESTNET.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.ARC_RESTNET.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Arc Scan',
+      url: NETWORKS.ARC_RESTNET.blockExplorerUrls[0],
+    },
+  },
+  iconUrl: '/arc-testnet-logo.jpg',
+  iconBackground: '#ffffff',
+})
+
+// Robinhood Chain Testnet for RainbowKit
+const robinhoodTestnet = defineChain({
+  id: NETWORKS.ROBINHOOD_TESTNET.chainId,
+  name: NETWORKS.ROBINHOOD_TESTNET.chainName,
+  nativeCurrency: NETWORKS.ROBINHOOD_TESTNET.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.ROBINHOOD_TESTNET.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Robinhood Explorer',
+      url: NETWORKS.ROBINHOOD_TESTNET.blockExplorerUrls[0],
+    },
+  },
+  iconUrl: '/robinhood-testnet-logo.png',
+  iconBackground: '#C2FF00',
+})
+
 // RainbowKit configuration for web users only
 export const rainbowkitConfig = getDefaultConfig({
   appName: 'BaseHub',
   projectId: '21fef48091f12692cad574a6f7753643', // Temporary project ID - replace with your own
-  chains: [base, inkChain, soneium, katana], // Base, InkChain, Soneium, and Katana
+  chains: [base, inkChain, soneium, katana, arcRestnet, robinhoodTestnet],
   ssr: false, // Client-side rendering
 })
 

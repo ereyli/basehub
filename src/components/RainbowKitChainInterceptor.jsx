@@ -2,6 +2,15 @@ import { useEffect } from 'react'
 import { useAccount, useChainId } from 'wagmi'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
+import { getAddChainParams } from '../config/networks'
+
+function isChainNotAddedError(err) {
+  if (!err) return false
+  const code = err.code ?? err.cause?.code ?? err.error?.code
+  const msg = (err.message || err.cause?.message || err.error?.message || '').toLowerCase()
+  if (Number(code) === 4902 || String(code) === '4902') return true
+  return msg.includes('not been added') || msg.includes('unrecognized chain') || msg.includes('unknown chain')
+}
 
 /**
  * Component that intercepts RainbowKit's chain switching and automatically adds networks
@@ -91,28 +100,30 @@ export const RainbowKitChainInterceptor = () => {
             try {
               return await originalRequest(...args)
             } catch (error) {
-              // If chain not added (error 4902), add it automatically
-              if (
-                error.code === 4902 || 
-                error.message?.includes('not been added') || 
-                error.message?.includes('Unrecognized chain ID')
-              ) {
+              // If chain not added (4902), add it here directly to avoid re-entering switchToNetwork
+              if (isChainNotAddedError(error)) {
                 const chainIdHex = args[0]?.params?.[0]?.chainId
                 if (chainIdHex) {
                   const targetChainId = parseInt(chainIdHex, 16)
-                  console.log('🔄 Auto-adding network:', targetChainId)
-                  isIntercepting = true
-                  try {
-                    await switchToNetwork(targetChainId)
-                    console.log('✅ Network auto-added, retrying switch...')
-                    // Retry the original request
-                    const result = await originalRequest(...args)
-                    isIntercepting = false
-                    return result
-                  } catch (addError) {
-                    isIntercepting = false
-                    console.error('❌ Failed to auto-add network:', addError)
-                    throw addError
+                  const addParams = getAddChainParams(targetChainId)
+                  if (addParams) {
+                    console.log('🔄 Auto-adding network:', targetChainId)
+                    isIntercepting = true
+                    try {
+                      const payload = JSON.parse(JSON.stringify(addParams))
+                      await originalRequest({
+                        method: 'wallet_addEthereumChain',
+                        params: [payload],
+                      })
+                      console.log('✅ Network added, switching...')
+                      const result = await originalRequest(...args)
+                      isIntercepting = false
+                      return result
+                    } catch (addError) {
+                      isIntercepting = false
+                      console.error('❌ Failed to auto-add network:', addError)
+                      throw addError
+                    }
                   }
                 }
               }

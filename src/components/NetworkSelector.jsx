@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useAccount } from 'wagmi'
-import { NETWORKS, getNetworkConfig } from '../config/networks'
+import { NETWORKS, getNetworkConfig, getMainnetNetworks, getTestnetNetworks } from '../config/networks'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { Wifi, ChevronDown } from 'lucide-react'
 
@@ -66,7 +66,9 @@ const NetworkSelector = () => {
   // If not connected, show network selector anyway (user can see available networks)
   // But make it clear they need to connect
   
-  const supportedNetworks = Object.values(NETWORKS)
+  const mainnetNetworks = getMainnetNetworks()
+  const testnetNetworks = getTestnetNetworks()
+  const supportedNetworks = mainnetNetworks.concat(testnetNetworks)
   
   const handleNetworkSelect = async (targetChainId) => {
     if (!isConnected) {
@@ -215,6 +217,35 @@ const NetworkSelector = () => {
               objectFit: 'cover'
             }}
           />
+        ) : currentNetwork.chainId === NETWORKS.ARC_RESTNET?.chainId ? (
+          <img 
+            src="/arc-testnet-logo.jpg" 
+            alt="Arc Testnet" 
+            style={{
+              width: 20,
+              height: 20,
+              minWidth: 20,
+              minHeight: 20,
+              borderRadius: '6px',
+              objectFit: 'contain',
+              display: 'block',
+              backgroundColor: 'rgba(255,255,255,0.1)'
+            }}
+          />
+        ) : currentNetwork.chainId === NETWORKS.ROBINHOOD_TESTNET?.chainId ? (
+          <img 
+            src="/robinhood-testnet-logo.png" 
+            alt="Robinhood Chain Testnet" 
+            style={{
+              width: 20,
+              height: 20,
+              minWidth: 20,
+              minHeight: 20,
+              borderRadius: '6px',
+              objectFit: 'contain',
+              display: 'block'
+            }}
+          />
         ) : (
           <img 
             src="/base-logo.jpg" 
@@ -253,121 +284,76 @@ const NetworkSelector = () => {
             overflow: 'hidden'
           }}
         >
-          {supportedNetworks.map(network => {
-            const isActive = network.chainId === currentChainId
-            return (
-              <button
-                key={network.chainId}
-                onClick={() => handleNetworkSelect(network.chainId)}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '12px 16px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: isActive ? '#60a5fa' : '#e2e8f0',
-                  background: isActive 
-                    ? 'rgba(59, 130, 246, 0.2)' 
-                    : 'transparent',
-                  border: 'none',
-                  cursor: isActive ? 'default' : 'pointer',
-                  transition: 'all 0.2s ease',
-                  textAlign: 'left'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)'
-                    e.currentTarget.style.color = '#93c5fd'
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.background = 'transparent'
-                    e.currentTarget.style.color = '#e2e8f0'
-                  }
-                }}
-              >
-                {network.chainId === NETWORKS.BASE.chainId ? (
-                  <img 
-                    src="/base-logo.jpg" 
-                    alt="Base" 
-                    style={{
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '6px',
-                      objectFit: 'cover',
-                      opacity: isActive ? 1 : 0.6
-                    }}
-                  />
-                ) : network.chainId === NETWORKS.INKCHAIN.chainId ? (
-                  <img 
-                    src="/ink-logo.jpg" 
-                    alt="InkChain" 
-                    style={{
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '6px',
-                      objectFit: 'cover',
-                      opacity: isActive ? 1 : 0.6
-                    }}
-                  />
-                ) : network.chainId === NETWORKS.SONEIUM.chainId ? (
-                  <img 
-                    src="/soneium-logo.jpg" 
-                    alt="Soneium" 
-                    style={{
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '6px',
-                      objectFit: 'cover',
-                      opacity: isActive ? 1 : 0.6,
-                      display: 'block'
-                    }}
-                  />
-                ) : network.chainId === NETWORKS.KATANA.chainId ? (
-                  <img 
-                    src="/katana-logo.jpg" 
-                    alt="Katana" 
-                    style={{
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '6px',
-                      objectFit: 'cover',
-                      opacity: isActive ? 1 : 0.6,
-                      display: 'block'
-                    }}
-                  />
-                ) : (
-                  <img 
-                    src="/base-logo.jpg" 
-                    alt="Base" 
-                    style={{
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '6px',
-                      objectFit: 'cover',
-                      opacity: isActive ? 1 : 0.6
-                    }}
-                  />
-                )}
-                <span>{network.chainName}</span>
-                {isActive && (
-                  <span style={{
-                    marginLeft: 'auto',
-                    fontSize: '12px',
-                    color: '#60a5fa'
-                  }}>
-                    ✓
-                  </span>
-                )}
-              </button>
-            )
-          })}
+          {mainnetNetworks.length > 0 && (
+            <>
+              <div style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase' }}>Mainnet</div>
+              {mainnetNetworks.map(network => renderNetworkButton(network, currentChainId, handleNetworkSelect))}
+            </>
+          )}
+          {testnetNetworks.length > 0 && (
+            <>
+              <div style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', borderTop: '1px solid rgba(59, 130, 246, 0.2)' }}>Testnet</div>
+              {testnetNetworks.map(network => renderNetworkButton(network, currentChainId, handleNetworkSelect))}
+            </>
+          )}
         </div>
       )}
     </div>
+  )
+}
+
+function renderNetworkButton(network, currentChainId, handleNetworkSelect) {
+  const isActive = network.chainId === currentChainId
+  return (
+    <button
+      key={network.chainId}
+      onClick={() => handleNetworkSelect(network.chainId)}
+      style={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        padding: '12px 16px',
+        fontSize: '14px',
+        fontWeight: '500',
+        color: isActive ? '#60a5fa' : '#e2e8f0',
+        background: isActive ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+        border: 'none',
+        cursor: isActive ? 'default' : 'pointer',
+        transition: 'all 0.2s ease',
+        textAlign: 'left'
+      }}
+      onMouseEnter={(e) => {
+        if (!isActive) {
+          e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)'
+          e.currentTarget.style.color = '#93c5fd'
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isActive) {
+          e.currentTarget.style.background = 'transparent'
+          e.currentTarget.style.color = '#e2e8f0'
+        }
+      }}
+    >
+      {network.chainId === NETWORKS.BASE?.chainId ? (
+        <img src="/base-logo.jpg" alt="Base" style={{ width: '20px', height: '20px', borderRadius: '6px', objectFit: 'cover', opacity: isActive ? 1 : 0.6 }} />
+      ) : network.chainId === NETWORKS.INKCHAIN?.chainId ? (
+        <img src="/ink-logo.jpg" alt="InkChain" style={{ width: '20px', height: '20px', borderRadius: '6px', objectFit: 'cover', opacity: isActive ? 1 : 0.6 }} />
+      ) : network.chainId === NETWORKS.SONEIUM?.chainId ? (
+        <img src="/soneium-logo.jpg" alt="Soneium" style={{ width: '20px', height: '20px', borderRadius: '6px', objectFit: 'cover', opacity: isActive ? 1 : 0.6 }} />
+      ) : network.chainId === NETWORKS.KATANA?.chainId ? (
+        <img src="/katana-logo.jpg" alt="Katana" style={{ width: '20px', height: '20px', borderRadius: '6px', objectFit: 'cover', opacity: isActive ? 1 : 0.6 }} />
+      ) : network.chainId === NETWORKS.ARC_RESTNET?.chainId ? (
+        <img src="/arc-testnet-logo.jpg" alt="Arc Testnet" style={{ width: 20, height: 20, minWidth: 20, minHeight: 20, borderRadius: '6px', objectFit: 'contain', opacity: isActive ? 1 : 0.6, display: 'block', backgroundColor: 'rgba(255,255,255,0.1)' }} />
+      ) : network.chainId === NETWORKS.ROBINHOOD_TESTNET?.chainId ? (
+        <img src="/robinhood-testnet-logo.png" alt="Robinhood Chain Testnet" style={{ width: 20, height: 20, minWidth: 20, minHeight: 20, borderRadius: '6px', objectFit: 'contain', opacity: isActive ? 1 : 0.6, display: 'block' }} />
+      ) : (
+        <img src="/base-logo.jpg" alt="" style={{ width: '20px', height: '20px', borderRadius: '6px', objectFit: 'cover', opacity: isActive ? 1 : 0.6 }} />
+      )}
+      <span>{network.chainName}</span>
+      {isActive && <span style={{ marginLeft: 'auto', fontSize: '12px', color: '#60a5fa' }}>✓</span>}
+    </button>
   )
 }
 
