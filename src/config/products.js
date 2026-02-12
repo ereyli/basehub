@@ -30,10 +30,10 @@ export const MOBILE_MENU_IDS = ['home', 'swap', 'pumphub', 'flip', 'dice', 'wall
 
 /** Static menu entries (not in PRODUCTS) for mobile header */
 const MOBILE_STATIC_ITEMS = [
-  { id: 'home', path: '/', label: 'Ana Sayfa', color: '#3b82f6', icon: 'Home' },
+  { id: 'home', path: '/', label: 'Home', color: '#3b82f6', icon: 'Home' },
   { id: 'pumphub', path: '/pumphub', label: 'Pumphub', color: '#06b6d4', icon: 'Zap' },
-  { id: 'badges', path: '/badges', label: 'Rozetler', color: '#eab308', icon: 'Award' },
-  { id: 'profile', path: '/profile', label: 'Profil', color: '#14b8a6', icon: 'User' },
+  { id: 'badges', path: '/badges', label: 'Badges', color: '#eab308', icon: 'Award' },
+  { id: 'profile', path: '/profile', label: 'Profile', color: '#14b8a6', icon: 'User' },
 ]
 
 export const PRODUCTS = [

@@ -108,7 +108,7 @@ const AI_NFT_ABI = [
 ];
 
 // AI NFT Collection Contract Address (Base Mainnet)
-// Bu adres deploy edildikten sonra güncellenecek
+// Update this address after deploy
 const AI_NFT_CONTRACT_ADDRESS = getContractAddress();
 
 /**

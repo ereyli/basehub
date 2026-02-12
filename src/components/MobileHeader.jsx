@@ -139,7 +139,7 @@ const MobileHeader = () => {
         {/* Wallet Connection */}
         <div className="mobile-menu-wallet">
           <Wallet size={18} />
-          <span>Cüzdan Bağla</span>
+          <span>Connect Wallet</span>
           <div className="mobile-menu-wallet-btn">
             <ConnectButton 
               accountStatus="address"
@@ -153,7 +153,7 @@ const MobileHeader = () => {
         <div className="mobile-menu-stats">
           <div className="mobile-menu-stat">
             <Users size={16} />
-            <span className="mobile-stat-label">Kullanıcılar:</span>
+            <span className="mobile-stat-label">Users:</span>
             <span className="mobile-stat-value">{proofLoading ? '...' : totalUsers.toLocaleString()}</span>
           </div>
           {isConnected && (
@@ -169,7 +169,7 @@ const MobileHeader = () => {
         </div>
 
         {/* Menu Label */}
-        <div className="mobile-menu-label">HIZLI ERİŞİM</div>
+        <div className="mobile-menu-label">QUICK ACCESS</div>
 
         {/* Menu Items */}
         <nav className="mobile-menu-nav">

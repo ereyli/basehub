@@ -1,16 +1,15 @@
 
 
-* Kullanıcı prompt yazar,
-* Yapay zeka (örnek olarak placeholder AI) görseli üretir,
-* nft.storage’a yükler,
-* Remix’ten deploy ettiğin kontrata mint eder,
-* Görsel NFT olarak cüzdana düşer 💥
+* User writes a prompt,
+* AI (e.g. placeholder) generates the image,
+* Upload to nft.storage,
+* Mint to your Remix-deployed contract,
+* Image lands in wallet as NFT 💥
 
 ---
 
-## 🧠 Cursor Prompt – “AI NFT Launchpad” (senin senaryona özel)
-
-> Bunu **Cursor’a yapıştır** (tek komutla proje çıkaracak 👇)
+## 🧠 Cursor Prompt – “AI NFT Launchpad” 
+> Paste this into **Cursor** to generate the project 👇
 
 ````
 Create a complete Next.js + TypeScript + TailwindCSS dApp called "AI NFT Launchpad" where users can generate AI images and mint them as NFTs on Base network.

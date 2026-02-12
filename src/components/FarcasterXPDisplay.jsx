@@ -126,7 +126,7 @@ const FarcasterXPDisplay = () => {
       <div className="farcaster-header-bar not-connected">
         <div className="header-left">
           {!isHomePage && (
-            <button className="home-button" onClick={handleHomeClick} title="Ana Sayfa">
+            <button className="home-button" onClick={handleHomeClick} title="Home">
               <Home size={16} />
             </button>
           )}
@@ -166,7 +166,7 @@ const FarcasterXPDisplay = () => {
     <div className="farcaster-header-bar">
       <div className="header-left">
         {!isHomePage && (
-          <button className="home-button" onClick={handleHomeClick} title="Ana Sayfa">
+          <button className="home-button" onClick={handleHomeClick} title="Home">
             <Home size={16} />
           </button>
         )}

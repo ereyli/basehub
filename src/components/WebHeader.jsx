@@ -239,7 +239,7 @@ const WebHeader = () => {
             {/* User Profile */}
             {isConnected && <UserProfile />}
             
-            {/* RainbowKit Connect Button - mobilde kendi satırında */}
+            {/* RainbowKit Connect Button - own row on mobile */}
             <div className="header-wallet-wrap">
               <ConnectButton />
             </div>

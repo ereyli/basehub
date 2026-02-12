@@ -205,12 +205,12 @@ function FarcasterAppContent() {
     }
   }, [isInitialized, isReady])
 
-  // Farcaster app - Router'ı her zaman render et, loading overlay ile göster
+  // Farcaster app - always render Router, show loading overlay
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <GlobalErrorHandler />
       <div className="App farcaster-app">
-        {/* Loading overlay - sadece göster, Router'ı engelleme */}
+        {/* Loading overlay - show only, do not block Router */}
         {(!isInitialized || !isReady) && (
           <div style={{
             position: 'fixed',

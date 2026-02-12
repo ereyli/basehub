@@ -73,7 +73,7 @@ const XPDisplay = () => {
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-      setIsScrolled(scrollTop > 100) // Header ile aynı threshold
+      setIsScrolled(scrollTop > 100) // Same threshold as header
     }
 
     window.addEventListener('scroll', handleScroll)

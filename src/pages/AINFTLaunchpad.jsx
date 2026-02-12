@@ -964,15 +964,15 @@ export default function AINFTLaunchpad() {
                           marginBottom: '10px',
                           textAlign: 'center'
                         }}>
-                          Fiyat (adet aralığına göre)
+                          Pricing Tiers
                         </h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                           {[
-                            { range: '1 – 1.000', price: '0.001 ETH', active: quantity <= 1000 },
-                            { range: '1.001 – 2.000', price: '0.002 ETH', active: quantity > 1000 && quantity <= 2000 },
-                            { range: '2.001 – 4.000', price: '0.004 ETH', active: quantity > 2000 && quantity <= 4000 },
-                            { range: '4.001 – 8.000', price: '0.008 ETH', active: quantity > 4000 && quantity <= 8000 },
-                            { range: '8.001 – 10.000', price: '0.01 ETH', active: quantity > 8000 }
+                            { range: '1 – 1,000', price: '0.001 ETH', active: quantity <= 1000 },
+                            { range: '1,001 – 2,000', price: '0.002 ETH', active: quantity > 1000 && quantity <= 2000 },
+                            { range: '2,001 – 4,000', price: '0.004 ETH', active: quantity > 2000 && quantity <= 4000 },
+                            { range: '4,001 – 8,000', price: '0.008 ETH', active: quantity > 4000 && quantity <= 8000 },
+                            { range: '8,001 – 10,000', price: '0.01 ETH', active: quantity > 8000 }
                           ].map((tier, idx) => (
                             <div
                               key={idx}
@@ -988,7 +988,7 @@ export default function AINFTLaunchpad() {
                               }}
                             >
                               <span style={{ color: '#1e293b', fontWeight: tier.active ? '600' : '500' }}>
-                                {tier.range} adet
+                                {tier.range} NFTs
                               </span>
                               <span style={{ color: '#0f172a', fontWeight: '600' }}>
                                 {tier.price}
@@ -1034,7 +1034,7 @@ export default function AINFTLaunchpad() {
                           }}
                         >
                           <ExternalLink size={14} />
-                          OpenSea’de görüntüle
+                          View on OpenSea
                         </a>
                       </div>
                     </div>
