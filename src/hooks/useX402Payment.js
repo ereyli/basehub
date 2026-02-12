@@ -8,6 +8,7 @@ import { config } from '../config/wagmi'
 import { isInFarcaster } from '../config/wagmi'
 import { addXP, recordTransaction } from '../utils/xpUtils'
 import { useQuestSystem } from './useQuestSystem'
+import { getX402ApiBase } from '../config/x402'
 
 export const useX402Payment = () => {
   const { data: walletClient } = useWalletClient() // Get wallet client from wagmi
@@ -84,15 +85,16 @@ export const useX402Payment = () => {
         MAX_PAYMENT_AMOUNT // Max allowed payment amount (safety check)
       )
 
-      console.log('📡 Making payment request to /api/x402-payment...')
+      const apiBase = getX402ApiBase()
+      console.log('📡 Making payment request to', `${apiBase}/api/x402-payment`)
       
       let response
       let transactionHash = null
       
       try {
         // x402-fetch sends the transaction and retries the request
-        // If it's in Farcaster, we may need to wait longer for transaction confirmation
-        response = await fetchWithPayment('/api/x402-payment', {
+        // Absolute URL so web (different origin) and Farcaster both hit the same API
+        response = await fetchWithPayment(`${apiBase}/api/x402-payment`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

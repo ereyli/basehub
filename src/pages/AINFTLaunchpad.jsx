@@ -695,7 +695,7 @@ export default function AINFTLaunchpad() {
                       <h3 style={{
                         fontSize: '18px',
                         fontWeight: 'bold',
-                        color: '#e5e7eb',
+                        color: '#1e293b',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
@@ -949,106 +949,94 @@ export default function AINFTLaunchpad() {
                         )}
                       </button>
 
+                      {/* Pricing Tiers - compact, always readable */}
+                      <div style={{
+                        marginTop: '20px',
+                        background: '#f8fafc',
+                        borderRadius: '12px',
+                        padding: '16px',
+                        border: '1px solid #e2e8f0'
+                      }}>
+                        <h4 style={{
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          color: '#334155',
+                          marginBottom: '10px',
+                          textAlign: 'center'
+                        }}>
+                          Fiyat (adet aralığına göre)
+                        </h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {[
+                            { range: '1 – 1.000', price: '0.001 ETH', active: quantity <= 1000 },
+                            { range: '1.001 – 2.000', price: '0.002 ETH', active: quantity > 1000 && quantity <= 2000 },
+                            { range: '2.001 – 4.000', price: '0.004 ETH', active: quantity > 2000 && quantity <= 4000 },
+                            { range: '4.001 – 8.000', price: '0.008 ETH', active: quantity > 4000 && quantity <= 8000 },
+                            { range: '8.001 – 10.000', price: '0.01 ETH', active: quantity > 8000 }
+                          ].map((tier, idx) => (
+                            <div
+                              key={idx}
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '10px 12px',
+                                background: tier.active ? 'rgba(59, 130, 246, 0.15)' : '#ffffff',
+                                border: tier.active ? '1px solid rgba(59, 130, 246, 0.5)' : '1px solid #e2e8f0',
+                                borderRadius: '8px',
+                                fontSize: '13px'
+                              }}
+                            >
+                              <span style={{ color: '#1e293b', fontWeight: tier.active ? '600' : '500' }}>
+                                {tier.range} adet
+                              </span>
+                              <span style={{ color: '#0f172a', fontWeight: '600' }}>
+                                {tier.price}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
 
-                      {/* Share Button */}
-                      <div style={{ 
-                        marginTop: '24px',
+                      {/* Secondary: Share & OpenSea - single row, less prominent */}
+                      <div style={{
+                        marginTop: '20px',
+                        paddingTop: '16px',
+                        borderTop: '1px solid #e2e8f0',
                         display: 'flex',
-                        justifyContent: 'center'
+                        flexWrap: 'wrap',
+                        justifyContent: 'center',
+                        gap: '12px',
+                        alignItems: 'center'
                       }}>
                         <ShareButton 
                           title="AI NFT Launchpad - BaseHub"
-                          description="Generate AI art and mint as NFT on Base network"
+                          description="Generate AI art and mint as NFT on Base"
                           gameType="nft"
                           customUrl="https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub"
                         />
-                      </div>
-
-                      {/* OpenSea Collection Link */}
-                      <div style={{ 
-                        marginTop: '20px',
-                        display: 'flex',
-                        justifyContent: 'center'
-                      }}>
                         <a
                           href="https://opensea.io/collection/ai-132443724"
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
-                            display: 'flex',
+                            display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '8px',
-                            padding: '12px 20px',
-                            background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                            color: 'white',
+                            gap: '6px',
+                            padding: '8px 14px',
+                            background: '#f1f5f9',
+                            color: '#475569',
                             textDecoration: 'none',
-                            borderRadius: '12px',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            transition: 'all 0.3s ease',
-                            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
-                          }}
-                          onMouseOver={(e) => {
-                            e.target.style.transform = 'translateY(-2px)';
-                            e.target.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
-                          }}
-                          onMouseOut={(e) => {
-                            e.target.style.transform = 'translateY(0)';
-                            e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                            borderRadius: '8px',
+                            fontSize: '13px',
+                            fontWeight: '500',
+                            border: '1px solid #e2e8f0'
                           }}
                         >
-                          <ExternalLink size={16} />
-                          View Collection on OpenSea
+                          <ExternalLink size={14} />
+                          OpenSea’de görüntüle
                         </a>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Pricing Tiers */}
-                  <div style={{
-                    marginTop: '24px',
-                    background: '#f8fafc',
-                    borderRadius: '12px',
-                    padding: '20px',
-                    border: '1px solid #e2e8f0'
-                  }}>
-                    <h4 style={{
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#475569',
-                      marginBottom: '12px',
-                      textAlign: 'center'
-                    }}>
-                      Pricing Tiers
-                    </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      {[
-                        { range: '1-1,000 NFTs', price: '0.001 ETH', active: quantity <= 1000 },
-                        { range: '1,001-2,000 NFTs', price: '0.002 ETH', active: quantity > 1000 && quantity <= 2000 },
-                        { range: '2,001-4,000 NFTs', price: '0.004 ETH', active: quantity > 2000 && quantity <= 4000 },
-                        { range: '4,001-8,000 NFTs', price: '0.008 ETH', active: quantity > 4000 && quantity <= 8000 },
-                        { range: '8,001-10,000 NFTs', price: '0.01 ETH', active: quantity > 8000 }
-                      ].map((tier, idx) => (
-                        <div
-                          key={idx}
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            padding: '10px 12px',
-                            background: tier.active ? 'rgba(59, 130, 246, 0.2)' : 'rgba(30, 41, 59, 0.8)',
-                            border: '1px solid #cbd5e1',
-                            borderRadius: '6px',
-                            fontSize: '12px'
-                          }}
-                        >
-                          <span style={{ color: '#475569', fontWeight: tier.active ? '600' : '400' }}>
-                            {tier.range}
-                          </span>
-                          <span style={{ color: '#475569', fontWeight: '600' }}>
-                            {tier.price}
-                          </span>
-                        </div>
-                      ))}
                     </div>
                   </div>
                 </div>

@@ -3,6 +3,7 @@ import { useAccount, useWalletClient } from 'wagmi'
 import { useSupabase } from './useSupabase'
 import { getNFTCount, addXP } from '../utils/xpUtils'
 import { wrapFetchWithPayment } from 'x402-fetch'
+import { getX402ApiBase } from '../config/x402'
 
 // XP reward segments with weighted probabilities and colors
 // Lower rewards have much higher chances, higher rewards are rare
@@ -195,7 +196,8 @@ export const useNFTWheel = () => {
       SPIN_COST_AMOUNT
     )
 
-    const response = await fetchWithPayment('/api/x402-nft-wheel', {
+    const apiBase = getX402ApiBase()
+    const response = await fetchWithPayment(`${apiBase}/api/x402-nft-wheel`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
