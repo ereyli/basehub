@@ -2,7 +2,6 @@
 import { useState } from 'react'
 import { useWalletClient, useAccount, useWriteContract, useReadContract, useChainId, useSwitchChain } from 'wagmi'
 import { wrapFetchWithPayment } from 'x402-fetch'
-import { getX402ApiBase } from '../config/x402'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { config } from '../config/wagmi'
 import { addXP, recordTransaction } from '../utils/xpUtils'
@@ -141,10 +140,9 @@ export const useAllowanceCleaner = () => {
         MAX_PAYMENT_AMOUNT
       )
 
-      const apiBase = getX402ApiBase()
-      console.log('💳 Making payment request to', `${apiBase}/api/x402-allowance-cleaner`)
+      console.log('💳 Making payment request to /api/x402-allowance-cleaner...')
 
-      const response = await fetchWithPayment(`${apiBase}/api/x402-allowance-cleaner`, {
+      const response = await fetchWithPayment('/api/x402-allowance-cleaner', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

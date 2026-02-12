@@ -4,7 +4,6 @@ import { useFarcaster } from '../contexts/FarcasterContext'
 import { useWalletClient, useChainId, useSwitchChain } from 'wagmi'
 import { wrapFetchWithPayment } from 'x402-fetch'
 import { NETWORKS } from '../config/networks'
-import { getX402ApiBase } from '../config/x402'
 
 export const useFeaturedProfiles = () => {
   const { user } = useFarcaster()
@@ -55,8 +54,8 @@ export const useFeaturedProfiles = () => {
         selectedPricing.maxPayment
       )
 
-      const apiBase = getX402ApiBase()
-      const endpoint = `${apiBase}/api/x402-featured-profile`
+      // Single endpoint for daily subscription only
+      const endpoint = `/api/x402-featured-profile`
       console.log('🔐 Initiating x402 payment for:', { endpoint, subscriptionType, maxPayment: selectedPricing.maxPayment })
       
       const response = await fetchWithPayment(endpoint, {
@@ -71,7 +70,7 @@ export const useFeaturedProfiles = () => {
           display_name: user.displayName,
           avatar_url: user.pfpUrl, // Farcaster SDK: pfpUrl (not pfp.url)
           bio: user.bio, // Farcaster SDK: bio (not bio.text)
-          description: profileData.description,
+          description: profileData.description, // Kullanıcının yazdığı açıklama
           wallet_address: user.walletAddress || profileData.walletAddress,
         }),
       })

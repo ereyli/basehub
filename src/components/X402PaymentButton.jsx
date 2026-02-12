@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAccount, useWalletClient } from 'wagmi';
 import { wrapFetchWithPayment } from 'x402-fetch';
-import { getX402ApiBase } from '../config/x402';
 
 const X402PaymentButton = () => {
   const { address, isConnected } = useAccount();
@@ -37,14 +36,16 @@ const X402PaymentButton = () => {
       // 3. Payment creation with wallet
       // 4. Retry with X-PAYMENT header
       
-      const apiBase = getX402ApiBase();
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://basehub-alpha.vercel.app';
+      
+      // Create wrapped fetch function with payment support
       const fetchWithPayment = wrapFetchWithPayment(
         fetch,
         walletClient,
         BigInt(100000), // 0.1 USDC in base units (6 decimals: 0.1 * 10^6)
       );
 
-      const response = await fetchWithPayment(`${apiBase}/api/x402-payment`, {
+      const response = await fetchWithPayment(`${apiUrl}/api/x402-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -6,7 +6,6 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { paymentMiddleware } from 'x402-hono'
 import { facilitator } from '@coinbase/x402'
-import { getRequestUrl } from './x402-request-url.js'
 
 const app = new Hono()
 
@@ -82,15 +81,20 @@ app.get('/', (c) => {
 
 // ==========================================
 // Apply x402 payment middleware (Base network)
-// Path must match client request URL for x402 verify (web + Farcaster)
 // ==========================================
-const CONTRACT_SECURITY_PATH = '/api/x402-contract-security'
 app.use(
   paymentMiddleware(
     RECEIVING_ADDRESS,
     {
-      'POST /': { price: PRICE, network: NETWORK, config: { description: 'BaseHub Contract Security Analysis - Pay 0.50 USDC on Base', mimeType: 'application/json', maxTimeoutSeconds: 600 } },
-      [`POST ${CONTRACT_SECURITY_PATH}`]: { price: PRICE, network: NETWORK, config: { description: 'BaseHub Contract Security Analysis - Pay 0.50 USDC on Base', mimeType: 'application/json', maxTimeoutSeconds: 600 } },
+      'POST /': {
+        price: PRICE,
+        network: NETWORK,
+        config: {
+          description: 'BaseHub Contract Security Analysis - Pay 0.50 USDC on Base',
+          mimeType: 'application/json',
+          maxTimeoutSeconds: 600,
+        },
+      },
     },
     facilitatorConfig
   )
@@ -803,8 +807,8 @@ function calculateSecurityScore(analysis) {
 // ==========================================
 // Contract Security Analysis endpoint
 // ==========================================
-app.post('*', async (c) => {
-  console.log('✅ POST endpoint called - payment verified by middleware')
+app.post('/', async (c) => {
+  console.log('✅ POST / endpoint called - payment verified by middleware')
   console.log('📋 Request details:', {
     method: c.req.method,
     url: c.req.url,
@@ -891,7 +895,10 @@ export default async function handler(req, res) {
       url: req.url,
     })
 
-    const fullUrl = getRequestUrl(req, CONTRACT_SECURITY_PATH)
+    const protocol = req.headers['x-forwarded-proto'] || 'https'
+    const host = req.headers.host || req.headers['x-forwarded-host'] || 'localhost'
+    const fullUrl = `${protocol}://${host}/`
+
     let body = undefined
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       if (req.body) {

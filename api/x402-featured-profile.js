@@ -7,7 +7,6 @@ import { paymentMiddleware } from 'x402-hono'
 import { facilitator } from '@coinbase/x402'
 import { cors } from 'hono/cors'
 import { createClient } from '@supabase/supabase-js'
-import { getRequestUrl } from './x402-request-url.js'
 
 const app = new Hono()
 
@@ -93,20 +92,27 @@ app.get('/', (c) => {
 // So we'll use the maximum price (monthly) and verify the amount in the handler
 // OR we can create separate middleware for each subscription type
 
-// Path must match client request URL for x402 verify (web + Farcaster)
-const FEATURED_PROFILE_PATH = '/api/x402-featured-profile'
+// Apply middleware for all POST requests (will use maximum price)
 app.use(
   paymentMiddleware(
     RECEIVING_ADDRESS,
     {
-      'POST /': { price: PRICING.daily.price, network: NETWORK, config: { description: 'BaseHub Featured Profile Registration - Daily', mimeType: 'application/json', maxTimeoutSeconds: 600 } },
-      [`POST ${FEATURED_PROFILE_PATH}`]: { price: PRICING.daily.price, network: NETWORK, config: { description: 'BaseHub Featured Profile Registration - Daily', mimeType: 'application/json', maxTimeoutSeconds: 600 } },
+      'POST /': {
+        price: PRICING.daily.price, // '$0.20' - daily price
+        network: NETWORK,
+        config: {
+          description: 'BaseHub Featured Profile Registration - Daily',
+          mimeType: 'application/json',
+          maxTimeoutSeconds: 600,
+        },
+      },
     },
     facilitatorConfig
   )
 )
 
-async function handlePost(c) {
+// Single POST endpoint that handles all subscription types via query parameter
+app.post('/', async (c) => {
   try {
     // Only daily subscription is available
     const subscriptionType = 'daily'
@@ -121,9 +127,7 @@ async function handlePost(c) {
       error: 'Invalid request body' 
     }, 400)
   }
-}
-app.post('/', handlePost)
-app.post(FEATURED_PROFILE_PATH, handlePost)
+})
 
 // ==========================================
 // Profile Registration Handler
@@ -269,10 +273,24 @@ async function handleProfileRegistration(c, subscriptionType, pricing) {
   }
 }
 
-// Vercel handler - URL must match client for x402 verify
+// Vercel handler
 export default async function handler(req, res) {
   try {
-    const fullUrl = getRequestUrl(req, FEATURED_PROFILE_PATH)
+    const protocol = req.headers['x-forwarded-proto'] || 'https'
+    const host = req.headers.host || req.headers['x-forwarded-host']
+    const url = req.url || '/'
+    
+    // Parse query string if present
+    const urlParts = url.split('?')
+    let path = urlParts[0] || '/'
+    const queryString = urlParts[1] || ''
+    
+    // For Vercel API routes, all requests to /api/x402-featured-profile map to '/'
+    // The path should always be '/' for this single endpoint
+    const normalizedPath = '/'
+    
+    const fullUrl = `${protocol}://${host}${normalizedPath}${queryString ? `?${queryString}` : ''}`
+    
     let body = undefined
     if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
       body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body)

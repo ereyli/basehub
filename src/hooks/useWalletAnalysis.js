@@ -2,7 +2,6 @@
 import { useState } from 'react'
 import { useWalletClient, useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { wrapFetchWithPayment } from 'x402-fetch'
-import { getX402ApiBase } from '../config/x402'
 import { addXP, recordTransaction } from '../utils/xpUtils'
 import { useQuestSystem } from './useQuestSystem'
 import { NETWORKS } from '../config/networks'
@@ -59,10 +58,9 @@ export const useWalletAnalysis = () => {
         MAX_PAYMENT_AMOUNT
       )
 
-      const apiBase = getX402ApiBase()
-      console.log('💳 Making payment request to', `${apiBase}/api/x402-wallet-analysis`)
+      console.log('💳 Making payment request to /api/x402-wallet-analysis...')
 
-      const response = await fetchWithPayment(`${apiBase}/api/x402-wallet-analysis`, {
+      const response = await fetchWithPayment('/api/x402-wallet-analysis', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
