@@ -18,9 +18,9 @@ export const CATEGORIES = {
 /** Nav section id -> product ids for sidebar/bottom nav */
 export const NAV_SECTIONS = {
   gaming: ['flip', 'dice', 'slot', 'lucky'],
-  nft: ['early-access', 'deploy-nft', 'ai-nft'],
+  nft: ['early-access', 'ai-nft'],
   analysis: ['wallet-analysis', 'contract-security', 'allowance-cleaner'],
-  deploy: ['deploy', 'deploy-nft', 'deploy-erc721', 'deploy-erc1155'],
+  deploy: ['deploy', 'deploy-erc721', 'deploy-erc1155'],
   social: ['featured-profiles'],
   dex: ['swap'],
 }
@@ -50,7 +50,6 @@ export const PRODUCTS = [
   { id: 'allowance-cleaner', path: '/allowance-cleaner', label: 'Allowance Cleaner', title: 'Allowance Cleaner', description: 'Scan and revoke risky token approvals', category: CATEGORIES.ANALYSIS, color: '#8b5cf6', icon: 'Trash2', xpReward: '300 XP', bonusXP: '0.1 USDC', networks: ['base'], isX402: true },
   { id: 'featured-profiles', path: '/featured-profiles', label: 'Featured Profiles', title: 'Featured Profiles', description: 'Register your profile and connect through mutual follows', category: CATEGORIES.SOCIAL, color: '#f59e0b', icon: 'Star', xpReward: '200 XP', bonusXP: '0.2-6.0 USDC', networks: ['base'], isX402: true },
   { id: 'deploy', path: '/deploy', label: 'Deploy Token', title: 'Deploy Token', description: 'Create your own ERC20 token', category: CATEGORIES.DEPLOY, color: '#f59e0b', icon: 'Coins', iconImage: '/crypto-logos/basahub logo/ERC20.png', xpReward: '50 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'katana'] },
-  { id: 'deploy-nft', path: '/deploy-nft', label: 'Deploy NFT', title: 'Deploy NFT', description: 'Deploy ERC721 NFT with image', category: CATEGORIES.DEPLOY, color: '#8b5cf6', icon: 'Image', xpReward: '100 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'katana'] },
   { id: 'deploy-erc721', path: '/deploy-erc721', label: 'ERC721', title: 'Deploy ERC721', description: 'Deploy your own NFT contract', category: CATEGORIES.DEPLOY, color: '#06b6d4', icon: 'Package', iconImage: '/crypto-logos/basahub logo/ERC-721.png', xpReward: '100 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'katana'] },
   { id: 'deploy-erc1155', path: '/deploy-erc1155', label: 'ERC1155', title: 'Deploy ERC1155', description: 'Deploy multi-token contract', category: CATEGORIES.DEPLOY, color: '#8b5cf6', icon: 'Factory', iconImage: '/crypto-logos/basahub logo/ERC-1155.png', xpReward: '100 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'katana'] },
   { id: 'ai-nft', path: '/ai-nft', label: 'AI NFT', title: 'AI NFT Launchpad', description: 'Generate AI art and mint as NFT', category: CATEGORIES.NFT, color: '#f59e0b', icon: 'Layers', iconImage: '/crypto-logos/basahub logo/AINFTLAUNCHPAD.png', xpReward: '500 XP', bonusXP: null, networks: ['base'] },
