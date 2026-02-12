@@ -7,7 +7,8 @@ import { addXP, recordTransaction } from '../utils/xpUtils'
 import { useNetworkCheck } from './useNetworkCheck'
 import { useQuestSystem } from './useQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'
-import { NETWORKS } from '../config/networks'
+import { NETWORKS, getContractAddressByNetwork } from '../config/networks'
+import { BASEHUB_DEPLOYER_ABI, DEPLOYER_FEE_ETH } from '../config/deployer'
 
 // ERC20 ABI with constructor for writeContractAsync
 const ERC20_ABI = [
@@ -380,150 +381,114 @@ export const useDeployToken = () => {
 
     try {
       console.log('🚀 Processing token deployment request:', { name, symbol, initialSupply, decimals })
-      
-      // Send fee to specified wallet
+
       const feeWallet = '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
-      
-      console.log('💰 Sending fee to wallet:', feeWallet)
-      
-      // Use Wagmi wallet client (works in both Farcaster and web)
-      if (!walletClient) {
-        throw new Error('Wallet not available. Please connect your wallet.')
-      }
-      
-      const feeTxHash = await walletClient.sendTransaction({
-        to: feeWallet,
-        value: parseEther('0.0002'),
-        chainId: chainId,
-      })
-      
-      console.log('✅ Fee transaction sent:', feeTxHash)
-      
-      // Wait for fee transaction confirmation (non-blocking with timeout for InkChain)
-      console.log('⏳ Waiting for fee transaction confirmation...')
-      try {
-        const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
-        const timeoutDuration = isOnInkChain ? 120000 : 60000
-        const receipt = await Promise.race([
-          waitForTransactionReceipt(config, {
-            hash: feeTxHash,
-            chainId: chainId, // Explicitly set chainId for proper network
-            confirmations: 1,
-            pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base
-          }),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Fee transaction confirmation timeout')), timeoutDuration)
-          )
-        ])
-        console.log('✅ Fee transaction confirmed!', receipt)
-      } catch (confirmError) {
-        console.warn('⚠️ Fee confirmation timeout (but proceeding with deploy):', confirmError.message)
-        // Continue with deploy even if confirmation times out
-      }
-      
-      // Now deploy the actual ERC20 contract
-      console.log('🚀 Deploying ERC20 contract...')
-      
-      // Limit string lengths for Farcaster compatibility
-      const shortName = name.substring(0, 20) // Limit to 20 chars
-      const shortSymbol = symbol.substring(0, 10) // Limit to 10 chars
-      
-      console.log('📝 Using shortened parameters:', { shortName, shortSymbol, initialSupply })
-      
-      // Use sendTransaction with manual encoding for Farcaster compatibility
+      const shortName = name.substring(0, 20)
+      const shortSymbol = symbol.substring(0, 10)
       const constructorData = encodeAbiParameters(
         parseAbiParameters('string name, string symbol, uint256 initialSupply'),
         [shortName, shortSymbol, BigInt(initialSupply)]
       )
-      
-      const deployData = ERC20_BYTECODE + constructorData.slice(2)
-      
-      // Use Wagmi wallet client (works in both Farcaster and web)
-      if (!walletClient) {
-        throw new Error('Wallet not available. Please connect your wallet.')
-      }
-      
-      const deployTxHash = await walletClient.sendTransaction({
-        data: deployData,
-        gas: 2000000n, // 2M gas for contract deployment
-      })
-      
-      console.log('✅ Deploy transaction sent:', deployTxHash)
-      
-      // Wait for deploy confirmation (non-blocking with timeout for InkChain)
-      console.log('⏳ Waiting for deploy transaction confirmation...')
-      try {
+      const initCode = ERC20_BYTECODE + constructorData.slice(2)
+
+      let deployTxHash
+      let contractAddress = null
+      let feeTxHash = null
+      let feeLabel = DEPLOYER_FEE_ETH + ' ETH'
+
+      const deployerAddress = getContractAddressByNetwork('BASEHUB_DEPLOYER', chainId)
+
+      if (deployerAddress) {
+        // Single-tx via BaseHubDeployer (Base)
+        console.log('📦 Deploying via BaseHubDeployer (single tx)...')
+        if (!walletClient) throw new Error('Wallet not available. Please connect your wallet.')
+        deployTxHash = await writeContractAsync({
+          address: deployerAddress,
+          abi: BASEHUB_DEPLOYER_ABI,
+          functionName: 'deployERC20',
+          args: [initCode],
+          value: parseEther(DEPLOYER_FEE_ETH),
+          chainId,
+        })
+        console.log('✅ Deploy transaction sent:', deployTxHash)
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
         const timeoutDuration = isOnInkChain ? 120000 : 60000
         const deployReceipt = await Promise.race([
-          waitForTransactionReceipt(config, {
-            hash: deployTxHash,
-            chainId: chainId, // Explicitly set chainId for proper network
-            confirmations: 1,
-            pollingInterval: isOnInkChain ? 1000 : 4000, // 1 second for InkChain, 4 seconds for Base
-          }),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Deploy transaction confirmation timeout')), timeoutDuration)
-          )
-        ])
-        console.log('✅ ERC20 contract deployed successfully!', deployReceipt)
-        
-        // Return with contract address if confirmation succeeded
-        return {
-          txHash: deployTxHash,
-          contractAddress: deployReceipt.contractAddress,
-          feeTxHash,
-          fee: '0.0002 ETH',
-          feeWallet,
-          xpEarned: 50,
-          status: 'Token deployed successfully! +50 XP earned!'
+          waitForTransactionReceipt(config, { hash: deployTxHash, chainId, confirmations: 1, pollingInterval: isOnInkChain ? 1000 : 4000 }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Deploy confirmation timeout')), timeoutDuration)),
+        ]).catch((e) => {
+          console.warn('⚠️ Deploy confirmation timeout:', e.message)
+          return null
+        })
+        if (deployReceipt?.logs?.length) {
+          const deployerLog = deployReceipt.logs.find((l) => l.address?.toLowerCase() === deployerAddress.toLowerCase() && l.topics?.length >= 2)
+          if (deployerLog?.topics?.[1]) contractAddress = '0x' + deployerLog.topics[1].slice(-40).toLowerCase()
         }
-      } catch (confirmError) {
-        console.warn('⚠️ Deploy confirmation timeout (but transaction was sent):', confirmError.message)
-        // Return with txHash even if confirmation times out
-        return {
-          txHash: deployTxHash,
-          contractAddress: null, // Will be available after confirmation
-          feeTxHash,
-          fee: '0.0002 ETH',
-          feeWallet,
-          xpEarned: 50,
-          status: 'Token deployment transaction sent! Please check the transaction hash for contract address. +50 XP earned!'
+        console.log('✅ ERC20 deployed via deployer', contractAddress || '(check tx)')
+      } else {
+        // Legacy two-tx (e.g. InkChain)
+        console.log('💰 Sending fee to wallet:', feeWallet)
+        if (!walletClient) throw new Error('Wallet not available. Please connect your wallet.')
+        feeTxHash = await walletClient.sendTransaction({ to: feeWallet, value: parseEther('0.0002'), chainId })
+        console.log('✅ Fee transaction sent:', feeTxHash)
+        try {
+          const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+          const timeoutDuration = isOnInkChain ? 120000 : 60000
+          await Promise.race([
+            waitForTransactionReceipt(config, { hash: feeTxHash, chainId, confirmations: 1, pollingInterval: isOnInkChain ? 1000 : 4000 }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Fee confirmation timeout')), timeoutDuration)),
+          ])
+        } catch (e) {
+          console.warn('⚠️ Fee confirmation timeout (proceeding with deploy):', e.message)
+        }
+        console.log('🚀 Deploying ERC20 contract...')
+        deployTxHash = await walletClient.sendTransaction({ data: initCode, gas: 2000000n })
+        console.log('✅ Deploy transaction sent:', deployTxHash)
+        feeLabel = '0.0002 ETH'
+        try {
+          const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+          const timeoutDuration = isOnInkChain ? 120000 : 60000
+          const deployReceipt = await Promise.race([
+            waitForTransactionReceipt(config, { hash: deployTxHash, chainId, confirmations: 1, pollingInterval: isOnInkChain ? 1000 : 4000 }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Deploy confirmation timeout')), timeoutDuration)),
+          ])
+          contractAddress = deployReceipt?.contractAddress ?? null
+        } catch (e) {
+          console.warn('⚠️ Deploy confirmation timeout (tx sent):', e.message)
         }
       }
-      console.log('📄 Contract Address:', deployReceipt.contractAddress)
-      
-      // Award XP for successful token deployment
+
+      // Award XP, record, quest (shared)
       try {
-        console.log('🎉 Awarding 50 XP for token deployment!')
         await addXP(address, 50, 'Token Deployment', chainId)
-        
-        // Record the transaction for tracking
         await recordTransaction({
           wallet_address: address,
           game_type: 'Token Deployment',
           tx_hash: deployTxHash,
           xp_earned: 50,
           result: 'success',
-          contract_address: deployReceipt.contractAddress,
+          contract_address: contractAddress,
           token_name: name,
           token_symbol: symbol,
-          initial_supply: initialSupply.toString()
-          // Note: chain_id removed - column doesn't exist in Supabase table yet
+          initial_supply: initialSupply.toString(),
         })
-        
-        console.log('✅ XP awarded and transaction recorded!')
       } catch (xpError) {
-        console.error('⚠️ Failed to award XP:', xpError)
-        // Don't throw here, deployment was successful
+        console.error('⚠️ Failed to award XP/record:', xpError)
       }
-
-      // Update quest progress for token deployment (independent of XP)
       try {
-        console.log('🎯 Updating quest progress for token deployment!')
         await updateQuestProgress('tokenDeployed', 1)
       } catch (questError) {
         console.error('❌ Failed to update quest progress:', questError)
+      }
+
+      return {
+        txHash: deployTxHash,
+        contractAddress,
+        feeTxHash,
+        fee: feeLabel,
+        feeWallet,
+        xpEarned: 50,
+        status: contractAddress ? 'Token deployed successfully! +50 XP earned!' : 'Token deployment sent! Check tx for contract address. +50 XP earned!',
       }
     } catch (err) {
       console.error('❌ Token deployment failed:', err)
