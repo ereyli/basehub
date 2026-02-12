@@ -6,6 +6,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { paymentMiddleware } from 'x402-hono'
 import { facilitator } from '@coinbase/x402'
+import { getRequestUrl } from './x402-request-url.js'
 import { createPublicClient, http, formatUnits } from 'viem'
 import { base, mainnet, polygon, arbitrum, optimism, bsc, avalanche } from 'viem/chains'
 
@@ -925,10 +926,7 @@ app.post(ALLOWANCE_CLEANER_PATH, handleAllowanceScanPost)
 // Vercel handler - URL must match client request URL for x402 payment verification
 export default async function handler(req, res) {
   try {
-    const protocol = req.headers['x-forwarded-proto'] || 'https'
-    const host = req.headers.host || req.headers['x-forwarded-host'] || ''
-    const path = (req.url && req.url.startsWith('/api')) ? req.url.split('?')[0] : ALLOWANCE_CLEANER_PATH
-    const fullUrl = `${protocol}://${host}${path}${(req.url && req.url.includes('?')) ? '?' + req.url.split('?')[1] : ''}`
+    const fullUrl = getRequestUrl(req, ALLOWANCE_CLEANER_PATH)
 
     let body = undefined
     const bodyString = req.method !== 'GET' && req.method !== 'HEAD' && req.body

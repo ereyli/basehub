@@ -7,6 +7,7 @@ import { cors } from 'hono/cors'
 import { paymentMiddleware } from 'x402-hono'
 // Facilitator import for mainnet
 import { facilitator } from '@coinbase/x402'
+import { getRequestUrl } from './x402-request-url.js'
 
 const app = new Hono()
 
@@ -124,22 +125,9 @@ export default async function handler(req, res) {
       },
     })
 
-    // In Vercel, /api/x402-payment.js creates /api/x402-payment endpoint
-    // req.url will be '/' for requests to the function root
-    // We need to normalize the path to '/' for Hono routes
-    
     // URL must match client request URL for x402 payment verification (web + Farcaster)
-    const protocol = req.headers['x-forwarded-proto'] || 'https'
-    const host = req.headers.host || req.headers['x-forwarded-host'] || 'localhost'
-    const urlParts = (req.url || '/').split('?')
-    const path = (urlParts[0] && urlParts[0].startsWith('/api')) ? urlParts[0] : '/api/x402-payment'
-    const queryString = urlParts[1] || ''
-    const fullUrl = `${protocol}://${host}${path}${queryString ? `?${queryString}` : ''}`
-    
+    const fullUrl = getRequestUrl(req, X402_PAYMENT_PATH)
     console.log('📤 Creating Hono Request:', {
-      originalPath: path,
-      normalizedPath,
-      queryString,
       fullUrl,
       method: req.method,
     })
@@ -162,7 +150,6 @@ export default async function handler(req, res) {
     // Log request details for debugging route matching
     console.log('🔍 Request details for middleware:', {
       url: fullUrl,
-      path: normalizedPath,
       method: req.method,
       hasXPayment: !!req.headers['x-payment'],
     })

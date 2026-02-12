@@ -6,6 +6,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { paymentMiddleware } from 'x402-hono'
 import { facilitator } from '@coinbase/x402'
+import { getRequestUrl } from './x402-request-url.js'
 
 const app = new Hono()
 
@@ -545,11 +546,7 @@ export default async function handler(req, res) {
       url: req.url,
     })
 
-    const protocol = req.headers['x-forwarded-proto'] || 'https'
-    const host = req.headers.host || req.headers['x-forwarded-host'] || 'localhost'
-    const path = (req.url && req.url.startsWith('/api')) ? req.url.split('?')[0] : WALLET_ANALYSIS_PATH
-    const fullUrl = `${protocol}://${host}${path}${(req.url && req.url.includes('?')) ? '?' + req.url.split('?')[1] : ''}`
-
+    const fullUrl = getRequestUrl(req, WALLET_ANALYSIS_PATH)
     let body = undefined
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       if (req.body) {

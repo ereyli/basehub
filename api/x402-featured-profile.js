@@ -7,6 +7,7 @@ import { paymentMiddleware } from 'x402-hono'
 import { facilitator } from '@coinbase/x402'
 import { cors } from 'hono/cors'
 import { createClient } from '@supabase/supabase-js'
+import { getRequestUrl } from './x402-request-url.js'
 
 const app = new Hono()
 
@@ -271,14 +272,7 @@ async function handleProfileRegistration(c, subscriptionType, pricing) {
 // Vercel handler - URL must match client for x402 verify
 export default async function handler(req, res) {
   try {
-    const protocol = req.headers['x-forwarded-proto'] || 'https'
-    const host = req.headers.host || req.headers['x-forwarded-host'] || ''
-    const url = req.url || '/'
-    const urlParts = url.split('?')
-    const path = (urlParts[0] && urlParts[0].startsWith('/api')) ? urlParts[0] : FEATURED_PROFILE_PATH
-    const queryString = urlParts[1] || ''
-    const fullUrl = `${protocol}://${host}${path}${queryString ? `?${queryString}` : ''}`
-    
+    const fullUrl = getRequestUrl(req, FEATURED_PROFILE_PATH)
     let body = undefined
     if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
       body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body)
