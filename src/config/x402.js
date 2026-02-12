@@ -1,5 +1,5 @@
-// Canonical host for x402 so payment and verify always use the same URL (no www vs non-www mismatch).
-const BASEHUB_CANONICAL_ORIGIN = 'https://www.basehub.fun'
+// Canonical host for x402 so payment and verify always use the same URL (basehub.fun, no www).
+const BASEHUB_CANONICAL_ORIGIN = 'https://basehub.fun'
 
 /**
  * x402 API base URL. Use canonical origin on basehub.fun so 402 resource URL

@@ -1,9 +1,9 @@
 // Canonical host for basehub.fun so 402 resource URL and verify URL always match.
-const BASEHUB_CANONICAL_HOST = 'www.basehub.fun'
+const BASEHUB_CANONICAL_HOST = 'basehub.fun'
 
 /**
  * Build the full request URL for x402 verify. Must match exactly what the client used.
- * - Use canonical host for basehub.fun (www) so payment and verify never disagree.
+ * - Use canonical host basehub.fun (no www) so payment and verify never disagree.
  * - Prefer x-forwarded-host when behind Vercel/proxy; support req.url as path or full URL.
  */
 export function getRequestUrl(req, endpointPath) {
