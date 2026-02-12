@@ -147,11 +147,13 @@ export default async function handler(req, res) {
       body: body,
     })
     
-    // Log request details for debugging route matching
+    // Log request details for debugging (X-PAYMENT length only, not value)
+    const xPayment = req.headers['x-payment']
     console.log('🔍 Request details for middleware:', {
       url: fullUrl,
       method: req.method,
-      hasXPayment: !!req.headers['x-payment'],
+      hasXPayment: !!xPayment,
+      xPaymentLength: xPayment ? String(xPayment).length : 0,
     })
 
     console.log('📞 Calling Hono app.fetch with normalized path...')
