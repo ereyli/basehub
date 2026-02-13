@@ -192,6 +192,12 @@ export const getTestnetNetworks = () => {
   return Object.values(NETWORKS).filter(net => net && net.isTestnet === true)
 }
 
+// Verilen chainId testnet mi? (XP testnet'lerde kazanılmaz.)
+export const isTestnetChainId = (chainId) => {
+  if (chainId == null) return false
+  return getTestnetNetworks().some(net => net.chainId === Number(chainId))
+}
+
 // Get contract address for current network
 export const getContractAddressByNetwork = (contractName, chainId) => {
   const configKey = getNetworkConfigKey(chainId)

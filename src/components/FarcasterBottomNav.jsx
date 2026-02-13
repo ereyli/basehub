@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAccount } from 'wagmi'
+import { useAccount, useChainId } from 'wagmi'
 import { useTransactions } from '../hooks/useTransactions'
+import { isTestnetChainId } from '../config/networks'
 import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, Trash2, Star, Users, Repeat, ArrowLeftRight } from 'lucide-react'
 import { getNavItems } from '../config/products'
 
@@ -10,6 +11,7 @@ const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Fa
 const FarcasterBottomNav = () => {
   const navigate = useNavigate()
   const { isConnected, address } = useAccount()
+  const chainId = useChainId()
   const { sendGMTransaction, sendGNTransaction, isLoading: transactionLoading } = useTransactions()
   const [activeTab, setActiveTab] = useState(null) // null = hidden, 'gmgn' | 'gaming' | 'nft' | 'analysis' | 'deploy' | 'social' | 'dex'
   const [isLoadingGM, setIsLoadingGM] = useState(false)
@@ -35,7 +37,7 @@ const FarcasterBottomNav = () => {
     
     try {
       await sendGMTransaction('GM from BaseHub! 🎮')
-      setSuccessMessage('🎉 GM sent! +150 XP')
+      setSuccessMessage(isTestnetChainId(chainId) ? '🎉 GM sent!' : '🎉 GM sent! +150 XP')
       setTimeout(() => setSuccessMessage(''), 3000)
     } catch (error) {
       console.error('GM transaction failed:', error)
@@ -57,7 +59,7 @@ const FarcasterBottomNav = () => {
     
     try {
       await sendGNTransaction('GN from BaseHub! 🌙')
-      setSuccessMessage('🌙 GN sent! +150 XP')
+      setSuccessMessage(isTestnetChainId(chainId) ? '🌙 GN sent!' : '🌙 GN sent! +150 XP')
       setTimeout(() => setSuccessMessage(''), 3000)
     } catch (error) {
       console.error('GN transaction failed:', error)

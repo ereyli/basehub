@@ -4,6 +4,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useChainId } from 'wagmi'
 import { Home, Users, Zap, Sun, Moon, Repeat, Coins, Dice1, TrendingUp, Rocket, Loader2 } from 'lucide-react'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
+import { isTestnetChainId } from '../config/networks'
 import { useFastDeployModal } from '../contexts/FastDeployContext'
 import { getCurrentConfig } from '../config/base'
 import { useProofOfUsage } from '../hooks/useProofOfUsage'
@@ -37,7 +38,7 @@ const WebHeader = () => {
     setIsLoadingGM(true)
     try {
       await sendGMTransaction('GM from BaseHub! 🎮')
-      setQuickActionMessage('GM sent! +150 XP')
+      setQuickActionMessage(isTestnetChainId(chainId) ? 'GM sent!' : 'GM sent! +150 XP')
       setTimeout(() => setQuickActionMessage(''), 2000)
     } catch (error) {
       console.error('GM failed:', error)
@@ -51,7 +52,7 @@ const WebHeader = () => {
     setIsLoadingGN(true)
     try {
       await sendGNTransaction('GN from BaseHub! 🌙')
-      setQuickActionMessage('GN sent! +150 XP')
+      setQuickActionMessage(isTestnetChainId(chainId) ? 'GN sent!' : 'GN sent! +150 XP')
       setTimeout(() => setQuickActionMessage(''), 2000)
     } catch (error) {
       console.error('GN failed:', error)

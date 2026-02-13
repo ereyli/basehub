@@ -2,6 +2,7 @@
 import { supabase } from '../config/supabase'
 import { createPublicClient, http } from 'viem'
 import { base } from 'viem/chains'
+import { isTestnetChainId } from '../config/networks'
 
 // Simple in-memory cache for NFT count checks
 const nftCountCache = new Map()
@@ -107,6 +108,12 @@ export const getNFTCount = async (walletAddress) => {
 export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chainId = null, skipNFTBonus = false) => {
   if (!walletAddress || !xpAmount) {
     console.log('❌ Missing walletAddress or xpAmount:', { walletAddress, xpAmount })
+    return
+  }
+
+  // Test ağlarında XP kazanımı kapalı (sadece mainnet'lerde XP verilir)
+  if (chainId != null && isTestnetChainId(chainId)) {
+    console.log('⏭️ XP atlanıyor (test ağı):', { chainId, gameType })
     return
   }
 

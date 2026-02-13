@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAccount, useWriteContract } from 'wagmi'
+import { useAccount, useChainId, useWriteContract } from 'wagmi'
 import { waitForTransactionReceipt, sendTransaction } from 'wagmi/actions'
 import { parseEther } from 'viem'
 import { config } from '../config/wagmi'
@@ -141,6 +141,7 @@ const SIMPLE_NFT_ABI = [
 
 export const useDeployNFT = () => {
   const { address } = useAccount()
+  const chainId = useChainId()
   const { writeContractAsync } = useWriteContract()
   const { isCorrectNetwork, networkName, baseNetworkName, switchToBaseNetwork } = useNetworkCheck()
   const [isLoading, setIsLoading] = useState(false)
@@ -234,7 +235,7 @@ export const useDeployNFT = () => {
       // Award XP for successful NFT deployment
       try {
         console.log('🎉 Awarding 850 XP for NFT deployment!')
-        await addXP(address, 850, 'NFT Deployment')
+        await addXP(address, 850, 'NFT Deployment', chainId)
       } catch (xpError) {
         console.warn('⚠️ Failed to award XP:', xpError)
       }
