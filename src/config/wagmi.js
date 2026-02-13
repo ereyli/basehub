@@ -3,11 +3,11 @@ import { base } from 'wagmi/chains'
 import { defineChain } from 'viem'
 import { injected, metaMask } from 'wagmi/connectors'
 import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector'
-import { toDataSuffix } from 'ox/erc8021/Attribution'
 import { NETWORKS } from './networks'
 
 // Base Builder Code – ERC-8021 attribution (base.dev → Settings → Builder Code). Export for writeContract dataSuffix.
-export const DATA_SUFFIX = toDataSuffix({ codes: ['bc_cr8omxff'] })
+// Schema 0: codesHex + codesLength(1) + schemaId(0) + ercMarker(16 bytes). Inline to avoid ox package resolution on Vercel.
+export const DATA_SUFFIX = '0x62635f6372386f6d7866660b0080218021802180218021802180218021'
 
 // InkChain chain definition
 const inkChain = defineChain({
