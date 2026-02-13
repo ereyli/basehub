@@ -48,7 +48,7 @@ const WebBottomNav = () => {
     
     try {
       await sendGMTransaction('GM from BaseHub! 🎮')
-      setSuccessMessage('🎉 GM sent! +30 XP')
+      setSuccessMessage('🎉 GM sent! +150 XP')
       setTimeout(() => setSuccessMessage(''), 3000)
     } catch (error) {
       console.error('GM transaction failed:', error)
@@ -70,7 +70,7 @@ const WebBottomNav = () => {
     
     try {
       await sendGNTransaction('GN from BaseHub! 🌙')
-      setSuccessMessage('🌙 GN sent! +30 XP')
+      setSuccessMessage('🌙 GN sent! +150 XP')
       setTimeout(() => setSuccessMessage(''), 3000)
     } catch (error) {
       console.error('GN transaction failed:', error)

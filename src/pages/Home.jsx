@@ -7,18 +7,20 @@ import { useX402Payment } from '../hooks/useX402Payment'
 import EmbedMeta from '../components/EmbedMeta'
 import TwitterShareButton from '../components/TwitterShareButton'
 import DailyQuestSystem from '../components/DailyQuestSystem'
+import { useFastDeployModal } from '../contexts/FastDeployContext'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { NETWORKS, getNetworkKey } from '../config/networks'
 import { getProductsForHome, getProductsForHomeByNetwork } from '../config/products'
 import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat, Sparkles, RotateCcw, Gift } from 'lucide-react'
 
-const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Search, Shield, Trash2, Star, Layers, Package, Factory, Rocket, Image, Sparkles, ArrowLeftRight, Repeat }
+const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Search, Shield, Trash2, Star, Layers, Package, Factory, Rocket, Image, Sparkles, ArrowLeftRight, Repeat, Zap }
 
 const Home = () => {
   const { isConnected } = useAccount()
   const chainId = useChainId()
   const { switchChain } = useRainbowKitSwitchChain()
+  const { openModal: openFastDeployModal } = useFastDeployModal()
   
   // x402 Payment hook - uses x402-fetch (handles wallet UI automatically)
   const { 
@@ -1078,6 +1080,40 @@ const Home = () => {
                   {!isCompactMode && renderNetworkLogos(['base', 'ink', 'soneium', 'katana', 'arc-restnet', 'robinhood-testnet'])}
                 </div>
                 <div style={compactStyles.cardGrid}>
+                  {/* Fast Deploy card - opens modal */}
+                  {shouldUseRainbowKit() && (
+                    <button
+                      type="button"
+                      onClick={openFastDeployModal}
+                      className="game-card"
+                      style={{ textDecoration: 'none', display: 'block', border: 'none', background: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                    >
+                      <div style={{ ...compactStyles.card('#ec4899'), height: '100%' }}>
+                        <div style={compactStyles.cardInner}>
+                          {isCompactMode ? (
+                            <>
+                              <div style={{ flexShrink: 0 }}><Zap size={40} style={{ color: 'white' }} /></div>
+                              <h3 style={compactStyles.cardTitle}>Fast Deploy</h3>
+                              <div style={compactStyles.xpBadge}>850 XP each</div>
+                            </>
+                          ) : (
+                            <>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                                <div style={{ flexShrink: 0 }}><Zap size={40} style={{ color: 'white' }} /></div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <h3 style={compactStyles.cardTitle}>Fast Deploy</h3>
+                                  <p style={compactStyles.cardDescription}>Deploy ERC20 + ERC721 + ERC1155 in one flow</p>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                                <div style={compactStyles.xpBadge}>850 XP each</div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  )}
                   {games.filter(g => ['deploy', 'deploy-nft', 'deploy-erc721', 'deploy-erc1155'].includes(g.id)).sort((a, b) => {
                     const order = ['deploy', 'deploy-nft', 'deploy-erc721', 'deploy-erc1155'];
                     return order.indexOf(a.id) - order.indexOf(b.id);

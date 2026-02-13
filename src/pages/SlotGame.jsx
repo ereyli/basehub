@@ -1,28 +1,62 @@
 import React, { useState, useEffect } from 'react'
-import { useAccount, useChainId } from 'wagmi'
+import { useAccount, useChainId, useReadContract } from 'wagmi'
 import { useTransactions } from '../hooks/useTransactions'
 import { useSupabase } from '../hooks/useSupabase'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
-import { NETWORKS } from '../config/networks'
+import { NETWORKS, getContractAddressByNetwork } from '../config/networks'
 import { formatEther } from 'viem'
 import { Coins, Play, Star, CheckCircle, ExternalLink, TrendingUp, Zap, Gift } from 'lucide-react'
+
+const SLOT_GAME_ABI = [
+  {
+    name: 'getPlayerStats',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'player', type: 'address' }],
+    outputs: [
+      { name: 'credits', type: 'uint256' },
+      { name: 'spinCount', type: 'uint256' },
+      { name: 'totalWins', type: 'uint256' }
+    ]
+  },
+  { name: 'CREDIT_PRICE', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] }
+]
 
 const SlotGame = () => {
   const { isConnected, address } = useAccount()
   const chainId = useChainId()
   const { sendSlotTransaction, isLoading, error } = useTransactions()
   const { calculateTokens } = useSupabase()
-  
-  // Get credit price based on network
-  const getCreditPrice = () => {
-    const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
-    return isOnInkChain ? '0.00002' : '0.000005'
-  }
-  
-  const creditPrice = getCreditPrice()
+
+  const slotGameAddress = getContractAddressByNetwork('SLOT_GAME', chainId)
+  const { data: playerStats, refetch: refetchCredits } = useReadContract({
+    address: slotGameAddress || undefined,
+    abi: SLOT_GAME_ABI,
+    functionName: 'getPlayerStats',
+    args: address ? [address] : undefined
+  })
+  const { data: creditPriceWei } = useReadContract({
+    address: slotGameAddress || undefined,
+    abi: SLOT_GAME_ABI,
+    functionName: 'CREDIT_PRICE'
+  })
+
+  // Sync credits from contract (single source of truth)
+  useEffect(() => {
+    if (!address) {
+      setCredits(0)
+      return
+    }
+    if (playerStats != null && Array.isArray(playerStats) && playerStats[0] !== undefined) {
+      setCredits(Number(playerStats[0]))
+    }
+  }, [address, playerStats])
+
+  // Credit price from contract so UI always matches chain
+  const creditPrice = creditPriceWei != null ? formatEther(creditPriceWei) : '0.00002'
   
   // Safely get Farcaster context - only if not in web environment
   let isInFarcaster = false
@@ -115,21 +149,24 @@ const SlotGame = () => {
       })
       
       const result = await sendSlotTransaction('purchaseCredits', { amount })
+
+      // Only update credits when tx really succeeded. If user cancelled, result is null.
+      if (!result) {
+        setLastResult(null)
+        return
+      }
+
       console.log('✅ Credits purchased!', result)
-      setCredits(prev => prev + amount)
-      
-      // Show success message
+      setCredits(prev => prev + (result.creditsPurchased ?? amount))
+      if (refetchCredits) refetchCredits()
+
       setLastResult({
         symbols: [0, 1, 2, 3],
         won: false,
         xpEarned: 0,
         message: `✅ Successfully purchased ${amount} credits!`
       })
-      
-      // Clear message after 2 seconds
-      setTimeout(() => {
-        setLastResult(null)
-      }, 2000)
+      setTimeout(() => setLastResult(null), 2000)
     } catch (error) {
       console.error('❌ Credit purchase failed:', error)
       alert(`Credit purchase failed: ${error.message}`)
@@ -209,7 +246,7 @@ const SlotGame = () => {
         
         setCredits(prev => prev - 1)
         setLastTransaction(result)
-        
+        if (refetchCredits) refetchCredits()
         console.log('✅ Slot spin completed!', result)
       }, 2000)
       
@@ -246,126 +283,118 @@ const SlotGame = () => {
 
   if (!isConnected) {
     return (
-      <div className="card">
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <Coins size={48} style={{ color: '#f59e0b', marginBottom: '16px' }} />
-          <h2 style={{ 
-            fontSize: '24px', 
-            fontWeight: 'bold', 
-            marginBottom: '8px',
-            color: '#1f2937'
-          }}>
-            Connect Wallet to Play
+      <div className="card" style={{ maxWidth: 560, margin: '0 auto' }}>
+        <BackButton />
+        <div style={{ textAlign: 'center', padding: 48 }}>
+          <div className="game-icon" style={{ background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)', margin: '0 auto 16px' }}>
+            <Gift size={32} style={{ color: 'white' }} />
+          </div>
+          <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: 8, color: '#e5e7eb' }}>
+            Connect wallet to play
           </h2>
-          <p style={{ color: '#6b7280' }}>
-            Please connect your wallet to start playing the slot machine
+          <p style={{ color: '#94a3b8', fontSize: 15 }}>
+            Connect your wallet to buy credits and spin the reels.
           </p>
         </div>
       </div>
     )
   }
 
-  return (
-    <div className="card">
+  const presetAmounts = [1, 5, 10, 20, 50, 100]
+
+    return (
+    <div className="card" style={{ maxWidth: 560, margin: '0 auto' }}>
       <EmbedMeta 
-        title="Slot Machine Game - BaseHub"
-        description="Spin the slot machine and win XP! Match symbols to earn bonus XP. Play now on BaseHub!"
-        buttonText="🎰 Play Slot Machine!"
+        title="Crypto Slots - BaseHub"
+        description="Spin the reels, match symbols, win XP. Play Crypto Slots on BaseHub!"
+        buttonText="🎰 Play Crypto Slots!"
         image="/image.svg"
       />
       
       <BackButton />
       
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <div 
-          className="game-icon"
-          style={{ 
-            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-            margin: '0 auto 16px'
-          }}
-        >
-          <Coins size={32} style={{ color: 'white' }} />
-        </div>
-        <h1 style={{ 
-          fontSize: '32px', 
-          fontWeight: 'bold', 
-          marginBottom: '8px',
-          color: '#1f2937'
-        }}>
-          Crypto Slots
-        </h1>
-        <p style={{ 
-          color: '#6b7280',
-          fontSize: '16px'
-        }}>
-          Spin the reels and match symbols to win XP!
-        </p>
-      </div>
-
-      {/* Credits Display */}
+      {/* Header: title + credits pill */}
       <div style={{ 
         display: 'flex', 
+        flexWrap: 'wrap', 
         alignItems: 'center', 
-        justifyContent: 'center',
-        gap: '12px',
-        marginBottom: '24px',
-        padding: '16px',
-        background: 'rgba(245, 158, 11, 0.1)',
-        borderRadius: '12px',
-        border: '1px solid rgba(245, 158, 11, 0.2)'
+        justifyContent: 'space-between', 
+        gap: 16, 
+        marginBottom: 24 
       }}>
-        <Coins size={20} style={{ color: '#f59e0b' }} />
-        <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#1f2937' }}>
-          Credits: {credits}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div 
+            className="game-icon"
+            style={{ 
+              background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+              margin: 0,
+              flexShrink: 0
+            }}
+          >
+            <Gift size={28} style={{ color: 'white' }} />
+          </div>
+          <div>
+            <h1 style={{ 
+              fontSize: 'clamp(1.35rem, 4vw, 1.6rem)', 
+              fontWeight: 700, 
+              margin: 0,
+              color: '#e5e7eb',
+              letterSpacing: '-0.02em'
+            }}>
+              Crypto Slots
+            </h1>
+            <p style={{ margin: '4px 0 0', color: '#94a3b8', fontSize: 14 }}>
+              Match symbols · Win XP
+            </p>
+          </div>
+        </div>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 8,
+          padding: '10px 16px',
+          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.15) 100%)',
+          borderRadius: 9999,
+          border: '1px solid rgba(245, 158, 11, 0.35)',
+          boxShadow: '0 0 0 1px rgba(0,0,0,0.1)'
+        }}>
+          <Coins size={18} style={{ color: '#fbbf24' }} />
+          <span style={{ fontSize: 18, fontWeight: 700, color: '#fcd34d' }}>{credits}</span>
+          <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 2 }}>credits</span>
+        </div>
       </div>
 
-      {/* Slot Machine Display */}
+      {/* Slot reels */}
       <div className="slot-machine" style={{
-        background: 'linear-gradient(135deg, #2d3748 0%, #1a202c 100%)',
-        borderRadius: '20px',
-        padding: '32px',
-        marginBottom: '24px',
-        border: '2px solid #4a5568',
-        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+        background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%)',
+        borderRadius: 16,
+        padding: 24,
+        marginBottom: 20,
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.2)',
         position: 'relative',
         overflow: 'hidden'
       }}>
-        {/* Subtle accent line */}
         <div style={{
-          position: 'absolute',
-          top: '0',
-          left: '0',
-          right: '0',
-          height: '3px',
-          background: 'linear-gradient(90deg, #4299e1, #63b3ed, #90cdf4)',
-          borderRadius: '20px 20px 0 0'
-        }}></div>
-        {/* Slot Machine Title */}
+          position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+          background: 'linear-gradient(90deg, #3b82f6, #60a5fa, #93c5fd)',
+          borderRadius: '16px 16px 0 0'
+        }} />
         <div style={{
-          textAlign: 'center',
-          marginBottom: '24px',
-          color: '#e2e8f0',
-          fontSize: '24px',
-          fontWeight: '600',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          letterSpacing: '1px',
-          textTransform: 'uppercase'
+          textAlign: 'center', marginBottom: 20, color: '#94a3b8', fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase'
         }}>
-          Slot Machine
+          Reels
         </div>
         
-        {/* Slot Reels */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '16px',
-          marginBottom: '28px',
-          padding: '24px',
-          background: 'rgba(0, 0, 0, 0.4)',
-          borderRadius: '16px',
-          border: '1px solid #4a5568',
-          boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.2)'
+          gap: 12,
+          marginBottom: 20,
+          padding: 20,
+          background: 'rgba(0, 0, 0, 0.25)',
+          borderRadius: 12,
+          border: '1px solid rgba(255, 255, 255, 0.08)'
         }}>
           {currentSymbols.map((symbol, index) => {
             // Check if this symbol is part of a winning combination
@@ -390,21 +419,19 @@ const SlotGame = () => {
                 className={`${isWinning ? 'winning-symbol' : ''} ${isJackpot ? 'jackpot' : ''}`}
                 style={{
                   background: isJackpot 
-                    ? 'linear-gradient(135deg, #f6ad55 0%, #ed8936 100%)' 
+                    ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.35) 0%, rgba(245, 158, 11, 0.3) 100%)' 
                     : isWinning 
-                      ? 'linear-gradient(135deg, #68d391 0%, #48bb78 100%)'
-                      : 'linear-gradient(135deg, #ffffff 0%, #f7fafc 100%)',
-                  borderRadius: '12px',
-                  padding: '24px',
+                      ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(22, 163, 74, 0.25) 100%)'
+                      : 'linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(51, 65, 85, 0.6) 100%)',
+                  borderRadius: 12,
+                  padding: 20,
                   textAlign: 'center',
-                  minHeight: '100px',
+                  minHeight: 88,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  border: isWinning ? '2px solid #68d391' : '2px solid #e2e8f0',
-                  boxShadow: isWinning 
-                    ? '0 4px 12px rgba(104, 211, 145, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-                    : '0 2px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                  border: isJackpot ? '2px solid rgba(251, 191, 36, 0.6)' : isWinning ? '2px solid rgba(34, 197, 94, 0.5)' : '1px solid rgba(255, 255, 255, 0.1)',
+                  boxShadow: isWinning ? '0 0 20px rgba(34, 197, 94, 0.2)' : 'none',
                   transform: spinAnimation ? 'rotateY(360deg) scale(1.05)' : 'rotateY(0deg) scale(1)',
                   transition: 'all 0.2s ease-in-out',
                   position: 'relative',
@@ -445,9 +472,9 @@ const SlotGame = () => {
                   textAlign: 'center',
                   filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))',
                   transition: 'transform 0.2s ease',
-                  color: '#4a5568',
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                  letterSpacing: '1px'
+                  color: '#cbd5e1',
+                  fontFamily: 'system-ui, sans-serif',
+                  letterSpacing: '0.05em'
                 }}>
                   {symbol}
                 </div>
@@ -465,16 +492,14 @@ const SlotGame = () => {
           style={{ 
             width: '100%',
             background: (isLoading || isSpinning || credits < 1) 
-              ? '#718096' 
-              : 'linear-gradient(135deg, #4299e1 0%, #3182ce 100%)',
-            fontSize: '16px',
-            fontWeight: '600',
-            padding: '16px 24px',
+              ? 'rgba(100, 116, 139, 0.5)' 
+              : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+            fontSize: 16,
+            fontWeight: 600,
+            padding: '14px 24px',
             border: 'none',
-            borderRadius: '12px',
-            boxShadow: (isLoading || isSpinning || credits < 1) 
-              ? '0 2px 4px rgba(0, 0, 0, 0.1)'
-              : '0 4px 12px rgba(66, 153, 225, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1)',
+            borderRadius: 12,
+            boxShadow: (isLoading || isSpinning || credits < 1) ? 'none' : '0 4px 14px rgba(59, 130, 246, 0.35)',
             color: 'white',
             position: 'relative',
             overflow: 'hidden',
@@ -518,139 +543,126 @@ const SlotGame = () => {
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
-          gap: '12px',
+          gap: 12,
           justifyContent: 'center',
-          padding: '20px',
+          flexWrap: 'wrap',
+          padding: 16,
           background: lastResult.won 
-            ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 193, 7, 0.2) 100%)'
-            : 'linear-gradient(135deg, rgba(108, 117, 125, 0.2) 0%, rgba(73, 80, 87, 0.2) 100%)',
-          border: lastResult.won ? '2px solid #ffd700' : '2px solid #6c757d',
-          borderRadius: '15px',
-          marginBottom: '24px',
-          boxShadow: lastResult.won 
-            ? '0 0 20px rgba(255, 215, 0, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.1)'
-            : '0 0 10px rgba(108, 117, 125, 0.3)',
+            ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(22, 163, 74, 0.1) 100%)'
+            : 'linear-gradient(135deg, rgba(51, 65, 85, 0.3) 0%, rgba(30, 41, 59, 0.4) 100%)',
+          border: lastResult.won ? '1px solid rgba(34, 197, 94, 0.35)' : '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: 12,
+          marginBottom: 20,
           position: 'relative',
           overflow: 'hidden'
         }}>
-          {/* Winning sparkle effect */}
           {lastResult.won && (
             <div style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent)',
-              animation: 'shimmer 1s linear infinite'
-            }}></div>
+              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+              background: 'linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.06), transparent)',
+              animation: 'shimmer 1.5s linear infinite'
+            }} />
           )}
-          
-          <div style={{ 
-            fontSize: '24px',
-            animation: lastResult.won ? 'bounce 0.6s ease-in-out' : 'none',
-            fontWeight: 'bold',
-            color: lastResult.won ? '#ffd700' : '#6c757d'
-          }}>
-            {lastResult.won ? 'WIN!' : 'LOSE'}
-          </div>
-          
           <span style={{ 
-            fontWeight: 'bold',
-            fontSize: '18px',
-            color: lastResult.won ? '#ffd700' : '#6c757d',
-            textShadow: lastResult.won ? '0 0 10px rgba(255, 215, 0, 0.8)' : 'none'
+            fontSize: 18,
+            fontWeight: 700,
+            color: lastResult.won ? '#4ade80' : '#94a3b8',
+            animation: lastResult.won ? 'bounce 0.6s ease-in-out' : 'none'
           }}>
+            {lastResult.won ? 'WIN!' : 'Spin again'}
+          </span>
+          <span style={{ fontSize: 14, color: '#cbd5e1' }}>
             {lastResult.message 
               ? lastResult.message
               : lastResult.won 
-                ? (lastResult.xpEarned >= 2010 ? `JACKPOT! +${lastResult.xpEarned} XP` : `WIN! +${lastResult.xpEarned} XP`)
-                : `Better luck next time! +${lastResult.xpEarned} XP`
+                ? (lastResult.xpEarned >= 2010 ? `JACKPOT! +${lastResult.xpEarned} XP` : `+${lastResult.xpEarned} XP`)
+                : `+${lastResult.xpEarned} XP`
             }
           </span>
         </div>
       )}
 
-      {/* Purchase Credits Section */}
-      <div style={{ marginBottom: '24px' }}>
-        <h3 style={{ 
-          fontSize: '18px', 
-          fontWeight: 'bold', 
-          marginBottom: '16px',
-          color: '#1f2937',
-          textAlign: 'center'
-        }}>
-          Purchase Credits ({creditPrice} ETH each)
-        </h3>
-        
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(3, 1fr)', 
-          gap: '12px',
-          marginBottom: '16px'
-        }}>
-          {[1, 5, 10, 20, 50, 100].map((amount) => (
-            <button
-              key={amount}
-              onClick={() => purchaseCredits(amount)}
-              disabled={isLoading}
-              className="btn"
-              style={{ 
-                padding: '12px',
-                fontSize: '14px',
-                fontWeight: '700',
-                background: 'rgba(245, 158, 11, 0.1)',
-                color: '#000000',
-                border: '2px solid rgba(245, 158, 11, 0.3)',
-                textShadow: 'none'
-              }}
-            >
-              {amount} Credits
-            </button>
-          ))}
+      {/* Get credits */}
+      <div style={{ 
+        marginBottom: 24,
+        padding: 20,
+        background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.5) 100%)',
+        borderRadius: 16,
+        border: '1px solid rgba(255, 255, 255, 0.08)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+          <Zap size={18} style={{ color: '#fbbf24' }} />
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#e5e7eb' }}>Get credits</h3>
+          <span style={{ fontSize: 12, color: '#94a3b8' }}>{creditPrice} ETH each</span>
         </div>
-        
-        {/* Custom Amount Input */}
-        <div style={{ 
-          display: 'flex', 
-          gap: '12px', 
-          alignItems: 'center',
-          marginBottom: '16px'
-        }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 14 }}>
+          {presetAmounts.map((amount) => {
+            const cost = (Number(creditPrice) * amount).toFixed(5)
+            return (
+              <button
+                key={amount}
+                onClick={() => purchaseCredits(amount)}
+                disabled={isLoading}
+                type="button"
+                style={{ 
+                  padding: '12px 10px',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  background: 'rgba(59, 130, 246, 0.12)',
+                  color: '#e5e7eb',
+                  border: '1px solid rgba(59, 130, 246, 0.25)',
+                  borderRadius: 10,
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2
+                }}
+                onMouseOver={(e) => { if (!isLoading) { e.currentTarget.style.background = 'rgba(59, 130, 246, 0.2)'; e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)' } }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(59, 130, 246, 0.12)'; e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.25)' }}
+              >
+                <span>{amount} credits</span>
+                <span style={{ fontSize: 11, color: '#94a3b8' }}>{cost} ETH</span>
+              </button>
+            )
+          })}
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'stretch' }}>
           <input
             type="number"
             value={customAmount}
             onChange={(e) => setCustomAmount(e.target.value)}
             placeholder="Custom amount"
-            min="1"
+            min={1}
             style={{
               flex: 1,
-              padding: '12px',
-              border: '2px solid rgba(245, 158, 11, 0.3)',
-              borderRadius: '8px',
-              fontSize: '14px',
-              background: 'white'
+              padding: '12px 14px',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              borderRadius: 10,
+              fontSize: 14,
+              background: 'rgba(15, 23, 42, 0.6)',
+              color: '#e5e7eb',
+              outline: 'none'
             }}
+            onFocus={(e) => { e.target.style.borderColor = 'rgba(59, 130, 246, 0.5)' }}
+            onBlur={(e) => { e.target.style.borderColor = 'rgba(255, 255, 255, 0.12)' }}
           />
           <button
+            type="button"
             onClick={() => {
-              const amount = parseInt(customAmount)
-              if (amount > 0) {
-                purchaseCredits(amount)
-                setCustomAmount('')
-              }
+              const amount = parseInt(customAmount, 10)
+              if (amount > 0) { purchaseCredits(amount); setCustomAmount('') }
             }}
-            disabled={isLoading || !customAmount || parseInt(customAmount) <= 0}
-            className="btn"
+            disabled={isLoading || !customAmount || parseInt(customAmount, 10) <= 0}
             style={{ 
               padding: '12px 20px',
-              fontSize: '14px',
-              fontWeight: '700',
-              background: 'rgba(245, 158, 11, 0.1)',
-              color: '#000000',
-              border: '2px solid rgba(245, 158, 11, 0.3)',
+              fontSize: 14,
+              fontWeight: 600,
+              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 10,
               whiteSpace: 'nowrap',
-              textShadow: 'none'
+              cursor: (isLoading || !customAmount) ? 'not-allowed' : 'pointer',
+              opacity: (isLoading || !customAmount || parseInt(customAmount, 10) <= 0) ? 0.6 : 1
             }}
           >
             Buy
@@ -658,93 +670,75 @@ const SlotGame = () => {
         </div>
       </div>
 
-      {/* Transaction Info */}
-      {lastTransaction && (
+      {lastTransaction?.txHash && (
         <div style={{ 
-          marginTop: '12px',
-          padding: '12px',
-          background: 'rgba(59, 130, 246, 0.1)',
-          borderRadius: '8px',
+          marginBottom: 16,
+          padding: 12,
+          background: 'rgba(59, 130, 246, 0.08)',
+          borderRadius: 10,
           border: '1px solid rgba(59, 130, 246, 0.2)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <ExternalLink size={16} style={{ color: '#3b82f6' }} />
-            <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#1f2937' }}>
-              Transaction Hash:
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <ExternalLink size={14} style={{ color: '#60a5fa' }} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8' }}>Tx</span>
           </div>
-          <div style={{ 
-            fontFamily: 'monospace', 
-            fontSize: '12px', 
-            color: '#6b7280',
-            wordBreak: 'break-all'
-          }}>
-            {lastTransaction.hash || lastTransaction.transactionHash}
+          <div style={{ fontFamily: 'monospace', fontSize: 11, color: '#cbd5e1', wordBreak: 'break-all' }}>
+            {lastTransaction.txHash || lastTransaction.hash || lastTransaction.transactionHash}
           </div>
-          
         </div>
       )}
 
       {error && (
         <div style={{ 
-          marginTop: '16px',
-          padding: '12px',
+          marginBottom: 16,
+          padding: 12,
           background: 'rgba(239, 68, 68, 0.1)',
-          border: '1px solid rgba(239, 68, 68, 0.2)',
-          borderRadius: '8px',
-          color: '#dc2626'
+          border: '1px solid rgba(239, 68, 68, 0.25)',
+          borderRadius: 10,
+          color: '#f87171',
+          fontSize: 14
         }}>
           {error}
         </div>
       )}
 
-      <div style={{ 
-        marginTop: '24px',
-        display: 'flex',
-        justifyContent: 'center'
-      }}>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
         <ShareButton 
-          title="Slot Machine Game"
-          description="Spin the slot machine and win XP! Match symbols to earn bonus XP. Play now on BaseHub!"
+          title="Crypto Slots - BaseHub"
+          description="Spin the reels, match symbols, win XP. Play on BaseHub!"
           gameType="slot"
         />
       </div>
 
+      {/* How to Play - compact */}
       <div style={{ 
-        marginTop: '32px',
-        padding: '20px',
-        background: 'rgba(245, 158, 11, 0.1)',
-        border: '1px solid rgba(245, 158, 11, 0.2)',
-        borderRadius: '12px'
+        padding: 16,
+        background: 'rgba(15, 23, 42, 0.5)',
+        borderRadius: 12,
+        border: '1px solid rgba(255, 255, 255, 0.06)'
       }}>
-        <h3 style={{ 
-          fontSize: '16px', 
-          fontWeight: 'bold', 
-          marginBottom: '12px',
-          color: '#1f2937'
-        }}>
-          How to Play:
+        <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          How to play
         </h3>
-        <ul style={{ 
-          listStyle: 'none', 
-          padding: 0, 
-          margin: 0,
-          color: '#6b7280',
-          fontSize: '14px',
-          lineHeight: '1.6',
-          paddingLeft: '20px'
-        }}>
-          <li>• Purchase credits with ETH ({creditPrice} ETH per credit)</li>
-          <li>• Spin costs 1 credit per play</li>
-          <li>• Match 2+ symbols to win bonus XP</li>
-          <li>• 4 matching symbols = COMBO! (2000 XP)</li>
-          <li>• Always earn at least 10 XP per spin</li>
-          <li>• Your wallet: {address?.slice(0, 6)}...{address?.slice(-4)}</li>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 13, color: '#cbd5e1', lineHeight: 1.7 }}>
+          <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Star size={12} style={{ color: '#fbbf24', flexShrink: 0 }} /> Buy credits with ETH ({creditPrice} per credit)</li>
+          <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Play size={12} style={{ color: '#60a5fa', flexShrink: 0 }} /> 1 credit = 1 spin</li>
+          <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><TrendingUp size={12} style={{ color: '#34d399', flexShrink: 0 }} /> 2+ matching symbols = bonus XP</li>
+          <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Zap size={12} style={{ color: '#fbbf24', flexShrink: 0 }} /> 4 same = COMBO! +2000 XP</li>
+          <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><CheckCircle size={12} style={{ color: '#94a3b8', flexShrink: 0 }} /> 150 XP base per spin</li>
+          {address && (
+            <li style={{ marginTop: 6, fontSize: 11, color: '#64748b' }}>{address.slice(0, 6)}…{address.slice(-4)}</li>
+          )}
         </ul>
       </div>
       
       {/* Modern Animations CSS */}
       <style>{`
+        @keyframes buttonShimmer {
+          0%, 100% { opacity: 0; transform: translateX(-100%); }
+          50% { opacity: 1; }
+          100% { transform: translateX(100%); }
+        }
         @keyframes shimmer {
           0% { transform: translateX(-100%); }
           100% { transform: translateX(100%); }

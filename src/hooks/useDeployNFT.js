@@ -233,8 +233,8 @@ export const useDeployNFT = () => {
       
       // Award XP for successful NFT deployment
       try {
-        console.log('🎉 Awarding 100 XP for NFT deployment!')
-        await addXP(address, 100, 'NFT Deployment')
+        console.log('🎉 Awarding 850 XP for NFT deployment!')
+        await addXP(address, 850, 'NFT Deployment')
       } catch (xpError) {
         console.warn('⚠️ Failed to award XP:', xpError)
       }
@@ -245,7 +245,7 @@ export const useDeployNFT = () => {
           wallet_address: address,
           transaction_hash: feeTxHash,
           game_type: 'NFT_DEPLOYMENT',
-          xp_earned: 100,
+          xp_earned: 850,
           amount: '0.000001',
           token: 'ETH',
           status: 'completed'

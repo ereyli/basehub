@@ -4,6 +4,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useChainId } from 'wagmi'
 import { Home, Users, Zap, Sun, Moon, Repeat, Coins, Dice1, TrendingUp, Rocket, Loader2 } from 'lucide-react'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
+import { useFastDeployModal } from '../contexts/FastDeployContext'
 import { getCurrentConfig } from '../config/base'
 import { useProofOfUsage } from '../hooks/useProofOfUsage'
 import { getXP, getNFTCount } from '../utils/xpUtils'
@@ -17,6 +18,7 @@ const WebHeader = () => {
   const { isConnected, address } = useAccount()
   const chainId = useChainId()
   const { isCorrectNetwork } = useNetworkCheck()
+  const { openModal: openFastDeployModal } = useFastDeployModal()
   const baseConfig = getCurrentConfig()
   const { totalUsers, loading: proofLoading } = useProofOfUsage()
   const { supabase } = useSupabase()
@@ -35,7 +37,7 @@ const WebHeader = () => {
     setIsLoadingGM(true)
     try {
       await sendGMTransaction('GM from BaseHub! 🎮')
-      setQuickActionMessage('GM sent! +30 XP')
+      setQuickActionMessage('GM sent! +150 XP')
       setTimeout(() => setQuickActionMessage(''), 2000)
     } catch (error) {
       console.error('GM failed:', error)
@@ -49,7 +51,7 @@ const WebHeader = () => {
     setIsLoadingGN(true)
     try {
       await sendGNTransaction('GN from BaseHub! 🌙')
-      setQuickActionMessage('GN sent! +30 XP')
+      setQuickActionMessage('GN sent! +150 XP')
       setTimeout(() => setQuickActionMessage(''), 2000)
     } catch (error) {
       console.error('GN failed:', error)
@@ -145,6 +147,7 @@ const WebHeader = () => {
     { id: 'dice', label: 'Dice', icon: Dice1, color: '#10b981', path: '/dice' },
     { id: 'analysis', label: 'Analysis', icon: TrendingUp, color: '#8b5cf6', path: '/wallet-analysis' },
     { id: 'deploy', label: 'Deploy', icon: Rocket, color: '#ec4899', path: '/deploy' },
+    { id: 'fast-deploy', label: 'Fast Deploy', icon: Zap, color: '#ec4899', onClick: openFastDeployModal },
   ]
 
   return (

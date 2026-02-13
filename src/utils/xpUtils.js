@@ -574,9 +574,9 @@ export const addBonusXP = async (walletAddress, gameType, isWin, chainId = null)
   const gameTypeLower = gameType.toLowerCase()
   
   if (gameTypeLower === 'gm' || gameTypeLower === 'gn') {
-    baseXP = 30 // GM/GN gives 30 XP
+    baseXP = 150 // GM/GN gives 150 XP
   } else if (gameTypeLower === 'flip' || gameTypeLower === 'luckynumber' || gameTypeLower === 'diceroll' || gameTypeLower === 'slot') {
-    baseXP = 60 // Flip, Lucky Number, Dice Roll, Slot give 60 XP
+    baseXP = 150 // Flip, Lucky Number, Dice Roll, Slot give 150 XP
   }
   
   // Bonus XP for winning

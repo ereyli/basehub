@@ -9,7 +9,7 @@ import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
 import NetworkGuard from '../components/NetworkGuard'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
-import { Target, Send, Star, CheckCircle, ExternalLink, Coins, TrendingUp, TrendingDown } from 'lucide-react'
+import { Target, Send, Star, CheckCircle, ExternalLink, Coins, TrendingUp, TrendingDown, Play } from 'lucide-react'
 import NumberWheel from '../components/NumberWheel'
 import Confetti from '../components/Confetti'
 import soundManager from '../utils/soundEffects'
@@ -168,22 +168,14 @@ const LuckyNumberGame = () => {
 
   if (!isConnected) {
     return (
-      <div className="card">
+      <div className="card" style={{ maxWidth: 560, margin: '0 auto' }}>
         <BackButton />
-        
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <Target size={48} style={{ color: '#f59e0b', marginBottom: '16px' }} />
-          <h2 style={{ 
-            fontSize: '24px', 
-            fontWeight: 'bold', 
-            marginBottom: '8px',
-            color: '#e5e7eb'
-          }}>
-            Connect Wallet to Play
-          </h2>
-          <p style={{ color: '#9ca3af' }}>
-            Please connect your wallet to start playing the lucky number game
-          </p>
+        <div style={{ textAlign: 'center', padding: 48 }}>
+          <div className="game-icon" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', margin: '0 auto 16px' }}>
+            <Target size={32} style={{ color: 'white' }} />
+          </div>
+          <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: 8, color: '#e5e7eb' }}>Connect wallet to play</h2>
+          <p style={{ color: '#94a3b8', fontSize: 15 }}>Connect your wallet to pick a number and earn XP.</p>
         </div>
       </div>
     )
@@ -191,40 +183,24 @@ const LuckyNumberGame = () => {
 
   return (
     <NetworkGuard showWarning={true}>
-      <div className="card">
+      <div className="card" style={{ maxWidth: 560, margin: '0 auto' }}>
       <EmbedMeta 
-        title="Lucky Number Game - BaseHub"
-        description="Pick a number 1-10 and win XP! 10% chance to win 1000 bonus XP. Play now on BaseHub!"
+        title="Lucky Number - BaseHub"
+        description="Pick a number 1-10 and win XP! 10% chance to win 1000 bonus XP. Play on BaseHub!"
         buttonText="🍀 Play Lucky Number!"
         image="/image.svg"
       />
       
       <BackButton />
       
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <div 
-          className="game-icon"
-          style={{ 
-            background: '#f59e0b',
-            margin: '0 auto 16px'
-          }}
-        >
-          <img src="/crypto-logos/basahub logo/luckynumber.png" alt="Lucky Number Game" loading="lazy" style={{ width: '60px', height: '60px', borderRadius: '16px' }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <div className="game-icon" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', margin: 0, flexShrink: 0 }}>
+          <img src="/crypto-logos/basahub logo/luckynumber.png" alt="" loading="lazy" style={{ width: 40, height: 40, borderRadius: 12 }} />
         </div>
-        <h1 style={{ 
-          fontSize: '32px', 
-          fontWeight: 'bold', 
-          marginBottom: '8px',
-          color: '#e5e7eb'
-        }}>
-          Lucky Number Game
-        </h1>
-        <p style={{ 
-          color: '#9ca3af',
-          fontSize: '16px'
-        }}>
-          Guess a number from 1-10 and earn XP!
-        </p>
+        <div>
+          <h1 style={{ fontSize: 'clamp(1.35rem, 4vw, 1.6rem)', fontWeight: 700, margin: 0, color: '#e5e7eb', letterSpacing: '-0.02em' }}>Lucky Number</h1>
+          <p style={{ margin: '4px 0 0', color: '#94a3b8', fontSize: 14 }}>Guess 1–10 · Win XP</p>
+        </div>
       </div>
 
       {/* Confetti Effect */}
@@ -276,104 +252,37 @@ const LuckyNumberGame = () => {
         </div>
       )}
 
-      {/* Result Display with Animations */}
+      {/* Result */}
       {showResult && gameResult && (
         <div style={{ 
-          display: 'flex', 
-          flexDirection: 'column',
-          alignItems: 'center', 
-          gap: '12px',
-          justifyContent: 'center',
-          padding: '24px',
-          background: gameResult.won 
-            ? 'rgba(16, 185, 129, 0.15)' 
-            : 'rgba(239, 68, 68, 0.15)',
-          border: gameResult.won 
-            ? '2px solid rgba(16, 185, 129, 0.3)' 
-            : '2px solid rgba(239, 68, 68, 0.3)',
-          borderRadius: '16px',
-          marginBottom: '24px',
-          animation: gameResult.won ? 'winReveal 0.6s ease-out' : 'loseReveal 0.6s ease-out',
-          boxShadow: gameResult.won
-            ? '0 0 30px rgba(16, 185, 129, 0.3)'
-            : '0 0 20px rgba(239, 68, 68, 0.2)'
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: 16,
+          background: gameResult.won ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(22, 163, 74, 0.1) 100%)' : 'linear-gradient(135deg, rgba(51, 65, 85, 0.3) 0%, rgba(30, 41, 59, 0.4) 100%)',
+          border: gameResult.won ? '1px solid rgba(34, 197, 94, 0.35)' : '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: 12, marginBottom: 20
         }}>
-          {gameResult.won ? (
-            <TrendingUp size={32} style={{ color: '#10b981', animation: 'bounce 0.6s ease-out' }} />
-          ) : (
-            <TrendingDown size={32} style={{ color: '#ef4444', animation: 'shake 0.6s ease-out' }} />
-          )}
-          <div 
-            style={{ 
-              fontWeight: 'bold',
-              fontSize: '24px',
-              color: gameResult.won ? '#10b981' : '#ef4444',
-              animation: gameResult.won ? 'bounce 0.6s ease-out 0.2s both' : 'shake 0.6s ease-out 0.2s both',
-              textAlign: 'center'
-            }}
-          >
-            {gameResult.won ? '🎉 YOU WIN!' : '😔 YOU LOST!'} 
-          </div>
-          <div style={{ fontSize: '16px', color: '#9ca3af', marginTop: '8px', textAlign: 'center' }}>
-            Your number: <strong style={{ color: '#e5e7eb' }}>{gameResult.selectedNumber}</strong> | 
-            Winning number: <strong style={{ color: '#e5e7eb' }}>{gameResult.winningNumber}</strong>
-          </div>
-          {lastTransaction && (
-            <div style={{ 
-              fontSize: '18px', 
-              fontWeight: 'bold',
-              color: gameResult.won ? '#10b981' : '#8b5cf6',
-              marginTop: '8px'
-            }}>
-              XP Earned: +{lastTransaction.xpEarned || 10} XP
-            </div>
-          )}
-        </div>
-      )}
-
-      {lastPlayed && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-          <CheckCircle size={20} style={{ color: '#8b5cf6' }} />
-          <span style={{ color: '#9ca3af', fontSize: '14px' }}>
-            Last played: {lastPlayed.toLocaleTimeString()}
+          {gameResult.won ? <TrendingUp size={24} style={{ color: '#4ade80' }} /> : <TrendingDown size={24} style={{ color: '#94a3b8' }} />}
+          <span style={{ fontWeight: 700, fontSize: 18, color: gameResult.won ? '#4ade80' : '#94a3b8' }}>
+            {gameResult.won ? 'You win!' : 'Try again'}
           </span>
+          <span style={{ fontSize: 14, color: '#cbd5e1' }}>You picked {gameResult.selectedNumber}, result was {gameResult.winningNumber} · +{lastTransaction?.xpEarned || 150} XP</span>
         </div>
       )}
 
-      {lastTransaction && (
-        <div style={{ 
-          marginTop: '12px',
-          padding: '12px',
-          background: 'rgba(59, 130, 246, 0.1)',
-          borderRadius: '8px',
-          border: '1px solid rgba(59, 130, 246, 0.2)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <ExternalLink size={16} style={{ color: '#3b82f6' }} />
-            <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#e5e7eb' }}>
-              Transaction Hash:
-            </span>
+      {lastTransaction?.txHash && (
+        <div style={{ marginBottom: 16, padding: 12, background: 'rgba(59, 130, 246, 0.08)', borderRadius: 10, border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <ExternalLink size={14} style={{ color: '#60a5fa' }} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8' }}>Tx</span>
           </div>
-          <div style={{ 
-            fontFamily: 'monospace', 
-            fontSize: '12px', 
-            color: '#9ca3af',
-            wordBreak: 'break-all'
-          }}>
-            {lastTransaction.hash || lastTransaction.transactionHash}
+          <div style={{ fontFamily: 'monospace', fontSize: 11, color: '#cbd5e1', wordBreak: 'break-all' }}>
+            {lastTransaction.txHash || lastTransaction.hash || lastTransaction.transactionHash}
           </div>
-          
         </div>
       )}
 
-      <div style={{ marginTop: '24px' }}>
-        <h3 style={{ 
-          fontSize: '18px', 
-          fontWeight: 'bold', 
-          marginBottom: '16px',
-          color: '#e5e7eb'
-        }}>
-          Choose your lucky number (1-10):
+      <div style={{ marginBottom: 24, padding: 20, background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.5) 100%)', borderRadius: 16, border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <h3 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 600, color: '#e5e7eb' }}>
+          Choose your number (1–10)
         </h3>
         
         <div style={{ 
@@ -393,16 +302,14 @@ const LuckyNumberGame = () => {
                 fontSize: '20px',
                 fontWeight: 'bold',
                 background: selectedNumber === number 
-                  ? '#f59e0b' 
+                  ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' 
                   : 'rgba(30, 41, 59, 0.8)',
                 color: selectedNumber === number ? 'white' : '#e5e7eb',
-                border: selectedNumber === number 
-                  ? 'none' 
-                  : '2px solid rgba(245, 158, 11, 0.3)',
+                border: selectedNumber === number ? 'none' : '1px solid rgba(255, 255, 255, 0.12)',
                 transition: 'all 0.3s ease',
                 transform: selectedNumber === number ? 'scale(1.1)' : 'scale(1)',
                 boxShadow: selectedNumber === number 
-                  ? '0 4px 15px rgba(245, 158, 11, 0.4)' 
+                  ? '0 4px 14px rgba(59, 130, 246, 0.35)' 
                   : 'none',
                 cursor: (isSpinning || isRevealing) ? 'not-allowed' : 'pointer',
                 opacity: (isSpinning || isRevealing) ? 0.6 : 1
@@ -430,25 +337,23 @@ const LuckyNumberGame = () => {
           style={{ 
             width: '100%',
             background: (isLoading || isSpinning || isRevealing) 
-              ? '#9ca3af' 
-              : '#f59e0b',
+              ? 'rgba(100, 116, 139, 0.5)' 
+              : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
             transition: 'all 0.3s ease',
             transform: (isLoading || isSpinning || isRevealing) ? 'none' : 'scale(1)',
-            boxShadow: (isLoading || isSpinning || isRevealing) 
-              ? 'none' 
-              : '0 4px 15px rgba(245, 158, 11, 0.4)',
+            boxShadow: (isLoading || isSpinning || isRevealing) ? 'none' : '0 4px 14px rgba(59, 130, 246, 0.35)',
             cursor: (isLoading || isSpinning || isRevealing) ? 'not-allowed' : 'pointer'
           }}
           onMouseEnter={(e) => {
             if (!isLoading && !isSpinning && !isRevealing) {
               e.target.style.transform = 'scale(1.02)'
-              e.target.style.boxShadow = '0 6px 20px rgba(245, 158, 11, 0.5)'
+              e.target.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.4)'
             }
           }}
           onMouseLeave={(e) => {
             if (!isLoading && !isSpinning && !isRevealing) {
               e.target.style.transform = 'scale(1)'
-              e.target.style.boxShadow = '0 4px 15px rgba(245, 158, 11, 0.4)'
+              e.target.style.boxShadow = '0 4px 14px rgba(59, 130, 246, 0.35)'
             }
           }}
         >
@@ -466,61 +371,26 @@ const LuckyNumberGame = () => {
         </button>
 
         {error && (
-          <div style={{ 
-            marginTop: '16px',
-            padding: '12px',
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.2)',
-            borderRadius: '8px',
-            color: '#dc2626'
-          }}>
+          <div style={{ marginTop: 12, padding: 12, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: 10, color: '#f87171', fontSize: 14 }}>
             {error}
           </div>
         )}
       </div>
 
-      <div style={{ 
-        marginTop: '24px',
-        display: 'flex',
-        justifyContent: 'center'
-      }}>
-        <ShareButton 
-          title="Lucky Number Game"
-          description="Pick a number 1-10 and win XP! 10% chance to win 1000 bonus XP. Play now on BaseHub!"
-          gameType="lucky"
-        />
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+        <ShareButton title="Lucky Number - BaseHub" description="Pick a number 1-10 and win XP! Play on BaseHub!" gameType="lucky" />
       </div>
 
-      <div style={{ 
-        marginTop: '32px',
-        padding: '20px',
-        background: 'rgba(139, 92, 246, 0.1)',
-        border: '1px solid rgba(139, 92, 246, 0.2)',
-        borderRadius: '12px'
-      }}>
-        <h3 style={{ 
-          fontSize: '16px', 
-          fontWeight: 'bold', 
-          marginBottom: '12px',
-          color: '#e5e7eb'
-        }}>
-          How to Play:
-        </h3>
-        <ul style={{ 
-          listStyle: 'none', 
-          padding: 0, 
-          margin: 0,
-          color: '#9ca3af',
-          fontSize: '14px',
-          lineHeight: '1.6',
-          paddingLeft: '20px'
-        }}>
-          <li>Choose a number from 1 to 10</li>
-          <li>Earn 10 XP for playing, +1000 bonus XP for winning</li>
-          <li>1 XP = 50 BHUP tokens (claim coming soon!)</li>
-          <li>Your wallet address: {address?.slice(0, 6)}...{address?.slice(-4)}</li>
+      <div style={{ padding: 16, background: 'rgba(15, 23, 42, 0.5)', borderRadius: 12, border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+        <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>How to play</h3>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 13, color: '#cbd5e1', lineHeight: 1.7 }}>
+          <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Star size={12} style={{ color: '#fbbf24', flexShrink: 0 }} /> Pick a number from 1 to 10</li>
+          <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Play size={12} style={{ color: '#60a5fa', flexShrink: 0 }} /> 150 XP base, +1000 XP if you win</li>
+          <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><TrendingUp size={12} style={{ color: '#34d399', flexShrink: 0 }} /> 10% chance to match</li>
+          <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><CheckCircle size={12} style={{ color: '#94a3b8', flexShrink: 0 }} /> Pay small fee in ETH per play</li>
+          {address && <li style={{ marginTop: 6, fontSize: 11, color: '#64748b' }}>{address.slice(0, 6)}…{address.slice(-4)}</li>}
         </ul>
-        </div>
+      </div>
       </div>
 
       {/* CSS Animations */}

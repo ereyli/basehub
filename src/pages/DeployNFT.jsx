@@ -191,7 +191,7 @@ const DeployNFT = () => {
               </div>
               <div className="info-item">
                 <Zap size={16} />
-                <span>XP Reward: +100 XP</span>
+                <span>XP Reward: +850 XP</span>
               </div>
             </div>
 

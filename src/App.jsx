@@ -16,6 +16,8 @@ import Footer from './components/Footer'
 import SkeletonLoader from './components/SkeletonLoader'
 import { useNetworkInterceptor } from './hooks/useNetworkInterceptor'
 import { RainbowKitChainInterceptor } from './components/RainbowKitChainInterceptor'
+import { FastDeployProvider } from './contexts/FastDeployContext'
+import FastDeployModal from './components/FastDeployModal'
 import Home from './pages/Home'
 import GMGame from './pages/GMGame'
 import GNGame from './pages/GNGame'
@@ -355,11 +357,13 @@ function WebAppContent() {
     <>
       {/* RainbowKit chain interceptor - handles automatic network addition (only for web) */}
       <RainbowKitChainInterceptor />
-      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <GlobalErrorHandler />
-        <div className="App web-app">
-          <ResponsiveHeader />
-          <main className="container" style={{ paddingLeft: '80px', paddingBottom: '40px' }}>
+      <FastDeployProvider>
+        <FastDeployModal />
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <GlobalErrorHandler />
+          <div className="App web-app">
+            <ResponsiveHeader />
+            <main className="container" style={{ paddingLeft: '80px', paddingBottom: '40px' }}>
           <Suspense fallback={<SkeletonLoader />}>
             <Routes>
               <Route path="/" element={<Home />} />
@@ -394,6 +398,7 @@ function WebAppContent() {
         <Footer />
       </div>
     </Router>
+      </FastDeployProvider>
     </>
   )
 }

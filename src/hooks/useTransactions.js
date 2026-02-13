@@ -1,12 +1,12 @@
 import { useState, useRef, useCallback } from 'react'
-import { useAccount, useWriteContract, useChainId } from 'wagmi'
+import { useAccount, useWriteContract, useChainId, usePublicClient } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from './useNetworkCheck'
 import { addXP, addBonusXP, recordTransaction } from '../utils/xpUtils'
 import { getCurrentConfig, getContractAddress, GAS_CONFIG, GAME_CONFIG } from '../config/base'
 import { getContractAddressByNetwork, NETWORKS, isNetworkSupported } from '../config/networks'
-import { parseEther } from 'viem'
+import { parseEther, formatEther } from 'viem'
 import { config } from '../config/wagmi'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { useQuestSystem } from './useQuestSystem'
@@ -27,7 +27,8 @@ export const useTransactions = () => {
     }
   }
   const { address } = useAccount()
-  const chainId = useChainId() // Use useChainId hook to ensure we always get the current chainId
+  const chainId = useChainId()
+  const publicClient = usePublicClient({ chainId })
   const { writeContractAsync, data: txData } = useWriteContract()
   const { isCorrectNetwork, networkName, currentNetworkConfig, switchToNetwork, supportedNetworks } = useNetworkCheck()
   const { updateQuestProgress } = useQuestSystem()
@@ -103,12 +104,27 @@ export const useTransactions = () => {
     return isOnBase ? parseEther('0.000005') : parseEther('0.00002')
   }
 
-  // Get slot credit price based on network
-  // Base: 0.000005 ETH, InkChain/Soneium/Katana: 0.00002 ETH
-  const getSlotCreditPrice = () => {
-    const isOnBase = chainId === NETWORKS.BASE.chainId
-    return isOnBase ? parseEther('0.000005') : parseEther('0.00002')
-  }
+  // SlotGame ABI for reading CREDIT_PRICE and simulating purchaseCredits
+  const SLOT_GAME_ABI = [
+    { name: 'CREDIT_PRICE', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    { name: 'purchaseCredits', type: 'function', stateMutability: 'payable', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [] }
+  ]
+  // Get slot credit price from chain when possible, else fallback to match SlotGame.sol (0.00002 ether)
+  const getSlotCreditPrice = useCallback(async (contractAddress) => {
+    if (publicClient && contractAddress) {
+      try {
+        const price = await publicClient.readContract({
+          address: contractAddress,
+          abi: SLOT_GAME_ABI,
+          functionName: 'CREDIT_PRICE'
+        })
+        return BigInt(price)
+      } catch (e) {
+        console.warn('Could not read CREDIT_PRICE from contract, using 0.00002:', e?.message)
+      }
+    }
+    return parseEther('0.00002')
+  }, [publicClient])
 
   const sendGMTransaction = useCallback(async (message = 'GM!') => {
     if (!address) {
@@ -154,7 +170,7 @@ export const useTransactions = () => {
       // Separate try-catch blocks to ensure XP is awarded even if transaction recording fails
       try {
         console.log('🎯 Awarding XP for GM transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName })
-        await addXP(address, 30, 'GM_GAME', chainId) // GM gives 30 XP
+        await addXP(address, 150, 'GM_GAME', chainId) // GM gives 150 XP
         console.log('✅ XP added successfully')
       } catch (xpError) {
         console.error('❌ Error adding XP:', xpError)
@@ -166,7 +182,7 @@ export const useTransactions = () => {
         await recordTransaction({
           wallet_address: address,
           game_type: 'GM_GAME',
-          xp_earned: 30,
+          xp_earned: 150,
           transaction_hash: txHash
         })
         console.log('✅ Transaction recorded')
@@ -278,7 +294,7 @@ export const useTransactions = () => {
       // Separate try-catch blocks to ensure XP is awarded even if transaction recording fails
       try {
         console.log('🎯 Awarding XP for GN transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName })
-        await addXP(address, 30, 'GN_GAME', chainId) // GN gives 30 XP
+        await addXP(address, 150, 'GN_GAME', chainId) // GN gives 150 XP
         console.log('✅ XP added successfully')
       } catch (xpError) {
         console.error('❌ Error adding XP:', xpError)
@@ -290,7 +306,7 @@ export const useTransactions = () => {
         await recordTransaction({
           wallet_address: address,
           game_type: 'GN_GAME',
-          xp_earned: 30,
+          xp_earned: 150,
           transaction_hash: txHash
         })
         console.log('✅ Transaction recorded')
@@ -412,7 +428,7 @@ export const useTransactions = () => {
         // Don't throw - XP failure shouldn't block the transaction
       }
       
-      const xpEarned = playerWon ? 60 + 500 : 60
+      const xpEarned = playerWon ? 150 + 500 : 150
       
       // Record transaction separately (non-blocking)
       try {
@@ -540,7 +556,7 @@ export const useTransactions = () => {
         // Don't throw - XP failure shouldn't block the transaction
       }
       
-      const xpEarned = playerWon ? 60 + 1000 : 60
+      const xpEarned = playerWon ? 150 + 1000 : 150
       
       // Record transaction separately (non-blocking)
       try {
@@ -669,7 +685,7 @@ export const useTransactions = () => {
         // Don't throw - XP failure shouldn't block the transaction
       }
       
-      const xpEarned = playerWon ? 60 + 1500 : 60
+      const xpEarned = playerWon ? 150 + 1500 : 150
       
       // Record transaction separately (non-blocking)
       try {
@@ -765,32 +781,53 @@ export const useTransactions = () => {
       console.log('📡 Sending Slot transaction to blockchain...')
       
       let txHash
-      let xpEarned = 60 // Base XP for slot
+      let xpEarned = 150 // Base XP for slot
       
       if (action === 'purchaseCredits') {
-        // Purchase credits
-        const amount = params.amount || 10
-        const creditPrice = getSlotCreditPrice()
-        // Calculate total cost: amount * creditPrice
-        const totalCost = BigInt(amount) * creditPrice
-        
+        // 1) Read CREDIT_PRICE from contract so UI always matches deployed contract
+        const amount = Number(params.amount) || 10
+        const amountBn = BigInt(amount)
+        const creditPrice = await getSlotCreditPrice(contractAddress)
+        const totalCost = amountBn * creditPrice
+
+        // 2) Simulate to avoid sending a tx that will revert (e.g. "Payment transfer failed" if owner rejects ETH)
+        if (publicClient) {
+          try {
+            await publicClient.simulateContract({
+              account: address,
+              address: contractAddress,
+              abi: SLOT_GAME_ABI,
+              functionName: 'purchaseCredits',
+              args: [amountBn],
+              value: totalCost
+            })
+          } catch (simErr) {
+            const msg = (simErr?.message || simErr?.shortMessage || String(simErr)).toLowerCase()
+            if (msg.includes('payment transfer failed') || msg.includes('payment transfer')) {
+              throw new Error('Credit purchase would fail: the slot contract cannot send ETH to its owner on this network. Please try another network or contact support.')
+            }
+            if (msg.includes('insufficient eth') || msg.includes('insufficient eth for credits')) {
+              throw new Error(`Insufficient ETH. For ${amount} credits you need ${formatEther(totalCost)} ETH (contract price: ${formatEther(creditPrice)} per credit).`)
+            }
+            throw simErr
+          }
+        }
+
+        const gasLimit = 500000n
         txHash = await writeContractAsync({
           address: contractAddress,
-          abi: [{
-            name: 'purchaseCredits',
-            type: 'function',
-            stateMutability: 'payable',
-            inputs: [{ name: 'amount', type: 'uint256' }]
-          }],
+          abi: SLOT_GAME_ABI,
           functionName: 'purchaseCredits',
-          args: [amount],
-          value: totalCost, // Network-specific credit price (Base: 0.000005 ETH, InkChain: 0.00002 ETH per credit)
+          args: [amountBn],
+          value: totalCost,
+          gas: gasLimit,
         })
         
         console.log('✅ Credits purchase transaction sent! Hash:', txHash)
         
       } else if (action === 'spinSlot') {
-        // Spin the slot
+        // Spin the slot - cap gas so wallet doesn't show inflated fee
+        const spinGasLimit = 250000n
         txHash = await writeContractAsync({
           address: contractAddress,
           abi: [{
@@ -801,7 +838,8 @@ export const useTransactions = () => {
           }],
           functionName: 'spinSlot',
           args: [],
-          value: 0 // No ETH needed for spin
+          value: 0n, // No ETH needed for spin
+          gas: spinGasLimit,
         })
         
         console.log('✅ Slot spin transaction sent! Hash:', txHash)
@@ -847,7 +885,7 @@ export const useTransactions = () => {
           
           console.log('🎰 Max count:', maxCount, 'Bonus XP:', bonusXp)
           
-          xpEarned = 60 + bonusXp // BASE_XP + bonus
+          xpEarned = 150 + bonusXp // Base XP + bonus
           
           // Award XP separately (non-blocking)
           try {
@@ -941,23 +979,19 @@ export const useTransactions = () => {
           // Don't throw - quest progress failure shouldn't block XP
         }
         
-        // Try to wait for confirmation (non-blocking)
+        // Wait for confirmation and verify success (required so UI only shows credits on real success)
         console.log('⏳ Waiting for transaction confirmation...')
-        try {
-          // Wait for confirmation with optimized polling
-          const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
-          const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
-          
-          const receipt = await waitForTxReceipt(txHash, timeoutDuration)
-          
-          console.log('✅ Slot credits purchase confirmed!', receipt)
-        } catch (confirmError) {
-          console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
+        const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+        const timeoutDuration = isOnInkChain ? 120000 : 60000
+        const receipt = await waitForTxReceipt(txHash, timeoutDuration)
+
+        if (receipt?.status !== 'success') {
+          console.error('❌ Slot credits purchase reverted', receipt)
+          throw new Error('Transaction reverted. Credits were not added.')
         }
-        
-        // Clear any previous errors on success
+        console.log('✅ Slot credits purchase confirmed!', receipt)
+
         setError(null)
-        
         return {
           txHash,
           creditsPurchased: params.amount,
@@ -978,17 +1012,29 @@ export const useTransactions = () => {
         setError(null)
         return null
       }
-      
+
+      // Surface contract revert reasons for credit purchase
+      let throwMsg = err.message
+      if (action === 'purchaseCredits') {
+        if (errorMsg.includes('insufficient eth') || errorMsg.includes('insufficient eth for credits')) {
+          throwMsg = 'Insufficient ETH sent. Each credit costs 0.00002 ETH. Send at least (amount × 0.00002) ETH.'
+        } else if (errorMsg.includes('payment transfer failed')) {
+          throwMsg = 'Credit purchase failed: payment to contract owner failed. Try again or contact support.'
+        } else if (errorMsg.includes('revert') || errorMsg.includes('execution reverted')) {
+          throwMsg = throwMsg || 'Transaction reverted on-chain. Ensure you have enough ETH (0.00002 per credit) and are on the correct network.'
+        }
+      }
+
       console.error('❌ Slot Transaction failed:', err)
       if (!errorMsg.includes('confirmation timeout')) {
-        setError(err.message)
+        setError(throwMsg)
       }
-      throw err
+      throw new Error(throwMsg)
     } finally {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getSlotCreditPrice])
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getSlotCreditPrice, publicClient])
 
   const sendCustomTransaction = useCallback(async (contractAddressParam, functionData, value = '0') => {
     if (!address) {

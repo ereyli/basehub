@@ -460,12 +460,12 @@ export const useDeployToken = () => {
 
       // Award XP, record, quest (shared)
       try {
-        await addXP(address, 50, 'Token Deployment', chainId)
+        await addXP(address, 850, 'Token Deployment', chainId)
         await recordTransaction({
           wallet_address: address,
           game_type: 'Token Deployment',
           tx_hash: deployTxHash,
-          xp_earned: 50,
+          xp_earned: 850,
           result: 'success',
           contract_address: contractAddress,
           token_name: name,
@@ -488,7 +488,7 @@ export const useDeployToken = () => {
         fee: feeLabel,
         feeWallet,
         xpEarned: 50,
-        status: contractAddress ? 'Token deployed successfully! +50 XP earned!' : 'Token deployment sent! Check tx for contract address. +50 XP earned!',
+        status: contractAddress ? 'Token deployed successfully! +850 XP earned!' : 'Token deployment sent! Check tx for contract address. +850 XP earned!',
       }
     } catch (err) {
       console.error('❌ Token deployment failed:', err)

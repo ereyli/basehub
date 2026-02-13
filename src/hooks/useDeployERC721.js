@@ -575,7 +575,7 @@ export const useDeployERC721 = () => {
       }
 
       try {
-        await addXP(address, 100, 'ERC721 Deployment', chainId)
+        await addXP(address, 850, 'ERC721 Deployment', chainId)
         await recordTransaction({
           wallet_address: address,
           transaction_type: 'ERC721_DEPLOY',

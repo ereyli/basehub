@@ -13,12 +13,12 @@ export const TABLES = {
 
 // XP System Configuration
 export const XP_CONFIG = {
-  GM_GAME: 30,        // 30 XP per GM
-  GN_GAME: 30,        // 30 XP per GN
-  FLIP_GAME: 60,      // 60 XP per flip
-  LUCKY_NUMBER: 60,   // 60 XP per lucky number
-  DICE_ROLL: 60,      // 60 XP per dice roll
-  SLOT_GAME: 60,      // 60 XP per slot spin
+  GM_GAME: 150,        // 150 XP per GM
+  GN_GAME: 150,       // 150 XP per GN
+  FLIP_GAME: 150,     // 150 XP per flip
+  LUCKY_NUMBER: 150,  // 150 XP per lucky number
+  DICE_ROLL: 150,     // 150 XP per dice roll
+  SLOT_GAME: 150,     // 150 XP per slot spin
   CONTRACT_GAME: 30,  // 30 XP per contract interaction
   
   // XP to Token conversion
