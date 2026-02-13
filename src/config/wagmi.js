@@ -3,7 +3,11 @@ import { base } from 'wagmi/chains'
 import { defineChain } from 'viem'
 import { injected, metaMask } from 'wagmi/connectors'
 import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector'
+import { Attribution } from 'ox/erc8021'
 import { NETWORKS } from './networks'
+
+// Base Builder Code – ERC-8021 attribution (base.dev → Settings → Builder Code). Export for writeContract dataSuffix.
+export const DATA_SUFFIX = Attribution.toDataSuffix({ codes: ['bc_cr8omxff'] })
 
 // InkChain chain definition
 const inkChain = defineChain({
@@ -98,6 +102,7 @@ const robinhoodTestnet = defineChain({
 // Wagmi config with multiple wallet support
 export const config = createConfig({
   chains: [base, inkChain, soneium, katana, arcRestnet, robinhoodTestnet],
+  dataSuffix: DATA_SUFFIX,
   transports: {
     [base.id]: http(),
     [inkChain.id]: http(NETWORKS.INKCHAIN.rpcUrls[0], {

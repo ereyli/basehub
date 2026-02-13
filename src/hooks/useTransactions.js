@@ -7,7 +7,7 @@ import { addXP, addBonusXP, recordTransaction } from '../utils/xpUtils'
 import { getCurrentConfig, getContractAddress, GAS_CONFIG, GAME_CONFIG } from '../config/base'
 import { getContractAddressByNetwork, NETWORKS, isNetworkSupported } from '../config/networks'
 import { parseEther, formatEther } from 'viem'
-import { config } from '../config/wagmi'
+import { config, DATA_SUFFIX } from '../config/wagmi'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { useQuestSystem } from './useQuestSystem'
 
@@ -161,6 +161,7 @@ export const useTransactions = () => {
         functionName: 'sendGM',
         args: [message],
         value: getGameFee(), // Network-specific fee (Base: 0.000005 ETH, InkChain: 0.00002 ETH)
+        dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
       
       console.log('✅ GM transaction sent! Hash:', txHash)
@@ -286,6 +287,7 @@ export const useTransactions = () => {
         functionName: 'sendGN',
         args: [message],
         value: getGameFee(), // Network-specific fee (Base: 0.000005 ETH, InkChain: 0.00002 ETH)
+        dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
       
       console.log('✅ GN transaction sent! Hash:', txHash)
@@ -406,6 +408,7 @@ export const useTransactions = () => {
         functionName: 'playFlip',
         args: [choice],
         value: getGameFee(), // Network-specific fee (Base: 0.000005 ETH, InkChain: 0.00002 ETH)
+        dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
       
       console.log('✅ Flip transaction sent! Hash:', txHash)
@@ -535,6 +538,7 @@ export const useTransactions = () => {
         functionName: 'guessLuckyNumber',
         args: [guess],
         value: getGameFee(), // Network-specific fee (Base: 0.000005 ETH, InkChain: 0.00002 ETH)
+        dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
       
       console.log('✅ Lucky Number transaction sent! Hash:', txHash)
@@ -662,6 +666,7 @@ export const useTransactions = () => {
         functionName: 'rollDice',
         args: [guess],
         value: getGameFee(), // Network-specific fee (Base: 0.000005 ETH, InkChain: 0.00002 ETH)
+        dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
       
       console.log('✅ Dice Roll transaction sent! Hash:', txHash)
@@ -821,6 +826,7 @@ export const useTransactions = () => {
           args: [amountBn],
           value: totalCost,
           gas: gasLimit,
+          dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
         })
         
         console.log('✅ Credits purchase transaction sent! Hash:', txHash)
@@ -840,6 +846,7 @@ export const useTransactions = () => {
           args: [],
           value: 0n, // No ETH needed for spin
           gas: spinGasLimit,
+          dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
         })
         
         console.log('✅ Slot spin transaction sent! Hash:', txHash)
