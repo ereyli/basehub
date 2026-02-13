@@ -8,7 +8,9 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 export const TABLES = {
   PLAYERS: 'players',
   TRANSACTIONS: 'transactions',
-  LEADERBOARD: 'leaderboard'
+  LEADERBOARD: 'leaderboard',
+  SWAPHUB_SWAPS: 'swaphub_swaps',
+  SWAPHUB_VOLUME: 'swaphub_volume'
 }
 
 // XP System Configuration

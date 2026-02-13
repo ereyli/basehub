@@ -620,133 +620,221 @@ export const claimTokens = async (walletAddress, xpAmount) => {
   throw new Error('Claim feature is coming soon! Minting is not enabled yet.')
 }
 
-// Record swap transaction with volume tracking
-export const recordSwapTransaction = async (walletAddress, swapAmountUSD, transactionHash, xpEarned = 250) => {
-  if (!walletAddress || !swapAmountUSD) {
-    console.log('❌ Missing walletAddress or swapAmountUSD:', { walletAddress, swapAmountUSD })
+// Per $100 volume: 5,000 XP (recurring every $100)
+export const SWAP_PER_100_XP = 5000
+export const SWAP_PER_100_GAME_TYPE = 'SWAP_PER_100'
+
+// Big milestones on total volume bar (max $1M): one-time bonuses
+export const SWAP_VOLUME_TIERS = [
+  { threshold: 1000, xp: 50000, key: 'SWAP_MILESTONE_1K' },
+  { threshold: 10000, xp: 500000, key: 'SWAP_MILESTONE_10K' },
+  { threshold: 100000, xp: 5000000, key: 'SWAP_MILESTONE_100K' },
+  { threshold: 1000000, xp: 50000000, key: 'SWAP_MILESTONE_1M' }
+]
+export const SWAP_VOLUME_BAR_MAX_USD = 1_000_000
+
+// Record swap into SwapHub tables (swaphub_swaps + swaphub_volume) then check XP milestones
+export const recordSwapTransaction = async (walletAddress, swapAmountUSD, transactionHash) => {
+  if (!walletAddress) {
+    console.log('❌ Missing walletAddress for swap record')
     return
   }
+  const amount = typeof swapAmountUSD === 'number' ? swapAmountUSD : parseFloat(swapAmountUSD) || 0
+  const normalized = walletAddress.toLowerCase()
 
   try {
-    // Check if Supabase is available
-    if (!supabase || !supabase.from) {
-      console.log('⚠️ Supabase not available, storing swap transaction locally')
-      const localTransactions = JSON.parse(localStorage.getItem('basehub_transactions') || '[]')
-      localTransactions.push({
-        wallet_address: walletAddress,
-        game_type: 'SWAP_VOLUME',
-        swap_amount_usd: swapAmountUSD,
-        transaction_hash: transactionHash,
-        created_at: new Date().toISOString()
-      })
-      localStorage.setItem('basehub_transactions', JSON.stringify(localTransactions))
-      console.log('✅ Swap transaction stored locally')
-      return
+    if (!supabase?.from) {
+      console.log('⚠️ Supabase not available, storing swap locally')
+      const local = JSON.parse(localStorage.getItem('basehub_swaphub_swaps') || '[]')
+      local.push({ wallet_address: normalized, amount_usd: amount, tx_hash: transactionHash, created_at: new Date().toISOString() })
+      localStorage.setItem('basehub_swaphub_swaps', JSON.stringify(local))
+      const vol = JSON.parse(localStorage.getItem('basehub_swaphub_volume') || '{}')
+      vol[normalized] = (vol[normalized] || 0) + amount
+      localStorage.setItem('basehub_swaphub_volume', JSON.stringify(vol))
+      const awarded = await checkSwapVolumeMilestones(walletAddress)
+      return awarded
     }
 
-    console.log('📝 Recording swap volume:', { walletAddress, swapAmountUSD, transactionHash })
-    
-    // Record the swap volume (separate from XP transaction)
-    await recordTransaction({
-      wallet_address: walletAddress,
-      game_type: 'SWAP_VOLUME',
-      xp_earned: 0, // Volume tracking only, XP already awarded
-      swap_amount_usd: swapAmountUSD,
-      transaction_hash: transactionHash
-    })
+    console.log('📝 Recording swap volume (SwapHub):', { wallet: normalized.slice(0, 10) + '...', amountUSD: amount, txHash: transactionHash?.slice(0, 10) + '...' })
 
-    // Check and award milestone bonus
-    await checkSwapMilestone(walletAddress)
+    // 1) Insert into swaphub_swaps (her swap bir satır)
+    const { error: insertErr } = await supabase
+      .from('swaphub_swaps')
+      .insert([{ wallet_address: normalized, amount_usd: amount, tx_hash: transactionHash || null }])
+
+    if (insertErr) {
+      console.error('❌ swaphub_swaps insert error:', insertErr)
+      throw insertErr
+    }
+
+    // 2) Upsert swaphub_volume (toplam hacim güncelle)
+    const { data: existing } = await supabase
+      .from('swaphub_volume')
+      .select('total_volume_usd, swap_count')
+      .eq('wallet_address', normalized)
+      .maybeSingle()
+
+    const newTotal = (existing?.total_volume_usd ?? 0) + amount
+    const newCount = (existing?.swap_count ?? 0) + 1
+    const { error: volErr } = await supabase
+      .from('swaphub_volume')
+      .upsert(
+        {
+          wallet_address: normalized,
+          total_volume_usd: newTotal,
+          swap_count: newCount,
+          last_tx_hash: transactionHash || null,
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: 'wallet_address' }
+      )
+
+    if (volErr) {
+      console.error('❌ swaphub_volume upsert error:', volErr)
+    }
+
+    // 3) XP milestone kontrolü (per $100 + $1k/$10k/$100k/$1M) — return XP awarded for success toast
+    const awarded = await checkSwapVolumeMilestones(walletAddress)
+    return awarded
   } catch (error) {
     console.error('❌ Error in recordSwapTransaction:', error)
+    return { xpFromPer100: 0, xpFromMilestones: 0 }
   }
 }
 
-// Check if user reached $500 swap milestone and award bonus
-export const checkSwapMilestone = async (walletAddress) => {
-  if (!walletAddress) return
+// Get SwapHub volume and awards from swaphub_volume + transactions (for UI bars)
+export const getSwapVolumeForWallet = async (walletAddress) => {
+  if (!walletAddress) return { totalVolumeUSD: 0, per100BlocksAwarded: 0, awardedTiers: [] }
+  const normalized = walletAddress.toLowerCase()
+  try {
+    if (!supabase?.from) {
+      const vol = JSON.parse(localStorage.getItem('basehub_swaphub_volume') || '{}')
+      const totalVolumeUSD = vol[normalized] ?? 0
+      const local = JSON.parse(localStorage.getItem('basehub_transactions') || '[]')
+      const per100BlocksAwarded = local.filter(t => t.wallet_address?.toLowerCase() === normalized && t.game_type === SWAP_PER_100_GAME_TYPE).length
+      const awardedTiers = [...new Set(
+        local
+          .filter(t => t.wallet_address?.toLowerCase() === normalized && SWAP_VOLUME_TIERS.some(tier => tier.key === t.game_type))
+          .map(t => t.game_type)
+      )]
+      return { totalVolumeUSD, per100BlocksAwarded, awardedTiers }
+    }
+
+    const { data: volRow } = await supabase
+      .from('swaphub_volume')
+      .select('total_volume_usd')
+      .eq('wallet_address', normalized)
+      .maybeSingle()
+    const totalVolumeUSD = parseFloat(volRow?.total_volume_usd ?? 0) || 0
+
+    const { data: per100Rows } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('wallet_address', normalized)
+      .eq('game_type', SWAP_PER_100_GAME_TYPE)
+    const per100BlocksAwarded = per100Rows ? per100Rows.length : 0
+
+    const tierKeys = SWAP_VOLUME_TIERS.map(t => t.key)
+    const { data: milestoneRows } = await supabase
+      .from('transactions')
+      .select('game_type')
+      .eq('wallet_address', normalized)
+      .in('game_type', tierKeys)
+    const awardedTiers = [...new Set((milestoneRows || []).map(r => r.game_type).filter(Boolean))]
+    return { totalVolumeUSD, per100BlocksAwarded, awardedTiers }
+  } catch (e) {
+    console.warn('getSwapVolumeForWallet:', e)
+    return { totalVolumeUSD: 0, per100BlocksAwarded: 0, awardedTiers: [] }
+  }
+}
+
+// Check per-$100 blocks and big milestones; award XP. Returns { xpFromPer100, xpFromMilestones } for UI toast.
+// NFT sahipleri her 100 dolar eşiği ve kademe bonuslarında 2x (veya daha fazla) XP kazanır (addXP içinde uygulanır).
+export const checkSwapVolumeMilestones = async (walletAddress) => {
+  const result = { xpFromPer100: 0, xpFromMilestones: 0 }
+  if (!walletAddress) return result
 
   try {
-    // Check if Supabase is available
-    if (!supabase || !supabase.from) {
-      console.log('⚠️ Supabase not available, skipping milestone check')
-      return
-    }
+    const normalized = walletAddress.toLowerCase()
+    let totalVolume = 0
 
-    // Calculate total swap volume from SWAP_VOLUME transactions
-    const { data: swapTransactions, error: swapError } = await supabase
-      .from('transactions')
-      .select('swap_amount_usd')
-      .eq('wallet_address', walletAddress)
-      .eq('game_type', 'SWAP_VOLUME')
-      .not('swap_amount_usd', 'is', null)
-
-    if (swapError) {
-      console.error('❌ Error fetching swap transactions:', swapError)
-      return
-    }
-
-    const totalVolume = (swapTransactions || []).reduce((sum, tx) => {
-      return sum + (parseFloat(tx.swap_amount_usd) || 0)
-    }, 0)
-
-    console.log(`📊 Total swap volume: $${totalVolume.toFixed(2)}`)
-
-    // Calculate how many $500 milestones have been reached
-    const milestonesReached = Math.floor(totalVolume / 500)
-    console.log(`🎯 Milestones reached: ${milestonesReached}`)
-
-    if (milestonesReached === 0) {
-      console.log('📊 No milestones reached yet')
-      return
-    }
-
-    // Get already awarded milestones
-    const { data: awardedMilestones, error: milestoneError } = await supabase
-      .from('transactions')
-      .select('swap_amount_usd')
-      .eq('wallet_address', walletAddress)
-      .eq('game_type', 'SWAP_MILESTONE_500')
-      .not('swap_amount_usd', 'is', null)
-
-    if (milestoneError && milestoneError.code !== 'PGRST116') {
-      console.error('❌ Error checking awarded milestones:', milestoneError)
-      return
-    }
-
-    const alreadyAwardedCount = awardedMilestones ? awardedMilestones.length : 0
-    console.log(`✅ Already awarded milestones: ${alreadyAwardedCount}`)
-
-    // Award bonuses for new milestones
-    const newMilestonesCount = milestonesReached - alreadyAwardedCount
-
-    if (newMilestonesCount > 0) {
-      console.log(`🎉 ${newMilestonesCount} new milestone(s) reached! Awarding ${newMilestonesCount * 5000} XP...`)
-      
-      const totalBonusXP = newMilestonesCount * 5000
-      
-      // Award milestone bonus XP
-      await addXP(walletAddress, totalBonusXP, 'SWAP_MILESTONE_500')
-
-      // Record milestone transactions for each new milestone
-      for (let i = 0; i < newMilestonesCount; i++) {
-        const milestoneNumber = alreadyAwardedCount + i + 1
-        const milestoneVolume = milestoneNumber * 500
-        
-        await recordTransaction({
-          wallet_address: walletAddress,
-          game_type: 'SWAP_MILESTONE_500',
-          xp_earned: 5000,
-          swap_amount_usd: milestoneVolume,
-          transaction_hash: null
-        })
-      }
-
-      console.log(`✅ ${newMilestonesCount} milestone bonus(es) awarded: ${totalBonusXP} XP total`)
+    if (supabase?.from) {
+      const { data: volRow } = await supabase
+        .from('swaphub_volume')
+        .select('total_volume_usd')
+        .eq('wallet_address', normalized)
+        .maybeSingle()
+      totalVolume = parseFloat(volRow?.total_volume_usd ?? 0) || 0
     } else {
-      console.log('✅ All milestones already awarded')
+      const vol = JSON.parse(localStorage.getItem('basehub_swaphub_volume') || '{}')
+      totalVolume = vol[normalized] ?? 0
     }
+
+    console.log(`📊 Total swap volume (SwapHub): $${totalVolume.toFixed(2)}`)
+
+    if (!supabase?.from) {
+      console.log('⚠️ Supabase not available, skipping milestone XP')
+      return result
+    }
+
+    // NFT çarpanı: toast'ta gösterilecek gerçek XP = base * multiplier (addXP zaten 2x uyguluyor)
+    let nftCount = 0
+    try {
+      nftCount = await getNFTCount(walletAddress)
+    } catch (_) { /* ignore */ }
+    const effectiveNFT = Math.min(nftCount, 10)
+    const multiplier = effectiveNFT > 0 ? effectiveNFT + 1 : 1
+
+    // 1) Per $100 recurring: every full $100 = 5,000 XP (NFT: 2x = 10,000 XP)
+    const blocksReached = Math.floor(totalVolume / 100)
+    const { data: per100Rows } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('wallet_address', normalized)
+      .eq('game_type', SWAP_PER_100_GAME_TYPE)
+    const blocksAwarded = per100Rows ? per100Rows.length : 0
+    for (let b = blocksAwarded + 1; b <= blocksReached; b++) {
+      const blockThreshold = b * 100
+      await addXP(walletAddress, SWAP_PER_100_XP, SWAP_PER_100_GAME_TYPE, null, false)
+      await recordTransaction({
+        wallet_address: walletAddress,
+        game_type: SWAP_PER_100_GAME_TYPE,
+        xp_earned: SWAP_PER_100_XP,
+        swap_amount_usd: blockThreshold,
+        transaction_hash: null
+      })
+      result.xpFromPer100 += SWAP_PER_100_XP * multiplier
+      console.log(`✅ Per $100 awarded: $${blockThreshold} → ${SWAP_PER_100_XP * multiplier} XP${multiplier > 1 ? ` (${multiplier}x NFT)` : ''}`)
+    }
+
+    // 2) Big milestones: $1k (50k), $10k (500k), $100k (5M), $1M (50M) XP (NFT: 2x)
+    const tierKeys = SWAP_VOLUME_TIERS.map(t => t.key)
+    const { data: awardedRows } = await supabase
+      .from('transactions')
+      .select('game_type')
+      .eq('wallet_address', normalized)
+      .in('game_type', tierKeys)
+    const awardedSet = new Set((awardedRows || []).map(r => r.game_type).filter(Boolean))
+
+    for (const tier of SWAP_VOLUME_TIERS) {
+      if (totalVolume < tier.threshold) continue
+      if (awardedSet.has(tier.key)) continue
+
+      await addXP(walletAddress, tier.xp, tier.key, null, false)
+      await recordTransaction({
+        wallet_address: walletAddress,
+        game_type: tier.key,
+        xp_earned: tier.xp,
+        swap_amount_usd: tier.threshold,
+        transaction_hash: null
+      })
+      result.xpFromMilestones += tier.xp * multiplier
+      awardedSet.add(tier.key)
+      console.log(`✅ Swap milestone awarded: ${tier.key} ($${tier.threshold.toLocaleString()}) → ${(tier.xp * multiplier).toLocaleString()} XP${multiplier > 1 ? ` (${multiplier}x NFT)` : ''}`)
+    }
+    return result
   } catch (error) {
-    console.error('❌ Error in checkSwapMilestone:', error)
+    console.error('❌ Error in checkSwapVolumeMilestones:', error)
+    return result
   }
 }

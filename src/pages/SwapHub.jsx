@@ -4,6 +4,7 @@ import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { useChainId, useSwitchChain } from 'wagmi';
 import SwapInterface from '../components/SwapInterface.tsx';
 import StatsPanel from '../components/StatsPanel.tsx';
+import SwapHubActivity from '../components/SwapHubActivity';
 import BackButton from '../components/BackButton';
 import { NETWORKS } from '../config/networks';
 
@@ -157,6 +158,14 @@ export default function SwapHub() {
       display: 'flex',
       flexDirection: 'column',
       minHeight: isMobile ? '350px' : 'auto'
+    },
+    activityCard: {
+      backgroundColor: 'rgba(30, 41, 59, 0.6)',
+      borderRadius: '20px',
+      padding: isMobile ? '14px' : '24px',
+      border: '1px solid rgba(59, 130, 246, 0.2)',
+      backdropFilter: 'blur(10px)',
+      marginTop: isMobile ? '0' : '24px'
     },
     xpBanner: {
       backgroundColor: 'rgba(30, 41, 59, 0.6)',
@@ -367,40 +376,47 @@ export default function SwapHub() {
         )}
 
         <div style={styles.mainGrid}>
-          <div style={styles.swapCard}>
-            <SwapErrorBoundary>
-              {isOnBase ? (
-                <SwapInterface />
-              ) : (
-                <div style={{
-                  padding: '40px',
-                  textAlign: 'center',
-                  color: '#9ca3af'
-                }}>
-                  <AlertCircle size={48} style={{ color: '#f59e0b', marginBottom: '16px', margin: '0 auto 16px' }} />
-                  <h3 style={{ color: '#fff', marginBottom: '8px' }}>Switch to Base Network</h3>
-                  <p style={{ marginBottom: '20px' }}>
-                    SwapHub is only available on Base network. Please switch to Base to continue.
-                  </p>
-                  <button
-                    onClick={handleSwapClick}
-                    style={{
-                      padding: '12px 24px',
-                      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
-                    }}
-                  >
-                    Switch to Base Network
-                  </button>
-                </div>
-              )}
-            </SwapErrorBoundary>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '12px' : '20px' }}>
+            <div style={styles.swapCard}>
+              <SwapErrorBoundary>
+                {isOnBase ? (
+                  <SwapInterface />
+                ) : (
+                  <div style={{
+                    padding: '40px',
+                    textAlign: 'center',
+                    color: '#9ca3af'
+                  }}>
+                    <AlertCircle size={48} style={{ color: '#f59e0b', marginBottom: '16px', margin: '0 auto 16px' }} />
+                    <h3 style={{ color: '#fff', marginBottom: '8px' }}>Switch to Base Network</h3>
+                    <p style={{ marginBottom: '20px' }}>
+                      SwapHub is only available on Base network. Please switch to Base to continue.
+                    </p>
+                    <button
+                      onClick={handleSwapClick}
+                      style={{
+                        padding: '12px 24px',
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
+                      }}
+                    >
+                      Switch to Base Network
+                    </button>
+                  </div>
+                )}
+              </SwapErrorBoundary>
+            </div>
+            <div style={styles.activityCard}>
+              <SwapErrorBoundary>
+                <SwapHubActivity isMobile={isMobile} />
+              </SwapErrorBoundary>
+            </div>
           </div>
 
           <div style={styles.statsCard}>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useBalance, usePublicClient, useChainId } from 'wagmi';
 import { parseUnits, formatUnits, maxUint256 } from 'viem';
 import { base } from 'wagmi/chains';
@@ -6,7 +6,7 @@ import { DEFAULT_TOKENS, POPULAR_TOKENS, MEME_TOKENS, FEE_TIERS, searchTokens, g
 import { Token } from '@uniswap/sdk-core';
 import StatsPanel from './StatsPanel';
 import swaphubLogo from '../assets/swaphub-logo.png';
-import { addXP, recordSwapTransaction } from '../utils/xpUtils';
+import { recordSwapTransaction } from '../utils/xpUtils';
 import { useQuestSystem } from '../hooks/useQuestSystem';
 import { NETWORKS } from '../config/networks';
 import { AlertCircle } from 'lucide-react';
@@ -735,6 +735,8 @@ export default function SwapInterface() {
   const [amountIn, setAmountIn] = useState('');
   const [amountOut, setAmountOut] = useState('0');
   const [transactionStep, setTransactionStep] = useState<'idle' | 'approving' | 'approved' | 'swapping' | 'success'>('idle');
+  const quoteRequestIdRef = useRef(0);
+  const pendingSwapVolumeRef = useRef<{ swapAmountUSD: number } | null>(null);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -767,64 +769,53 @@ export default function SwapInterface() {
     return () => clearInterval(interval);
   }, []);
 
-  // Award XP only on successful swap (not on approve)
+  // Record swap volume when tx confirms (use amount stored in ref at submit time so we don't depend on state)
+  const lastRecordedHashRef = useRef<string | null>(null);
+  const [xpSuccessToast, setXpSuccessToast] = useState<{ xp: number; message: string } | null>(null);
   useEffect(() => {
-    if (isSuccess && address && hash && amountIn && tokenIn && transactionStep === 'swapping') {
-      try {
-        // Calculate swap amount in USD
-        let swapAmountUSD = 0;
-        const amountInNum = parseFloat(amountIn);
-        
-        if (!isNaN(amountInNum) && amountInNum > 0) {
-          if (tokenIn.isNative || tokenIn.symbol === 'ETH' || tokenIn.symbol === 'WETH') {
-            // ETH/WETH: amount * ETH price
-            swapAmountUSD = amountInNum * ethPriceUsd;
-          } else if (tokenIn.symbol === 'USDC' || tokenIn.symbol === 'USDT' || tokenIn.symbol === 'USDbC' || tokenIn.symbol === 'DAI') {
-            // Stablecoins: amount is already in USD (for 18 decimals, divide by 1e12 for USDC/USDT with 6 decimals)
-            if (tokenIn.decimals === 6) {
-              swapAmountUSD = amountInNum;
-            } else {
-              swapAmountUSD = amountInNum;
-            }
-          } else {
-            // Other tokens: use amountOut in USD if available (USDC/USDT), otherwise estimate with ETH price
-            const amountOutNum = parseFloat(amountOut);
-            if (!isNaN(amountOutNum) && amountOutNum > 0 && (tokenOut.symbol === 'USDC' || tokenOut.symbol === 'USDT' || tokenOut.symbol === 'USDbC')) {
-              swapAmountUSD = amountOutNum;
-            } else {
-              // Fallback: estimate with ETH price (assume similar value to ETH)
-              swapAmountUSD = amountInNum * ethPriceUsd;
-            }
-          }
-        }
+    if (!isSuccess || !address || !hash) return;
+    if (transactionStep !== 'swapping' && transactionStep !== 'success') return;
+    if (lastRecordedHashRef.current === hash) return;
 
-        console.log('🎉 Swap successful! Awarding 250 XP...');
-        console.log('💵 Swap amount USD:', swapAmountUSD.toFixed(2));
-        
-        // Award base XP
-        addXP(address, 250, 'SWAP')
-          .then(() => {
-            console.log('✅ XP awarded successfully for swap');
-            
-            // Record swap transaction with volume tracking
-            recordSwapTransaction(address, swapAmountUSD, hash, 250)
-              .then(() => {
-                console.log('✅ Swap transaction recorded with volume tracking');
-                // Update quest progress for swap quest
-                updateQuestProgress?.('swapsCompleted', 1);
-              })
-              .catch(error => {
-                console.error('❌ Error recording swap transaction:', error);
-              });
-          })
-          .catch(error => {
-            console.error('❌ Error awarding XP:', error);
-          });
-      } catch (error) {
-        console.error('❌ Error in swap success handler:', error);
-      }
-    }
-  }, [isSuccess, address, hash, amountIn, tokenIn, amountOut, tokenOut, ethPriceUsd, transactionStep]);
+    const pending = pendingSwapVolumeRef.current;
+    const swapAmountUSD = pending?.swapAmountUSD ?? 0;
+    lastRecordedHashRef.current = hash;
+    pendingSwapVolumeRef.current = null;
+    if (swapAmountUSD <= 0) return;
+
+    console.log('🎉 Swap confirmed! Recording volume:', { swapAmountUSD, hash: hash.slice(0, 10) + '...' });
+
+    recordSwapTransaction(address, swapAmountUSD, hash)
+      .then((awarded: { xpFromPer100?: number; xpFromMilestones?: number } | void) => {
+        console.log('✅ Swap volume recorded');
+        updateQuestProgress?.('swapsCompleted', 1);
+        if (typeof window !== 'undefined') {
+          setTimeout(() => window.dispatchEvent(new CustomEvent('basehub-swap-recorded')), 400);
+          setTimeout(() => window.dispatchEvent(new CustomEvent('basehub-swap-recorded')), 2500);
+          setTimeout(() => window.dispatchEvent(new CustomEvent('basehub-swap-recorded')), 5000);
+        }
+        const from100 = awarded?.xpFromPer100 ?? 0;
+        const fromMilestones = awarded?.xpFromMilestones ?? 0;
+        const total = from100 + fromMilestones;
+        if (total > 0) {
+          const msg = from100 > 0 && fromMilestones > 0
+            ? `$100 eşiği + kademe bonusu!`
+            : from100 > 0
+              ? `$100 hacim eşiği geçildi!`
+              : `Kademe bonusu kazandın!`;
+          setXpSuccessToast({ xp: total, message: msg });
+        }
+      })
+      .catch(err => {
+        console.error('❌ Error recording swap volume:', err);
+        lastRecordedHashRef.current = null;
+      });
+  }, [isSuccess, address, hash, transactionStep, updateQuestProgress]);
+  useEffect(() => {
+    if (!xpSuccessToast) return;
+    const t = setTimeout(() => setXpSuccessToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [xpSuccessToast]);
   const [showTokenSelect, setShowTokenSelect] = useState<'in' | 'out' | null>(null);
   const [tokenSearchQuery, setTokenSearchQuery] = useState('');
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
@@ -1202,6 +1193,7 @@ export default function SwapInterface() {
         return;
       }
 
+      const currentRequestId = ++quoteRequestIdRef.current;
       setIsLoadingQuote(true);
       setNoLiquidityError(false);
       console.log('🔄 Fetching quotes from Uniswap V3 and V2...');
@@ -1378,6 +1370,7 @@ export default function SwapInterface() {
         console.log('🏆 Using V2 (only available)');
       } else {
         console.log('❌ No liquidity in V3 or V2');
+        if (currentRequestId !== quoteRequestIdRef.current) return;
         setAmountOut('0');
         setPriceImpact('0');
         setNoLiquidityError(true);
@@ -1428,13 +1421,13 @@ export default function SwapInterface() {
       
       setPriceImpact(calculatedImpact.toFixed(2));
       
+      if (currentRequestId !== quoteRequestIdRef.current) return;
       // Store the full precision value in amountOut for accurate calculations
-      // formatNumber is only for display, not for storage
       setAmountOut(formatted);
       setIsLoadingQuote(false);
     };
 
-    const timer = setTimeout(fetchQuote, 500);
+    const timer = setTimeout(fetchQuote, 280);
     return () => clearTimeout(timer);
   }, [amountIn, tokenIn, tokenOut, selectedFeeTier, publicClient]);
 
@@ -1757,6 +1750,25 @@ export default function SwapInterface() {
       console.log('   Value:', txConfig.value?.toString() || '0');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
+      // Store swap amount in USD for volume tracking (used when tx confirms)
+      let swapAmountUSD = 0;
+      const amountInNum = parseFloat(amountInNormalized);
+      if (!isNaN(amountInNum) && amountInNum > 0) {
+        if (tokenIn.isNative || tokenIn.symbol === 'ETH' || tokenIn.symbol === 'WETH') {
+          swapAmountUSD = amountInNum * ethPriceUsd;
+        } else if (tokenIn.symbol === 'USDC' || tokenIn.symbol === 'USDT' || tokenIn.symbol === 'USDbC' || tokenIn.symbol === 'DAI') {
+          swapAmountUSD = amountInNum;
+        } else if (tokenOut.symbol === 'USDC' || tokenOut.symbol === 'USDT' || tokenOut.symbol === 'USDbC') {
+          swapAmountUSD = parseFloat(amountOutNormalized) || amountInNum * ethPriceUsd;
+        } else {
+          swapAmountUSD = amountInNum * ethPriceUsd;
+        }
+      }
+      if (swapAmountUSD <= 0 && !isNaN(amountInNum) && amountInNum > 0 && ethPriceUsd > 0) {
+        swapAmountUSD = Math.max(0.01, amountInNum * ethPriceUsd);
+      }
+      pendingSwapVolumeRef.current = { swapAmountUSD };
+
       writeContract({
         address: txConfig.address,
         abi: txConfig.abi,
@@ -1820,11 +1832,16 @@ export default function SwapInterface() {
         }, 1500);
         return () => clearTimeout(swapTimer);
       } else if (transactionStep === 'swapping') {
-        // Swap was successful – refresh balances so UI updates without page reload
-        console.log('✅ Swap confirmed!');
+        // Swap was successful – refresh wallet balances so UI updates without page reload
+        console.log('✅ Swap confirmed! Refreshing balances...');
         refetchBalanceIn();
         refetchBalanceOut();
         setTransactionStep('success');
+        // Delayed refetch in case RPC had cached balance (block propagation)
+        const balanceRefreshTimer = setTimeout(() => {
+          refetchBalanceIn();
+          refetchBalanceOut();
+        }, 1500);
         
         // Clear after 3 seconds
         const timer = setTimeout(() => {
@@ -1832,7 +1849,10 @@ export default function SwapInterface() {
           setAmountOut('0');
           setTransactionStep('idle');
         }, 3000);
-        return () => clearTimeout(timer);
+        return () => {
+          clearTimeout(timer);
+          clearTimeout(balanceRefreshTimer);
+        };
       }
     }
   }, [isSuccess, hash, isConfirming, transactionStep, refetchAllowance, refetchBalanceIn, refetchBalanceOut]);
@@ -2389,14 +2409,14 @@ export default function SwapInterface() {
               <div style={{ 
                 marginTop: '12px',
                 padding: '8px 16px',
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                background: 'rgba(255,255,255,0.08)',
                 borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 'bold',
-                color: 'white',
+                fontSize: '12px',
+                fontWeight: '600',
+                color: 'rgba(255,255,255,0.85)',
                 textAlign: 'center' as const
               }}>
-                🎉 +250 XP Earned!
+                Volume recorded — earn XP at $100, $1k, $10k, $100k, $1M milestones
               </div>
               <a 
                 href={`https://basescan.org/tx/${hash}`}
@@ -2406,6 +2426,37 @@ export default function SwapInterface() {
               >
                 View on Basescan ↗
               </a>
+            </div>
+          </div>
+        )}
+
+        {/* XP milestone success toast — auto-dismiss after 4s */}
+        {xpSuccessToast && (
+          <div
+            style={{
+              position: 'fixed',
+              top: '24px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 1001,
+              padding: '14px 24px',
+              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.95), rgba(22, 163, 74, 0.95))',
+              borderRadius: '14px',
+              boxShadow: '0 10px 40px rgba(34, 197, 94, 0.4)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              animation: 'fadeIn 0.3s ease-out',
+              maxWidth: '90vw'
+            }}
+          >
+            <span style={{ fontSize: '28px' }}>🎉</span>
+            <div>
+              <div style={{ fontSize: '15px', fontWeight: '700', color: '#fff' }}>{xpSuccessToast.message}</div>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: '#fff', marginTop: '2px' }}>
+                +{xpSuccessToast.xp.toLocaleString()} XP
+              </div>
             </div>
           </div>
         )}
@@ -3342,8 +3393,9 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     backdropFilter: 'blur(8px)',
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
+    paddingTop: '18vh',
     zIndex: 1000,
     animation: 'fadeIn 0.2s ease-out'
   },

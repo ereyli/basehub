@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo } from 'react';
-import { useReadContract } from 'wagmi';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useAccount, useReadContract } from 'wagmi';
 import { formatUnits } from 'viem';
 import { base } from 'wagmi/chains';
+import { getSwapVolumeForWallet, SWAP_VOLUME_TIERS, SWAP_PER_100_XP, SWAP_VOLUME_BAR_MAX_USD } from '../utils/xpUtils';
 
 const SWAP_AGGREGATOR = '0xbf579e68ba69de03ccec14476eb8d765ec558257';
 
@@ -80,6 +81,32 @@ interface StatsPanelProps {
 }
 
 export default function StatsPanel({ isMobile = false }: StatsPanelProps) {
+  const { address } = useAccount();
+  const [userVolume, setUserVolume] = useState<{ totalVolumeUSD: number; per100BlocksAwarded: number; awardedTiers: string[] }>({ totalVolumeUSD: 0, per100BlocksAwarded: 0, awardedTiers: [] });
+
+  const refreshUserVolume = () => {
+    if (!address) return;
+    getSwapVolumeForWallet(address).then(setUserVolume);
+  };
+
+  useEffect(() => {
+    if (!address) {
+      setUserVolume({ totalVolumeUSD: 0, per100BlocksAwarded: 0, awardedTiers: [] });
+      return;
+    }
+    refreshUserVolume();
+  }, [address]);
+
+  useEffect(() => {
+    const onSwapRecorded = () => {
+      refreshUserVolume();
+      setTimeout(refreshUserVolume, 1500);
+      setTimeout(refreshUserVolume, 4000);
+    };
+    window.addEventListener('basehub-swap-recorded', onSwapRecorded);
+    return () => window.removeEventListener('basehub-swap-recorded', onSwapRecorded);
+  }, [address]);
+
   const { data: stats, refetch } = useReadContract({
     address: SWAP_AGGREGATOR as `0x${string}`,
     abi: AGGREGATOR_ABI,
@@ -513,7 +540,7 @@ export default function StatsPanel({ isMobile = false }: StatsPanelProps) {
               color: 'rgba(255, 255, 255, 0.6)',
               margin: 0
             }}>
-              Earn rewards on every swap!
+              Earn XP with volume — every $100 & big milestones!
             </p>
           </div>
         </div>
@@ -523,168 +550,169 @@ export default function StatsPanel({ isMobile = false }: StatsPanelProps) {
           flexDirection: 'column',
           gap: '12px'
         }}>
+          {address && (
+            <div style={{
+              padding: '12px',
+              background: 'rgba(255, 255, 255, 0.02)',
+              borderRadius: '10px',
+              border: '1px solid rgba(255, 255, 255, 0.06)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: 'rgba(255,255,255,0.9)' }}>Every $100 volume → 5,000 XP</div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>Recurring reward for each $100 of swap volume</div>
+                </div>
+                <span style={{ fontSize: '12px', fontWeight: '600', color: 'rgba(255,255,255,0.7)' }}>
+                  Earned: {((userVolume.per100BlocksAwarded ?? 0) * SWAP_PER_100_XP).toLocaleString()} XP
+                </span>
+              </div>
+              {(() => {
+                const total = userVolume.totalVolumeUSD ?? 0;
+                const currentInBlock = total % 100;
+                const next100At = (Math.floor(total / 100) + 1) * 100;
+                const toNext100 = Math.max(0, next100At - total);
+                const pctInBlock = total >= next100At ? 100 : (currentInBlock / 100) * 100;
+                const minPct = total > 0 ? Math.max(pctInBlock, 6) : 0;
+                return (
+                  <div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', marginBottom: '6px' }}>
+                      Progress to next 5k XP: <strong style={{ color: '#fbbf24' }}>${currentInBlock.toFixed(1)}</strong> / $100 (${toNext100.toFixed(0)} left)
+                    </div>
+                    <div style={{
+                      height: '16px',
+                      borderRadius: '8px',
+                      background: 'rgba(255,255,255,0.08)',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        width: `${minPct}%`,
+                        height: '100%',
+                        borderRadius: '8px',
+                        background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.6), rgba(251, 191, 36, 0.8))',
+                        transition: 'width 0.3s ease'
+                      }} />
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
           <div style={{
             padding: '12px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            borderRadius: '12px',
-            border: '1px solid rgba(59, 130, 246, 0.15)'
+            background: 'rgba(255, 255, 255, 0.02)',
+            borderRadius: '10px',
+            border: '1px solid rgba(255, 255, 255, 0.06)'
           }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '8px'
-            }}>
+            <div style={{ marginBottom: '8px' }}>
               <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
+                fontSize: '13px',
+                fontWeight: '600',
+                color: 'rgba(255,255,255,0.9)',
+                marginBottom: '2px'
               }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)',
-                  border: '1px solid rgba(251, 191, 36, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '16px'
-                }}>
-                  🎯
-                </div>
-                <div>
-                  <div style={{
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#ffffff',
-                    marginBottom: '2px'
-                  }}>
-                    Base Reward
-                  </div>
+                Total volume bar (max $1M)
+              </div>
                   <div style={{
                     fontSize: '11px',
                     color: 'rgba(255, 255, 255, 0.5)'
                   }}>
-                    Every swap earns you XP
+                    One-time bonus XP at each threshold below
                   </div>
-                </div>
-              </div>
-              <div style={{
-                padding: '6px 12px',
-                borderRadius: '8px',
-                background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)',
-                border: '1px solid rgba(251, 191, 36, 0.3)',
-                fontSize: '16px',
-                fontWeight: '700',
-                color: '#fbbf24'
-              }}>
-                250 XP
-              </div>
-            </div>
-            <p style={{
-              fontSize: '12px',
-              color: 'rgba(255, 255, 255, 0.7)',
-              margin: 0,
-              lineHeight: '1.5'
-            }}>
-              Get instant XP rewards on every successful swap, regardless of volume. Build your XP and climb the leaderboard!
-            </p>
-          </div>
-
-          <div style={{
-            padding: '12px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            borderRadius: '12px',
-            border: '1px solid rgba(59, 130, 246, 0.15)'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '8px'
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%)',
-                  border: '1px solid rgba(59, 130, 246, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '16px'
-                }}>
-                  🚀
-                </div>
-                <div>
-                  <div style={{
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#ffffff',
-                    marginBottom: '2px'
-                  }}>
-                    Volume Milestone Bonus
-                  </div>
-                  <div style={{
-                    fontSize: '11px',
-                    color: 'rgba(255, 255, 255, 0.5)'
-                  }}>
-                    Massive bonus for high volume traders
-                  </div>
-                </div>
-              </div>
-              <div style={{
-                padding: '6px 12px',
-                borderRadius: '8px',
-                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%)',
-                border: '1px solid rgba(59, 130, 246, 0.3)',
-                fontSize: '16px',
-                fontWeight: '700',
-                color: '#60a5fa'
-              }}>
-                5,000 XP
-              </div>
-            </div>
-            <p style={{
-              fontSize: '12px',
-              color: 'rgba(255, 255, 255, 0.7)',
-              margin: 0,
-              lineHeight: '1.5'
-            }}>
-              Reach <strong style={{ color: '#60a5fa' }}>$500</strong> in cumulative swap volume and unlock a massive <strong style={{ color: '#fbbf24' }}>5,000 XP bonus</strong>! Multiple milestones = multiple bonuses. Trade more, earn more!
-            </p>
-          </div>
-
-          <div style={{
-            marginTop: '8px',
-            padding: '12px',
-            background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%)',
-            borderRadius: '12px',
-            border: '1px solid rgba(251, 191, 36, 0.2)',
-            textAlign: 'center' as const
-          }}>
-            <div style={{
-              fontSize: '13px',
-              fontWeight: '600',
-              color: '#fbbf24',
-              marginBottom: '4px'
-            }}>
-              💎 Pro Tip
             </div>
             <p style={{
               fontSize: '11px',
-              color: 'rgba(255, 255, 255, 0.8)',
+              color: 'rgba(255, 255, 255, 0.7)',
               margin: 0,
-              lineHeight: '1.4'
+              marginBottom: '12px',
+              lineHeight: '1.5'
             }}>
-              Combine base rewards with milestone bonuses to maximize your XP earnings. Every swap counts towards your next milestone!
+              Your cumulative swap volume fills this bar. NFT holders get 2× on all rewards.
             </p>
+            {address && (
+              <div style={{
+                padding: '10px',
+                borderRadius: '8px',
+                background: 'rgba(0,0,0,0.12)',
+                border: '1px solid rgba(255,255,255,0.06)'
+              }}>
+                {(() => {
+                  const awardedSet = new Set(userVolume.awardedTiers);
+                  const totalMilestoneXP = SWAP_VOLUME_TIERS
+                    .filter(t => awardedSet.has(t.key))
+                    .reduce((sum, t) => sum + t.xp, 0);
+                  const progressPct = Math.min(100, ((userVolume.totalVolumeUSD ?? 0) / SWAP_VOLUME_BAR_MAX_USD) * 100);
+                  return (
+                    <>
+                      {totalMilestoneXP > 0 && (
+                        <div style={{ marginBottom: '8px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: '600', color: 'rgba(251, 191, 36, 0.9)' }}>
+                            Milestone bonuses earned: {totalMilestoneXP >= 1e6 ? `${(totalMilestoneXP / 1e6).toFixed(1)}M` : totalMilestoneXP.toLocaleString()} XP
+                          </span>
+                        </div>
+                      )}
+                      <div style={{ marginBottom: '8px', fontSize: '12px', color: 'rgba(255,255,255,0.75)' }}>
+                        Your volume: <strong style={{ color: '#60a5fa' }}>${(userVolume.totalVolumeUSD ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong> / $1,000,000
+                      </div>
+                      <div style={{
+                        height: '20px',
+                        borderRadius: '10px',
+                        background: 'rgba(255,255,255,0.08)',
+                        overflow: 'hidden'
+                      }}>
+                        <div style={{
+                          width: `${(userVolume.totalVolumeUSD ?? 0) > 0 ? Math.max(progressPct, 4) : 0}%`,
+                          height: '100%',
+                          borderRadius: '10px',
+                          background: 'linear-gradient(90deg, rgba(59, 130, 246, 0.6), rgba(96, 165, 250, 0.8))',
+                          transition: 'width 0.3s ease'
+                        }} />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>
+                        <span>$0</span>
+                        <span>$1k</span>
+                        <span>$10k</span>
+                        <span>$100k</span>
+                        <span>$1M</span>
+                      </div>
+                      <div style={{ marginTop: '10px', padding: '8px 10px', borderRadius: '8px', background: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                        <div style={{ fontSize: '10px', fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginBottom: '4px' }}>Bonus at each mark:</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 12px', fontSize: '11px', color: 'rgba(251, 191, 36, 0.95)' }}>
+                          <span><strong>$1k</strong> → 50,000 XP</span>
+                          <span><strong>$10k</strong> → 500,000 XP</span>
+                          <span><strong>$100k</strong> → 5M XP</span>
+                          <span><strong>$1M</strong> → 50M XP</span>
+                        </div>
+                      </div>
+                      {progressPct >= 100 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
+                          <span style={{ fontSize: '14px' }}>✓</span>
+                          <span style={{ fontSize: '13px', fontWeight: '600', color: '#fbbf24' }}>All volume milestones unlocked.</span>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+            <div style={{
+              marginTop: '12px',
+              padding: '10px',
+              borderRadius: '8px',
+              background: 'rgba(0,0,0,0.15)',
+              border: '1px solid rgba(255,255,255,0.06)'
+            }}>
+              <div style={{ fontSize: '11px', fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginBottom: '6px' }}>Thresholds and bonuses</div>
+              <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '11px', color: 'rgba(255,255,255,0.65)', lineHeight: '1.6' }}>
+                <li><strong>$1,000</strong> total volume → <strong>50,000 XP</strong> one-time bonus</li>
+                <li><strong>$10,000</strong> total volume → <strong>500,000 XP</strong> one-time bonus</li>
+                <li><strong>$100,000</strong> total volume → <strong>5,000,000 XP</strong> one-time bonus</li>
+                <li><strong>$1,000,000</strong> total volume → <strong>50,000,000 XP</strong> one-time bonus</li>
+              </ul>
+              <p style={{ margin: '8px 0 0', fontSize: '11px', color: 'rgba(255,255,255,0.55)', lineHeight: '1.5' }}>
+                Every $100 of cumulative swap volume also gives 5,000 XP (recurring). NFT holders receive 2× XP on all these rewards. Volume is the sum of USD value of all your swaps on BaseHub.
+              </p>
+            </div>
           </div>
         </div>
       </div>

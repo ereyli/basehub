@@ -260,7 +260,12 @@ const Profile = () => {
       'SWAP': 'Token Swap',
       'NFT_MINT': 'NFT Mint',
       'SWAP_VOLUME': 'Swap Volume',
-      'SWAP_MILESTONE_500': 'Swap Milestone'
+      'SWAP_PER_100': 'Swap per $100',
+      'SWAP_MILESTONE_500': 'Swap Milestone',
+      'SWAP_MILESTONE_1K': 'Swap $1K',
+      'SWAP_MILESTONE_10K': 'Swap $10K',
+      'SWAP_MILESTONE_100K': 'Swap $100K',
+      'SWAP_MILESTONE_1M': 'Swap $1M'
     }
     return types[type] || type
   }
