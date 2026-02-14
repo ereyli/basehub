@@ -3032,7 +3032,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'flex-start',
     flex: 1,
-    padding: '20px 20px 40px'
+    padding: '20px 20px 24px'
   },
   container: {
     display: 'flex',
@@ -3049,7 +3049,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '12px',
     width: '100%',
     maxWidth: '420px',
-    minHeight: '650px',
+    minHeight: 'auto',
     boxShadow: '0 4px 24px rgba(59, 130, 246, 0.2)',
     border: '1px solid rgba(59, 130, 246, 0.2)'
   },

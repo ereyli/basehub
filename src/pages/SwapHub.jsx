@@ -284,42 +284,8 @@ export default function SwapHub() {
                   XP Rewards Active!
                 </div>
                 <div style={styles.xpBannerSubtitle}>
-                  Earn XP on every swap, reach milestones and unlock bonus rewards!
+                  Volume-based XP: 5,000 XP per $100 swapped. Bonus at $1k, $10k, $100k, $1M. NFT holders earn 2x.
                 </div>
-              </div>
-            </div>
-            <div style={styles.xpRewards}>
-              <div style={styles.xpRewardItem}>
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '4px',
-                  background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  boxShadow: '0 2px 8px rgba(251, 191, 36, 0.4)'
-                }}>
-                  <div style={{ fontSize: '12px' }}>⚡</div>
-                </div>
-                <span>Per Swap: <span style={styles.xpBadge}>250 XP</span></span>
-              </div>
-              <div style={styles.xpRewardItem}>
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '4px',
-                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  boxShadow: '0 2px 8px rgba(59, 130, 246, 0.4)'
-                }}>
-                  <div style={{ fontSize: '12px' }}>🎯</div>
-                </div>
-                <span>Per $500: <span style={styles.xpBadge}>5000 XP</span></span>
               </div>
             </div>
           </div>
