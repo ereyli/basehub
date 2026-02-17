@@ -14,6 +14,7 @@ import { usePumpHub, usePumpHubData } from '../hooks/usePumpHub'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { supabase } from '../config/supabase'
 import { NETWORKS } from '../config/networks'
+import { uploadToIPFS } from '../utils/pinata'
 
 // Contract address
 const PUMPHUB_FACTORY_ADDRESS = '0xE7c2Fe007C65349C91B8ccAC3c5BE5a7f2FDaF21'
@@ -147,34 +148,6 @@ const timeAgo = (timestamp) => {
   return `${days}d ago`
 }
 
-// Upload to IPFS via Pinata
-const uploadToIPFS = async (file) => {
-  const apiKey = import.meta.env.VITE_PINATA_API_KEY
-  const secretKey = import.meta.env.VITE_PINATA_SECRET_KEY
-  
-  if (!apiKey || !secretKey) {
-    throw new Error('Pinata API keys not configured')
-  }
-  
-  const formData = new FormData()
-  formData.append('file', file)
-  
-  const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
-    method: 'POST',
-    headers: {
-      'pinata_api_key': apiKey,
-      'pinata_secret_api_key': secretKey
-    },
-    body: formData
-  })
-  
-  if (!response.ok) {
-    throw new Error('Failed to upload to IPFS')
-  }
-  
-  const data = await response.json()
-  return `https://gateway.pinata.cloud/ipfs/${data.IpfsHash}`
-}
 
 // ============================================
 // TOKEN CARD COMPONENT

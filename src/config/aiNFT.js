@@ -1,18 +1,12 @@
-// AI NFT Configuration
+// AI NFT Configuration – secret keys are server-only (env in Vercel). Do not use VITE_ for API keys.
 export const AI_NFT_CONFIG = {
-  // Google Studio API Key (Gemini)
-  GOOGLE_STUDIO_API_KEY: import.meta.env.VITE_GOOGLE_STUDIO_API_KEY || 'YOUR_GOOGLE_STUDIO_API_KEY',
-  
-  // MiniMax API Key (Image Generation - Recommended)
-  MINIMAX_API_KEY: import.meta.env.VITE_MINIMAX_API_KEY || 'YOUR_MINIMAX_API_KEY',
-  
-  // AI Provider Selection: 'minimax' | 'gemini' | 'canvas'
-  AI_PROVIDER: import.meta.env.VITE_AI_PROVIDER || 'minimax', // Default to MiniMax
-  
-  // Pinata IPFS Configuration
-  PINATA_API_KEY: import.meta.env.VITE_PINATA_API_KEY || 'YOUR_PINATA_API_KEY',
-  PINATA_SECRET_KEY: import.meta.env.VITE_PINATA_SECRET_KEY || 'YOUR_PINATA_SECRET_KEY',
-  PINATA_JWT: import.meta.env.VITE_PINATA_JWT || 'YOUR_PINATA_JWT',
+  // Not exposed to client; AI image uses /api/ai-image-generate, Pinata uses /api/pinata-upload
+  GOOGLE_STUDIO_API_KEY: '',
+  MINIMAX_API_KEY: '',
+  AI_PROVIDER: import.meta.env.VITE_AI_PROVIDER || 'minimax',
+  PINATA_API_KEY: '',
+  PINATA_SECRET_KEY: '',
+  PINATA_JWT: '',
   
   // AI NFT Collection Contract Address (Base Mainnet)
   // V2 - Tiered Pricing Model (Fixed: tokenURI before mint)
