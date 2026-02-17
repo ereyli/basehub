@@ -408,7 +408,9 @@ export default function AINFTLaunchpad() {
                       fontSize: '14px',
                       minHeight: '100px',
                       resize: 'vertical',
-                      fontFamily: 'inherit'
+                      fontFamily: 'inherit',
+                      color: '#111827',
+                      backgroundColor: '#ffffff'
                     }}
                     maxLength="500"
                     disabled={isGenerating || !isConnected}

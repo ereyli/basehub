@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import { Upload, Wand2, Package, AlertCircle, ExternalLink, CheckCircle } from 'lucide-react'
 import BackButton from '../components/BackButton'
@@ -30,7 +30,8 @@ export default function NFTLaunchpad() {
   const [description, setDescription] = useState('')
   const [isGeneratingAi, setIsGeneratingAi] = useState(false)
 
-  const { makePayment: makeX402Payment, isLoading: isLoadingX402, error: x402Error } = useX402Payment()
+  const errorRef = useRef(null)
+  const { makePayment: makeX402Payment, isLoading: isLoadingX402, error: x402Error, isConnected: isX402Connected } = useX402Payment()
   const {
     createCollection,
     isLoading: isCreating,
@@ -41,12 +42,20 @@ export default function NFTLaunchpad() {
     mintTxHash,
   } = useNFTLaunchpad()
 
+  useEffect(() => {
+    if (createError && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+  }, [createError])
+
   const handleAiGenerate = async (e) => {
     e.preventDefault()
-    if (!aiPrompt.trim() || !isConnected) return
+    if (!aiPrompt.trim() || !isConnected || !isX402Connected) return
     setIsGeneratingAi(true)
     try {
+      // Step 1: x402 payment (0.1 USDC) – same flow as AI NFT Mint
       await makeX402Payment()
+      // Step 2: Generate image after payment
       const dataUrl = await generateAIImage(aiPrompt.trim())
       const file = dataURLtoFile(dataUrl, 'ai-nft.png')
       const url = await uploadToIPFS(file)
@@ -174,7 +183,7 @@ export default function NFTLaunchpad() {
                 )}
               </div>
               <p style={{ marginTop: '16px', fontSize: '13px', color: '#9ca3af' }}>
-                Deploy fee: 0.002 ETH. AI image: 0.1 USDC (x402). Upload your own image: no extra fee.
+                Deploy fee: 0.002 ETH. AI image: 0.1 USDC (x402).
               </p>
             </div>
           ) : (
@@ -205,7 +214,7 @@ export default function NFTLaunchpad() {
                     }}
                   >
                     <Upload size={16} />
-                    Upload (no extra fee)
+                    Upload
                   </button>
                   <button
                     type="button"
@@ -253,7 +262,35 @@ export default function NFTLaunchpad() {
 
               {imageSource === 'ai' && (
                 <div className="form-group">
-                  <label>AI prompt (then pay 0.1 USDC to generate)</label>
+                  <div style={{
+                    marginBottom: '12px',
+                    padding: '12px 16px',
+                    background: 'rgba(59, 130, 246, 0.15)',
+                    border: '1px solid rgba(59, 130, 246, 0.4)',
+                    borderRadius: '12px',
+                    fontSize: '13px',
+                    color: '#93c5fd',
+                  }}>
+                    <strong>AI image: 0.1 USDC (x402)</strong> – Payment is required before generating.
+                  </div>
+                  {x402Error && (
+                    <div style={{
+                      marginBottom: '12px',
+                      padding: '12px 16px',
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      color: '#fca5a5',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}>
+                      <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                      {x402Error}
+                    </div>
+                  )}
+                  <label>AI prompt</label>
                   <textarea
                     value={aiPrompt}
                     onChange={(e) => setAiPrompt(e.target.value)}
@@ -272,7 +309,7 @@ export default function NFTLaunchpad() {
                   <button
                     type="button"
                     onClick={handleAiGenerate}
-                    disabled={!aiPrompt.trim() || !isConnected || isGeneratingAi || isLoadingX402}
+                    disabled={!aiPrompt.trim() || !isConnected || !isX402Connected || isGeneratingAi || isLoadingX402}
                     style={{
                       marginTop: '8px',
                       padding: '10px 20px',
@@ -284,7 +321,7 @@ export default function NFTLaunchpad() {
                       cursor: isGeneratingAi || isLoadingX402 ? 'not-allowed' : 'pointer',
                     }}
                   >
-                    {isGeneratingAi || isLoadingX402 ? 'Processing...' : 'Generate image (0.1 USDC)'}
+                    {isLoadingX402 ? 'Processing payment...' : isGeneratingAi ? 'Generating...' : 'Generate image (Pay 0.1 USDC)'}
                   </button>
                   {aiImageUrl && (
                     <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '8px', color: '#86efac' }}>
@@ -371,13 +408,15 @@ export default function NFTLaunchpad() {
 
                 {(createError || x402Error) && (
                   <div
+                    ref={errorRef}
+                    role="alert"
                     style={{
                       display: 'flex',
                       alignItems: 'flex-start',
                       gap: '8px',
                       padding: '12px',
-                      background: 'rgba(239, 68, 68, 0.1)',
-                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      background: 'rgba(239, 68, 68, 0.15)',
+                      border: '1px solid rgba(239, 68, 68, 0.5)',
                       borderRadius: '12px',
                       marginBottom: '16px',
                       color: '#fca5a5',

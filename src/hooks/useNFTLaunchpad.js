@@ -68,20 +68,26 @@ export function useNFTLaunchpad() {
     imageUrl = null,
     description = '',
   }) => {
-    if (!address) throw new Error('Wallet not connected')
-    if (!NFT_COLLECTION_BYTECODE || NFT_COLLECTION_BYTECODE.length < 100) {
-      throw new Error(
-        'NFTCollection bytecode not set. Run "npx hardhat compile" and copy bytecode from artifacts/contracts/NFTCollection.sol/NFTCollection.json into src/config/nftCollection.js'
-      )
-    }
-
-    await validateNetwork()
     setIsLoading(true)
     setError(null)
     setSuccess(null)
     setContractAddress(null)
     setDeployTxHash(null)
     setMintTxHash(null)
+
+    if (!address) {
+      setIsLoading(false)
+      throw new Error('Wallet not connected')
+    }
+    if (!NFT_COLLECTION_BYTECODE || NFT_COLLECTION_BYTECODE.length < 100) {
+      setIsLoading(false)
+      const msg =
+        'NFT collection bytecode not configured. Ask the team to add compiled bytecode to src/config/nftCollection.js (from Hardhat compile).'
+      setError(msg)
+      throw new Error(msg)
+    }
+
+    await validateNetwork()
 
     try {
       let finalImageUrl = imageUrl
@@ -100,8 +106,8 @@ export function useNFTLaunchpad() {
       const metadataURI = await uploadMetadataToIPFS(metadata)
 
       const constructorData = encodeAbiParameters(
-        parseAbiParameters('string name, string symbol, uint256 maxSupply'),
-        [name, symbol, BigInt(supply)]
+        parseAbiParameters('string name, string symbol, uint256 maxSupply, address initialOwner'),
+        [name, symbol, BigInt(supply), address]
       )
       const initCodeHex =
         (NFT_COLLECTION_BYTECODE.startsWith('0x') ? NFT_COLLECTION_BYTECODE : '0x' + NFT_COLLECTION_BYTECODE) +
