@@ -1,12 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useAccount } from 'wagmi'
-import { Upload, Wand2, Package, AlertCircle, ExternalLink, CheckCircle } from 'lucide-react'
+import { Upload, Wand2, Package, AlertCircle, ExternalLink, CheckCircle, List } from 'lucide-react'
 import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
 import { useNFTLaunchpad } from '../hooks/useNFTLaunchpad'
 import { useX402Payment } from '../hooks/useX402Payment'
 import { uploadToIPFS } from '../utils/pinata'
 import { generateAIImage } from '../utils/aiImageGenerator'
+import { supabase } from '../config/supabase'
+
+const OPENSEA_BASE_URL = 'https://opensea.io/assets/base'
+
+function shortAddress(addr) {
+  if (!addr || addr.length < 10) return addr
+  return `${addr.slice(0, 6)}...${addr.slice(-4)}`
+}
 
 function dataURLtoFile(dataUrl, filename = 'nft-image.png') {
   const arr = dataUrl.split(',')
@@ -29,18 +37,49 @@ export default function NFTLaunchpad() {
   const [supply, setSupply] = useState(100)
   const [description, setDescription] = useState('')
   const [isGeneratingAi, setIsGeneratingAi] = useState(false)
+  const [collections, setCollections] = useState([])
+  const [collectionsLoading, setCollectionsLoading] = useState(true)
 
   const errorRef = useRef(null)
   const { makePayment: makeX402Payment, isLoading: isLoadingX402, error: x402Error, isConnected: isX402Connected } = useX402Payment()
   const {
     createCollection,
     isLoading: isCreating,
+    loadingStep,
     error: createError,
     success,
     contractAddress,
     deployTxHash,
     mintTxHash,
   } = useNFTLaunchpad()
+
+  const getProcessingLabel = () => {
+    if (!loadingStep) return 'Processing...'
+    if (loadingStep === 'uploading_image') return 'Uploading image to IPFS...'
+    if (loadingStep === 'uploading_metadata') return 'Uploading metadata...'
+    if (loadingStep === 'deploying') return 'Confirm in wallet (deploy)...'
+    if (loadingStep === 'minting') return 'Confirm in wallet (mint)...'
+    return 'Processing...'
+  }
+
+  useEffect(() => {
+    if (!supabase?.from) {
+      setCollectionsLoading(false)
+      return
+    }
+    let cancelled = false
+    supabase
+      .from('nft_launchpad_collections')
+      .select('contract_address, deployer_address, name, symbol, supply, created_at')
+      .order('created_at', { ascending: false })
+      .limit(50)
+      .then(({ data, error }) => {
+        if (cancelled) return
+        setCollectionsLoading(false)
+        if (!error && data) setCollections(data)
+      })
+    return () => { cancelled = true }
+  }, [success])
 
   useEffect(() => {
     if (createError && errorRef.current) {
@@ -442,11 +481,63 @@ export default function NFTLaunchpad() {
                     cursor: canDeploy && !loading ? 'pointer' : 'not-allowed',
                   }}
                 >
-                  {loading ? 'Processing...' : `Deploy collection (0.002 ETH) + mint ${supply} NFT(s)`}
+                  {loading ? getProcessingLabel() : `Deploy collection (0.002 ETH) + mint ${supply} NFT(s)`}
                 </button>
               </form>
             </>
           )}
+
+          {/* Deployed collections list – everyone can see who deployed what; click → OpenSea */}
+          <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid rgba(55, 65, 81, 0.5)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#e5e7eb', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <List size={20} />
+              Deployed collections
+            </h2>
+            {collectionsLoading ? (
+              <p style={{ color: '#9ca3af', fontSize: '14px' }}>Loading...</p>
+            ) : collections.length === 0 ? (
+              <p style={{ color: '#9ca3af', fontSize: '14px' }}>No collections deployed yet. Be the first!</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {collections.map((c) => (
+                  <a
+                    key={c.contract_address}
+                    href={`${OPENSEA_BASE_URL}/${c.contract_address}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '12px 16px',
+                      background: 'rgba(30, 41, 59, 0.8)',
+                      border: '1px solid rgba(55, 65, 81, 0.8)',
+                      borderRadius: '12px',
+                      color: '#e5e7eb',
+                      textDecoration: 'none',
+                      transition: 'border-color 0.2s, background 0.2s',
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.6)'
+                      e.currentTarget.style.background = 'rgba(30, 41, 59, 1)'
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(55, 65, 81, 0.8)'
+                      e.currentTarget.style.background = 'rgba(30, 41, 59, 0.8)'
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '2px' }}>{c.name}</div>
+                      <div style={{ fontSize: '12px', color: '#9ca3af' }}>
+                        {c.symbol} · {c.supply} NFT{c.supply !== 1 ? 's' : ''} · by {shortAddress(c.deployer_address)}
+                      </div>
+                    </div>
+                    <ExternalLink size={18} style={{ color: '#60a5fa', flexShrink: 0, marginLeft: '12px' }} />
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </NetworkGuard>

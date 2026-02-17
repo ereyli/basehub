@@ -11,6 +11,7 @@ import { NFT_COLLECTION_BYTECODE } from '../config/nftCollection'
 import { addXP, recordTransaction } from '../utils/xpUtils'
 import { useQuestSystem } from './useQuestSystem'
 import { useNetworkCheck } from './useNetworkCheck'
+import { supabase } from '../config/supabase'
 
 const NFT_COLLECTION_ABI = [
   {
@@ -34,6 +35,7 @@ export function useNFTLaunchpad() {
   const { updateQuestProgress } = useQuestSystem()
 
   const [isLoading, setIsLoading] = useState(false)
+  const [loadingStep, setLoadingStep] = useState(null) // 'uploading_image' | 'uploading_metadata' | 'deploying' | 'minting'
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const [contractAddress, setContractAddress] = useState(null)
@@ -92,11 +94,13 @@ export function useNFTLaunchpad() {
     try {
       let finalImageUrl = imageUrl
       if (imageSource === 'upload' && imageFile) {
+        setLoadingStep('uploading_image')
         const url = await uploadToIPFS(imageFile)
         finalImageUrl = url
       }
       if (!finalImageUrl) throw new Error('No image URL. Upload an image or provide imageUrl.')
 
+      setLoadingStep('uploading_metadata')
       const metadata = createNFTMetadata(
         name,
         description || `${name} NFT Collection`,
@@ -105,6 +109,7 @@ export function useNFTLaunchpad() {
       )
       const metadataURI = await uploadMetadataToIPFS(metadata)
 
+      setLoadingStep('deploying')
       const constructorData = encodeAbiParameters(
         parseAbiParameters('string name, string symbol, uint256 maxSupply, address initialOwner'),
         [name, symbol, BigInt(supply), address]
@@ -146,6 +151,7 @@ export function useNFTLaunchpad() {
 
       setContractAddress(deployedAddress)
 
+      setLoadingStep('minting')
       const mintTx = await walletClient.sendTransaction({
         to: deployedAddress,
         data: encodeFunctionData({
@@ -160,6 +166,23 @@ export function useNFTLaunchpad() {
       await waitForTransactionReceipt(config, { hash: mintTx, chainId, confirmations: 1 })
 
       setSuccess({ contractAddress: deployedAddress, deployTxHash: txHash, mintTxHash: mintTx })
+
+      if (supabase?.from) {
+        try {
+          await supabase.from('nft_launchpad_collections').insert({
+            contract_address: deployedAddress.toLowerCase(),
+            deployer_address: address.toLowerCase(),
+            name,
+            symbol,
+            supply,
+            description: description || null,
+            deploy_tx_hash: txHash,
+            mint_tx_hash: mintTx,
+          })
+        } catch (e) {
+          console.error('Supabase nft_launchpad_collections insert failed:', e)
+        }
+      }
 
       try {
         await addXP(address, 500, 'NFT_LAUNCHPAD_COLLECTION', chainId)
@@ -189,12 +212,14 @@ export function useNFTLaunchpad() {
       throw err
     } finally {
       setIsLoading(false)
+      setLoadingStep(null)
     }
   }
 
   return {
     createCollection,
     isLoading,
+    loadingStep,
     error,
     success,
     contractAddress,

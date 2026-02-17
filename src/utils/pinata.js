@@ -11,32 +11,54 @@ function fileToBase64(file) {
   })
 }
 
+const PROXY_TIMEOUT_MS = 90000 // 90s for large image upload
+
 async function uploadFileViaProxy(imageBase64, fileName = 'image.png', mimeType = 'image/png') {
-  const res = await fetch(PROXY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type: 'file', imageBase64, fileName, mimeType }),
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }))
-    throw new Error(err.error || err.details || 'Pinata upload failed')
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS)
+  try {
+    const res = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'file', imageBase64, fileName, mimeType }),
+      signal: controller.signal,
+    })
+    clearTimeout(timeoutId)
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }))
+      throw new Error(err.error || err.details || 'Pinata upload failed')
+    }
+    const data = await res.json()
+    return { url: data.url, ipfsHash: data.ipfsHash }
+  } catch (e) {
+    clearTimeout(timeoutId)
+    if (e.name === 'AbortError') throw new Error('Image upload timed out. Try a smaller image or try again.')
+    throw e
   }
-  const data = await res.json()
-  return { url: data.url, ipfsHash: data.ipfsHash }
 }
 
 async function uploadMetadataViaProxy(metadata) {
-  const res = await fetch(PROXY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type: 'metadata', metadata }),
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }))
-    throw new Error(err.error || err.details || 'Pinata metadata upload failed')
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 30000)
+  try {
+    const res = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'metadata', metadata }),
+      signal: controller.signal,
+    })
+    clearTimeout(timeoutId)
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }))
+      throw new Error(err.error || err.details || 'Pinata metadata upload failed')
+    }
+    const data = await res.json()
+    return { url: data.url, ipfsHash: data.ipfsHash }
+  } catch (e) {
+    clearTimeout(timeoutId)
+    if (e.name === 'AbortError') throw new Error('Metadata upload timed out.')
+    throw e
   }
-  const data = await res.json()
-  return { url: data.url, ipfsHash: data.ipfsHash }
 }
 
 export { uploadFileViaProxy, uploadMetadataViaProxy }
