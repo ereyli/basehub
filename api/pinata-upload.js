@@ -1,5 +1,6 @@
 // Server-side Pinata upload proxy – API keys stay on server (no VITE_)
 // Set PINATA_API_KEY and PINATA_SECRET_KEY in Vercel (or PINATA_JWT)
+import FormData from 'form-data'
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -30,18 +31,27 @@ export default async function handler(req, res) {
       const { imageBase64, fileName = 'image.png', mimeType = 'image/png' } = body
       if (!imageBase64) return res.status(400).json({ error: 'Missing imageBase64' })
       const buf = Buffer.from(imageBase64.replace(/^data:[^;]+;base64,/, ''), 'base64')
-      const formData = new FormData()
-      const blob = new Blob([buf], { type: mimeType })
-      formData.append('file', blob, fileName)
-      formData.append('pinataMetadata', JSON.stringify({ name: fileName, keyvalues: { type: 'nft-image' } }))
-      formData.append('pinataOptions', JSON.stringify({ cidVersion: 0, wrapWithDirectory: false }))
-      const headers = {}
+      const form = new FormData()
+      form.append('file', buf, { filename: fileName, contentType: mimeType })
+      form.append('pinataMetadata', JSON.stringify({ name: fileName, keyvalues: { type: 'nft-image' } }))
+      form.append('pinataOptions', JSON.stringify({ cidVersion: 0, wrapWithDirectory: false }))
+      const headers = { ...form.getHeaders() }
       if (jwt) headers['Authorization'] = `Bearer ${jwt}`
-      else { headers['pinata_api_key'] = apiKey; headers['pinata_secret_api_key'] = secretKey }
+      else {
+        headers['pinata_api_key'] = apiKey
+        headers['pinata_secret_api_key'] = secretKey
+      }
+      const formBuffer = await new Promise((resolve, reject) => {
+        const chunks = []
+        form.on('data', (chunk) => chunks.push(chunk))
+        form.on('end', () => resolve(Buffer.concat(chunks)))
+        form.on('error', reject)
+      })
+      headers['Content-Length'] = String(formBuffer.length)
       const r = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
         method: 'POST',
         headers,
-        body: formData,
+        body: formBuffer,
       })
       if (!r.ok) {
         const t = await r.text()
