@@ -315,9 +315,9 @@ export default function AINFTLaunchpad() {
           {/* Header */}
           <div className="deploy-header">
             <div className="deploy-icon">
-              <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT Launchpad" loading="lazy" style={{ width: '60px', height: '60px', borderRadius: '16px' }} />
+              <img src="/crypto-logos/basahub logo/AINFTLAUNCHPAD.png" alt="AI NFT MINT" loading="lazy" style={{ width: '60px', height: '60px', borderRadius: '16px' }} />
             </div>
-            <h1>AI NFT Launchpad</h1>
+            <h1>AI NFT MINT</h1>
             <p>Create unique AI artwork and mint as NFT on Base</p>
           </div>
 
@@ -1010,7 +1010,7 @@ export default function AINFTLaunchpad() {
                         alignItems: 'center'
                       }}>
                         <ShareButton 
-                          title="AI NFT Launchpad - BaseHub"
+                          title="AI NFT MINT - BaseHub"
                           description="Generate AI art and mint as NFT on Base"
                           gameType="nft"
                           customUrl="https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub"

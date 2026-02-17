@@ -41,6 +41,13 @@ export const BASEHUB_DEPLOYER_ABI = [
     type: 'function',
   },
   {
+    inputs: [{ internalType: 'bytes', name: 'initCode', type: 'bytes' }],
+    name: 'deployNFTCollection',
+    outputs: [{ internalType: 'address', name: '', type: 'address' }],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
     anonymous: false,
     inputs: [
       { indexed: true, internalType: 'address', name: 'deployedAddress', type: 'address' },
@@ -52,3 +59,4 @@ export const BASEHUB_DEPLOYER_ABI = [
 ]
 
 export const DEPLOYER_FEE_ETH = '0.00025'
+export const DEPLOYER_FEE_NFT_COLLECTION_ETH = '0.002'

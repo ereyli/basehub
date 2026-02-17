@@ -409,17 +409,52 @@ async function optimizeImageSize(base64Image) {
  * @param {string} uploadedImage - Optional uploaded image base64
  * @returns {Promise<string>} - Base64 encoded image data
  */
+/**
+ * Generate image via server proxy (avoids CORS when calling MiniMax from browser)
+ */
+async function generateViaProxy(prompt) {
+  const origin = typeof window !== 'undefined' && window.location?.origin
+    ? window.location.origin
+    : import.meta.env?.VITE_API_URL || '';
+  const base = origin || '';
+  const url = `${base.replace(/\/$/, '')}/api/ai-image-generate`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt: prompt.trim() }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || err.message || `Proxy ${res.status}`);
+  }
+  const data = await res.json();
+  if (data.imageDataUrl) return data.imageDataUrl;
+  throw new Error('No image in proxy response');
+}
+
 export async function generateAIImage(prompt, uploadedImage = null) {
   try {
     if (uploadedImage) {
       console.log('📸 Using uploaded image directly (no AI enhancement)');
       return uploadedImage;
     }
-    
+
+    // Try server proxy first (avoids CORS; API key stays on server)
+    if (typeof window !== 'undefined') {
+      try {
+        console.log('🎨 Generating image via server proxy...');
+        const imageDataUrl = await generateViaProxy(prompt);
+        console.log('✅ Image generated via proxy');
+        return imageDataUrl;
+      } catch (proxyErr) {
+        console.warn('⚠️ Proxy failed, trying direct AI...', proxyErr.message);
+      }
+    }
+
     // Check which AI provider to use
     const provider = AI_NFT_CONFIG.AI_PROVIDER || 'minimax';
     
-    // Try MiniMax first (default, cheaper, better quotas)
+    // Try MiniMax first (default, cheaper, better quotas) – may fail in browser due to CORS
     if (provider === 'minimax' || provider === 'auto') {
       try {
         return await generateWithMiniMax(prompt);

@@ -9,6 +9,7 @@ pragma solidity ^0.8.19;
 contract BaseHubDeployer {
     address public constant FEE_WALLET = 0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe;
     uint256 public constant FEE = 0.00025 ether;
+    uint256 public constant FEE_NFT_COLLECTION = 0.002 ether;
 
     event Deployed(address indexed deployedAddress, uint8 tokenType);
 
@@ -42,6 +43,20 @@ contract BaseHubDeployer {
         address deployed = _deploy(initCode);
         emit Deployed(deployed, 2);
         _refundExcess();
+        return deployed;
+    }
+
+    function deployNFTCollection(bytes calldata initCode) external payable returns (address) {
+        if (msg.value < FEE_NFT_COLLECTION) revert FeeRequired();
+        (bool ok, ) = FEE_WALLET.call{value: FEE_NFT_COLLECTION}("");
+        if (!ok) revert FeeTransferFailed();
+        address deployed = _deploy(initCode);
+        emit Deployed(deployed, 3);
+        uint256 excess = msg.value - FEE_NFT_COLLECTION;
+        if (excess > 0) {
+            (bool refundOk, ) = msg.sender.call{value: excess}("");
+            if (!refundOk) { /* excess stays in contract */ }
+        }
         return deployed;
     }
 

@@ -31,6 +31,7 @@ import DeployNFT from './pages/DeployNFT'
 import DeployERC721 from './pages/DeployERC721'
 import DeployERC1155 from './pages/DeployERC1155'
 import AINFTLaunchpad from './pages/AINFTLaunchpad'
+import NFTLaunchpad from './pages/NFTLaunchpad'
 import SharePage from './pages/SharePage'
 import WalletAnalysis from './pages/WalletAnalysis'
 import ContractSecurity from './pages/ContractSecurity'
@@ -326,6 +327,7 @@ function FarcasterAppContent() {
               <Route path="/deploy-erc721" element={<DeployERC721 />} />
               <Route path="/deploy-erc1155" element={<DeployERC1155 />} />
               <Route path="/ai-nft" element={<AINFTLaunchpad />} />
+              <Route path="/nft-launchpad" element={<NFTLaunchpad />} />
               <Route path="/share" element={<SharePage />} />
               <Route path="/wallet-analysis" element={<WalletAnalysis />} />
               <Route path="/contract-security" element={<ContractSecurity />} />
@@ -379,6 +381,7 @@ function WebAppContent() {
               <Route path="/deploy-erc721" element={<DeployERC721 />} />
               <Route path="/deploy-erc1155" element={<DeployERC1155 />} />
               <Route path="/ai-nft" element={<AINFTLaunchpad />} />
+              <Route path="/nft-launchpad" element={<NFTLaunchpad />} />
               <Route path="/share" element={<SharePage />} />
               <Route path="/wallet-analysis" element={<WalletAnalysis />} />
               <Route path="/contract-security" element={<ContractSecurity />} />

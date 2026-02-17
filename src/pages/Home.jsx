@@ -1204,14 +1204,14 @@ const Home = () => {
                   {!isCompactMode && renderNetworkLogos(['base'])}
                 </div>
                 <div style={compactStyles.cardGrid}>
-                  {games.filter(g => ['ai-nft'].includes(g.id)).map((game) => (
+                  {games.filter(g => ['ai-nft', 'nft-launchpad'].includes(g.id)).map((game) => (
                     <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
                       <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
                         <div style={compactStyles.cardInner}>
                           {isCompactMode ? (
                             <>
                               <div style={{ flexShrink: 0 }}>{game.icon}</div>
-                              <h3 style={compactStyles.cardTitle}>AI NFT</h3>
+                              <h3 style={compactStyles.cardTitle}>{game.title}</h3>
                               <div style={compactStyles.xpBadge}>{game.xpReward}</div>
                             </>
                           ) : (
