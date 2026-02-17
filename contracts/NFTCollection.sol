@@ -7,22 +7,36 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * NFTCollection - Launchpad ERC721: deploy once, owner mints batch with same tokenURI.
- * No per-mint fee (platform fee taken at deploy via BaseHubDeployer).
+ * contractURI() for OpenSea collection-level metadata (name, description, image).
  */
 contract NFTCollection is ERC721, ERC721URIStorage, Ownable {
     uint256 private _nextTokenId;
     uint256 public maxSupply;
+    string private _contractURI;
 
     event BatchMinted(address indexed to, string tokenURI, uint256 quantity, uint256 startTokenId);
+    event ContractURIUpdated(string newContractURI);
 
     constructor(
         string memory name,
         string memory symbol,
         uint256 _maxSupply,
-        address initialOwner
+        address initialOwner,
+        string memory contractURI_
     ) ERC721(name, symbol) Ownable(initialOwner) {
         maxSupply = _maxSupply;
         _nextTokenId = 0;
+        _contractURI = contractURI_;
+    }
+
+    /// @dev OpenSea / marketplaces use this for collection-level metadata (name, description, image).
+    function contractURI() public view returns (string memory) {
+        return _contractURI;
+    }
+
+    function setContractURI(string calldata newContractURI) external onlyOwner {
+        _contractURI = newContractURI;
+        emit ContractURIUpdated(newContractURI);
     }
 
     function mintBatch(address to, string calldata tokenURI_, uint256 quantity) external onlyOwner {

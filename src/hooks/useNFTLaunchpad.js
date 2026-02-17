@@ -111,15 +111,15 @@ export function useNFTLaunchpad() {
 
       setLoadingStep('deploying')
       const constructorData = encodeAbiParameters(
-        parseAbiParameters('string name, string symbol, uint256 maxSupply, address initialOwner'),
-        [name, symbol, BigInt(supply), address]
+        parseAbiParameters('string name, string symbol, uint256 maxSupply, address initialOwner, string contractURI'),
+        [name, symbol, BigInt(supply), address, metadataURI]
       )
       const initCodeHex =
         (NFT_COLLECTION_BYTECODE.startsWith('0x') ? NFT_COLLECTION_BYTECODE : '0x' + NFT_COLLECTION_BYTECODE) +
         constructorData.slice(2)
 
       const deployerAddress = getContractAddressByNetwork('BASEHUB_NFT_COLLECTION_DEPLOYER', chainId)
-      if (!deployerAddress) throw new Error('BaseHub deployer not configured for this network.')
+      if (!deployerAddress) throw new Error('NFT Launchpad deployer not configured for this network.')
       if (!walletClient) throw new Error('Wallet not available.')
 
       const deployData = encodeDeployerCall('deployNFTCollection', initCodeHex)
