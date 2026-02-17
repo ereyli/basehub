@@ -1,6 +1,20 @@
-// Server-side Pinata upload proxy – API keys stay on server (no VITE_)
-// Set PINATA_API_KEY and PINATA_SECRET_KEY in Vercel (or PINATA_JWT)
-import FormData from 'form-data'
+// Server-side Pinata upload proxy – follows https://docs.pinata.cloud/quickstart
+// Env: PINATA_JWT (required), PINATA_GATEWAY (optional, e.g. gateway.pinata.cloud or your Dedicated Gateway)
+import { PinataSDK } from 'pinata'
+
+const gateway = process.env.PINATA_GATEWAY || 'gateway.pinata.cloud'
+
+function getPinata() {
+  const jwt = process.env.PINATA_JWT
+  if (!jwt) {
+    console.error('Pinata: PINATA_JWT not set on server')
+    return null
+  }
+  return new PinataSDK({
+    pinataJwt: jwt,
+    pinataGateway: gateway,
+  })
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -9,12 +23,8 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const apiKey = process.env.PINATA_API_KEY
-  const secretKey = process.env.PINATA_SECRET_KEY
-  const jwt = process.env.PINATA_JWT
-  const hasAuth = (apiKey && secretKey) || jwt
-  if (!hasAuth) {
-    console.error('Pinata credentials not set on server (PINATA_API_KEY+SECRET or PINATA_JWT)')
+  const pinata = getPinata()
+  if (!pinata) {
     return res.status(500).json({ error: 'Upload service not configured' })
   }
 
@@ -30,68 +40,31 @@ export default async function handler(req, res) {
     if (type === 'file') {
       const { imageBase64, fileName = 'image.png', mimeType = 'image/png' } = body
       if (!imageBase64) return res.status(400).json({ error: 'Missing imageBase64' })
-      const buf = Buffer.from(imageBase64.replace(/^data:[^;]+;base64,/, ''), 'base64')
-      const form = new FormData()
-      form.append('file', buf, { filename: fileName, contentType: mimeType })
-      form.append('pinataMetadata', JSON.stringify({ name: fileName, keyvalues: { type: 'nft-image' } }))
-      form.append('pinataOptions', JSON.stringify({ cidVersion: 0, wrapWithDirectory: false }))
-      const headers = { ...form.getHeaders() }
-      if (jwt) headers['Authorization'] = `Bearer ${jwt}`
-      else {
-        headers['pinata_api_key'] = apiKey
-        headers['pinata_secret_api_key'] = secretKey
-      }
-      const formBuffer = await new Promise((resolve, reject) => {
-        const chunks = []
-        form.on('data', (chunk) => chunks.push(chunk))
-        form.on('end', () => resolve(Buffer.concat(chunks)))
-        form.on('error', reject)
-      })
-      headers['Content-Length'] = String(formBuffer.length)
-      const r = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
-        method: 'POST',
-        headers,
-        body: formBuffer,
-      })
-      if (!r.ok) {
-        const t = await r.text()
-        console.error('Pinata pinFile error:', r.status, t)
-        return res.status(502).json({ error: 'Pinata upload failed', details: t.slice(0, 200) })
-      }
-      const result = await r.json()
-      const url = `https://gateway.pinata.cloud/ipfs/${result.IpfsHash}`
-      return res.status(200).json({ url, ipfsHash: result.IpfsHash })
+      // Strip data URL prefix if present (SDK expects raw base64)
+      const base64 = imageBase64.replace(/^data:[^;]+;base64,/, '')
+      const upload = await pinata.upload.public.base64(base64).name(fileName)
+      const cid = upload.cid
+      const url = `https://${gateway}/ipfs/${cid}`
+      return res.status(200).json({ url, ipfsHash: cid })
     }
 
     if (type === 'metadata') {
       const { metadata } = body
       if (!metadata) return res.status(400).json({ error: 'Missing metadata' })
-      const payload = {
-        pinataContent: metadata,
-        pinataMetadata: { name: `nft-metadata-${Date.now()}`, keyvalues: { type: 'nft-metadata' } },
-        pinataOptions: { cidVersion: 0 },
-      }
-      const headers = { 'Content-Type': 'application/json' }
-      if (jwt) headers['Authorization'] = `Bearer ${jwt}`
-      else { headers['pinata_api_key'] = apiKey; headers['pinata_secret_api_key'] = secretKey }
-      const r = await fetch('https://api.pinata.cloud/pinning/pinJSONToIPFS', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
-      })
-      if (!r.ok) {
-        const t = await r.text()
-        console.error('Pinata pinJSON error:', r.status, t)
-        return res.status(502).json({ error: 'Pinata metadata upload failed', details: t.slice(0, 200) })
-      }
-      const result = await r.json()
-      const url = `https://gateway.pinata.cloud/ipfs/${result.IpfsHash}`
-      return res.status(200).json({ url, ipfsHash: result.IpfsHash })
+      const upload = await pinata.upload.public
+        .json(metadata)
+        .name(`nft-metadata-${Date.now()}.json`)
+      const cid = upload.cid
+      const url = `https://${gateway}/ipfs/${cid}`
+      return res.status(200).json({ url, ipfsHash: cid })
     }
 
     return res.status(400).json({ error: 'Invalid type; use type: "file" or "metadata"' })
   } catch (err) {
     console.error('pinata-upload proxy error:', err)
-    return res.status(500).json({ error: 'Upload failed', message: err.message || 'Server error' })
+    return res.status(500).json({
+      error: 'Upload failed',
+      message: err?.message || err?.toString?.() || 'Server error',
+    })
   }
 }
