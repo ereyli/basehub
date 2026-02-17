@@ -193,12 +193,20 @@ export default function NFTLaunchpad() {
               </p>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 <a
+                  href={`https://opensea.io/assets/base/${contractAddress}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  View on OpenSea <ExternalLink size={14} />
+                </a>
+                <a
                   href={`https://basescan.org/address/${contractAddress}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  View on Basescan <ExternalLink size={14} />
+                  Basescan <ExternalLink size={14} />
                 </a>
                 {deployTxHash && (
                   <a
@@ -222,7 +230,7 @@ export default function NFTLaunchpad() {
                 )}
               </div>
               <p style={{ marginTop: '16px', fontSize: '13px', color: '#9ca3af' }}>
-                Deploy fee: 0.002 ETH. AI image: 0.1 USDC (x402).
+                Deploy fee: 0.002 ETH. AI image: 0.1 USDC (x402). OpenSea may take a few minutes to index the collection.
               </p>
             </div>
           ) : (

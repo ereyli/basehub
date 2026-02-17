@@ -27,6 +27,7 @@ contract NFTCollection is ERC721, ERC721URIStorage, Ownable {
         maxSupply = _maxSupply;
         _nextTokenId = 0;
         _contractURI = contractURI_;
+        emit ContractURIUpdated(contractURI_);
     }
 
     /// @dev OpenSea / marketplaces use this for collection-level metadata (name, description, image).

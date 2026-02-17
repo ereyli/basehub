@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAccount, useWalletClient, useChainId } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { config } from '../config/wagmi'
-import { parseEther, encodeAbiParameters, parseAbiParameters, encodeFunctionData } from 'viem'
+import { parseEther, encodeAbiParameters, parseAbiParameters, encodeFunctionData, toEventHash } from 'viem'
 import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/pinata'
 import { encodeDeployerCall, DEPLOYER_FEE_NFT_COLLECTION_ETH } from '../config/deployer'
 import { getContractAddressByNetwork } from '../config/networks'
@@ -137,11 +137,15 @@ export function useNFTLaunchpad() {
         chainId,
         confirmations: 1,
       })
+      // Deployed(address indexed deployedAddress, uint8 tokenType) from NFTCollectionDeployer
+      const DEPLOYED_TOPIC0 = toEventHash('Deployed(address,uint8)')
       let deployedAddress = null
       if (receipt?.logs?.length) {
         const deployerLog = receipt.logs.find(
           (l) =>
-            l.address?.toLowerCase() === deployerAddress.toLowerCase() && l.topics?.length >= 2
+            l.address?.toLowerCase() === deployerAddress.toLowerCase() &&
+            l.topics?.[0] === DEPLOYED_TOPIC0 &&
+            l.topics?.length >= 2
         )
         if (deployerLog?.topics?.[1]) {
           deployedAddress = '0x' + deployerLog.topics[1].slice(-40).toLowerCase()
