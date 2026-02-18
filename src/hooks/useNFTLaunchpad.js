@@ -1,12 +1,17 @@
 import { useState } from 'react'
-import { useAccount, useWalletClient, useChainId } from 'wagmi'
+import { useAccount, useWalletClient, useChainId, useReadContract, usePublicClient } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { config } from '../config/wagmi'
 import { parseEther, encodeAbiParameters, parseAbiParameters, toEventHash } from 'viem'
 import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/pinata'
-import { encodeDeployerCall, DEPLOYER_FEE_NFT_COLLECTION_ETH } from '../config/deployer'
+import {
+  encodeDeployerCall,
+  DEPLOYER_FEE_NFT_COLLECTION_ETH,
+  DEPLOYER_FEE_NFT_COLLECTION_ETH_HOLDER,
+} from '../config/deployer'
 import { getContractAddressByNetwork } from '../config/networks'
 import { NFT_COLLECTION_BYTECODE } from '../config/nftCollection'
+import { EARLY_ACCESS_CONFIG, EARLY_ACCESS_ABI } from '../config/earlyAccessNFT'
 import { addXP, recordTransaction } from '../utils/xpUtils'
 import { useQuestSystem } from './useQuestSystem'
 import { useNetworkCheck } from './useNetworkCheck'
@@ -30,8 +35,20 @@ export function useNFTLaunchpad() {
   const { address } = useAccount()
   const { data: walletClient } = useWalletClient()
   const chainId = useChainId()
+  const publicClient = usePublicClient({ chainId })
   const { isCorrectNetwork, networkName } = useNetworkCheck()
   const { updateQuestProgress } = useQuestSystem()
+
+  const shouldFetchEarlyAccess = !!address && !!EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS
+  const { data: earlyAccessBalance } = useReadContract({
+    address: shouldFetchEarlyAccess ? EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS : undefined,
+    abi: EARLY_ACCESS_ABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    query: { enabled: shouldFetchEarlyAccess },
+  })
+  const isEarlyAccessHolder = (earlyAccessBalance ?? 0n) > 0n
+  const deployFeeEth = isEarlyAccessHolder ? DEPLOYER_FEE_NFT_COLLECTION_ETH_HOLDER : DEPLOYER_FEE_NFT_COLLECTION_ETH
 
   const [isLoading, setIsLoading] = useState(false)
   const [loadingStep, setLoadingStep] = useState(null)
@@ -134,11 +151,27 @@ export function useNFTLaunchpad() {
       if (!deployerAddress) throw new Error('NFT Launchpad deployer not configured for this network.')
       if (!walletClient) throw new Error('Wallet not available.')
 
+      // Fee at tx time: read Early Access balance on current chain so we never use stale/empty hook state
+      let feeEthForTx = DEPLOYER_FEE_NFT_COLLECTION_ETH
+      if (publicClient && address && EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS) {
+        try {
+          const balance = await publicClient.readContract({
+            address: EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS,
+            abi: EARLY_ACCESS_ABI,
+            functionName: 'balanceOf',
+            args: [address],
+          })
+          if (balance != null && balance > 0n) feeEthForTx = DEPLOYER_FEE_NFT_COLLECTION_ETH_HOLDER
+        } catch (e) {
+          console.warn('Early Access balance check failed, using standard fee:', e)
+        }
+      }
+
       const deployData = encodeDeployerCall('deployNFTCollection', initCodeHex)
       const txHash = await walletClient.sendTransaction({
         to: deployerAddress,
         data: deployData,
-        value: parseEther(DEPLOYER_FEE_NFT_COLLECTION_ETH),
+        value: parseEther(feeEthForTx),
         chainId,
         gas: 5000000n,
       })
@@ -204,10 +237,10 @@ export function useNFTLaunchpad() {
           game_type: 'NFT_LAUNCHPAD_COLLECTION',
           transaction_hash: txHash,
           contract_address: deployedAddress,
-          amount: DEPLOYER_FEE_NFT_COLLECTION_ETH,
+          amount: feeEthForTx,
           currency: 'ETH',
           status: 'success',
-          metadata: { name, symbol, supply, mintPrice },
+          metadata: { name, symbol, supply, mintPrice, isEarlyAccessHolder: feeEthForTx === DEPLOYER_FEE_NFT_COLLECTION_ETH_HOLDER },
         })
       } catch (e) {
         console.error('XP/record failed:', e)
@@ -238,5 +271,7 @@ export function useNFTLaunchpad() {
     contractAddress,
     deployTxHash,
     slug,
+    deployFeeEth,
+    isEarlyAccessHolder,
   }
 }

@@ -59,4 +59,7 @@ export const BASEHUB_DEPLOYER_ABI = [
 ]
 
 export const DEPLOYER_FEE_ETH = '0.00025'
+/** NFT Launchpad: non–Early Access Pass holders */
 export const DEPLOYER_FEE_NFT_COLLECTION_ETH = '0.002'
+/** NFT Launchpad: BaseHub Early Access Pass holders */
+export const DEPLOYER_FEE_NFT_COLLECTION_ETH_HOLDER = '0.0005'

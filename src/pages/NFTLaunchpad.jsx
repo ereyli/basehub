@@ -190,6 +190,7 @@ export default function NFTLaunchpad() {
   const {
     createCollection, isLoading: isCreating, loadingStep,
     error: createError, success, contractAddress, deployTxHash, slug: deployedSlug,
+    deployFeeEth, isEarlyAccessHolder,
   } = useNFTLaunchpad()
 
   const getProcessingLabel = () => {
@@ -578,7 +579,13 @@ export default function NFTLaunchpad() {
                       </div>
                       <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.7 }}>
                         <div style={{ display: 'flex', gap: '6px', marginBottom: '2px' }}>
-                          <span style={{ color: '#475569' }}>1.</span> Deploy fee: <strong style={{ color: '#e2e8f0' }}>0.002 ETH</strong> (one-time platform fee)
+                          <span style={{ color: '#475569' }}>1.</span> Deploy fee: <strong style={{ color: '#e2e8f0' }}>{deployFeeEth} ETH</strong>
+                          {isEarlyAccessHolder ? (
+                            <span style={{ color: '#22c55e', marginLeft: '4px' }}>(Early Access discount)</span>
+                          ) : (
+                            <span style={{ color: '#94a3b8' }}> — <a href="/early-access" style={{ color: '#93c5fd' }}>Hold Early Access Pass</a> for 0.0005 ETH</span>
+                          )}
+                          <span style={{ color: '#64748b' }}> (one-time)</span>
                         </div>
                         <div style={{ display: 'flex', gap: '6px', marginBottom: '2px' }}>
                           <span style={{ color: '#475569' }}>2.</span> Each mint at <strong style={{ color: '#e2e8f0' }}>{mintPrice || '0'} ETH</strong> goes <strong style={{ color: '#22c55e' }}>directly to you</strong>
@@ -634,7 +641,7 @@ export default function NFTLaunchpad() {
                       {loading ? (
                         <>{getProcessingLabel()}</>
                       ) : (
-                        <><Rocket size={16} /> Deploy Collection (0.002 ETH)</>
+                        <><Rocket size={16} /> Deploy Collection ({deployFeeEth} ETH)</>
                       )}
                     </button>
                   </form>
