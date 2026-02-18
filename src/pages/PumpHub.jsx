@@ -1355,55 +1355,75 @@ const PumpHub = () => {
           }
         }
 
-        // Fetch on-chain token data (parallelized with multicall-style Promise.all)
-        const tokenDataPromises = tokenAddresses.map(async (addr) => {
-          try {
-            const [meta, core, stats] = await Promise.all([
-              publicClient.readContract({
-                address: PUMPHUB_FACTORY_ADDRESS,
-                abi: PUMPHUB_FACTORY_ABI,
-                functionName: 'getTokenMeta',
-                args: [addr]
-              }),
-              publicClient.readContract({
-                address: PUMPHUB_FACTORY_ADDRESS,
-                abi: PUMPHUB_FACTORY_ABI,
-                functionName: 'tokenCore',
-                args: [addr]
-              }),
-              publicClient.readContract({
-                address: PUMPHUB_FACTORY_ADDRESS,
-                abi: PUMPHUB_FACTORY_ABI,
-                functionName: 'tokenStats',
-                args: [addr]
-              })
-            ])
-            
-            const supabaseImage = supabaseImageMap[addr.toLowerCase()] || null
-            
-            return {
-              address: addr,
-              name: meta[0],
-              symbol: meta[1],
-              description: meta[2],
-              image: supabaseImage || meta[3],
-              creator: core[0],
-              virtualETH: formatEther(core[1] || 0n),
-              realETH: formatEther(core[3] || 0n),
-              createdAt: core[5]?.toString(),
-              graduated: core[7],
-              buys: stats[0]?.toString(),
-              sells: stats[1]?.toString(),
-              volume: formatEther(stats[2] || 0n),
-              holders: stats[3]?.toString()
-            }
-          } catch (err) {
-            console.error('Error fetching token data:', addr, err)
-            return null
-          }
+        // Use multicall to batch ALL on-chain reads into a single RPC call
+        // This avoids rate limiting (429) from the public RPC endpoint
+        const multicallContracts = []
+        tokenAddresses.forEach((addr) => {
+          multicallContracts.push(
+            { address: PUMPHUB_FACTORY_ADDRESS, abi: PUMPHUB_FACTORY_ABI, functionName: 'getTokenMeta', args: [addr] },
+            { address: PUMPHUB_FACTORY_ADDRESS, abi: PUMPHUB_FACTORY_ABI, functionName: 'tokenCore', args: [addr] },
+            { address: PUMPHUB_FACTORY_ADDRESS, abi: PUMPHUB_FACTORY_ABI, functionName: 'tokenStats', args: [addr] },
+          )
         })
-        
-        const tokenData = (await Promise.all(tokenDataPromises)).filter(Boolean)
+
+        let multicallResults
+        try {
+          multicallResults = await publicClient.multicall({ contracts: multicallContracts, allowFailure: true })
+        } catch (mcErr) {
+          console.error('Multicall failed, falling back to chunked fetching:', mcErr)
+          // Fallback: fetch in small sequential chunks to avoid rate limits
+          multicallResults = []
+          const chunkSize = 5
+          for (let i = 0; i < multicallContracts.length; i += chunkSize * 3) {
+            const chunk = multicallContracts.slice(i, i + chunkSize * 3)
+            try {
+              const chunkRes = await publicClient.multicall({ contracts: chunk, allowFailure: true })
+              multicallResults.push(...chunkRes)
+            } catch (chunkErr) {
+              console.error('Chunk multicall failed:', chunkErr)
+              multicallResults.push(...chunk.map(() => ({ status: 'failure', error: chunkErr })))
+            }
+            if (i + chunkSize * 3 < multicallContracts.length) {
+              await new Promise(r => setTimeout(r, 300))
+            }
+          }
+        }
+
+        // Parse multicall results (every 3 results = 1 token: meta, core, stats)
+        const tokenData = []
+        for (let i = 0; i < tokenAddresses.length; i++) {
+          const addr = tokenAddresses[i]
+          const metaRes = multicallResults[i * 3]
+          const coreRes = multicallResults[i * 3 + 1]
+          const statsRes = multicallResults[i * 3 + 2]
+
+          if (metaRes?.status === 'failure' || coreRes?.status === 'failure' || statsRes?.status === 'failure') {
+            console.error('Token data fetch failed for:', addr)
+            continue
+          }
+
+          const meta = metaRes.result
+          const core = coreRes.result
+          const stats = statsRes.result
+          const supabaseImage = supabaseImageMap[addr.toLowerCase()] || null
+
+          tokenData.push({
+            address: addr,
+            name: meta[0],
+            symbol: meta[1],
+            description: meta[2],
+            image: supabaseImage || meta[3],
+            creator: core[0],
+            virtualETH: formatEther(core[1] || 0n),
+            realETH: formatEther(core[3] || 0n),
+            createdAt: core[5]?.toString(),
+            graduated: core[7],
+            buys: stats[0]?.toString(),
+            sells: stats[1]?.toString(),
+            volume: formatEther(stats[2] || 0n),
+            holders: stats[3]?.toString()
+          })
+        }
         setTokens(tokenData)
       } catch (err) {
         console.error('Error fetching tokens:', err)
