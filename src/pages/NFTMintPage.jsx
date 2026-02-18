@@ -106,7 +106,7 @@ export default function NFTMintPage() {
         <Package size={48} style={{ opacity: 0.5 }} />
         <p>Collection not found.</p>
         <button onClick={() => navigate('/nft-launchpad')} style={{ padding: '10px 20px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
-          Back to Launchpad
+          Back to Collection
         </button>
       </div>
     )
@@ -134,7 +134,7 @@ export default function NFTMintPage() {
           onClick={() => navigate('/nft-launchpad')}
           style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '24px', fontSize: '14px' }}
         >
-          <ArrowLeft size={16} /> Back to Launchpad
+          <ArrowLeft size={16} /> Back to Collection
         </button>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'flex-start' }}>

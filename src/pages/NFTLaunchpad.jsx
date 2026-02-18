@@ -38,6 +38,26 @@ function formatMintPrice(price) {
   return `${p} ETH`
 }
 
+// Convert IPFS hash to gateway URL
+function ipfsToUrl(ipfsHash) {
+  if (!ipfsHash) return null
+  // If already a full URL, return as-is
+  if (ipfsHash.startsWith('http://') || ipfsHash.startsWith('https://')) {
+    return ipfsHash
+  }
+  // If it's an IPFS hash (starts with Qm or bafk), convert to gateway URL
+  if (ipfsHash.startsWith('Qm') || ipfsHash.startsWith('bafk')) {
+    // Try multiple gateways for better reliability
+    const gateways = [
+      `https://ipfs.io/ipfs/${ipfsHash}`,
+      `https://gateway.pinata.cloud/ipfs/${ipfsHash}`,
+      `https://cloudflare-ipfs.com/ipfs/${ipfsHash}`,
+    ]
+    return gateways[0] // Use first gateway, fallback handled by onError
+  }
+  return ipfsHash
+}
+
 function dataURLtoFile(dataUrl, filename = 'nft-image.png') {
   const arr = dataUrl.split(',')
   const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png'
@@ -153,6 +173,47 @@ function SortPill({ label, icon: Icon, active, onClick }) {
     >
       {Icon && <Icon size={12} />} {label}
     </button>
+  )
+}
+
+/* ───────────────────── Collection Card Image ───────────────────── */
+function CollectionCardImage({ imageUrl, name }) {
+  const [imageError, setImageError] = useState(false)
+  const [imageSrc, setImageSrc] = useState(() => ipfsToUrl(imageUrl))
+  
+  if (!imageUrl || imageError) {
+    return <Package size={48} style={{ color: '#3b82f6', opacity: 0.6 }} />
+  }
+  
+  return (
+    <img
+      src={imageSrc}
+      alt={name}
+      onError={() => {
+        // Extract IPFS hash from URL
+        const hash = imageUrl.replace(/^https?:\/\/[^/]+\/ipfs\//, '').replace(/^ipfs:\/\//, '').replace(/^\/ipfs\//, '')
+        if (hash && hash.length > 10) {
+          // Try fallback gateways
+          const fallbacks = [
+            `https://gateway.pinata.cloud/ipfs/${hash}`,
+            `https://cloudflare-ipfs.com/ipfs/${hash}`,
+            `https://dweb.link/ipfs/${hash}`,
+          ]
+          const currentIndex = fallbacks.findIndex(url => imageSrc === url)
+          if (currentIndex < fallbacks.length - 1) {
+            setImageSrc(fallbacks[currentIndex + 1])
+          } else {
+            setImageError(true)
+          }
+        } else {
+          setImageError(true)
+        }
+      }}
+      style={{
+        maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto',
+        borderRadius: '10px', objectFit: 'contain',
+      }}
+    />
   )
 }
 
@@ -771,18 +832,7 @@ export default function NFTLaunchpad() {
                             borderRadius: '12px',
                             margin: '0 14px',
                           }}>
-                            {c.image_url ? (
-                              <img
-                                src={c.image_url}
-                                alt={c.name}
-                                style={{
-                                  maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto',
-                                  borderRadius: '10px', objectFit: 'contain',
-                                }}
-                              />
-                            ) : (
-                              <Package size={48} style={{ color: '#3b82f6', opacity: 0.6 }} />
-                            )}
+                            <CollectionCardImage imageUrl={c.image_url} name={c.name} />
                           </div>
                           {/* Info */}
                           <div style={{ padding: '14px' }}>
