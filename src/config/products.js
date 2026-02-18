@@ -18,7 +18,7 @@ export const CATEGORIES = {
 /** Nav section id -> product ids for sidebar/bottom nav */
 export const NAV_SECTIONS = {
   gaming: ['flip', 'dice', 'slot', 'lucky'],
-  nft: ['early-access', 'ai-nft', 'nft-launchpad'],
+  nft: ['early-access', 'nft-launchpad', 'nft-launchpad-explore'],
   analysis: ['wallet-analysis', 'contract-security', 'allowance-cleaner'],
   deploy: ['deploy', 'deploy-erc721', 'deploy-erc1155'],
   social: ['featured-profiles'],
@@ -52,8 +52,8 @@ export const PRODUCTS = [
   { id: 'deploy', path: '/deploy', label: 'Deploy Token', title: 'Deploy Token', description: 'Create your own ERC20 token', category: CATEGORIES.DEPLOY, color: '#f59e0b', icon: 'Coins', iconImage: '/crypto-logos/basahub logo/ERC20.png', xpReward: '850 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'katana', 'arc-restnet', 'robinhood-testnet'] },
   { id: 'deploy-erc721', path: '/deploy-erc721', label: 'ERC721', title: 'Deploy ERC721', description: 'Deploy your own NFT contract', category: CATEGORIES.DEPLOY, color: '#06b6d4', icon: 'Package', iconImage: '/crypto-logos/basahub logo/ERC-721.png', xpReward: '850 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'katana', 'arc-restnet', 'robinhood-testnet'] },
   { id: 'deploy-erc1155', path: '/deploy-erc1155', label: 'ERC1155', title: 'Deploy ERC1155', description: 'Deploy multi-token contract', category: CATEGORIES.DEPLOY, color: '#8b5cf6', icon: 'Factory', iconImage: '/crypto-logos/basahub logo/ERC-1155.png', xpReward: '850 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'katana', 'arc-restnet', 'robinhood-testnet'] },
-  { id: 'ai-nft', path: '/ai-nft', label: 'AI NFT Mint', title: 'AI NFT MINT', description: 'Generate AI art and mint as NFT', category: CATEGORIES.NFT, color: '#f59e0b', icon: 'Layers', iconImage: '/crypto-logos/basahub logo/AINFTLAUNCHPAD.png', xpReward: '500 XP', bonusXP: null, networks: ['base'] },
-  { id: 'nft-launchpad', path: '/nft-launchpad', label: 'NFT Launchpad', title: 'NFT Launchpad', description: 'Create your own NFT collection. Upload art or generate with AI, then deploy on Base.', category: CATEGORIES.NFT, color: '#3b82f6', icon: 'Package', xpReward: '500 XP', bonusXP: null, networks: ['base'], isX402: true },
+  { id: 'nft-launchpad', path: '/nft-launchpad', label: 'NFT Launchpad', title: 'NFT Launchpad', description: 'Create your own NFT collection. Upload art or generate with AI, then deploy on Base.', category: CATEGORIES.NFT, color: '#3b82f6', icon: 'Package', xpReward: '2000 XP', bonusXP: '200 XP per mint', networks: ['base'], isX402: true },
+  { id: 'nft-launchpad-explore', path: '/nft-launchpad?tab=explore', label: 'Launched NFTs', title: 'Launched Collections', description: 'Browse and mint from NFT collections launched on Base', category: CATEGORIES.NFT, color: '#10b981', icon: 'LayoutGrid', xpReward: null, bonusXP: null, networks: ['base'] },
 ]
 
 /** Get product by id */

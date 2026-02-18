@@ -1204,7 +1204,7 @@ const Home = () => {
                   {!isCompactMode && renderNetworkLogos(['base'])}
                 </div>
                 <div style={compactStyles.cardGrid}>
-                  {games.filter(g => ['ai-nft', 'nft-launchpad'].includes(g.id)).map((game) => (
+                  {games.filter(g => ['nft-launchpad', 'nft-launchpad-explore'].includes(g.id)).map((game) => (
                     <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
                       <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
                         <div style={compactStyles.cardInner}>

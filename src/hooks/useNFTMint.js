@@ -6,6 +6,7 @@ import { config } from '../config/wagmi'
 import { NFT_LAUNCH_COLLECTION_ABI } from '../config/nftCollection'
 import { useNetworkCheck } from './useNetworkCheck'
 import { supabase } from '../config/supabase'
+import { addXP, recordTransaction } from '../utils/xpUtils'
 
 /**
  * Hook for public minting from an NFT Launchpad collection.
@@ -117,6 +118,23 @@ export function useNFTMint(contractAddress) {
       })
 
       setSuccess(true)
+
+      // XP: 200 XP per mint
+      try {
+        await addXP(address, 200, 'NFT_LAUNCHPAD_MINT', chainId)
+        await recordTransaction({
+          wallet_address: address,
+          game_type: 'NFT_LAUNCHPAD_MINT',
+          transaction_hash: hash,
+          contract_address: contractAddress,
+          amount: String(quantity),
+          currency: 'NFT',
+          status: 'success',
+          metadata: { quantity },
+        })
+      } catch (e) {
+        console.error('XP/record for mint failed:', e)
+      }
 
       // Refresh on-chain state
       await readContractState()

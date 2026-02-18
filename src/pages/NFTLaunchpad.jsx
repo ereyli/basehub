@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { useAccount } from 'wagmi'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Upload, Wand2, Package, AlertCircle, ExternalLink, CheckCircle,
   Coins, Rocket, TrendingUp, Clock, Image as ImageIcon, X, ZoomIn,
@@ -154,9 +154,15 @@ function SortPill({ label, icon: Icon, active, onClick }) {
 export default function NFTLaunchpad() {
   const { address, isConnected } = useAccount()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
-  // Tabs
-  const [activeTab, setActiveTab] = useState('create') // 'create' | 'explore'
+  // Tabs – open Explore when coming from Home "Launched Collections" card (?tab=explore)
+  const [activeTab, setActiveTab] = useState(() =>
+    searchParams.get('tab') === 'explore' ? 'explore' : 'create'
+  )
+  useEffect(() => {
+    if (searchParams.get('tab') === 'explore') setActiveTab('explore')
+  }, [searchParams])
 
   // Create form state
   const [imageSource, setImageSource] = useState('upload')
@@ -175,6 +181,8 @@ export default function NFTLaunchpad() {
   const [collections, setCollections] = useState([])
   const [collectionsLoading, setCollectionsLoading] = useState(true)
   const [sortBy, setSortBy] = useState('newest') // 'newest' | 'most_minted' | 'trending'
+  const [currentPage, setCurrentPage] = useState(1)
+  const NFTS_PER_PAGE = 10
 
   const errorRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -223,6 +231,15 @@ export default function NFTLaunchpad() {
     }
     return arr
   }, [collections, sortBy])
+
+  const totalPages = Math.max(1, Math.ceil(sortedCollections.length / NFTS_PER_PAGE))
+  const paginatedCollections = useMemo(() => {
+    const start = (currentPage - 1) * NFTS_PER_PAGE
+    return sortedCollections.slice(start, start + NFTS_PER_PAGE)
+  }, [sortedCollections, currentPage])
+
+  useEffect(() => { setCurrentPage(1) }, [sortBy])
+  useEffect(() => { if (currentPage > totalPages) setCurrentPage(totalPages) }, [totalPages, currentPage])
 
   useEffect(() => {
     if (createError && errorRef.current) errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
@@ -311,7 +328,7 @@ export default function NFTLaunchpad() {
   return (
     <NetworkGuard showWarning={true}>
       <div className="deploy-token-page">
-        <div className="deploy-container" style={{ maxWidth: '640px' }}>
+        <div className="deploy-container" style={{ maxWidth: '1400px', margin: '0 auto', padding: '20px 16px' }}>
           <BackButton />
 
           {/* ─── Header ─── */}
@@ -343,7 +360,7 @@ export default function NFTLaunchpad() {
 
           {/* ═══════════ CREATE TAB ═══════════ */}
           {activeTab === 'create' && (
-            <>
+            <div style={{ maxWidth: '640px', margin: '0 auto' }}>
               {success ? (
                 /* ─── Success Card ─── */
                 <div style={{
@@ -623,7 +640,7 @@ export default function NFTLaunchpad() {
                   </form>
                 </>
               )}
-            </>
+            </div>
           )}
 
           {/* ═══════════ EXPLORE TAB ═══════════ */}
@@ -675,86 +692,155 @@ export default function NFTLaunchpad() {
                   </button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {sortedCollections.map((c) => {
-                    const minted = c.total_minted || 0
-                    const total = c.supply || 0
-                    const pct = total > 0 ? Math.min(100, Math.round((minted / total) * 100)) : 0
-                    const isSoldOut = minted >= total && total > 0
-                    return (
-                      <div
-                        key={c.contract_address}
-                        onClick={() => c.slug && navigate(`/mint/${c.slug}`)}
-                        style={{
-                          display: 'flex', gap: '14px', padding: '14px',
-                          background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(55,65,81,0.4)',
-                          borderRadius: '14px', cursor: c.slug ? 'pointer' : 'default',
-                          transition: 'all 0.2s', alignItems: 'center',
-                        }}
-                        onMouseOver={(e) => { e.currentTarget.style.borderColor = 'rgba(59,130,246,0.5)'; e.currentTarget.style.background = 'rgba(15,23,42,0.8)' }}
-                        onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(55,65,81,0.4)'; e.currentTarget.style.background = 'rgba(15,23,42,0.5)' }}
-                      >
-                        {/* Image */}
-                        {c.image_url ? (
-                          <img src={c.image_url} alt={c.name}
-                            style={{ width: '60px', height: '60px', borderRadius: '12px', objectFit: 'cover', flexShrink: 0 }} />
-                        ) : (
+                <>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                    gap: '16px',
+                  }}>
+                    {paginatedCollections.map((c) => {
+                      const minted = c.total_minted || 0
+                      const total = c.supply || 0
+                      const pct = total > 0 ? Math.min(100, Math.round((minted / total) * 100)) : 0
+                      const isSoldOut = minted >= total && total > 0
+                      return (
+                        <div
+                          key={c.contract_address}
+                          onClick={() => c.slug && navigate(`/mint/${c.slug}`)}
+                          style={{
+                            background: 'linear-gradient(145deg, rgba(30, 30, 40, 0.9) 0%, rgba(20, 20, 30, 0.95) 100%)',
+                            borderRadius: '16px',
+                            padding: '0',
+                            cursor: c.slug ? 'pointer' : 'default',
+                            border: '1px solid rgba(59, 130, 246, 0.2)',
+                            transition: 'all 0.3s ease',
+                            overflow: 'hidden',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-4px)'
+                            e.currentTarget.style.boxShadow = '0 12px 40px rgba(59, 130, 246, 0.2)'
+                            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)'
+                            e.currentTarget.style.boxShadow = 'none'
+                            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.2)'
+                          }}
+                        >
+                          {/* Progress bar at top */}
+                          <div style={{ height: '3px', background: 'rgba(59, 130, 246, 0.2)' }}>
+                            <div style={{
+                              width: `${pct}%`, height: '100%',
+                              background: isSoldOut ? '#f87171' : 'linear-gradient(90deg, #3b82f6, #60a5fa)',
+                              transition: 'width 0.3s',
+                            }} />
+                          </div>
+                          {/* Image – contain so full logo is visible, not cropped */}
                           <div style={{
-                            width: '60px', height: '60px', borderRadius: '12px', flexShrink: 0,
-                            background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            padding: '12px 14px 0',
+                            height: '160px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: 'rgba(15,23,42,0.5)',
+                            borderRadius: '12px',
+                            margin: '0 14px',
                           }}>
-                            <Package size={24} style={{ color: '#3b82f6' }} />
-                          </div>
-                        )}
-
-                        {/* Info */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
-                            <span style={{ fontWeight: '700', fontSize: '14px', color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {c.name}
-                            </span>
-                            {isSoldOut && (
-                              <span style={{
-                                padding: '1px 7px', borderRadius: '6px', fontSize: '10px', fontWeight: '700',
-                                background: 'rgba(239,68,68,0.15)', color: '#f87171',
-                              }}>SOLD OUT</span>
-                            )}
-                            {!isSoldOut && minted > 0 && (
-                              <span style={{
-                                padding: '1px 7px', borderRadius: '6px', fontSize: '10px', fontWeight: '700',
-                                background: 'rgba(34,197,94,0.15)', color: '#4ade80',
-                              }}>LIVE</span>
-                            )}
-                            {!isSoldOut && minted === 0 && (
-                              <span style={{
-                                padding: '1px 7px', borderRadius: '6px', fontSize: '10px', fontWeight: '700',
-                                background: 'rgba(59,130,246,0.15)', color: '#60a5fa',
-                              }}>NEW</span>
+                            {c.image_url ? (
+                              <img
+                                src={c.image_url}
+                                alt={c.name}
+                                style={{
+                                  maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto',
+                                  borderRadius: '10px', objectFit: 'contain',
+                                }}
+                              />
+                            ) : (
+                              <Package size={48} style={{ color: '#3b82f6', opacity: 0.6 }} />
                             )}
                           </div>
-                          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>
-                            {c.symbol} · <strong style={{ color: '#94a3b8' }}>{c.mint_price || '0'} ETH</strong> · {shortAddress(c.deployer_address)} · {timeAgo(c.created_at)}
-                          </div>
-                          {/* Progress bar */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{ flex: 1, height: '5px', background: 'rgba(55,65,81,0.6)', borderRadius: '3px', overflow: 'hidden' }}>
+                          {/* Info */}
+                          <div style={{ padding: '14px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
+                              <span style={{ fontWeight: '700', fontSize: '16px', color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {c.name}
+                              </span>
+                              {isSoldOut && (
+                                <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '700', background: 'rgba(239,68,68,0.2)', color: '#f87171', flexShrink: 0 }}>SOLD OUT</span>
+                              )}
+                              {!isSoldOut && minted > 0 && (
+                                <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '700', background: 'rgba(34,197,94,0.2)', color: '#4ade80', flexShrink: 0 }}>LIVE</span>
+                              )}
+                              {!isSoldOut && minted === 0 && (
+                                <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '700', background: 'rgba(59,130,246,0.2)', color: '#60a5fa', flexShrink: 0 }}>NEW</span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
+                              {c.symbol} · <strong style={{ color: '#94a3b8' }}>{c.mint_price || '0'} ETH</strong> · {timeAgo(c.created_at)}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#64748b' }}>
+                              <span>Minted</span>
+                              <span style={{ fontWeight: '600', color: '#e2e8f0' }}>{minted}/{total}</span>
+                            </div>
+                            <div style={{ height: '6px', background: 'rgba(55,65,81,0.6)', borderRadius: '3px', overflow: 'hidden', marginTop: '6px' }}>
                               <div style={{
                                 width: `${pct}%`, height: '100%',
                                 background: isSoldOut ? '#f87171' : 'linear-gradient(90deg, #3b82f6, #60a5fa)',
                                 borderRadius: '3px', transition: 'width 0.3s',
                               }} />
                             </div>
-                            <span style={{ fontSize: '10px', color: '#64748b', whiteSpace: 'nowrap', fontWeight: '600' }}>
-                              {minted}/{total}
-                            </span>
                           </div>
                         </div>
-
-                        <ExternalLink size={16} style={{ color: '#475569', flexShrink: 0 }} />
-                      </div>
-                    )
-                  })}
-                </div>
+                      )
+                    })}
+                  </div>
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div style={{
+                      display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px',
+                      marginTop: '24px', flexWrap: 'wrap', paddingBottom: '16px',
+                    }}>
+                      <button
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        style={{
+                          padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.3)',
+                          background: currentPage === 1 ? 'rgba(255,255,255,0.05)' : 'rgba(59, 130, 246, 0.15)',
+                          color: currentPage === 1 ? '#6b7280' : '#60a5fa', fontWeight: '600', fontSize: '14px',
+                          cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        ←
+                      </button>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          style={{
+                            minWidth: '36px', padding: '8px 10px', borderRadius: '8px',
+                            border: currentPage === page ? '1px solid #3b82f6' : '1px solid rgba(59, 130, 246, 0.2)',
+                            background: currentPage === page ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : 'rgba(0, 0, 0, 0.2)',
+                            color: currentPage === page ? '#fff' : '#9ca3af', fontWeight: '600', fontSize: '14px', cursor: 'pointer',
+                          }}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        style={{
+                          padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.3)',
+                          background: currentPage === totalPages ? 'rgba(255,255,255,0.05)' : 'rgba(59, 130, 246, 0.15)',
+                          color: currentPage === totalPages ? '#6b7280' : '#60a5fa', fontWeight: '600', fontSize: '14px',
+                          cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        →
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}

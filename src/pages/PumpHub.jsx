@@ -1281,6 +1281,9 @@ const PumpHub = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('newest')
   const [category, setCategory] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
+  
+  const TOKENS_PER_PAGE = 10
   
   // Token creation form
   const [formData, setFormData] = useState({
@@ -1639,6 +1642,23 @@ const PumpHub = () => {
     
     return result
   }, [tokens, searchQuery, category, sortBy])
+
+  // Pagination: show 10 tokens per page
+  const totalPages = Math.max(1, Math.ceil(filteredTokens.length / TOKENS_PER_PAGE))
+  const paginatedTokens = useMemo(() => {
+    const start = (currentPage - 1) * TOKENS_PER_PAGE
+    return filteredTokens.slice(start, start + TOKENS_PER_PAGE)
+  }, [filteredTokens, currentPage])
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [category, searchQuery, sortBy])
+
+  // Clamp page when total pages shrinks
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages)
+  }, [totalPages, currentPage])
   
   // Handle logo upload
   const handleLogoChange = async (e) => {
@@ -1710,7 +1730,29 @@ const PumpHub = () => {
             overflowX: 'hidden'
           }}
         >
-          <BackButton />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+            <BackButton style={{ marginBottom: 0 }} />
+            {selectedToken && (
+              <button
+                type="button"
+                onClick={() => setSelectedToken(null)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '8px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(59, 130, 246, 0.4)',
+                  background: 'rgba(59, 130, 246, 0.15)',
+                  color: '#60a5fa',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                }}
+              >
+                <Flame size={16} />
+                Tokens
+              </button>
+            )}
+          </div>
           
           {/* Header */}
           <div style={{ 
@@ -2105,20 +2147,86 @@ const PumpHub = () => {
                       </button>
                     </div>
                   ) : (
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))',
-                      gap: '16px'
-                    }}>
-                      {filteredTokens.map(token => (
-                        <TokenCard
-                          key={token.address}
-                          token={token}
-                          isMobile={isMobile}
-                          onClick={() => setSelectedToken(token.address)}
-                        />
-                      ))}
-                    </div>
+                    <>
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))',
+                        gap: '16px'
+                      }}>
+                        {paginatedTokens.map(token => (
+                          <TokenCard
+                            key={token.address}
+                            token={token}
+                            isMobile={isMobile}
+                            onClick={() => setSelectedToken(token.address)}
+                          />
+                        ))}
+                      </div>
+                      {/* Pagination: 1, 2, 3, 4, 5... */}
+                      {totalPages > 1 && (
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          gap: '6px',
+                          marginTop: '24px',
+                          flexWrap: 'wrap',
+                          paddingBottom: '16px'
+                        }}>
+                          <button
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            style={{
+                              padding: '8px 12px',
+                              borderRadius: '8px',
+                              border: '1px solid rgba(59, 130, 246, 0.3)',
+                              background: currentPage === 1 ? 'rgba(255,255,255,0.05)' : 'rgba(59, 130, 246, 0.15)',
+                              color: currentPage === 1 ? '#6b7280' : '#60a5fa',
+                              fontWeight: '600',
+                              fontSize: '14px',
+                              cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+                            }}
+                          >
+                            ←
+                          </button>
+                          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                            <button
+                              key={page}
+                              onClick={() => setCurrentPage(page)}
+                              style={{
+                                minWidth: '36px',
+                                padding: '8px 10px',
+                                borderRadius: '8px',
+                                border: currentPage === page ? '1px solid #3b82f6' : '1px solid rgba(59, 130, 246, 0.2)',
+                                background: currentPage === page ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : 'rgba(0, 0, 0, 0.2)',
+                                color: currentPage === page ? '#fff' : '#9ca3af',
+                                fontWeight: '600',
+                                fontSize: '14px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {page}
+                            </button>
+                          ))}
+                          <button
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            style={{
+                              padding: '8px 12px',
+                              borderRadius: '8px',
+                              border: '1px solid rgba(59, 130, 246, 0.3)',
+                              background: currentPage === totalPages ? 'rgba(255,255,255,0.05)' : 'rgba(59, 130, 246, 0.15)',
+                              color: currentPage === totalPages ? '#6b7280' : '#60a5fa',
+                              fontWeight: '600',
+                              fontSize: '14px',
+                              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+                            }}
+                          >
+                            →
+                          </button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </>
               )}

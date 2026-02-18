@@ -196,9 +196,9 @@ export function useNFTLaunchpad() {
 
       setSuccess({ contractAddress: deployedAddress, deployTxHash: txHash, slug: collectionSlug })
 
-      // XP & quest
+      // XP & quest (2000 XP for launching a collection)
       try {
-        await addXP(address, 500, 'NFT_LAUNCHPAD_COLLECTION', chainId)
+        await addXP(address, 2000, 'NFT_LAUNCHPAD_COLLECTION', chainId)
         await recordTransaction({
           wallet_address: address,
           game_type: 'NFT_LAUNCHPAD_COLLECTION',
