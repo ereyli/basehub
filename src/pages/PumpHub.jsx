@@ -1296,7 +1296,7 @@ const PumpHub = () => {
     clearLastCreatedToken 
   } = usePumpHub()
   
-  // Platform stats derived from Supabase tokens (no RPC needed)
+  // Platform stats derived from token list
   const platformStats = useMemo(() => {
     if (!tokens || tokens.length === 0) return null
     const totalTokens = tokens.length
@@ -1304,62 +1304,209 @@ const PumpHub = () => {
     const totalVolumeETH = tokens.reduce((sum, t) => sum + parseFloat(t.volume || 0), 0)
     return { totalTokens, graduated, totalVolumeETH }
   }, [tokens])
-  
-  // Fetch all tokens from Supabase (primary source - no RPC needed for token list)
+
+  // Helper: parse multicall results into token objects
+  const parseOnChainToken = useCallback((addr, meta, core, stats) => ({
+    address: addr,
+    name: meta[0] || 'Unknown',
+    symbol: meta[1] || '???',
+    description: meta[2] || '',
+    image: meta[3] || '',
+    creator: core[0] || '',
+    virtualETH: formatEther(core[1] || 0n),
+    realETH: formatEther(core[3] || 0n),
+    createdAt: core[5]?.toString() || '0',
+    graduated: core[7] || false,
+    buys: stats[0]?.toString() || '0',
+    sells: stats[1]?.toString() || '0',
+    volume: formatEther(stats[2] || 0n),
+    holders: stats[3]?.toString() || '0',
+  }), [])
+
+  // Fetch tokens: hybrid Supabase-first, then background RPC sync
   useEffect(() => {
+    let cancelled = false
+
     const fetchTokens = async () => {
-      if (!supabase?.from) {
-        setLoadingTokens(false)
-        return
-      }
-      
+      if (!publicClient) { setLoadingTokens(false); return }
+
       try {
-        const { data: sbTokens, error: sbError } = await supabase
-          .from('pumphub_tokens')
-          .select('*')
-          .order('created_at', { ascending: false })
+        // Step 1: Get on-chain token count & addresses (2 lightweight RPC calls)
+        let onChainCount = 0
+        try {
+          const countRaw = await publicClient.readContract({
+            address: PUMPHUB_FACTORY_ADDRESS,
+            abi: PUMPHUB_FACTORY_ABI,
+            functionName: 'getAllTokensCount',
+          })
+          onChainCount = Number(countRaw)
+        } catch { /* ignore */ }
 
-        if (sbError) {
-          console.error('Supabase token fetch error:', sbError)
-          setLoadingTokens(false)
-          return
-        }
-
-        if (!sbTokens || sbTokens.length === 0) {
+        if (onChainCount === 0) {
           setTokens([])
           setLoadingTokens(false)
           return
         }
 
-        const tokenData = sbTokens.map(row => ({
-          address: row.token_address,
-          name: row.name || 'Unknown',
-          symbol: row.symbol || '???',
-          description: row.description || '',
-          image: row.image_uri || '',
-          creator: row.creator || '',
-          virtualETH: row.virtual_eth || '1',
-          realETH: row.real_eth || '0',
-          createdAt: row.created_at
-            ? String(Math.floor(new Date(row.created_at).getTime() / 1000))
-            : '0',
-          graduated: row.graduated || false,
-          buys: String(row.total_buys || 0),
-          sells: String(row.total_sells || 0),
-          volume: row.total_volume || '0',
-          holders: String(row.holder_count || 0),
-        }))
+        let tokenAddresses = []
+        try {
+          tokenAddresses = await publicClient.readContract({
+            address: PUMPHUB_FACTORY_ADDRESS,
+            abi: PUMPHUB_FACTORY_ABI,
+            functionName: 'getTokens',
+            args: [0n, BigInt(Math.min(onChainCount, 100))]
+          })
+        } catch (e) {
+          console.error('getTokens RPC failed:', e)
+          setLoadingTokens(false)
+          return
+        }
 
-        setTokens(tokenData)
+        // Step 2: Load whatever we have in Supabase (fast, single query)
+        let sbMap = {}
+        if (supabase?.from) {
+          try {
+            const lowerAddrs = tokenAddresses.map(a => a.toLowerCase())
+            const { data: sbRows } = await supabase
+              .from('pumphub_tokens')
+              .select('*')
+              .in('token_address', lowerAddrs)
+            if (sbRows) {
+              sbRows.forEach(r => { sbMap[r.token_address] = r })
+            }
+          } catch (e) {
+            console.error('Supabase fetch failed:', e)
+          }
+        }
+
+        // Step 3: Show Supabase data immediately (fast first paint)
+        const sbTokens = tokenAddresses.map(addr => {
+          const row = sbMap[addr.toLowerCase()]
+          if (row && row.name && row.name !== 'Unknown') {
+            return {
+              address: addr,
+              name: row.name,
+              symbol: row.symbol || '???',
+              description: row.description || '',
+              image: row.image_uri || '',
+              creator: row.creator || '',
+              virtualETH: row.virtual_eth || '1',
+              realETH: row.real_eth || '0',
+              createdAt: row.created_at
+                ? String(Math.floor(new Date(row.created_at).getTime() / 1000))
+                : '0',
+              graduated: row.graduated || false,
+              buys: String(row.total_buys || 0),
+              sells: String(row.total_sells || 0),
+              volume: row.total_volume || '0',
+              holders: String(row.holder_count || 0),
+              _fromSupabase: true,
+            }
+          }
+          return { address: addr, name: 'Loading...', symbol: '...', _fromSupabase: false }
+        })
+
+        if (!cancelled) {
+          setTokens(sbTokens)
+          setLoadingTokens(false)
+        }
+
+        // Step 4: Background RPC sync via multicall (fills missing/stale data)
+        const multicallContracts = []
+        tokenAddresses.forEach(addr => {
+          multicallContracts.push(
+            { address: PUMPHUB_FACTORY_ADDRESS, abi: PUMPHUB_FACTORY_ABI, functionName: 'getTokenMeta', args: [addr] },
+            { address: PUMPHUB_FACTORY_ADDRESS, abi: PUMPHUB_FACTORY_ABI, functionName: 'tokenCore', args: [addr] },
+            { address: PUMPHUB_FACTORY_ADDRESS, abi: PUMPHUB_FACTORY_ABI, functionName: 'tokenStats', args: [addr] },
+          )
+        })
+
+        let mcResults
+        try {
+          mcResults = await publicClient.multicall({ contracts: multicallContracts, allowFailure: true })
+        } catch (mcErr) {
+          console.error('Multicall failed, trying chunks:', mcErr)
+          mcResults = []
+          for (let i = 0; i < multicallContracts.length; i += 15) {
+            const chunk = multicallContracts.slice(i, i + 15)
+            try {
+              const res = await publicClient.multicall({ contracts: chunk, allowFailure: true })
+              mcResults.push(...res)
+            } catch {
+              mcResults.push(...chunk.map(() => ({ status: 'failure' })))
+            }
+            if (i + 15 < multicallContracts.length) await new Promise(r => setTimeout(r, 400))
+          }
+        }
+
+        // Parse results and merge with Supabase images
+        const fullTokens = []
+        const upsertRows = []
+        for (let i = 0; i < tokenAddresses.length; i++) {
+          const addr = tokenAddresses[i]
+          const metaR = mcResults[i * 3]
+          const coreR = mcResults[i * 3 + 1]
+          const statsR = mcResults[i * 3 + 2]
+
+          if (metaR?.status === 'failure' || coreR?.status === 'failure' || statsR?.status === 'failure') {
+            const existing = sbTokens.find(t => t.address === addr)
+            if (existing && existing._fromSupabase) fullTokens.push(existing)
+            continue
+          }
+
+          const meta = metaR.result
+          const core = coreR.result
+          const stats = statsR.result
+          const sbRow = sbMap[addr.toLowerCase()]
+          const onChainImage = meta[3] || ''
+          const supabaseImage = sbRow?.image_uri || ''
+
+          const token = parseOnChainToken(addr, meta, core, stats)
+          token.image = supabaseImage || onChainImage
+          fullTokens.push(token)
+
+          // Prepare Supabase upsert for missing/stale data
+          upsertRows.push({
+            token_address: addr.toLowerCase(),
+            creator: (core[0] || '').toLowerCase(),
+            name: meta[0] || '',
+            symbol: meta[1] || '',
+            description: meta[2] || '',
+            image_uri: supabaseImage || onChainImage,
+            virtual_eth: formatEther(core[1] || 0n),
+            virtual_tokens: formatUnits(core[2] || 0n, 18),
+            real_eth: formatEther(core[3] || 0n),
+            graduated: core[7] || false,
+            total_buys: Number(stats[0] || 0),
+            total_sells: Number(stats[1] || 0),
+            total_volume: formatEther(stats[2] || 0n),
+            holder_count: Number(stats[3] || 0),
+            updated_at: new Date().toISOString(),
+          })
+        }
+
+        if (!cancelled) {
+          setTokens(fullTokens)
+        }
+
+        // Step 5: Upsert all token data back to Supabase (background, best-effort)
+        if (supabase?.from && upsertRows.length > 0) {
+          try {
+            await supabase.from('pumphub_tokens').upsert(upsertRows, { onConflict: 'token_address' })
+          } catch (e) {
+            console.error('Supabase sync upsert failed:', e)
+          }
+        }
       } catch (err) {
-        console.error('Error fetching tokens from Supabase:', err)
+        console.error('Error fetching tokens:', err)
       } finally {
-        setLoadingTokens(false)
+        if (!cancelled) setLoadingTokens(false)
       }
     }
-    
+
     fetchTokens()
-  }, [])
+    return () => { cancelled = true }
+  }, [publicClient, parseOnChainToken])
   
   // Fetch selected token data
   useEffect(() => {
