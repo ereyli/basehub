@@ -22,4 +22,5 @@ export const NFT_LAUNCH_COLLECTION_ABI = [
   { inputs: [], name: 'owner', outputs: [{ name: '', type: 'address' }], stateMutability: 'view', type: 'function' },
   { inputs: [], name: 'toggleSale', outputs: [], stateMutability: 'nonpayable', type: 'function' },
   { inputs: [{ name: 'newPrice', type: 'uint256' }], name: 'setMintPrice', outputs: [], stateMutability: 'nonpayable', type: 'function' },
+  { anonymous: false, inputs: [{ indexed: true, name: 'minter', type: 'address' }, { indexed: false, name: 'quantity', type: 'uint256' }, { indexed: false, name: 'startTokenId', type: 'uint256' }], name: 'Minted', type: 'event' },
 ]

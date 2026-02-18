@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useAccount } from 'wagmi'
+import { useAccount, usePublicClient } from 'wagmi'
 import { formatEther } from 'viem'
-import { Package, ExternalLink, AlertCircle, CheckCircle, ArrowLeft, Minus, Plus, Copy, Zap } from 'lucide-react'
+import { Package, ExternalLink, AlertCircle, CheckCircle, ArrowLeft, Minus, Plus, Copy, Zap, Users, Share2 } from 'lucide-react'
 import NetworkGuard from '../components/NetworkGuard'
 import { useNFTMint } from '../hooks/useNFTMint'
+import { useFarcaster } from '../contexts/FarcasterContext'
+import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { supabase } from '../config/supabase'
+
+const SHARE_BASE_URL = 'https://www.basehub.fun'
+function getMintUrl(slug) { return slug ? `${SHARE_BASE_URL}/mint/${slug}` : '' }
+function getOpenSeaUrl(contractAddress) { return contractAddress ? `https://opensea.io/assets/base/${contractAddress}` : '' }
+import { NFT_LAUNCH_COLLECTION_ABI } from '../config/nftCollection'
 
 function shortAddress(addr) {
   if (!addr || addr.length < 10) return addr
@@ -35,6 +42,41 @@ export default function NFTMintPage() {
   const [notFound, setNotFound] = useState(false)
   const [quantity, setQuantity] = useState(1)
   const [copied, setCopied] = useState(false)
+  const [holders, setHolders] = useState([])
+  const [holdersLoading, setHoldersLoading] = useState(false)
+  const [holderFetchKey, setHolderFetchKey] = useState(0)
+  const [isSharingCast, setIsSharingCast] = useState(false)
+  const publicClient = usePublicClient()
+
+  const farcaster = useFarcaster()
+  const isWeb = shouldUseRainbowKit()
+  const isInFarcaster = farcaster?.isInFarcaster ?? false
+  const castSdk = farcaster?.sdk ?? null
+
+  const handleTweetCollection = () => {
+    if (!collection?.slug) return
+    const mintUrl = getMintUrl(collection.slug)
+    const openseaUrl = getOpenSeaUrl(collection.contract_address)
+    const name = collection.name || 'NFT Collection'
+    const text = `🎨 "${name}" on Base – mint now!\n\nMint: ${mintUrl}\nOpenSea: ${openseaUrl}\n\n#BaseHub #NFT #Base`
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank')
+  }
+
+  const handleCastCollection = async () => {
+    if (!castSdk?.actions?.composeCast || !collection?.slug) return
+    const mintUrl = getMintUrl(collection.slug)
+    const openseaUrl = getOpenSeaUrl(collection.contract_address)
+    const name = collection.name || 'NFT Collection'
+    const castText = `🎨 "${name}" on BaseHub – mint on Base!\n\nMint: ${mintUrl}\nOpenSea: ${openseaUrl}\n\n#BaseHub #NFT #Base\n\n🌐 Web: ${SHARE_BASE_URL}/nft-launchpad\n🎭 Farcaster: https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub`
+    setIsSharingCast(true)
+    try {
+      await castSdk.actions.composeCast({ text: castText, embeds: [mintUrl] })
+    } catch (err) {
+      console.error('NFT Mint cast failed:', err)
+    } finally {
+      setIsSharingCast(false)
+    }
+  }
 
   // Load collection from Supabase by slug
   useEffect(() => {
@@ -76,6 +118,64 @@ export default function NFTMintPage() {
     refreshState,
   } = useNFTMint(contractAddress)
 
+  // Fetch minters from last ~50k blocks only (avoids scanning millions of blocks; ~1–2 days on Base)
+  const HOLDER_BLOCK_RANGE = 50000n
+  const HOLDER_CHUNK = 2000n
+  useEffect(() => {
+    if (!contractAddress || !publicClient) return
+    let cancelled = false
+    setHoldersLoading(true)
+    publicClient
+      .getBlockNumber()
+      .then(async (toBlock) => {
+        if (cancelled) return
+        const fromBlock = toBlock > HOLDER_BLOCK_RANGE ? toBlock - HOLDER_BLOCK_RANGE : 0n
+        const allLogs = []
+        let from = fromBlock
+        while (from <= toBlock) {
+          const chunkTo = from + HOLDER_CHUNK - 1n > toBlock ? toBlock : from + HOLDER_CHUNK - 1n
+          try {
+            const logs = await publicClient.getContractEvents({
+              address: contractAddress,
+              abi: NFT_LAUNCH_COLLECTION_ABI,
+              eventName: 'Minted',
+              fromBlock: from,
+              toBlock: chunkTo,
+            })
+            allLogs.push(...logs)
+          } catch (_) {
+            // skip chunk on error
+          }
+          from = chunkTo + 1n
+          if (cancelled) return
+        }
+        if (cancelled) return
+        const byAddress = {}
+        for (const e of allLogs) {
+          const minter = e.args?.minter
+          if (minter) {
+            byAddress[minter] = (byAddress[minter] || 0) + Number(e.args.quantity ?? 1)
+          }
+        }
+        const list = Object.entries(byAddress)
+          .map(([address, count]) => ({ address, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 50)
+        setHolders(list)
+      })
+      .catch(() => { if (!cancelled) setHolders([]) })
+      .finally(() => { if (!cancelled) setHoldersLoading(false) })
+    return () => { cancelled = true }
+  }, [contractAddress, publicClient, holderFetchKey])
+
+  // After successful mint, refetch holders once so new minter appears (short delay for chain to index)
+  useEffect(() => {
+    if (mintSuccess) {
+      const t = setTimeout(() => setHolderFetchKey((k) => k + 1), 2000)
+      return () => clearTimeout(t)
+    }
+  }, [mintSuccess])
+
   const handleMint = async () => {
     try {
       await mint(quantity)
@@ -105,7 +205,7 @@ export default function NFTMintPage() {
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', color: '#9ca3af', gap: '16px' }}>
         <Package size={48} style={{ opacity: 0.5 }} />
         <p>Collection not found.</p>
-        <button onClick={() => navigate('/nft-launchpad')} style={{ padding: '10px 20px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
+        <button onClick={() => navigate('/nft-launchpad?tab=explore')} style={{ padding: '10px 20px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>
           Back to Collection
         </button>
       </div>
@@ -131,7 +231,7 @@ export default function NFTMintPage() {
     <NetworkGuard showWarning={true}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 16px' }}>
         <button
-          onClick={() => navigate('/nft-launchpad')}
+          onClick={() => navigate('/nft-launchpad?tab=explore')}
           style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '24px', fontSize: '14px' }}
         >
           <ArrowLeft size={16} /> Back to Collection
@@ -173,7 +273,7 @@ export default function NFTMintPage() {
                     <div style={{ fontSize: '18px', fontWeight: '700', color: '#e5e7eb' }}>{isReadingChain ? '...' : (mintPrice === 0n ? 'Free' : `${mintPriceEth} ETH`)}</div>
                   </div>
                   <div style={{ flex: 1, minWidth: '80px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>Minted</div>
+                    <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>Minted so far</div>
                     <div style={{ fontSize: '18px', fontWeight: '700', color: '#e5e7eb' }}>{isReadingChain ? '...' : `${minted}/${max}`}</div>
                   </div>
                   <div style={{ flex: 1, minWidth: '80px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
@@ -187,7 +287,7 @@ export default function NFTMintPage() {
                 <div style={{ marginBottom: '20px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>
                     <span>Progress</span>
-                    <span>{minted} / {max} minted · {pct}%</span>
+                    <span>{minted} / {max} minted so far · {pct}%</span>
                   </div>
                   <div style={{ height: '8px', background: 'rgba(55, 65, 81, 0.8)', borderRadius: '4px', overflow: 'hidden' }}>
                     <div style={{
@@ -288,6 +388,37 @@ export default function NFTMintPage() {
                     Basescan <ExternalLink size={12} />
                   </a>
                 </div>
+                {/* Share: Tweet (web) / Cast (Farcaster) */}
+                {slug && (
+                  <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '12px', flexWrap: 'wrap' }}>
+                    {isWeb && (
+                      <button
+                        type="button"
+                        onClick={handleTweetCollection}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', fontSize: '13px', fontWeight: '600',
+                          border: 'none', borderRadius: '10px', background: 'rgba(29, 155, 240, 0.2)', color: '#38bdf8', cursor: 'pointer',
+                        }}
+                      >
+                        <Share2 size={16} /> Share on X
+                      </button>
+                    )}
+                    {isInFarcaster && castSdk?.actions?.composeCast && (
+                      <button
+                        type="button"
+                        onClick={handleCastCollection}
+                        disabled={isSharingCast}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', fontSize: '13px', fontWeight: '600',
+                          border: 'none', borderRadius: '10px',
+                          background: isSharingCast ? 'rgba(55,65,81,0.5)' : 'rgba(0, 82, 255, 0.25)', color: isSharingCast ? '#64748b' : '#60a5fa', cursor: isSharingCast ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        <Share2 size={16} /> {isSharingCast ? 'Sharing...' : 'Share on Farcaster'}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -337,7 +468,7 @@ export default function NFTMintPage() {
                 </div>
 
                 <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#9ca3af', marginBottom: '8px', marginTop: '20px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Links</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
                   <a href={`https://opensea.io/assets/base/${contractAddress}`} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <ExternalLink size={14} /> OpenSea
                   </a>
@@ -345,6 +476,30 @@ export default function NFTMintPage() {
                     <ExternalLink size={14} /> Basescan
                   </a>
                 </div>
+
+                <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#9ca3af', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Users size={14} /> Holders
+                </h3>
+                {holdersLoading ? (
+                  <p style={{ fontSize: '13px', color: '#64748b' }}>Loading...</p>
+                ) : holders.length === 0 ? (
+                  <p style={{ fontSize: '13px', color: '#64748b', fontStyle: 'italic' }}>No mints yet.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '200px', overflowY: 'auto' }}>
+                    {holders.map(({ address, count }) => (
+                      <a
+                        key={address}
+                        href={`https://basescan.org/address/${address}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ fontSize: '13px', color: '#60a5fa', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}
+                      >
+                        <span>{shortAddress(address)}</span>
+                        {count > 1 && <span style={{ color: '#64748b', fontSize: '12px' }}>×{count}</span>}
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

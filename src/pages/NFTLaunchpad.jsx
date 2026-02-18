@@ -3,7 +3,7 @@ import { useAccount } from 'wagmi'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Upload, Wand2, Package, AlertCircle, ExternalLink, CheckCircle,
-  Coins, Rocket, TrendingUp, Clock, Image as ImageIcon, X, ZoomIn,
+  Coins, Rocket, TrendingUp, TrendingDown, Clock, Image as ImageIcon, X, ZoomIn,
   ArrowUpDown, Flame, Sparkles, Eye
 } from 'lucide-react'
 import BackButton from '../components/BackButton'
@@ -247,7 +247,8 @@ export default function NFTLaunchpad() {
   // Collections state
   const [collections, setCollections] = useState([])
   const [collectionsLoading, setCollectionsLoading] = useState(true)
-  const [sortBy, setSortBy] = useState('newest') // 'newest' | 'most_minted' | 'trending'
+  const [sortBy, setSortBy] = useState('newest') // newest | most_minted | trending | least_minted | oldest | price_low | price_high | recent_activity
+  const [soldOutOnly, setSoldOutOnly] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const NFTS_PER_PAGE = 12
 
@@ -280,16 +281,40 @@ export default function NFTLaunchpad() {
       .then(({ data, error }) => {
         if (cancelled) return
         setCollectionsLoading(false)
-        if (!error && data) setCollections(data)
+        if (error) {
+          console.error('NFT Launchpad collections fetch failed:', error)
+          setCollections([])
+          return
+        }
+        setCollections(data ?? [])
       })
     return () => { cancelled = true }
   }, [success])
 
-  // Sorted collections
+  // Filter by sold out then sort
+  const filteredCollections = useMemo(() => {
+    if (soldOutOnly) {
+      return collections.filter((c) => {
+        const minted = c.total_minted || 0
+        const supply = c.supply || 0
+        return supply > 0 && minted >= supply
+      })
+    }
+    return collections
+  }, [collections, soldOutOnly])
+
   const sortedCollections = useMemo(() => {
-    const arr = [...collections]
+    const arr = [...filteredCollections]
+    const price = (c) => parseFloat(c.mint_price) || 0
     if (sortBy === 'newest') arr.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     else if (sortBy === 'most_minted') arr.sort((a, b) => (b.total_minted || 0) - (a.total_minted || 0))
+    else if (sortBy === 'least_minted') arr.sort((a, b) => (a.total_minted || 0) - (b.total_minted || 0))
+    else if (sortBy === 'oldest') arr.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+    else if (sortBy === 'price_low') arr.sort((a, b) => price(a) - price(b))
+    else if (sortBy === 'price_high') arr.sort((a, b) => price(b) - price(a))
+    else if (sortBy === 'recent_activity') {
+      arr.sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at))
+    }
     else if (sortBy === 'trending') {
       arr.sort((a, b) => {
         const aScore = (a.total_minted || 0) / Math.max(1, (Date.now() - new Date(a.created_at).getTime()) / 3600000)
@@ -298,7 +323,7 @@ export default function NFTLaunchpad() {
       })
     }
     return arr
-  }, [collections, sortBy])
+  }, [filteredCollections, sortBy])
 
   const totalPages = Math.max(1, Math.ceil(sortedCollections.length / NFTS_PER_PAGE))
   const paginatedCollections = useMemo(() => {
@@ -306,7 +331,7 @@ export default function NFTLaunchpad() {
     return sortedCollections.slice(start, start + NFTS_PER_PAGE)
   }, [sortedCollections, currentPage])
 
-  useEffect(() => { setCurrentPage(1) }, [sortBy])
+  useEffect(() => { setCurrentPage(1) }, [sortBy, soldOutOnly])
   useEffect(() => { if (currentPage > totalPages) setCurrentPage(totalPages) }, [totalPages, currentPage])
 
   useEffect(() => {
@@ -738,10 +763,24 @@ export default function NFTLaunchpad() {
                 alignItems: 'center',
               }}>
                 <ArrowUpDown size={14} style={{ color: '#64748b' }} />
-                <SortPill label="Newest" icon={Clock} active={sortBy === 'newest'} onClick={() => setSortBy('newest')} />
-                <SortPill label="Most Minted" icon={TrendingUp} active={sortBy === 'most_minted'} onClick={() => setSortBy('most_minted')} />
-                <SortPill label="Trending" icon={Flame} active={sortBy === 'trending'} onClick={() => setSortBy('trending')} />
+                <SortPill label="Newest" icon={Clock} active={sortBy === 'newest'} onClick={() => { setSortBy('newest'); setSoldOutOnly(false); }} />
+                <SortPill label="Recently active" icon={Sparkles} active={sortBy === 'recent_activity'} onClick={() => { setSortBy('recent_activity'); setSoldOutOnly(false); }} />
+                <SortPill label="Most Minted" icon={TrendingUp} active={sortBy === 'most_minted'} onClick={() => { setSortBy('most_minted'); setSoldOutOnly(false); }} />
+                <SortPill label="Least Minted" icon={TrendingDown} active={sortBy === 'least_minted'} onClick={() => { setSortBy('least_minted'); setSoldOutOnly(false); }} />
+                <SortPill label="Trending" icon={Flame} active={sortBy === 'trending'} onClick={() => { setSortBy('trending'); setSoldOutOnly(false); }} />
+                <SortPill label="Oldest" icon={Clock} active={sortBy === 'oldest'} onClick={() => { setSortBy('oldest'); setSoldOutOnly(false); }} />
+                <SortPill label="Price: Low" icon={Coins} active={sortBy === 'price_low'} onClick={() => { setSortBy('price_low'); setSoldOutOnly(false); }} />
+                <SortPill label="Price: High" icon={Coins} active={sortBy === 'price_high'} onClick={() => { setSortBy('price_high'); setSoldOutOnly(false); }} />
+                <SortPill label="Sold out" icon={CheckCircle} active={soldOutOnly} onClick={() => setSoldOutOnly(true)} />
               </div>
+
+              {soldOutOnly && (
+                <div style={{ marginBottom: '16px', fontSize: '13px', color: '#94a3b8' }}>
+                  {sortedCollections.length === 0
+                    ? 'No sold out collections yet.'
+                    : `Showing ${sortedCollections.length} sold out collection${sortedCollections.length === 1 ? '' : 's'}.`}
+                </div>
+              )}
 
               {/* Stats row */}
               <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
@@ -769,13 +808,17 @@ export default function NFTLaunchpad() {
               ) : sortedCollections.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '48px 20px' }}>
                   <Package size={40} style={{ color: '#334155', marginBottom: '12px' }} />
-                  <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>No collections yet. Be the first to launch!</p>
-                  <button onClick={() => setActiveTab('create')} style={{
-                    marginTop: '16px', padding: '10px 20px', background: '#3b82f6', color: '#fff',
-                    border: 'none', borderRadius: '10px', fontWeight: '600', fontSize: '13px', cursor: 'pointer',
-                  }}>
-                    Create Collection
-                  </button>
+                  <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>
+                    {soldOutOnly ? 'No sold out collections yet.' : 'No collections yet. Be the first to launch!'}
+                  </p>
+                  {!soldOutOnly && (
+                    <button onClick={() => setActiveTab('create')} style={{
+                      marginTop: '16px', padding: '10px 20px', background: '#3b82f6', color: '#fff',
+                      border: 'none', borderRadius: '10px', fontWeight: '600', fontSize: '13px', cursor: 'pointer',
+                    }}>
+                      Create Collection
+                    </button>
+                  )}
                 </div>
               ) : (
                 <>
