@@ -4,6 +4,7 @@ import { useAccount, useChainId } from 'wagmi'
 import { useRainbowKitSwitchChain } from '../hooks/useRainbowKitSwitchChain'
 import { getLeaderboard } from '../utils/xpUtils'
 import { useX402Payment } from '../hooks/useX402Payment'
+import { useTransactions } from '../hooks/useTransactions'
 import EmbedMeta from '../components/EmbedMeta'
 import TwitterShareButton from '../components/TwitterShareButton'
 import DailyQuestSystem from '../components/DailyQuestSystem'
@@ -29,6 +30,9 @@ const Home = () => {
     error: x402Error,
     isConnected: isX402Connected 
   } = useX402Payment()
+  
+  // GM/GN transactions
+  const { sendGMTransaction, sendGNTransaction, isLoading: isGMGNLoading } = useTransactions()
   
   // Safely get Farcaster context
   let isInFarcaster = false
@@ -978,24 +982,24 @@ const Home = () => {
                 )}
               </div>
 
-              {/* GAMING Category */}
-              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(245, 158, 11, 0.2)` }}>
+              {/* NFT Category - moved up for visibility */}
+              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(59, 130, 246, 0.2)` }}>
                 <div style={compactStyles.categoryHeader}>
-                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b' }}>
-                    <Gamepad2 size={compactStyles.iconSize} />
+                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.3)', color: '#3b82f6' }}>
+                    <Image size={compactStyles.iconSize} />
                   </div>
-                  <h2 style={compactStyles.categoryTitle}>GAMING</h2>
-                  {!isCompactMode && renderNetworkLogos(['base', 'ink', 'soneium', 'katana', 'arc-restnet', 'robinhood-testnet'])}
+                  <h2 style={compactStyles.categoryTitle}>NFT</h2>
+                  {!isCompactMode && renderNetworkLogos(['base'])}
                 </div>
                 <div style={compactStyles.cardGrid}>
-                  {games.filter(g => ['flip', 'dice', 'slot', 'lucky'].includes(g.id)).map((game) => (
+                  {games.filter(g => ['nft-launchpad', 'nft-launchpad-explore'].includes(g.id)).map((game) => (
                     <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
                       <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
                         <div style={compactStyles.cardInner}>
                           {isCompactMode ? (
                             <>
                               <div style={{ flexShrink: 0 }}>{game.icon}</div>
-                              <h3 style={compactStyles.cardTitle}>{game.title.split(' ')[0]}</h3>
+                              <h3 style={compactStyles.cardTitle}>{game.title}</h3>
                               <div style={compactStyles.xpBadge}>{game.xpReward}</div>
                             </>
                           ) : (
@@ -1005,15 +1009,13 @@ const Home = () => {
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <h3 style={compactStyles.cardTitle}>{game.title}</h3>
                                   <p style={compactStyles.cardDescription}>{game.description}</p>
+                                  {game.holderDiscount && (
+                                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', margin: '4px 0 0', fontWeight: 500 }}>{game.holderDiscount}</p>
+                                  )}
                                 </div>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
                                 <div style={compactStyles.xpBadge}>{game.xpReward}</div>
-                                {game.bonusXP && (
-                                  <div style={{ background: 'rgba(255, 215, 0, 0.95)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#92400e' }}>
-                                    {game.bonusXP}
-                                  </div>
-                                )}
                               </div>
                             </>
                           )}
@@ -1194,24 +1196,145 @@ const Home = () => {
                 </div>
               </div>
 
-              {/* NFT Category */}
-              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(245, 158, 11, 0.2)` }}>
+              {/* GM & GN Category */}
+              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(34, 197, 94, 0.2)` }}>
                 <div style={compactStyles.categoryHeader}>
-                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b' }}>
-                    <Image size={compactStyles.iconSize} />
+                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)', color: '#22c55e' }}>
+                    <MessageSquare size={compactStyles.iconSize} />
                   </div>
-                  <h2 style={compactStyles.categoryTitle}>NFT</h2>
+                  <h2 style={compactStyles.categoryTitle}>GM & GN</h2>
                   {!isCompactMode && renderNetworkLogos(['base'])}
                 </div>
                 <div style={compactStyles.cardGrid}>
-                  {games.filter(g => ['nft-launchpad', 'nft-launchpad-explore'].includes(g.id)).map((game) => (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!isConnected) {
+                        alert('Please connect your wallet first')
+                        return
+                      }
+                      try {
+                        await sendGMTransaction('GM from BaseHub! 🎮')
+                      } catch (err) {
+                        console.error('GM transaction failed:', err)
+                      }
+                    }}
+                    disabled={isGMGNLoading || !isConnected}
+                    className="game-card"
+                    style={{
+                      textDecoration: 'none',
+                      display: 'block',
+                      border: 'none',
+                      background: 'none',
+                      padding: 0,
+                      cursor: (isGMGNLoading || !isConnected) ? 'not-allowed' : 'pointer',
+                      textAlign: 'left',
+                      width: '100%',
+                      opacity: (isGMGNLoading || !isConnected) ? 0.6 : 1,
+                    }}
+                  >
+                    <div style={{ ...compactStyles.card('#f59e0b'), height: '100%' }}>
+                      <div style={compactStyles.cardInner}>
+                        {isCompactMode ? (
+                          <>
+                            <MessageSquare size={24} style={{ color: 'white' }} />
+                            <h3 style={compactStyles.cardTitle}>GM</h3>
+                            <div style={compactStyles.xpBadge}>50 XP</div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                              <MessageSquare size={40} style={{ color: 'white', flexShrink: 0 }} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <h3 style={compactStyles.cardTitle}>GM</h3>
+                                <p style={compactStyles.cardDescription}>
+                                  {isGMGNLoading ? 'Confirm in wallet...' : 'Send a GM message and earn XP'}
+                                </p>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                              <div style={compactStyles.xpBadge}>50 XP</div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!isConnected) {
+                        alert('Please connect your wallet first')
+                        return
+                      }
+                      try {
+                        await sendGNTransaction('GN from BaseHub! 🌙')
+                      } catch (err) {
+                        console.error('GN transaction failed:', err)
+                      }
+                    }}
+                    disabled={isGMGNLoading || !isConnected}
+                    className="game-card"
+                    style={{
+                      textDecoration: 'none',
+                      display: 'block',
+                      border: 'none',
+                      background: 'none',
+                      padding: 0,
+                      cursor: (isGMGNLoading || !isConnected) ? 'not-allowed' : 'pointer',
+                      textAlign: 'left',
+                      width: '100%',
+                      opacity: (isGMGNLoading || !isConnected) ? 0.6 : 1,
+                    }}
+                  >
+                    <div style={{ ...compactStyles.card('#8b5cf6'), height: '100%' }}>
+                      <div style={compactStyles.cardInner}>
+                        {isCompactMode ? (
+                          <>
+                            <MessageSquare size={24} style={{ color: 'white' }} />
+                            <h3 style={compactStyles.cardTitle}>GN</h3>
+                            <div style={compactStyles.xpBadge}>50 XP</div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                              <MessageSquare size={40} style={{ color: 'white', flexShrink: 0 }} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <h3 style={compactStyles.cardTitle}>GN</h3>
+                                <p style={compactStyles.cardDescription}>
+                                  {isGMGNLoading ? 'Confirm in wallet...' : 'Send a GN message and earn XP'}
+                                </p>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                              <div style={compactStyles.xpBadge}>50 XP</div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* GAMING Category - en altta */}
+              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(245, 158, 11, 0.2)` }}>
+                <div style={compactStyles.categoryHeader}>
+                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b' }}>
+                    <Gamepad2 size={compactStyles.iconSize} />
+                  </div>
+                  <h2 style={compactStyles.categoryTitle}>GAMING</h2>
+                  {!isCompactMode && renderNetworkLogos(['base', 'ink', 'soneium', 'katana', 'arc-restnet', 'robinhood-testnet'])}
+                </div>
+                <div style={compactStyles.cardGrid}>
+                  {games.filter(g => ['flip', 'dice', 'slot', 'lucky'].includes(g.id)).map((game) => (
                     <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
                       <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
                         <div style={compactStyles.cardInner}>
                           {isCompactMode ? (
                             <>
                               <div style={{ flexShrink: 0 }}>{game.icon}</div>
-                              <h3 style={compactStyles.cardTitle}>{game.title}</h3>
+                              <h3 style={compactStyles.cardTitle}>{game.title.split(' ')[0]}</h3>
                               <div style={compactStyles.xpBadge}>{game.xpReward}</div>
                             </>
                           ) : (
@@ -1225,6 +1348,11 @@ const Home = () => {
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
                                 <div style={compactStyles.xpBadge}>{game.xpReward}</div>
+                                {game.bonusXP && (
+                                  <div style={{ background: 'rgba(255, 215, 0, 0.95)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#92400e' }}>
+                                    {game.bonusXP}
+                                  </div>
+                                )}
                               </div>
                             </>
                           )}

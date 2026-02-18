@@ -144,7 +144,7 @@ export default function NFTMintPage() {
             <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
               <div style={{ flex: 1, background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
                 <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>Price</div>
-                <div style={{ fontSize: '18px', fontWeight: '700', color: '#e5e7eb' }}>{isReadingChain ? '...' : mintPriceEth} ETH</div>
+                <div style={{ fontSize: '18px', fontWeight: '700', color: '#e5e7eb' }}>{isReadingChain ? '...' : (mintPrice === 0n ? 'Free' : `${mintPriceEth} ETH`)}</div>
               </div>
               <div style={{ flex: 1, background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
                 <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>Minted</div>
@@ -261,7 +261,7 @@ export default function NFTMintPage() {
                     ? 'Connect Wallet to Mint'
                     : isMinting
                       ? 'Confirm in wallet...'
-                      : `Mint ${quantity} NFT${quantity > 1 ? 's' : ''} for ${totalCostEth} ETH`}
+                      : totalCostWei === 0n ? `Mint ${quantity} NFT${quantity > 1 ? 's' : ''} — Free` : `Mint ${quantity} NFT${quantity > 1 ? 's' : ''} for ${totalCostEth} ETH`}
                 </button>
               </div>
             )}

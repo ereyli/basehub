@@ -32,6 +32,12 @@ function timeAgo(dateStr) {
   return `${Math.floor(days / 30)}mo ago`
 }
 
+function formatMintPrice(price) {
+  const p = (price ?? '0').toString().trim()
+  if (p === '' || Number(p) === 0) return 'Free'
+  return `${p} ETH`
+}
+
 function dataURLtoFile(dataUrl, filename = 'nft-image.png') {
   const arr = dataUrl.split(',')
   const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png'
@@ -100,7 +106,7 @@ function ImagePreview({ src, alt, onRemove }) {
           src={src} alt={alt || 'Preview'}
           onClick={() => setLightboxOpen(true)}
           style={{
-            width: '100%', height: '200px', objectFit: 'cover',
+            width: '100%', height: '200px', objectFit: 'contain',
             cursor: 'zoom-in', display: 'block',
           }}
         />
@@ -558,8 +564,20 @@ export default function NFTLaunchpad() {
 
                       <div>
                         <label style={{ fontSize: '12px', fontWeight: '600', color: '#94a3b8', marginBottom: '6px', display: 'block' }}>Mint Price (ETH)</label>
-                        <input type="text" value={mintPrice} onChange={(e) => setMintPrice(e.target.value)} placeholder="0.005"
-                          style={{ width: '100%', padding: '11px 14px', border: '1.5px solid rgba(55,65,81,0.6)', borderRadius: '10px', fontSize: '14px', background: 'rgba(15,23,42,0.6)', color: '#e2e8f0', boxSizing: 'border-box' }} />
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <button type="button" onClick={() => setMintPrice('0')}
+                            style={{
+                              padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '600',
+                              background: (mintPrice === '0' || mintPrice === '' || Number(mintPrice) === 0) ? 'rgba(34,197,94,0.25)' : 'rgba(55,65,81,0.5)',
+                              color: (mintPrice === '0' || mintPrice === '' || Number(mintPrice) === 0) ? '#4ade80' : '#94a3b8',
+                              border: (mintPrice === '0' || mintPrice === '' || Number(mintPrice) === 0) ? '1px solid rgba(34,197,94,0.5)' : '1px solid rgba(55,65,81,0.6)',
+                              cursor: 'pointer',
+                            }}>
+                            Free
+                          </button>
+                          <input type="text" value={mintPrice} onChange={(e) => setMintPrice(e.target.value)} placeholder="0.005"
+                            style={{ flex: 1, minWidth: '120px', padding: '11px 14px', border: '1.5px solid rgba(55,65,81,0.6)', borderRadius: '10px', fontSize: '14px', background: 'rgba(15,23,42,0.6)', color: '#e2e8f0', boxSizing: 'border-box' }} />
+                        </div>
                       </div>
 
                       <div>
@@ -588,7 +606,7 @@ export default function NFTLaunchpad() {
                           <span style={{ color: '#64748b' }}> (one-time)</span>
                         </div>
                         <div style={{ display: 'flex', gap: '6px', marginBottom: '2px' }}>
-                          <span style={{ color: '#475569' }}>2.</span> Each mint at <strong style={{ color: '#e2e8f0' }}>{mintPrice || '0'} ETH</strong> goes <strong style={{ color: '#22c55e' }}>directly to you</strong>
+                          <span style={{ color: '#475569' }}>2.</span> Each mint at <strong style={{ color: '#e2e8f0' }}>{formatMintPrice(mintPrice)}</strong> goes <strong style={{ color: '#22c55e' }}>directly to you</strong>
                         </div>
                         <div style={{ display: 'flex', gap: '6px' }}>
                           <span style={{ color: '#475569' }}>3.</span> A shareable mint page is auto-created for your collection
@@ -609,7 +627,7 @@ export default function NFTLaunchpad() {
                           <img src={currentPreviewUrl} alt="Preview" style={{ width: '52px', height: '52px', borderRadius: '10px', objectFit: 'cover' }} />
                           <div>
                             <div style={{ fontWeight: '700', color: '#e2e8f0', fontSize: '15px' }}>{name.trim()}</div>
-                            <div style={{ fontSize: '12px', color: '#64748b' }}>{symbol || '???'} · {mintPrice || '0'} ETH · {supply} supply</div>
+                            <div style={{ fontSize: '12px', color: '#64748b' }}>{symbol || '???'} · {formatMintPrice(mintPrice)} · {supply} supply</div>
                           </div>
                         </div>
                       </div>
@@ -783,7 +801,7 @@ export default function NFTLaunchpad() {
                               )}
                             </div>
                             <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
-                              {c.symbol} · <strong style={{ color: '#94a3b8' }}>{c.mint_price || '0'} ETH</strong> · {timeAgo(c.created_at)}
+                              {c.symbol} · <strong style={{ color: '#94a3b8' }}>{formatMintPrice(c.mint_price)}</strong> · {timeAgo(c.created_at)}
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#64748b' }}>
                               <span>Minted</span>
