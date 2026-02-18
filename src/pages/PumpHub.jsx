@@ -150,37 +150,93 @@ const timeAgo = (timestamp) => {
 
 
 // ============================================
+// LAZY TOKEN IMAGE (with loading skeleton + retry)
+// ============================================
+const TokenImage = ({ src, alt, size = 64, borderRadius = '14px' }) => {
+  const [status, setStatus] = useState(src ? 'loading' : 'error') // 'loading' | 'loaded' | 'error'
+  const [retried, setRetried] = useState(false)
+
+  useEffect(() => {
+    setStatus(src ? 'loading' : 'error')
+    setRetried(false)
+  }, [src])
+
+  const handleError = () => {
+    if (!retried && src) {
+      setRetried(true)
+      setStatus('loading')
+      const t = setTimeout(() => setStatus('error'), 8000)
+      const img = new window.Image()
+      img.onload = () => { clearTimeout(t); setStatus('loaded') }
+      img.onerror = () => { clearTimeout(t); setStatus('error') }
+      img.src = src + (src.includes('?') ? '&' : '?') + 'r=1'
+    } else {
+      setStatus('error')
+    }
+  }
+
+  return (
+    <div style={{
+      width: `${size}px`, height: `${size}px`, borderRadius,
+      overflow: 'hidden', flexShrink: 0, position: 'relative',
+      background: status === 'error' ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : 'rgba(30,30,40,0.6)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      {status === 'loading' && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(110deg, rgba(30,30,40,0.6) 30%, rgba(59,130,246,0.15) 50%, rgba(30,30,40,0.6) 70%)',
+          backgroundSize: '200% 100%',
+          animation: 'shimmer 1.4s ease-in-out infinite',
+        }} />
+      )}
+      {src && status !== 'error' ? (
+        <img
+          src={retried ? src + (src.includes('?') ? '&' : '?') + 'r=1' : src}
+          alt={alt}
+          loading="lazy"
+          onLoad={() => setStatus('loaded')}
+          onError={handleError}
+          style={{
+            width: '100%', height: '100%', objectFit: 'cover',
+            opacity: status === 'loaded' ? 1 : 0,
+            transition: 'opacity 0.3s ease',
+          }}
+        />
+      ) : (
+        <Rocket size={size * 0.4} color="#fff" />
+      )}
+      <style>{`@keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }`}</style>
+    </div>
+  )
+}
+
+// ============================================
 // TOKEN CARD COMPONENT
 // ============================================
 const TokenCard = ({ token, onClick, isMobile = false }) => {
-  const [imageError, setImageError] = useState(false)
-  
-  // Calculate market cap in USD
   const virtualETH = parseFloat(token.virtualETH || 1)
   const realETH = parseFloat(token.realETH || 0)
   const marketCapETH = virtualETH + realETH
   const marketCapUSD = marketCapETH * ETH_PRICE_USD
-  
-  // Calculate progress to graduation (5 ETH threshold)
   const progress = Math.min((realETH / 5) * 100, 100)
-  
-  // Calculate 24h change (simplified - based on realETH vs initial)
-  const initialMarketCapUSD = 1 * ETH_PRICE_USD // Initial virtual ETH
+  const initialMarketCapUSD = 1 * ETH_PRICE_USD
   const changePercent = initialMarketCapUSD > 0 
     ? ((marketCapUSD - initialMarketCapUSD) / initialMarketCapUSD) * 100 
     : 0
-  
   const isNew = realETH === 0
   const isPositive = changePercent > 0
   const isNeutral = changePercent === 0
+
+  const imgSize = isMobile ? 56 : 72
 
   return (
     <div 
       onClick={onClick}
       style={{
         background: 'linear-gradient(145deg, rgba(30, 30, 40, 0.9) 0%, rgba(20, 20, 30, 0.95) 100%)',
-        borderRadius: isMobile ? '12px' : '16px',
-        padding: isMobile ? '12px' : '16px',
+        borderRadius: isMobile ? '14px' : '18px',
+        padding: isMobile ? '14px' : '18px',
         cursor: 'pointer',
         border: '1px solid rgba(59, 130, 246, 0.2)',
         transition: 'all 0.3s ease',
@@ -200,80 +256,41 @@ const TokenCard = ({ token, onClick, isMobile = false }) => {
     >
       {/* Progress bar at top */}
       <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: '3px',
-        background: 'rgba(59, 130, 246, 0.2)',
-        borderRadius: '16px 16px 0 0'
+        position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+        background: 'rgba(59, 130, 246, 0.2)', borderRadius: '18px 18px 0 0'
       }}>
         <div style={{
-          width: `${progress}%`,
-          height: '100%',
+          width: `${progress}%`, height: '100%',
           background: progress >= 100 
             ? 'linear-gradient(90deg, #10b981, #34d399)' 
             : 'linear-gradient(90deg, #3b82f6, #60a5fa)',
-          borderRadius: '16px 16px 0 0',
-          transition: 'width 0.5s ease'
+          borderRadius: '18px 18px 0 0', transition: 'width 0.5s ease'
         }} />
       </div>
       
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '12px', marginTop: '4px' }}>
-        {/* Logo */}
-        <div style={{
-          width: isMobile ? '40px' : '48px',
-          height: isMobile ? '40px' : '48px',
-          borderRadius: '12px',
-          overflow: 'hidden',
-          background: imageError ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : 'transparent',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0
-        }}>
-          {!imageError && token.image ? (
-            <img 
-              src={token.image} 
-              alt={token.name}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              onError={() => setImageError(true)}
-            />
-          ) : (
-            <Rocket size={isMobile ? 20 : 24} color="#fff" />
-          )}
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '12px' : '14px', marginTop: '4px' }}>
+        <TokenImage src={token.image} alt={token.name} size={imgSize} />
         
         {/* Name & Symbol */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ 
-            fontWeight: 'bold', 
-            fontSize: isMobile ? '14px' : '16px',
-            color: '#fff',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
+            fontWeight: 'bold', fontSize: isMobile ? '15px' : '17px', color: '#fff',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
           }}>
             {token.name || 'Unknown'}
           </div>
           <div style={{ 
-            fontSize: isMobile ? '12px' : '13px', 
-            color: '#9ca3af',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
+            fontSize: isMobile ? '12px' : '13px', color: '#9ca3af',
+            display: 'flex', alignItems: 'center', gap: '6px'
           }}>
             ${token.symbol || '???'}
             {token.graduated && (
               <span style={{
                 background: 'linear-gradient(90deg, #10b981, #34d399)',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                fontSize: '10px',
-                fontWeight: 'bold'
+                padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold'
               }}>
-                🎓 GRADUATED
+                GRADUATED
               </span>
             )}
           </div>
@@ -281,11 +298,7 @@ const TokenCard = ({ token, onClick, isMobile = false }) => {
         
         {/* Price Change */}
         <div style={{ textAlign: 'right' }}>
-          <div style={{ 
-            fontSize: isMobile ? '14px' : '16px', 
-            fontWeight: 'bold',
-            color: '#fff'
-          }}>
+          <div style={{ fontSize: isMobile ? '15px' : '17px', fontWeight: 'bold', color: '#fff' }}>
             {formatMarketCap(marketCapUSD)}
           </div>
           <div style={{ 
@@ -299,30 +312,24 @@ const TokenCard = ({ token, onClick, isMobile = false }) => {
       </div>
       
       {/* Stats */}
-      {!isMobile && (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginTop: '12px',
-          padding: '10px',
-          background: 'rgba(0, 0, 0, 0.2)',
-          borderRadius: '8px',
-          fontSize: '12px'
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ color: '#9ca3af' }}>Volume</div>
-            <div style={{ color: '#fff', fontWeight: '600' }}>{formatNumber(token.volume)} ETH</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ color: '#9ca3af' }}>Txns</div>
-            <div style={{ color: '#fff', fontWeight: '600' }}>{(parseInt(token.buys || 0) + parseInt(token.sells || 0))}</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ color: '#9ca3af' }}>Progress</div>
-            <div style={{ color: progress >= 100 ? '#10b981' : '#3b82f6', fontWeight: '600' }}>{progress.toFixed(1)}%</div>
-          </div>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between',
+        marginTop: '12px', padding: '10px 12px',
+        background: 'rgba(0, 0, 0, 0.2)', borderRadius: '10px', fontSize: '12px'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ color: '#9ca3af' }}>Volume</div>
+          <div style={{ color: '#fff', fontWeight: '600' }}>{formatNumber(token.volume)} ETH</div>
         </div>
-      )}
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ color: '#9ca3af' }}>Txns</div>
+          <div style={{ color: '#fff', fontWeight: '600' }}>{(parseInt(token.buys || 0) + parseInt(token.sells || 0))}</div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ color: '#9ca3af' }}>Progress</div>
+          <div style={{ color: progress >= 100 ? '#10b981' : '#3b82f6', fontWeight: '600' }}>{progress.toFixed(1)}%</div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -331,8 +338,6 @@ const TokenCard = ({ token, onClick, isMobile = false }) => {
 // MINI TOKEN CARD (for horizontal scroll when token selected)
 // ============================================
 const MiniTokenCard = ({ token, onClick, isSelected }) => {
-  const [imageError, setImageError] = useState(false)
-  
   return (
     <div 
       onClick={onClick}
@@ -352,28 +357,7 @@ const MiniTokenCard = ({ token, onClick, isSelected }) => {
         transition: 'all 0.2s ease'
       }}
     >
-      <div style={{
-        width: '28px',
-        height: '28px',
-        borderRadius: '8px',
-        overflow: 'hidden',
-        background: imageError ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : 'transparent',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0
-      }}>
-        {!imageError && token.image ? (
-          <img 
-            src={token.image} 
-            alt={token.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <Rocket size={14} color="#fff" />
-        )}
-      </div>
+      <TokenImage src={token.image} alt={token.name} size={32} borderRadius="8px" />
       <div>
         <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff' }}>{token.symbol}</div>
         <div style={{ fontSize: '10px', color: '#9ca3af' }}>{formatMarketCap(parseFloat(token.virtualETH || 1) * ETH_PRICE_USD)}</div>
@@ -1354,7 +1338,24 @@ const PumpHub = () => {
           args: [0n, BigInt(Math.min(count, 100))]
         })
         
-        // Fetch token data for each
+        // Batch fetch all images from Supabase in a single query
+        let supabaseImageMap = {}
+        if (supabase) {
+          try {
+            const lowerAddrs = tokenAddresses.map(a => a.toLowerCase())
+            const { data: sbRows } = await supabase
+              .from('pumphub_tokens')
+              .select('token_address, image_uri')
+              .in('token_address', lowerAddrs)
+            if (sbRows) {
+              sbRows.forEach(r => { if (r.image_uri) supabaseImageMap[r.token_address] = r.image_uri })
+            }
+          } catch (e) {
+            console.error('Supabase batch image fetch failed:', e)
+          }
+        }
+
+        // Fetch on-chain token data (parallelized with multicall-style Promise.all)
         const tokenDataPromises = tokenAddresses.map(async (addr) => {
           try {
             const [meta, core, stats] = await Promise.all([
@@ -1378,16 +1379,7 @@ const PumpHub = () => {
               })
             ])
             
-            // Also try to get image from Supabase
-            let supabaseImage = null
-            if (supabase) {
-              const { data } = await supabase
-                .from('pumphub_tokens')
-                .select('image_uri, name, symbol')
-                .eq('token_address', addr.toLowerCase())
-                .single()
-              if (data?.image_uri) supabaseImage = data.image_uri
-            }
+            const supabaseImage = supabaseImageMap[addr.toLowerCase()] || null
             
             return {
               address: addr,
@@ -1987,7 +1979,7 @@ const PumpHub = () => {
                   ) : (
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',
+                      gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))',
                       gap: '16px'
                     }}>
                       {filteredTokens.map(token => (
