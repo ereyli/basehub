@@ -1026,52 +1026,6 @@ const Home = () => {
                 </div>
               </div>
 
-              {/* ANALYSIS Category */}
-              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(139, 92, 246, 0.2)` }}>
-                <div style={compactStyles.categoryHeader}>
-                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(139, 92, 246, 0.15)', border: '1px solid rgba(139, 92, 246, 0.3)', color: '#8b5cf6' }}>
-                    <TrendingUp size={compactStyles.iconSize} />
-                  </div>
-                  <h2 style={compactStyles.categoryTitle}>ANALYSIS</h2>
-                  {!isCompactMode && renderMultiChainText()}
-                </div>
-                <div style={compactStyles.cardGrid}>
-                  {games.filter(g => ['wallet-analysis', 'contract-security', 'allowance-cleaner'].includes(g.id)).map((game) => (
-                    <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
-                      <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
-                        <div style={compactStyles.cardInner}>
-                          {isCompactMode ? (
-                            <>
-                              <div style={{ flexShrink: 0 }}>{game.icon}</div>
-                              <h3 style={compactStyles.cardTitle}>{game.title.split(' ')[0]}</h3>
-                              <div style={compactStyles.xpBadge}>{game.xpReward}</div>
-                            </>
-                          ) : (
-                            <>
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                                <div style={{ flexShrink: 0 }}>{game.icon}</div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <h3 style={compactStyles.cardTitle}>{game.title}</h3>
-                                  <p style={compactStyles.cardDescription}>{game.description}</p>
-                                </div>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                                <div style={compactStyles.xpBadge}>{game.xpReward}</div>
-                                {game.bonusXP && (
-                                  <div style={{ background: 'rgba(255, 215, 0, 0.95)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#92400e' }}>
-                                    {game.bonusXP}
-                                  </div>
-                                )}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
               {/* DEPLOY Category */}
               <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(59, 130, 246, 0.2)` }}>
                 <div style={compactStyles.categoryHeader}>
@@ -1140,6 +1094,52 @@ const Home = () => {
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
                                 <div style={compactStyles.xpBadge}>{game.xpReward}</div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* ANALYSIS Category */}
+              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(139, 92, 246, 0.2)` }}>
+                <div style={compactStyles.categoryHeader}>
+                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(139, 92, 246, 0.15)', border: '1px solid rgba(139, 92, 246, 0.3)', color: '#8b5cf6' }}>
+                    <TrendingUp size={compactStyles.iconSize} />
+                  </div>
+                  <h2 style={compactStyles.categoryTitle}>ANALYSIS</h2>
+                  {!isCompactMode && renderMultiChainText()}
+                </div>
+                <div style={compactStyles.cardGrid}>
+                  {games.filter(g => ['wallet-analysis', 'contract-security', 'allowance-cleaner'].includes(g.id)).map((game) => (
+                    <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
+                      <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
+                        <div style={compactStyles.cardInner}>
+                          {isCompactMode ? (
+                            <>
+                              <div style={{ flexShrink: 0 }}>{game.icon}</div>
+                              <h3 style={compactStyles.cardTitle}>{game.title.split(' ')[0]}</h3>
+                              <div style={compactStyles.xpBadge}>{game.xpReward}</div>
+                            </>
+                          ) : (
+                            <>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                                <div style={{ flexShrink: 0 }}>{game.icon}</div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <h3 style={compactStyles.cardTitle}>{game.title}</h3>
+                                  <p style={compactStyles.cardDescription}>{game.description}</p>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                                <div style={compactStyles.xpBadge}>{game.xpReward}</div>
+                                {game.bonusXP && (
+                                  <div style={{ background: 'rgba(255, 215, 0, 0.95)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#92400e' }}>
+                                    {game.bonusXP}
+                                  </div>
+                                )}
                               </div>
                             </>
                           )}
