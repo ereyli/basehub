@@ -205,7 +205,8 @@ const TokenImage = ({ src, alt, size = 64, borderRadius = '14px' }) => {
     <div style={{
       width: `${size}px`, height: `${size}px`, borderRadius,
       overflow: 'hidden', flexShrink: 0, position: 'relative',
-      background: status === 'error' ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : 'rgba(30,30,40,0.6)',
+      background: status === 'error' ? 'linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98))' : 'rgba(30,30,40,0.6)',
+      border: status === 'error' ? '1px solid rgba(71, 85, 105, 0.5)' : 'none',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       {status === 'loading' && (
@@ -230,7 +231,21 @@ const TokenImage = ({ src, alt, size = 64, borderRadius = '14px' }) => {
           }}
         />
       ) : (
-        <Rocket size={size * 0.4} color="#fff" />
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: size > 48 ? '4px' : '0',
+          padding: '4px',
+        }}>
+          <Rocket size={size * 0.35} color="rgba(148, 163, 184, 0.9)" />
+          {size > 48 && (
+            <span style={{ fontSize: '9px', color: 'rgba(148, 163, 184, 0.8)', textAlign: 'center', lineHeight: 1.1 }}>
+              No image
+            </span>
+          )}
+        </div>
       )}
       <style>{`@keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }`}</style>
     </div>
@@ -1296,6 +1311,7 @@ const PumpHub = () => {
   const [logoFile, setLogoFile] = useState(null)
   const [logoPreview, setLogoPreview] = useState(null)
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
+  const [logoError, setLogoError] = useState(false)
   const [isSharingCast, setIsSharingCast] = useState(false)
   
   const farcaster = useFarcaster()
@@ -1673,6 +1689,7 @@ const PumpHub = () => {
     try {
       const ipfsUrl = await uploadToIPFS(file)
       setFormData(prev => ({ ...prev, logoUrl: ipfsUrl }))
+      setLogoError(false)
       console.log('✅ Logo uploaded to IPFS:', ipfsUrl)
     } catch (err) {
       console.error('Failed to upload logo:', err)
@@ -1690,6 +1707,12 @@ const PumpHub = () => {
       alert('Please connect your wallet')
       return
     }
+    
+    if (!formData.logoUrl || !formData.logoUrl.trim()) {
+      setLogoError(true)
+      return
+    }
+    setLogoError(false)
     
     if (!formData.name || !formData.symbol) {
       alert('Please fill in token name and symbol')
@@ -2254,10 +2277,10 @@ const PumpHub = () => {
                 </h2>
                 
                 <form onSubmit={handleCreateToken}>
-                  {/* Logo upload */}
+                  {/* Logo upload - required */}
                   <div style={{ marginBottom: '20px' }}>
                     <label style={{ color: '#9ca3af', fontSize: '14px', marginBottom: '8px', display: 'block' }}>
-                      Token Logo
+                      Token Logo <span style={{ color: '#ef4444' }}>*</span>
                     </label>
                     <div style={{
                       display: 'flex',
@@ -2269,7 +2292,8 @@ const PumpHub = () => {
                         height: '80px',
                         borderRadius: '16px',
                         background: logoPreview ? 'transparent' : 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.1))',
-                        border: '2px dashed rgba(59, 130, 246, 0.4)',
+                        border: logoError ? '2px solid #ef4444' : '2px dashed rgba(59, 130, 246, 0.4)',
+                        boxShadow: logoError ? '0 0 0 2px rgba(239, 68, 68, 0.2)' : 'none',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -2282,7 +2306,7 @@ const PumpHub = () => {
                         {logoPreview ? (
                           <img src={logoPreview} alt="Logo preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
-                          <Plus size={24} color="#3b82f6" />
+                          <Plus size={24} color={logoError ? '#ef4444' : '#3b82f6'} />
                         )}
                         {isUploadingLogo && (
                           <div style={{
@@ -2311,6 +2335,11 @@ const PumpHub = () => {
                         <div style={{ color: '#9ca3af', fontSize: '12px' }}>
                           PNG, JPG up to 2MB
                         </div>
+                        {logoError && (
+                          <div style={{ color: '#f87171', fontSize: '12px', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <AlertCircle size={14} /> Logo is required to launch
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -2434,6 +2463,24 @@ const PumpHub = () => {
                     </ul>
                   </div>
                   
+                  {logoError && (
+                    <div style={{
+                      marginBottom: '16px',
+                      padding: '12px 16px',
+                      background: 'rgba(239, 68, 68, 0.12)',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(239, 68, 68, 0.4)',
+                      color: '#f87171',
+                      fontSize: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <AlertCircle size={18} />
+                      Logo is required. Please upload a token logo above to launch.
+                    </div>
+                  )}
+                  
                   {/* Submit button */}
                   <button
                     type="submit"
@@ -2442,7 +2489,8 @@ const PumpHub = () => {
                       width: '100%',
                       padding: '16px',
                       borderRadius: '12px',
-                      border: 'none',
+                      border: logoError ? '2px solid #ef4444' : 'none',
+                      boxShadow: logoError ? '0 0 0 1px rgba(239, 68, 68, 0.3)' : 'none',
                       background: !isConnected || isLoading || isUploadingLogo
                         ? 'rgba(255,255,255,0.1)'
                         : 'linear-gradient(135deg, #3b82f6, #2563eb)',

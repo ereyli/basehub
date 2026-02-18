@@ -188,7 +188,7 @@ export default function NFTLaunchpad() {
   const [collectionsLoading, setCollectionsLoading] = useState(true)
   const [sortBy, setSortBy] = useState('newest') // 'newest' | 'most_minted' | 'trending'
   const [currentPage, setCurrentPage] = useState(1)
-  const NFTS_PER_PAGE = 10
+  const NFTS_PER_PAGE = 12
 
   const errorRef = useRef(null)
   const fileInputRef = useRef(null)

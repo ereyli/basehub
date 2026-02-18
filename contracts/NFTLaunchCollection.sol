@@ -8,9 +8,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 /**
  * NFTLaunchCollection – NFT Launchpad public-mint collection.
  *
- * Creator deploys via NFTCollectionDeployer (0.002 ETH platform fee).
+ * Creator deploys via NFTCollectionDeployer (platform fee).
  * Anyone can mint by paying mintPrice per NFT; ETH goes to fundsRecipient (creator).
- * Owner can toggle sale, update mint price, and set contractURI.
+ * Owner = fundsRecipient (creator), so they can setContractURI, toggleSale, setMintPrice (e.g. on OpenSea).
  */
 contract NFTLaunchCollection is ERC721, ERC721URIStorage, Ownable {
     uint256 private _nextTokenId;
@@ -34,7 +34,7 @@ contract NFTLaunchCollection is ERC721, ERC721URIStorage, Ownable {
         address payable fundsRecipient_,
         string memory baseTokenURI_,
         string memory contractURI_
-    ) ERC721(name_, symbol_) Ownable(msg.sender) {
+    ) ERC721(name_, symbol_) Ownable(fundsRecipient_) {
         maxSupply = maxSupply_;
         mintPrice = mintPrice_;
         fundsRecipient = fundsRecipient_;
