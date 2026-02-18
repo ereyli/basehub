@@ -1,12 +1,28 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { useAccount } from 'wagmi'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { NETWORKS } from '../config/networks'
+import { AlertTriangle, RefreshCw } from 'lucide-react'
+
+const WRONG_NETWORK_DELAY_MS = 900
 
 const NetworkGuard = ({ children, showWarning = false }) => {
-  const { isCorrectNetwork, currentNetworkConfig, switchToNetwork } = useNetworkCheck()
-  
-  // Safely get Farcaster context - only if not in web environment
+  const { isConnected } = useAccount()
+  const { isCorrectNetwork, currentNetworkConfig, currentChainId, switchToNetwork } = useNetworkCheck()
+  const [showWarningAfterDelay, setShowWarningAfterDelay] = useState(false)
+
+  const isActuallyWrongNetwork = isConnected && currentChainId != null && currentChainId !== 0 && !isCorrectNetwork
+
+  useEffect(() => {
+    if (!isActuallyWrongNetwork) {
+      setShowWarningAfterDelay(false)
+      return
+    }
+    const t = setTimeout(() => setShowWarningAfterDelay(true), WRONG_NETWORK_DELAY_MS)
+    return () => clearTimeout(t)
+  }, [isActuallyWrongNetwork])
+
   let isInFarcaster = false
   if (!shouldUseRainbowKit()) {
     try {
@@ -14,12 +30,15 @@ const NetworkGuard = ({ children, showWarning = false }) => {
       const farcasterContext = useFarcaster()
       isInFarcaster = farcasterContext?.isInFarcaster || false
     } catch (error) {
-      // If FarcasterProvider is not available, default to false
       isInFarcaster = false
     }
   }
 
   if (isCorrectNetwork) {
+    return children
+  }
+
+  if (!isConnected || currentChainId == null || currentChainId === 0 || !showWarningAfterDelay) {
     return children
   }
 
@@ -35,81 +54,62 @@ const NetworkGuard = ({ children, showWarning = false }) => {
   if (showWarning) {
     return (
       <div style={{
-        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-        color: 'white',
-        padding: '20px',
-        borderRadius: '12px',
+        background: 'rgba(15, 23, 42, 0.95)',
+        border: '1px solid rgba(251, 191, 36, 0.35)',
+        borderRadius: '14px',
+        padding: '20px 24px',
         textAlign: 'center',
         margin: '20px 0',
-        boxShadow: '0 4px 20px rgba(239, 68, 68, 0.3)'
+        boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)',
       }}>
-        <h3 style={{ margin: '0 0 10px 0', fontSize: '18px' }}>⚠️ Wrong Network</h3>
-        <p style={{ margin: '0 0 15px 0', opacity: 0.9 }}>
-          You are currently on <strong>{currentNetworkConfig?.chainName || 'Unknown'}</strong> network.<br/>
-          BaseHub works on <strong>Base</strong> or <strong>InkChain</strong> networks.
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '10px' }}>
+          <AlertTriangle size={22} style={{ color: '#fbbf24', flexShrink: 0 }} />
+          <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '600', color: '#e2e8f0' }}>Wrong network</h3>
+        </div>
+        <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#94a3b8', lineHeight: 1.5 }}>
+          You are on <strong style={{ color: '#cbd5e1' }}>{currentNetworkConfig?.chainName || 'Unknown'}</strong>.
+          BaseHub works on <strong style={{ color: '#93c5fd' }}>Base</strong> or <strong style={{ color: '#93c5fd' }}>InkChain</strong>.
         </p>
         {!isInFarcaster && (
-          <button 
+          <button
+            type="button"
             onClick={handleSwitchNetwork}
             style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              color: 'white',
-              border: '2px solid rgba(255, 255, 255, 0.3)',
-              padding: '10px 20px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 'bold',
-              transition: 'all 0.3s ease'
+              display: 'inline-flex', alignItems: 'center', gap: '8px',
+              background: 'rgba(59, 130, 246, 0.2)', color: '#93c5fd',
+              border: '1px solid rgba(59, 130, 246, 0.4)',
+              padding: '10px 18px', borderRadius: '10px', cursor: 'pointer',
+              fontWeight: '600', fontSize: '14px', transition: 'all 0.2s ease',
             }}
-            onMouseOver={(e) => {
-              e.target.style.background = 'rgba(255, 255, 255, 0.3)'
-              e.target.style.borderColor = 'rgba(255, 255, 255, 0.5)'
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(59, 130, 246, 0.3)'
+              e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.6)'
             }}
-            onMouseOut={(e) => {
-              e.target.style.background = 'rgba(255, 255, 255, 0.2)'
-              e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)'
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(59, 130, 246, 0.2)'
+              e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)'
             }}
           >
-            🔄 Switch to Base
+            <RefreshCw size={16} /> Switch to Base
           </button>
         )}
       </div>
     )
   }
 
-  // If not showing warning, block content completely
   return (
-    <div style={{
-      position: 'relative',
-      filter: 'blur(3px)',
-      pointerEvents: 'none',
-      opacity: 0.5
-    }}>
+    <div style={{ position: 'relative', filter: 'blur(3px)', pointerEvents: 'none', opacity: 0.6 }}>
       {children}
       <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'rgba(239, 68, 68, 0.1)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#dc2626',
-        fontWeight: 'bold',
-        fontSize: '18px',
-        pointerEvents: 'all',
-        cursor: 'not-allowed',
-        textAlign: 'center',
-        padding: '20px'
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+        background: 'rgba(15, 23, 42, 0.75)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: '#fbbf24', fontWeight: '600', fontSize: '16px',
+        pointerEvents: 'all', cursor: 'not-allowed', textAlign: 'center', padding: '20px',
       }}>
         <div>
-          <div style={{ fontSize: '24px', marginBottom: '10px' }}>🚫</div>
-          <div>Wrong Network - Action Blocked</div>
-          <div style={{ fontSize: '14px', marginTop: '8px', opacity: 0.8 }}>
-            Please switch to Base or InkChain network
-          </div>
+          <div style={{ fontSize: '18px', marginBottom: '8px' }}>Wrong network</div>
+          <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px' }}>Switch to Base or InkChain to continue</div>
         </div>
       </div>
     </div>
