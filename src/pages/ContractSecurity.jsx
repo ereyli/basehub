@@ -4,6 +4,7 @@ import { useContractSecurity } from '../hooks/useContractSecurity'
 import { Shield, AlertTriangle, CheckCircle, XCircle, Loader2, Eye, BarChart3, FileCode, Lock, Zap } from 'lucide-react'
 import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
+import { getFarcasterUniversalLink } from '../config/farcaster'
 
 // Supported networks - must match backend configuration
 const SUPPORTED_NETWORKS = {
@@ -46,7 +47,7 @@ export default function ContractSecurity() {
     }
     parts.push('Powered by BaseHub x402')
     parts.push('Web: https://www.basehub.fun/contract-security')
-    parts.push('Farcaster: https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub')
+    parts.push(`Farcaster: ${getFarcasterUniversalLink('/contract-security')}`)
     return parts.join(' • ')
   }
 

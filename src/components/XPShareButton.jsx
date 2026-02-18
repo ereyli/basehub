@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Share2, Star, Trophy, Zap, Copy, Check } from 'lucide-react'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
+import { getFarcasterUniversalLink } from '../config/farcaster'
 
 const XPShareButton = ({ 
   gameType,
@@ -63,15 +64,11 @@ const XPShareButton = ({
   }
 
   const generateShareUrl = () => {
+    const gamePath = gameType === 'deploy' ? '/deploy' : gameType === 'swap' ? '/swap' : `/${gameType}`
     if (isInFarcaster) {
-      // Use Farcaster Universal Link for Farcaster users
-      return 'https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub'
-    } else {
-      // Use regular URL for web users
-      const baseUrl = window.location.origin
-      const gamePath = gameType === 'deploy' ? '/deploy' : gameType === 'swap' ? '/swap' : `/${gameType}`
-      return `${baseUrl}${gamePath}`
+      return getFarcasterUniversalLink(gamePath)
     }
+    return `${window.location.origin}${gamePath}`
   }
 
   const handleCopyXPShare = async () => {
@@ -109,7 +106,7 @@ const XPShareButton = ({
         if (sdk && sdk.actions && sdk.actions.composeCast) {
           const shareText = generateXPContent()
           const shareUrl = generateShareUrl()
-          const castText = `${shareText}\n\n🌐 Web: https://www.basehub.fun/\n🎭 Farcaster: https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub`
+          const castText = `${shareText}\n\n🌐 Web: https://www.basehub.fun/\n🎭 Farcaster: ${getFarcasterUniversalLink('/')}`
           
           console.log('🎮 Composing XP cast with text:', castText)
           await sdk.actions.composeCast({

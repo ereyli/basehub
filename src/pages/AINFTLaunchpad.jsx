@@ -15,6 +15,7 @@ import { useAINFTMinting } from '../hooks/useAINFTMinting';
 import { useX402Payment } from '../hooks/useX402Payment';
 import BackButton from '../components/BackButton';
 import ShareButton from '../components/ShareButton';
+import { getFarcasterUniversalLink } from '../config/farcaster';
 import NetworkGuard from '../components/NetworkGuard';
 
 export default function AINFTLaunchpad() {
@@ -1015,7 +1016,7 @@ export default function AINFTLaunchpad() {
                           title="AI NFT MINT - BaseHub"
                           description="Generate AI art and mint as NFT on Base"
                           gameType="nft"
-                          customUrl="https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub"
+                          customUrl={getFarcasterUniversalLink('/ai-nft')}
                         />
                         <a
                           href="https://opensea.io/collection/ai-132443724"

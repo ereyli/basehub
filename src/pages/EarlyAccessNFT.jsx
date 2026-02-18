@@ -5,6 +5,7 @@ import { Helmet } from 'react-helmet-async'
 import BackButton from '../components/BackButton'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
+import { getFarcasterUniversalLink } from '../config/farcaster'
 import { Zap, Users, Package, CheckCircle, ExternalLink, Sparkles, Share2, AlertCircle } from 'lucide-react'
 import { NETWORKS, getTransactionExplorerUrl } from '../config/networks'
 
@@ -63,7 +64,8 @@ const EarlyAccessNFT = () => {
       const remainingSupply = maxSupply - totalMinted
       let castText = ''
       
-      const appLinks = '\n\n🌐 Web: https://www.basehub.fun/early-access\n🎭 Farcaster: https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub'
+      const earlyAccessUrl = getFarcasterUniversalLink('/early-access')
+      const appLinks = `\n\n🌐 Web: https://www.basehub.fun/early-access\n🎭 Farcaster: ${earlyAccessUrl}`
       if (isAfterMint) {
         castText = `🎉 Just minted my BaseHub Early Access Pass! 🚀\n\n✨ Unlock exclusive benefits:\n• Dynamic XP multiplier: (NFT Count + 1)x on ALL activities\n• 1 NFT = 2x, 2 NFTs = 3x, 10 NFTs = 11x!\n• Priority access to airdrops\n• Exclusive quests & rewards\n• Early feature access\n\n🔥 Only ${remainingSupply} passes left!\n\nJoin the BaseHub community and level up faster! 💎\n\n#BaseHub #BaseNetwork #NFT #EarlyAccess${appLinks}`
       } else {
@@ -72,7 +74,7 @@ const EarlyAccessNFT = () => {
       
       await farcasterContext.sdk.actions.composeCast({
         text: castText,
-        embeds: ['https://www.basehub.fun/early-access']
+        embeds: [earlyAccessUrl]
       })
       
       console.log('✅ Cast shared successfully!')

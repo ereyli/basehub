@@ -7,6 +7,7 @@ import NetworkGuard from '../components/NetworkGuard'
 import { useNFTMint } from '../hooks/useNFTMint'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
+import { getFarcasterUniversalLink } from '../config/farcaster'
 import { supabase } from '../config/supabase'
 
 const SHARE_BASE_URL = 'https://www.basehub.fun'
@@ -64,13 +65,13 @@ export default function NFTMintPage() {
 
   const handleCastCollection = async () => {
     if (!castSdk?.actions?.composeCast || !collection?.slug) return
-    const mintUrl = getMintUrl(collection.slug)
+    const mintUrlFarcaster = getFarcasterUniversalLink(`/mint/${collection.slug}`)
     const openseaUrl = getOpenSeaUrl(collection.contract_address)
     const name = collection.name || 'NFT Collection'
-    const castText = `🎨 "${name}" on BaseHub – mint on Base!\n\nMint: ${mintUrl}\nOpenSea: ${openseaUrl}\n\n#BaseHub #NFT #Base\n\n🌐 Web: ${SHARE_BASE_URL}/nft-launchpad\n🎭 Farcaster: https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub`
+    const castText = `🎨 "${name}" on BaseHub – mint on Base!\n\nMint: ${mintUrlFarcaster}\nOpenSea: ${openseaUrl}\n\n#BaseHub #NFT #Base\n\n🌐 Web: ${SHARE_BASE_URL}/nft-launchpad\n🎭 Farcaster: ${getFarcasterUniversalLink('/nft-launchpad')}`
     setIsSharingCast(true)
     try {
-      await castSdk.actions.composeCast({ text: castText, embeds: [mintUrl] })
+      await castSdk.actions.composeCast({ text: castText, embeds: [mintUrlFarcaster] })
     } catch (err) {
       console.error('NFT Mint cast failed:', err)
     } finally {

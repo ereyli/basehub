@@ -4,6 +4,7 @@ import { useWalletAnalysis } from '../hooks/useWalletAnalysis'
 import { Search, Wallet, Coins, Activity, TrendingUp, Award, Sparkles, AlertCircle, Loader2, Calendar, BarChart3, Zap, Eye, Shield } from 'lucide-react'
 import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
+import { getFarcasterUniversalLink } from '../config/farcaster'
 
 // Supported networks - must match backend configuration
 const SUPPORTED_NETWORKS = {
@@ -42,7 +43,7 @@ export default function WalletAnalysis() {
     if (analysis.mostActiveDay) parts.push(`Most active: ${analysis.mostActiveDay}`)
     parts.push('Powered by BaseHub x402')
     parts.push('Web: https://www.basehub.fun/wallet-analysis')
-    parts.push('Farcaster: https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub')
+    parts.push(`Farcaster: ${getFarcasterUniversalLink('/wallet-analysis')}`)
     return parts.join(' • ')
   }
 

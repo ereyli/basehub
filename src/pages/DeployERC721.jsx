@@ -7,6 +7,7 @@ import { Helmet } from 'react-helmet-async'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
 import { getTransactionExplorerUrl, getAddressExplorerUrl } from '../config/networks'
+import { getFarcasterUniversalLink } from '../config/farcaster'
 
 const DeployERC721 = () => {
   const { isConnected } = useAccount()
@@ -128,7 +129,7 @@ const DeployERC721 = () => {
               title="Deploy ERC721 - BaseHub"
               description="Deploy your own ERC721 NFT contract on Base network"
               gameType="deploy"
-              customUrl="https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub"
+              customUrl={getFarcasterUniversalLink('/deploy/erc721')}
             />
           </div>
 

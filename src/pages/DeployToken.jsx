@@ -8,6 +8,7 @@ import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
 import NetworkGuard from '../components/NetworkGuard'
 import { getTransactionExplorerUrl } from '../config/networks'
+import { getFarcasterUniversalLink } from '../config/farcaster'
 
 const DeployToken = () => {
   const { isConnected } = useAccount()
@@ -171,7 +172,7 @@ const DeployToken = () => {
                 title="Deploy Token - BaseHub"
                 description="Deploy your own ERC20 token on Base network"
                 gameType="deploy"
-                customUrl="https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub"
+                customUrl={getFarcasterUniversalLink('/deploy/token')}
               />
             </div>
 

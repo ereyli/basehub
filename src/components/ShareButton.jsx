@@ -3,6 +3,7 @@ import { Share2, Copy, Check, ExternalLink } from 'lucide-react'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useQuestSystem } from '../hooks/useQuestSystem'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
+import { getFarcasterUniversalLink } from '../config/farcaster'
 
 const ShareButton = ({ 
   title, 
@@ -30,7 +31,7 @@ const ShareButton = ({
 
   const { awardQuestXP } = useQuestSystem()
 
-  const currentUrl = customUrl || (isInFarcaster ? 'https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub' : window.location.href)
+  const currentUrl = isInFarcaster ? getFarcasterUniversalLink(typeof window !== 'undefined' ? (window.location.pathname || '/') : '/') : (customUrl || window.location.href)
   
   // Generate share text based on context
   const generateShareText = () => {
@@ -73,12 +74,13 @@ const ShareButton = ({
         if (sdk && sdk.actions && sdk.actions.composeCast) {
           if (isCastShare && castData) {
             // For cast sharing, create a compose cast with the shared cast context (English + app link)
-            const castText = `🎮 Check out this cast from @${castData.author?.username || 'unknown'} on BaseHub!\n\n${castData.text?.slice(0, 200)}${castData.text?.length > 200 ? '...' : ''}\n\nMulti-chain Web3 platform. Deploy contracts, swap tokens, analyze wallets, and earn XP! 🚀\n\n🌐 Web: https://www.basehub.fun/\n🎭 Farcaster: https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub`
+            const shareUrl = getFarcasterUniversalLink(`/share?castHash=${castData.hash}&castFid=${castData.author?.fid}`)
+            const castText = `🎮 Check out this cast from @${castData.author?.username || 'unknown'} on BaseHub!\n\n${castData.text?.slice(0, 200)}${castData.text?.length > 200 ? '...' : ''}\n\nMulti-chain Web3 platform. Deploy contracts, swap tokens, analyze wallets, and earn XP! 🚀\n\n🌐 Web: https://www.basehub.fun/\n🎭 Farcaster: ${getFarcasterUniversalLink('/')}`
             
             console.log('🎭 Composing cast with text:', castText)
             await sdk.actions.composeCast({
               text: castText,
-              embeds: [`https://www.basehub.fun/share?castHash=${castData.hash}&castFid=${castData.author?.fid}`]
+              embeds: [shareUrl]
             })
             console.log('✅ Cast composed successfully!')
             
@@ -86,7 +88,7 @@ const ShareButton = ({
             await awardCastShareXP()
           } else {
             // Regular share with compose cast (English + app link)
-            const composeText = `${shareText}\n\n🌐 Web: https://www.basehub.fun/\n🎭 Farcaster: https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub`
+            const composeText = `${shareText}\n\n🌐 Web: https://www.basehub.fun/\n🎭 Farcaster: ${getFarcasterUniversalLink('/')}`
             
             console.log('🎭 Composing regular cast with text:', composeText)
             await sdk.actions.composeCast({

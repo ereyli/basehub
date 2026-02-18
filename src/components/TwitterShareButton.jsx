@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Twitter, Copy, Check, ChevronDown } from 'lucide-react'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
+import { getFarcasterUniversalLink } from '../config/farcaster'
 
 const TwitterShareButton = ({ 
   title = "BaseHub",
@@ -27,7 +28,7 @@ const TwitterShareButton = ({
   const generateTwitterUrl = () => {
     const tweetText = generateTwitterContent()
     const webUrl = 'https://www.basehub.fun/'
-    const farcasterUrl = 'https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub'
+    const farcasterUrl = getFarcasterUniversalLink('/')
     const fullText = `${tweetText}🌐 Web: ${webUrl}\n🎭 Farcaster: ${farcasterUrl}`
     
     return `https://twitter.com/intent/tweet?text=${encodeURIComponent(fullText)}`
@@ -63,7 +64,7 @@ const TwitterShareButton = ({
     e.stopPropagation()
     const tweetText = generateTwitterContent()
     const webUrl = 'https://www.basehub.fun/'
-    const farcasterUrl = 'https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub'
+    const farcasterUrl = getFarcasterUniversalLink('/')
     const fullText = `${tweetText}🌐 Web: ${webUrl}\n🎭 Farcaster: ${farcasterUrl}`
     
     try {

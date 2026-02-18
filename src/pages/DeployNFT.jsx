@@ -7,6 +7,7 @@ import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
 import { getTransactionExplorerUrl } from '../config/networks'
+import { getFarcasterUniversalLink } from '../config/farcaster'
 
 const DeployNFT = () => {
   const { isConnected } = useAccount()
@@ -212,7 +213,7 @@ const DeployNFT = () => {
                 title="Deploy NFT Collection - BaseHub"
                 description="Deploy your own NFT collection on Base network"
                 gameType="deploy"
-                customUrl="https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub"
+                customUrl={getFarcasterUniversalLink('/deploy/nft')}
               />
             </div>
 

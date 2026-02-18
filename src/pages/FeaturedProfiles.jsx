@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
+import { getFarcasterUniversalLink } from '../config/farcaster'
 
 const SUBSCRIPTION_OPTIONS = {
   daily: { 
@@ -537,7 +538,7 @@ export default function FeaturedProfiles() {
               <p style={{ color: '#9ca3af', margin: '4px 0 0 0', fontSize: '13px' }}>
                 To register your profile or follow others, please open this page in{' '}
                 <a 
-                  href="https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub"
+                  href={getFarcasterUniversalLink('/featured-profiles')}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ color: '#3b82f6', textDecoration: 'underline' }}
