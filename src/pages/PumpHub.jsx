@@ -149,26 +149,53 @@ const timeAgo = (timestamp) => {
 
 
 // ============================================
-// LAZY TOKEN IMAGE (with loading skeleton + retry)
+// IPFS gateway helpers
+// gateway.pinata.cloud is slow/rate-limited; use faster alternatives
+const FAST_GATEWAYS = [
+  'https://cloudflare-ipfs.com/ipfs/',
+  'https://ipfs.io/ipfs/',
+  'https://dweb.link/ipfs/',
+]
+
+const extractIPFSCid = (url) => {
+  if (!url) return null
+  // Handle gateway.pinata.cloud/ipfs/Qm... or any /ipfs/Qm... URL
+  const match = url.match(/\/ipfs\/(Qm[a-zA-Z0-9]{44,}|bafy[a-zA-Z0-9]+)/)
+  if (match) return match[1]
+  // Handle ipfs://Qm...
+  const ipfsMatch = url.match(/^ipfs:\/\/(Qm[a-zA-Z0-9]{44,}|bafy[a-zA-Z0-9]+)/)
+  if (ipfsMatch) return ipfsMatch[1]
+  return null
+}
+
+const toFastGateway = (url, gatewayIndex = 0) => {
+  const cid = extractIPFSCid(url)
+  if (cid) return FAST_GATEWAYS[gatewayIndex % FAST_GATEWAYS.length] + cid
+  return url
+}
+
+// ============================================
+// LAZY TOKEN IMAGE (with fast IPFS gateway + multi-retry)
 // ============================================
 const TokenImage = ({ src, alt, size = 64, borderRadius = '14px' }) => {
-  const [status, setStatus] = useState(src ? 'loading' : 'error') // 'loading' | 'loaded' | 'error'
-  const [retried, setRetried] = useState(false)
+  const [status, setStatus] = useState(src ? 'loading' : 'error')
+  const [gatewayIdx, setGatewayIdx] = useState(0)
+  const [currentSrc, setCurrentSrc] = useState(() => src ? toFastGateway(src, 0) : '')
 
   useEffect(() => {
-    setStatus(src ? 'loading' : 'error')
-    setRetried(false)
+    if (!src) { setStatus('error'); return }
+    setGatewayIdx(0)
+    setCurrentSrc(toFastGateway(src, 0))
+    setStatus('loading')
   }, [src])
 
   const handleError = () => {
-    if (!retried && src) {
-      setRetried(true)
+    const cid = extractIPFSCid(src)
+    const nextIdx = gatewayIdx + 1
+    if (cid && nextIdx < FAST_GATEWAYS.length) {
+      setGatewayIdx(nextIdx)
+      setCurrentSrc(FAST_GATEWAYS[nextIdx] + cid)
       setStatus('loading')
-      const t = setTimeout(() => setStatus('error'), 8000)
-      const img = new window.Image()
-      img.onload = () => { clearTimeout(t); setStatus('loaded') }
-      img.onerror = () => { clearTimeout(t); setStatus('error') }
-      img.src = src + (src.includes('?') ? '&' : '?') + 'r=1'
     } else {
       setStatus('error')
     }
@@ -189,9 +216,9 @@ const TokenImage = ({ src, alt, size = 64, borderRadius = '14px' }) => {
           animation: 'shimmer 1.4s ease-in-out infinite',
         }} />
       )}
-      {src && status !== 'error' ? (
+      {currentSrc && status !== 'error' ? (
         <img
-          src={retried ? src + (src.includes('?') ? '&' : '?') + 'r=1' : src}
+          src={currentSrc}
           alt={alt}
           loading="lazy"
           onLoad={() => setStatus('loaded')}
@@ -1460,19 +1487,27 @@ const PumpHub = () => {
           const sbRow = sbMap[addr.toLowerCase()]
           const onChainImage = meta[3] || ''
           const supabaseImage = sbRow?.image_uri || ''
+          // Prefer Supabase values for fields that might be richer, fall back to on-chain
+          const bestImage = supabaseImage || onChainImage
+          const bestName = (sbRow?.name && sbRow.name !== 'Unknown') ? sbRow.name : (meta[0] || '')
+          const bestSymbol = (sbRow?.symbol && sbRow.symbol !== '???') ? sbRow.symbol : (meta[1] || '')
+          const bestDesc = sbRow?.description || meta[2] || ''
 
           const token = parseOnChainToken(addr, meta, core, stats)
-          token.image = supabaseImage || onChainImage
+          token.image = bestImage
+          token.name = bestName || token.name
+          token.symbol = bestSymbol || token.symbol
+          token.description = bestDesc || token.description
           fullTokens.push(token)
 
-          // Prepare Supabase upsert for missing/stale data
+          // Prepare Supabase upsert -- never overwrite non-empty fields with empty
           upsertRows.push({
             token_address: addr.toLowerCase(),
-            creator: (core[0] || '').toLowerCase(),
-            name: meta[0] || '',
-            symbol: meta[1] || '',
-            description: meta[2] || '',
-            image_uri: supabaseImage || onChainImage,
+            creator: (core[0] || sbRow?.creator || '').toLowerCase(),
+            name: bestName,
+            symbol: bestSymbol,
+            description: bestDesc,
+            image_uri: bestImage,
             virtual_eth: formatEther(core[1] || 0n),
             virtual_tokens: formatUnits(core[2] || 0n, 18),
             real_eth: formatEther(core[3] || 0n),
