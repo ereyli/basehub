@@ -43,6 +43,7 @@ import Profile from './pages/Profile'
 import EarlyAccessNFT from './pages/EarlyAccessNFT'
 import NFTWheelGame from './pages/NFTWheelGame'
 import PumpHub from './pages/PumpHub'
+import FrameLanding from './pages/FrameLanding'
 // Lazy load PrivacyPolicy and TermsOfService to avoid ad blocker issues
 const PrivacyPolicy = lazy(() => 
   import('./pages/PrivacyPolicy').catch(() => ({
@@ -340,6 +341,7 @@ function FarcasterAppContent() {
               <Route path="/early-access" element={<EarlyAccessNFT />} />
               <Route path="/nft-wheel" element={<NFTWheelGame />} />
               <Route path="/pumphub" element={<PumpHub />} />
+              <Route path="/frames/:frameType" element={<FrameLanding />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
             </Routes>
@@ -394,10 +396,11 @@ function WebAppContent() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/early-access" element={<EarlyAccessNFT />} />
               <Route path="/nft-wheel" element={<NFTWheelGame />} />
-              <Route path="/pumphub" element={<PumpHub />} />
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="/terms" element={<TermsOfService />} />
-            </Routes>
+<Route path="/pumphub" element={<PumpHub />} />
+            <Route path="/frames/:frameType" element={<FrameLanding />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
+          </Routes>
           </Suspense>
         </main>
         <WebBottomNav />
