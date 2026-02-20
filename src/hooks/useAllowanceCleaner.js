@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useWalletClient, useAccount, useWriteContract, useReadContract, useChainId, useSwitchChain } from 'wagmi'
 import { wrapFetchWithPayment } from 'x402-fetch'
 import { waitForTransactionReceipt } from 'wagmi/actions'
-import { config } from '../config/wagmi'
+import { config, DATA_SUFFIX } from '../config/wagmi'
 import { addXP, recordTransaction } from '../utils/xpUtils'
 import { useQuestSystem } from './useQuestSystem'
 import { NETWORKS } from '../config/networks'
@@ -274,6 +274,7 @@ export const useAllowanceCleaner = () => {
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [spenderAddress, 0n], // 0n = BigInt zero = revoke approval
+        dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
 
       console.log('✅ Revoke transaction sent:', txHash)
@@ -352,6 +353,7 @@ export const useAllowanceCleaner = () => {
           abi: ERC20_ABI,
           functionName: 'approve',
           args: [allowance.spenderAddress, 0n],
+          dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
         })
       )
 

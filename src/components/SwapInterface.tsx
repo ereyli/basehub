@@ -9,6 +9,7 @@ import swaphubLogo from '../assets/swaphub-logo.png';
 import { recordSwapTransaction } from '../utils/xpUtils';
 import { useQuestSystem } from '../hooks/useQuestSystem';
 import { NETWORKS } from '../config/networks';
+import { DATA_SUFFIX } from '../config/wagmi';
 import { AlertCircle } from 'lucide-react';
 
 // ETH price state - will be fetched from CoinGecko API
@@ -716,7 +717,7 @@ export default function SwapInterface() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { updateQuestProgress } = useQuestSystem();
-  const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
+  const { writeContractAsync, data: hash, isPending, error: writeError } = useWriteContract();
   const { isLoading: isConfirming, isSuccess, error: txError } = useWaitForTransactionReceipt({ hash });
   const publicClient = usePublicClient();
   
@@ -1488,12 +1489,14 @@ export default function SwapInterface() {
     console.log('🔓 Step 1: Max Approving Aggregator:', SWAP_AGGREGATOR);
 
     try {
-      writeContract({
+      // Use writeContractAsync (same as GM/GN) so ERC-8021 dataSuffix is applied correctly
+      await writeContractAsync({
         address: tokenIn.address as `0x${string}`,
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [SWAP_AGGREGATOR, maxUint256], // Unlimited approval
-        chainId: base.id
+        chainId: base.id,
+        dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       });
     } catch (error: any) {
       setTransactionStep('idle');
@@ -1587,23 +1590,25 @@ export default function SwapInterface() {
       
       try {
         if (isWrap) {
-          // ETH → WETH: Call deposit() with ETH value
-          writeContract({
+          // ETH → WETH: Call deposit() with ETH value (writeContractAsync = same path as GM/GN for 8021)
+          await writeContractAsync({
             address: WETH_ADDRESS as `0x${string}`,
             abi: WETH_ABI,
             functionName: 'deposit',
             args: [],
             value: amountInWei,
-            chainId: base.id
+            chainId: base.id,
+            dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
           });
         } else {
           // WETH → ETH: Call withdraw() with amount
-          writeContract({
+          await writeContractAsync({
             address: WETH_ADDRESS as `0x${string}`,
             abi: WETH_ABI,
             functionName: 'withdraw',
             args: [amountInWei],
-            chainId: base.id
+            chainId: base.id,
+            dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
           });
         }
         console.log('✅ Wrap/Unwrap request sent to wallet!');
@@ -1769,14 +1774,16 @@ export default function SwapInterface() {
       }
       pendingSwapVolumeRef.current = { swapAmountUSD };
 
-      writeContract({
+      // Use writeContractAsync (same as GM/GN) so ERC-8021 dataSuffix is applied correctly
+      await writeContractAsync({
         address: txConfig.address,
         abi: txConfig.abi,
         functionName: txConfig.functionName,
         args: txConfig.args,
         value: txConfig.value,
         gas: txConfig.gas,
-        chainId: txConfig.chainId
+        chainId: txConfig.chainId,
+        dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       });
       
       console.log('✅ Aggregator swap request sent to wallet!');

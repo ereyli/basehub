@@ -1,0 +1,54 @@
+---
+description: ERC-8021 attribution for Base – all contract transactions must include Builder Code so Base can attribute on-chain activity.
+globs: "**/hooks/**/*.js,**/hooks/**/*.ts,**/components/**/*.tsx,**/components/**/*.jsx,**/pages/**/*.jsx"
+alwaysApply: false
+---
+
+# ERC-8021 (Base Builder Code) – BaseHub Contract Transactions
+
+BaseHub uses **ERC-8021** so the Base team can attribute on-chain transactions to the project. Every contract interaction that sends a transaction **must** include the Builder Code.
+
+## Implementation
+
+- **Definition**: `DATA_SUFFIX` is exported from `src/config/wagmi.js`. Do not change its value (it comes from base.dev → Settings → Builder Code).
+
+## When using Wagmi `writeContract` / `writeContractAsync`
+
+Always pass `dataSuffix`:
+
+```js
+import { DATA_SUFFIX } from '../config/wagmi'
+
+writeContract({
+  address: contractAddress,
+  abi: abi,
+  functionName: 'someFunction',
+  args: [...],
+  dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
+})
+```
+
+## When using `walletClient.sendTransaction` or raw `data`
+
+There is no `dataSuffix` parameter. Append the suffix to the `data` hex string:
+
+```js
+import { DATA_SUFFIX } from '../config/wagmi'
+
+const dataWithSuffix = `${existingData}${DATA_SUFFIX.startsWith('0x') ? DATA_SUFFIX.slice(2) : DATA_SUFFIX}`
+await walletClient.sendTransaction({
+  to,
+  data: dataWithSuffix,
+  value,
+  chainId,
+  gas,
+})
+```
+
+## What to skip
+
+- Simple ETH transfers with no `data` (e.g. fee payments that only set `to` and `value`) do not need 8021; the standard applies to contract call payloads.
+
+## Reference
+
+Existing usage: `src/hooks/useTransactions.js`, `src/components/SwapInterface.tsx`, `src/pages/TugOfWar.jsx`, `src/hooks/usePumpHub.js`, `src/hooks/useNFTLaunchpad.js`, `src/hooks/useNFTMint.js`, deploy hooks, and others.

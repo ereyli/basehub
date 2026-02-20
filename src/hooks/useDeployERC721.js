@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAccount, useWaitForTransactionReceipt, useWalletClient, useChainId } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { parseEther, encodeAbiParameters, parseAbiParameters } from 'viem'
-import { config } from '../config/wagmi'
+import { config, DATA_SUFFIX } from '../config/wagmi'
 import { addXP, recordTransaction } from '../utils/xpUtils'
 import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/pinata'
 import { useNetworkCheck } from './useNetworkCheck'
@@ -532,9 +532,10 @@ export const useDeployERC721 = () => {
         console.log('📦 Deploying ERC721 via BaseHubDeployer (single tx)...')
         if (!walletClient) throw new Error('Wallet not available. Please connect your wallet.')
         const deployData = encodeDeployerCall('deployERC721', initCode)
+        const deployDataWithSuffix = `${deployData}${DATA_SUFFIX.startsWith('0x') ? DATA_SUFFIX.slice(2) : DATA_SUFFIX}`
         deployTxHash = await walletClient.sendTransaction({
           to: deployerAddress,
-          data: deployData,
+          data: deployDataWithSuffix,
           value: parseEther(DEPLOYER_FEE_ETH),
           chainId,
           gas: 3000000n,
@@ -563,7 +564,8 @@ export const useDeployERC721 = () => {
             new Promise((_, reject) => setTimeout(() => reject(new Error('Fee confirmation timeout')), 60000)),
           ])
         } catch (e) { console.warn('⚠️ Fee confirmation timeout (proceeding):', e.message) }
-        deployTxHash = await walletClient.sendTransaction({ data: initCode, gas: 2000000n })
+        const initCodeWithSuffix = `${initCode}${DATA_SUFFIX.startsWith('0x') ? DATA_SUFFIX.slice(2) : DATA_SUFFIX}`
+        deployTxHash = await walletClient.sendTransaction({ data: initCodeWithSuffix, gas: 2000000n })
         try {
           const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
           const deployReceipt = await Promise.race([

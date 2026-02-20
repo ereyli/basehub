@@ -184,11 +184,23 @@ const TokenImage = ({ src, alt, size = 64, borderRadius = '14px' }) => {
   const [currentSrc, setCurrentSrc] = useState(() => src ? toFastGateway(src, 0) : '')
 
   useEffect(() => {
-    if (!src) { setStatus('error'); return }
+    if (!src) {
+      setStatus('error')
+      setCurrentSrc('')
+      return
+    }
     setGatewayIdx(0)
-    setCurrentSrc(toFastGateway(src, 0))
+    const url = toFastGateway(src, 0)
+    setCurrentSrc(url)
     setStatus('loading')
   }, [src])
+
+  // Fallback: if onLoad never fires (e.g. cached image, race), show image after delay so logos appear on refresh
+  useEffect(() => {
+    if (!currentSrc || status !== 'loading') return
+    const t = setTimeout(() => setStatus(s => (s === 'loading' ? 'loaded' : s)), 600)
+    return () => clearTimeout(t)
+  }, [currentSrc, status])
 
   const handleError = () => {
     const cid = extractIPFSCid(src)
@@ -220,15 +232,18 @@ const TokenImage = ({ src, alt, size = 64, borderRadius = '14px' }) => {
       )}
       {currentSrc && status !== 'error' ? (
         <img
+          key={currentSrc}
           src={currentSrc}
           alt={alt}
-          loading="lazy"
+          loading="eager"
+          decoding="async"
           onLoad={() => setStatus('loaded')}
           onError={handleError}
           style={{
             width: '100%', height: '100%', objectFit: 'cover',
-            opacity: status === 'loaded' ? 1 : 0,
-            transition: 'opacity 0.3s ease',
+            opacity: 1,
+            visibility: status === 'loading' ? 'hidden' : 'visible',
+            transition: 'visibility 0.2s ease',
           }}
         />
       ) : (
@@ -411,12 +426,11 @@ const MiniTokenCard = ({ token, onClick, isSelected }) => {
 // ============================================
 // TOKEN CHART PANEL
 // ============================================
-const TokenChartPanel = ({ tokenData, tokenAddress }) => {
-  const [timeframe, setTimeframe] = useState('4h')
+const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
   const [tradeHistory, setTradeHistory] = useState([])
   const [loadingTrades, setLoadingTrades] = useState(true)
   
-  // Fetch trade history from Supabase
+  // Fetch trade history from Supabase (refetch when lastTradeConfirmedAt changes = swap just confirmed)
   useEffect(() => {
     const fetchTrades = async () => {
       if (!tokenAddress || !supabase) {
@@ -444,7 +458,7 @@ const TokenChartPanel = ({ tokenData, tokenAddress }) => {
     }
     
     fetchTrades()
-  }, [tokenAddress])
+  }, [tokenAddress, lastTradeConfirmedAt])
   
   // Calculate market cap
   const virtualETH = parseFloat(tokenData?.tokenData?.virtualETH || tokenData?.virtualETH || 1)
@@ -456,71 +470,67 @@ const TokenChartPanel = ({ tokenData, tokenAddress }) => {
   // Progress to graduation
   const progress = Math.min((realETH / 5) * 100, 100)
   
-  // Generate candlestick data from Supabase trades for ApexCharts
+  // Generate candlestick data: 1 day per candle, last 30 days. X-axis shows days; bars are distinct (OHLC).
   const candlestickData = useMemo(() => {
-    const data = []
-    
-    // Token creation time
-    const createdAt = tokenData?.tokenData?.createdAt 
-      ? parseInt(tokenData.tokenData.createdAt) * 1000 
-      : Date.now() - 24 * 60 * 60 * 1000
-    
+    const bucketMs = 24 * 60 * 60 * 1000 // 1 day
+    const numBuckets = 30
     const now = Date.now()
-    
-    // Time bucket based on timeframe
-    const bucketMinutes = {
-      '1m': 1, '5m': 5, '15m': 15, '1h': 60, '4h': 240, '1d': 1440
-    }
-    const bucketMs = (bucketMinutes[timeframe] || 240) * 60 * 1000
-    
-    // Calculate number of buckets
-    const timeDiff = now - createdAt
-    const numBuckets = Math.min(Math.max(Math.ceil(timeDiff / bucketMs), 10), 50)
-    
-    // Create time buckets
-    let runningMC = initialMarketCapUSD
-    
+    const data = []
+
+    let open = initialMarketCapUSD
     for (let i = 0; i < numBuckets; i++) {
-      const bucketStart = createdAt + i * bucketMs
-      const bucketEnd = bucketStart + bucketMs
-      
-      // Find trades in this bucket
+      const bucketEnd = now - (numBuckets - 1 - i) * bucketMs
+      const bucketStart = bucketEnd - bucketMs
+
       const bucketTrades = (tradeHistory || []).filter(t => {
         const tradeTime = new Date(t.created_at).getTime()
         return tradeTime >= bucketStart && tradeTime < bucketEnd
       })
-      
-      const open = runningMC
-      let high = runningMC
-      let low = runningMC
-      
-      // Process trades in this bucket
+
+      let high = open
+      let low = open
+      let close = open
+
       bucketTrades.forEach(trade => {
         const ethAmount = parseFloat(trade.eth_amount || 0)
         const mcChange = ethAmount * ETH_PRICE_USD * 2
-        
         if (trade.trade_type === 'buy') {
-          runningMC += mcChange
+          close += mcChange
         } else {
-          runningMC -= mcChange
+          close -= mcChange
         }
-        runningMC = Math.max(runningMC, initialMarketCapUSD * 0.3)
-        
-        high = Math.max(high, runningMC)
-        low = Math.min(low, runningMC)
+        close = Math.max(close, initialMarketCapUSD * 0.3)
+        high = Math.max(high, close)
+        low = Math.min(low, close)
       })
-      
-      const close = runningMC
-      
-      // Add candle - ApexCharts format: [open, high, low, close]
+
       data.push({
         x: new Date(bucketStart),
         y: [open, high, low, close]
       })
+      open = close
     }
-    
+
     return data
-  }, [tradeHistory, initialMarketCapUSD, timeframe, tokenData])
+  }, [tradeHistory, initialMarketCapUSD, tokenData])
+
+  // Y-axis range so bars are visible (min range ~5% of current value so candles aren't flat)
+  const yAxisRange = useMemo(() => {
+    if (!candlestickData.length) return { min: undefined, max: undefined }
+    let min = Infinity
+    let max = -Infinity
+    candlestickData.forEach(d => {
+      const [o, h, l, c] = d.y
+      min = Math.min(min, o, h, l, c)
+      max = Math.max(max, o, h, l, c)
+    })
+    const center = (min + max) / 2
+    const range = Math.max(max - min, center * 0.05)
+    return {
+      min: Math.max(0, center - range / 2 - center * 0.02),
+      max: center + range / 2 + center * 0.02
+    }
+  }, [candlestickData])
   
   // ApexCharts options
   const chartOptions = useMemo(() => ({
@@ -567,11 +577,10 @@ const TokenChartPanel = ({ tokenData, tokenAddress }) => {
           colors: '#9ca3af',
           fontSize: '11px'
         },
-        datetimeFormatter: {
-          year: 'yyyy',
-          month: "MMM 'yy",
-          day: 'dd MMM',
-          hour: 'HH:mm'
+        formatter: (val, timestamp) => {
+          const d = new Date(timestamp ?? val)
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+          return d.getDate() + ' ' + months[d.getMonth()]
         }
       },
       axisBorder: {
@@ -579,11 +588,14 @@ const TokenChartPanel = ({ tokenData, tokenAddress }) => {
       },
       axisTicks: {
         color: 'rgba(255,255,255,0.1)'
-      }
+      },
+      tickAmount: 8
     },
     yaxis: {
       opposite: true,
       floating: false,
+      min: yAxisRange.min,
+      max: yAxisRange.max,
       labels: {
         style: {
           colors: '#9ca3af',
@@ -602,17 +614,12 @@ const TokenChartPanel = ({ tokenData, tokenAddress }) => {
         enabled: true
       },
       crosshairs: {
-        show: true,
-        stroke: {
-          color: '#3b82f6',
-          width: 1,
-          dashArray: 3
-        }
+        show: false
       }
     },
     grid: {
-      borderColor: 'rgba(255,255,255,0.08)',
-      strokeDashArray: 4
+      borderColor: 'rgba(255,255,255,0.06)',
+      strokeDashArray: 2
     },
     plotOptions: {
       candlestick: {
@@ -622,47 +629,21 @@ const TokenChartPanel = ({ tokenData, tokenAddress }) => {
         },
         wick: {
           useFillColor: true
-        }
+        },
+        columnWidth: '80%'
       }
     },
     tooltip: {
       enabled: true,
       theme: 'dark',
       x: {
-        format: 'dd MMM HH:mm'
+        format: 'dd MMM yyyy'
       },
       y: {
         formatter: (val) => formatMarketCap(val)
       }
-    },
-    annotations: {
-      yaxis: [{
-        y: marketCapUSD,
-        borderColor: '#3b82f6',
-        strokeDashArray: 5,
-        borderWidth: 1,
-        label: {
-          borderColor: 'transparent',
-          style: {
-            color: '#fff',
-            background: '#3b82f6',
-            fontSize: '10px',
-            fontWeight: 600,
-            padding: {
-              left: 5,
-              right: 5,
-              top: 2,
-              bottom: 2
-            }
-          },
-          text: formatMarketCap(marketCapUSD),
-          position: 'right',
-          offsetX: 0,
-          offsetY: 0
-        }
-      }]
     }
-  }), [marketCapUSD])
+  }), [yAxisRange])
   
   const chartSeries = useMemo(() => [{
     name: 'Market Cap',
@@ -685,27 +666,7 @@ const TokenChartPanel = ({ tokenData, tokenAddress }) => {
           <div style={{ fontSize: '12px', color: '#9ca3af' }}>Market Cap</div>
         </div>
         
-        {/* Timeframe buttons */}
-        <div style={{ display: 'flex', gap: '4px' }}>
-          {['1m', '5m', '15m', '1h', '4h', '1d'].map(tf => (
-            <button
-              key={tf}
-              onClick={() => setTimeframe(tf)}
-              style={{
-                padding: '4px 8px',
-                borderRadius: '6px',
-                border: 'none',
-                background: timeframe === tf ? '#3b82f6' : 'rgba(255,255,255,0.1)',
-                color: timeframe === tf ? '#fff' : '#9ca3af',
-                fontSize: '11px',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
-            >
-              {tf}
-            </button>
-          ))}
-        </div>
+        <div style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600' }}>1D chart</div>
       </div>
       
       {/* Progress bar */}
@@ -794,6 +755,93 @@ const TokenChartPanel = ({ tokenData, tokenAddress }) => {
           </div>
         </div>
       </div>
+
+      {/* Recent transactions - below chart (Account, Type, Amount, Time, Txn) */}
+      <div style={{
+        marginTop: '16px',
+        background: 'rgba(0, 0, 0, 0.25)',
+        borderRadius: '12px',
+        border: '1px solid rgba(59, 130, 246, 0.15)',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '12px 14px',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          fontSize: '12px',
+          fontWeight: '600',
+          color: '#9ca3af'
+        }}>
+          <BarChart3 size={16} />
+          Recent transactions
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          {loadingTrades ? (
+            <div style={{ padding: '24px', textAlign: 'center', color: '#9ca3af', fontSize: '12px' }}>
+              <RefreshCw size={18} className="animate-spin" style={{ display: 'inline-block', marginRight: '8px', verticalAlign: 'middle' }} />
+              Loading...
+            </div>
+          ) : !tradeHistory || tradeHistory.length === 0 ? (
+            <div style={{ padding: '24px', textAlign: 'center', color: '#6b7280', fontSize: '12px' }}>No transactions yet</div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                  <th style={{ textAlign: 'left', padding: '10px 14px', color: '#9ca3af', fontWeight: '600' }}>Account</th>
+                  <th style={{ textAlign: 'left', padding: '10px 14px', color: '#9ca3af', fontWeight: '600' }}>Type</th>
+                  <th style={{ textAlign: 'right', padding: '10px 14px', color: '#9ca3af', fontWeight: '600' }}>Amount (ETH)</th>
+                  <th style={{ textAlign: 'right', padding: '10px 14px', color: '#9ca3af', fontWeight: '600' }}>Amount ({tokenData?.tokenMeta?.symbol || 'Token'})</th>
+                  <th style={{ textAlign: 'center', padding: '10px 14px', color: '#9ca3af', fontWeight: '600' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> Time</span>
+                  </th>
+                  <th style={{ textAlign: 'right', padding: '10px 14px', color: '#9ca3af', fontWeight: '600' }}>Txn</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...tradeHistory].reverse().slice(0, 15).map((t, i) => (
+                  <tr key={t.tx_hash || i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <td style={{ padding: '10px 14px', color: '#e2e8f0', fontFamily: 'monospace' }} title={t.trader_address}>
+                      {shortenAddress(t.trader_address)}
+                    </td>
+                    <td style={{ padding: '10px 14px' }}>
+                      <span style={{
+                        color: t.trade_type === 'buy' ? '#10b981' : '#ef4444',
+                        fontWeight: '600'
+                      }}>
+                        {t.trade_type === 'buy' ? 'Buy' : 'Sell'}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'right', padding: '10px 14px', color: t.trade_type === 'buy' ? '#10b981' : '#ef4444', fontWeight: '500' }}>
+                      {parseFloat(t.eth_amount || 0).toFixed(4)} ETH
+                    </td>
+                    <td style={{ textAlign: 'right', padding: '10px 14px', color: t.trade_type === 'buy' ? '#10b981' : '#ef4444', fontWeight: '500' }}>
+                      {t.token_amount ? formatNumber(t.token_amount) : '-'}
+                    </td>
+                    <td style={{ textAlign: 'center', padding: '10px 14px', color: '#94a3b8' }}>
+                      {timeAgo(t.created_at ? Math.floor(new Date(t.created_at).getTime() / 1000) : null)}
+                    </td>
+                    <td style={{ textAlign: 'right', padding: '10px 14px' }}>
+                      {t.tx_hash ? (
+                        <a
+                          href={`https://basescan.org/tx/${t.tx_hash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: '#60a5fa', textDecoration: 'none', fontFamily: 'monospace' }}
+                          title={t.tx_hash}
+                        >
+                          {t.tx_hash.slice(0, 6)}...{t.tx_hash.slice(-4)}
+                        </a>
+                      ) : '-'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
@@ -801,13 +849,11 @@ const TokenChartPanel = ({ tokenData, tokenAddress }) => {
 // ============================================
 // TOKEN TRADE PANEL
 // ============================================
-const TokenTradePanel = ({ tokenData, tokenAddress }) => {
+const TokenTradePanel = ({ tokenData, tokenAddress, buyTokens, sellTokens, claimFees, isLoading, error }) => {
   const { address, isConnected } = useAccount()
   const [tradeMode, setTradeMode] = useState('buy')
   const [amount, setAmount] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
-  
-  const { buyTokens, sellTokens, claimFees, isLoading, error } = usePumpHub()
   
   // Get user's ETH balance
   const { data: ethBalance } = useBalance({ address })
@@ -1294,6 +1340,7 @@ const PumpHub = () => {
   const [selectedTokenData, setSelectedTokenData] = useState(null)
   const [tokens, setTokens] = useState([])
   const [loadingTokens, setLoadingTokens] = useState(true)
+  const [tokensListKey, setTokensListKey] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('newest')
   const [category, setCategory] = useState('all')
@@ -1338,10 +1385,14 @@ const PumpHub = () => {
   
   const { 
     createToken, 
+    buyTokens,
+    sellTokens,
+    claimFees,
     isLoading, 
     error, 
     lastCreatedToken, 
-    clearLastCreatedToken 
+    clearLastCreatedToken,
+    lastTradeConfirmedAt
   } = usePumpHub()
   
   // Platform stats derived from token list
@@ -1376,37 +1427,67 @@ const PumpHub = () => {
     let cancelled = false
 
     const fetchTokens = async () => {
-      if (!publicClient) { setLoadingTokens(false); return }
+      if (!publicClient) return
 
       try {
-        // Step 1: Get on-chain token count & addresses (2 lightweight RPC calls)
-        let onChainCount = 0
-        try {
-          const countRaw = await publicClient.readContract({
-            address: PUMPHUB_FACTORY_ADDRESS,
-            abi: PUMPHUB_FACTORY_ABI,
-            functionName: 'getAllTokensCount',
-          })
-          onChainCount = Number(countRaw)
-        } catch { /* ignore */ }
+        // Step 1: Get on-chain token count (only treat as "0 tokens" when call succeeds and returns 0; retry on failure)
+        let onChainCount = null
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            const countRaw = await publicClient.readContract({
+              address: PUMPHUB_FACTORY_ADDRESS,
+              abi: PUMPHUB_FACTORY_ABI,
+              functionName: 'getAllTokensCount',
+            })
+            onChainCount = Number(countRaw)
+            break
+          } catch (e) {
+            console.warn('getAllTokensCount attempt', attempt + 1, 'failed:', e)
+            if (attempt === 1) {
+              if (!cancelled) setLoadingTokens(false)
+              return
+            }
+            await new Promise(r => setTimeout(r, 400))
+          }
+        }
 
+        if (onChainCount === null) {
+          if (!cancelled) setLoadingTokens(false)
+          return
+        }
         if (onChainCount === 0) {
-          setTokens([])
-          setLoadingTokens(false)
+          if (!cancelled) {
+            setTokens([])
+            setLoadingTokens(false)
+          }
           return
         }
 
         let tokenAddresses = []
-        try {
-          tokenAddresses = await publicClient.readContract({
-            address: PUMPHUB_FACTORY_ADDRESS,
-            abi: PUMPHUB_FACTORY_ABI,
-            functionName: 'getTokens',
-            args: [0n, BigInt(Math.min(onChainCount, 100))]
-          })
-        } catch (e) {
-          console.error('getTokens RPC failed:', e)
-          setLoadingTokens(false)
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            tokenAddresses = await publicClient.readContract({
+              address: PUMPHUB_FACTORY_ADDRESS,
+              abi: PUMPHUB_FACTORY_ABI,
+              functionName: 'getTokens',
+              args: [0n, BigInt(Math.min(onChainCount, 100))]
+            })
+            if (tokenAddresses?.length > 0) break
+          } catch (e) {
+            console.warn('getTokens RPC attempt', attempt + 1, 'failed:', e)
+            if (attempt === 1) {
+              if (!cancelled) setLoadingTokens(false)
+              return
+            }
+            await new Promise(r => setTimeout(r, 500))
+          }
+        }
+
+        if (!tokenAddresses?.length) {
+          if (!cancelled) {
+            setTokens([])
+            setLoadingTokens(false)
+          }
           return
         }
 
@@ -1427,7 +1508,7 @@ const PumpHub = () => {
           }
         }
 
-        // Step 3: Show Supabase data immediately (fast first paint)
+        // Step 3: Build Supabase snapshot for merge/fallback (do not show list yet – wait for full data so images load on refresh)
         const sbTokens = tokenAddresses.map(addr => {
           const row = sbMap[addr.toLowerCase()]
           if (row && row.name && row.name !== 'Unknown') {
@@ -1454,12 +1535,7 @@ const PumpHub = () => {
           return { address: addr, name: 'Loading...', symbol: '...', _fromSupabase: false }
         })
 
-        if (!cancelled) {
-          setTokens(sbTokens)
-          setLoadingTokens(false)
-        }
-
-        // Step 4: Background RPC sync via multicall (fills missing/stale data)
+        // Step 4: RPC multicall (we only set tokens + loading=false after this, so list always has image URLs)
         const multicallContracts = []
         tokenAddresses.forEach(addr => {
           multicallContracts.push(
@@ -1542,7 +1618,9 @@ const PumpHub = () => {
         }
 
         if (!cancelled) {
-          setTokens(fullTokens)
+          const nextTokens = fullTokens.length > 0 ? fullTokens : sbTokens
+          setTokens(nextTokens)
+          setTokensListKey(k => k + 1)
         }
 
         // Step 5: Upsert all token data back to Supabase (background, best-effort)
@@ -2031,11 +2109,17 @@ const PumpHub = () => {
                   }}>
                     <TokenChartPanel 
                       tokenData={selectedTokenData} 
-                      tokenAddress={selectedToken} 
+                      tokenAddress={selectedToken}
+                      lastTradeConfirmedAt={lastTradeConfirmedAt}
                     />
                     <TokenTradePanel 
                       tokenData={selectedTokenData} 
-                      tokenAddress={selectedToken} 
+                      tokenAddress={selectedToken}
+                      buyTokens={buyTokens}
+                      sellTokens={sellTokens}
+                      claimFees={claimFees}
+                      isLoading={isLoading}
+                      error={error}
                     />
                   </div>
                 </>
@@ -2173,11 +2257,14 @@ const PumpHub = () => {
                     </div>
                   ) : (
                     <>
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))',
-                        gap: '16px'
-                      }}>
+                      <div
+                        key={tokensListKey}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))',
+                          gap: '16px'
+                        }}
+                      >
                         {paginatedTokens.map(token => (
                           <TokenCard
                             key={token.address}

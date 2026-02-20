@@ -3,6 +3,7 @@ import { useAccount, useWriteContract, useReadContract, useWaitForTransactionRec
 import { parseEther, formatEther, formatUnits, parseUnits, decodeEventLog, maxUint256 } from 'viem'
 import { NETWORKS } from '../config/networks'
 import { supabase } from '../config/supabase'
+import { DATA_SUFFIX } from '../config/wagmi'
 import { addXP, recordTransaction } from '../utils/xpUtils'
 
 // PumpHubFactory Contract ABI
@@ -275,6 +276,7 @@ export const usePumpHub = () => {
   const [approveHash, setApproveHash] = useState(null) // Hash of pending approve transaction
   const [currentHash, setCurrentHash] = useState(null) // Track current transaction hash
   const [lastCreatedToken, setLastCreatedToken] = useState(null) // Store last created token info { address, name, symbol, image, hash }
+  const [lastTradeConfirmedAt, setLastTradeConfirmedAt] = useState(null) // Timestamp when last buy/sell confirmed (for UI refetch)
   
   // Use ref to prevent double popup - more reliable than state
   const isTransactionPendingRef = useRef(false)
@@ -396,7 +398,8 @@ export const usePumpHub = () => {
         abi: PUMPHUB_FACTORY_ABI,
         functionName: 'createToken',
         args: [name, symbol, description || '', imageUrl || '', allocation],
-        value
+        value,
+        dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
       
       console.log('✅ Create token tx submitted:', hash)
@@ -525,6 +528,7 @@ export const usePumpHub = () => {
               txHash: currentHash,
               blockNumber: receipt.blockNumber?.toString()
             })
+            setLastTradeConfirmedAt(Date.now())
             
             // Award XP for buy (100 XP)
             try {
@@ -558,6 +562,7 @@ export const usePumpHub = () => {
               txHash: currentHash,
               blockNumber: receipt.blockNumber?.toString()
             })
+            setLastTradeConfirmedAt(Date.now())
             
             // Award XP for sell (100 XP)
             try {
@@ -608,7 +613,8 @@ export const usePumpHub = () => {
         abi: PUMPHUB_FACTORY_ABI,
         functionName: 'buy',
         args: [tokenAddress, minTokensOut],
-        value
+        value,
+        dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
       
       console.log('✅ Buy tx submitted:', hash)
@@ -638,109 +644,7 @@ export const usePumpHub = () => {
     }
   }, [isConnected, chainId, writeContractAsync])
   
-  // Process buy transaction when confirmed
-  useEffect(() => {
-    const processBuy = async () => {
-      if (!isConfirmed || !receipt || !currentHash || !address || !publicClient) return
-      isTransactionPendingRef.current = false
-      
-      // Try to find TB event in logs
-      for (const log of receipt.logs) {
-        try {
-          const decoded = decodeEventLog({
-            abi: PUMPHUB_FACTORY_ABI,
-            data: log.data,
-            topics: log.topics
-          })
-          
-          if (decoded.eventName === 'TB') {
-            const tokenAddress = decoded.args.t
-            const ethAmount = decoded.args.e
-            const tokenAmount = decoded.args.o
-            
-            // Save trade to Supabase
-            await saveTradeToSupabase({
-              tokenAddress,
-              traderAddress: address,
-              tradeType: 'buy',
-              ethAmount: formatEther(ethAmount), // Convert wei to ETH string
-              tokenAmount: formatUnits(tokenAmount, 18), // Convert wei to token string
-              price: null,
-              txHash: currentHash,
-              blockNumber: receipt.blockNumber?.toString()
-            })
-            
-            // Update token stats
-            setTimeout(() => {
-              updateTokenStats(tokenAddress).catch(err => 
-                console.error('Error updating token stats after buy:', err)
-              )
-            }, 2000)
-            
-            break
-          }
-        } catch (e) {
-          continue
-        }
-      }
-    }
-    
-    if (currentHash && receipt) {
-      processBuy().catch(err => console.error('Error processing buy:', err))
-    }
-  }, [isConfirmed, receipt, currentHash, address, publicClient])
-  
-  // Process sell transaction when confirmed
-  useEffect(() => {
-    const processSell = async () => {
-      if (!isConfirmed || !receipt || !currentHash || !address || !publicClient) return
-      isTransactionPendingRef.current = false
-      
-      // Try to find TS2 event in logs
-      for (const log of receipt.logs) {
-        try {
-          const decoded = decodeEventLog({
-            abi: PUMPHUB_FACTORY_ABI,
-            data: log.data,
-            topics: log.topics
-          })
-          
-          if (decoded.eventName === 'TS2') {
-            const tokenAddress = decoded.args.t
-            const tokenAmount = decoded.args.i
-            const ethAmount = decoded.args.o
-            
-            // Save trade to Supabase
-            await saveTradeToSupabase({
-              tokenAddress,
-              traderAddress: address,
-              tradeType: 'sell',
-              ethAmount: formatEther(ethAmount), // Convert wei to ETH string
-              tokenAmount: formatUnits(tokenAmount, 18), // Convert wei to token string
-              price: null,
-              txHash: currentHash,
-              blockNumber: receipt.blockNumber?.toString()
-            })
-            
-            // Update token stats
-            setTimeout(() => {
-              updateTokenStats(tokenAddress).catch(err => 
-                console.error('Error updating token stats after sell:', err)
-              )
-            }, 2000)
-            
-            break
-          }
-        } catch (e) {
-          continue
-        }
-      }
-    }
-    
-    if (currentHash && receipt) {
-      processSell().catch(err => console.error('Error processing sell:', err))
-    }
-  }, [isConfirmed, receipt, currentHash, address, publicClient])
+  // Buy/sell are processed only in processTransaction above (single place) to avoid duplicate trade entries.
 
   // Sell tokens
   const sellTokens = useCallback(async (tokenAddress, tokenAmount, minETHOut = 0n) => {
@@ -792,7 +696,8 @@ export const usePumpHub = () => {
           address: tokenAddress,
           abi: ERC20_ABI,
           functionName: 'approve',
-          args: [PUMPHUB_FACTORY_ADDRESS, maxApproval]
+          args: [PUMPHUB_FACTORY_ADDRESS, maxApproval],
+          dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
         })
 
         console.log('✅ Approval transaction sent:', approveHashResult)
@@ -809,7 +714,8 @@ export const usePumpHub = () => {
           address: PUMPHUB_FACTORY_ADDRESS,
           abi: PUMPHUB_FACTORY_ABI,
           functionName: 'sell',
-          args: [tokenAddress, amount, minETHOut]
+          args: [tokenAddress, amount, minETHOut],
+          dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
         })
         
         console.log('✅ Sell tx submitted:', sellHash)
@@ -863,7 +769,8 @@ export const usePumpHub = () => {
             address: PUMPHUB_FACTORY_ADDRESS,
             abi: PUMPHUB_FACTORY_ABI,
             functionName: 'sell',
-            args: [tokenAddress, amount, minETHOut]
+            args: [tokenAddress, amount, minETHOut],
+            dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
           })
           
           console.log('✅ Sell tx submitted after approve:', sellHash)
@@ -909,7 +816,8 @@ export const usePumpHub = () => {
       const hash = await writeContractAsync({
         address: PUMPHUB_FACTORY_ADDRESS,
         abi: PUMPHUB_FACTORY_ABI,
-        functionName: 'claimFees'
+        functionName: 'claimFees',
+        dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
       console.log('✅ Claim fees tx submitted:', hash)
       setCurrentHash(hash)
@@ -951,7 +859,8 @@ export const usePumpHub = () => {
       const hash = await writeContractAsync({
         address: PUMPHUB_FACTORY_ADDRESS,
         abi: PUMPHUB_FACTORY_ABI,
-        functionName: 'claimRefund'
+        functionName: 'claimRefund',
+        dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
       console.log('✅ Claim refund tx submitted:', hash)
       setCurrentHash(hash)
@@ -1061,6 +970,7 @@ export const usePumpHub = () => {
     saveTokenToSupabase, // Export for manual updates
     saveTradeToSupabase, // Export for manual updates
     updateTokenStats, // Export for updating token stats
+    lastTradeConfirmedAt, // UI can refetch trades when this changes (after buy/sell confirm)
     resetError: () => { 
       setError(null)
       lastErrorRef.current = null

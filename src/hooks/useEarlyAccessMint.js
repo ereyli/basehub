@@ -3,6 +3,7 @@ import { useAccount, useReadContract, useWriteContract, useWaitForTransactionRec
 import { parseEther } from 'viem'
 import { useNetworkCheck } from './useNetworkCheck'
 import { EARLY_ACCESS_CONFIG, EARLY_ACCESS_ABI } from '../config/earlyAccessNFT'
+import { DATA_SUFFIX } from '../config/wagmi'
 import { addXP, recordTransaction } from '../utils/xpUtils'
 
 export const useEarlyAccessMint = () => {
@@ -130,6 +131,7 @@ export const useEarlyAccessMint = () => {
         abi: EARLY_ACCESS_ABI,
         functionName: 'mint',
         value: price,
+        dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
     } catch (err) {
       console.error('Mint error:', err)

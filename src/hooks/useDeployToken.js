@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAccount, useWriteContract, useWalletClient, useChainId } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { parseEther, encodeAbiParameters, parseAbiParameters } from 'viem'
-import { config } from '../config/wagmi'
+import { config, DATA_SUFFIX } from '../config/wagmi'
 import { addXP, recordTransaction } from '../utils/xpUtils'
 import { useNetworkCheck } from './useNetworkCheck'
 import { useQuestSystem } from './useQuestSystem'
@@ -409,6 +409,7 @@ export const useDeployToken = () => {
           args: [initCode],
           value: parseEther(DEPLOYER_FEE_ETH),
           chainId,
+          dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
         })
         console.log('✅ Deploy transaction sent:', deployTxHash)
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
@@ -442,7 +443,8 @@ export const useDeployToken = () => {
           console.warn('⚠️ Fee confirmation timeout (proceeding with deploy):', e.message)
         }
         console.log('🚀 Deploying ERC20 contract...')
-        deployTxHash = await walletClient.sendTransaction({ data: initCode, gas: 2000000n })
+        const initCodeWithSuffix = `${initCode}${DATA_SUFFIX.startsWith('0x') ? DATA_SUFFIX.slice(2) : DATA_SUFFIX}`
+        deployTxHash = await walletClient.sendTransaction({ data: initCodeWithSuffix, gas: 2000000n })
         console.log('✅ Deploy transaction sent:', deployTxHash)
         feeLabel = '0.0002 ETH'
         try {

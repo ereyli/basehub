@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAccount, useWalletClient, useChainId, usePublicClient } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { encodeFunctionData } from 'viem'
-import { config } from '../config/wagmi'
+import { config, DATA_SUFFIX } from '../config/wagmi'
 import { NFT_LAUNCH_COLLECTION_ABI } from '../config/nftCollection'
 import { useNetworkCheck } from './useNetworkCheck'
 import { supabase } from '../config/supabase'
@@ -101,10 +101,12 @@ export function useNFTMint(contractAddress) {
       }
 
       const totalCost = mintPrice * BigInt(quantity)
-
+      // Append ERC-8021 Builder Code for Base attribution (walletClient.sendTransaction has no dataSuffix param)
+      const mintData = encodeMintCall(quantity)
+      const dataWithSuffix = `${mintData}${DATA_SUFFIX.startsWith('0x') ? DATA_SUFFIX.slice(2) : DATA_SUFFIX}`
       const hash = await walletClient.sendTransaction({
         to: contractAddress,
-        data: encodeMintCall(quantity),
+        data: dataWithSuffix,
         value: totalCost,
         chainId,
         gas: 300000n * BigInt(quantity),

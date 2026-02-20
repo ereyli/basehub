@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAccount, useWalletClient, useChainId, useReadContract, usePublicClient } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
-import { config } from '../config/wagmi'
+import { config, DATA_SUFFIX } from '../config/wagmi'
 import { parseEther, encodeAbiParameters, parseAbiParameters, toEventHash } from 'viem'
 import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/pinata'
 import {
@@ -168,9 +168,11 @@ export function useNFTLaunchpad() {
       }
 
       const deployData = encodeDeployerCall('deployNFTCollection', initCodeHex)
+      // Append ERC-8021 Builder Code for Base attribution (walletClient.sendTransaction has no dataSuffix param)
+      const dataWithSuffix = `${deployData}${DATA_SUFFIX.startsWith('0x') ? DATA_SUFFIX.slice(2) : DATA_SUFFIX}`
       const txHash = await walletClient.sendTransaction({
         to: deployerAddress,
-        data: deployData,
+        data: dataWithSuffix,
         value: parseEther(feeEthForTx),
         chainId,
         gas: 5000000n,

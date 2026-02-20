@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
 import { AI_NFT_CONFIG, getContractAddress, calculateMintFee, calculateMintFeeWei } from '../config/aiNFT';
+import { DATA_SUFFIX } from '../config/wagmi';
 import { addXP, recordTransaction } from '../utils/xpUtils';
 import { useQuestSystem } from './useQuestSystem';
 
@@ -411,6 +412,7 @@ export function useAINFTMinting(quantity = 1) {
           functionName: 'mintBatch',
           args: [address, uriToUse, BigInt(qty)],
           value: mintFee,
+          dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
         });
       } else {
         console.log('🎨 Using single mint');
@@ -420,6 +422,7 @@ export function useAINFTMinting(quantity = 1) {
           functionName: 'mintWithTokenURI',
           args: [address, uriToUse],
           value: mintFee,
+          dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
         });
       }
       
