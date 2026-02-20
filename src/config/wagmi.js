@@ -1,6 +1,6 @@
 import { http, createConfig } from 'wagmi'
 import { base } from 'wagmi/chains'
-import { defineChain } from 'viem'
+import { defineChain, fallback, http as viemHttp } from 'viem'
 import { injected, metaMask } from 'wagmi/connectors'
 import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector'
 import { NETWORKS } from './networks'
@@ -104,7 +104,9 @@ export const config = createConfig({
   chains: [base, inkChain, soneium, katana, arcRestnet, robinhoodTestnet],
   dataSuffix: DATA_SUFFIX,
   transports: {
-    [base.id]: http(),
+    [base.id]: fallback(
+      NETWORKS.BASE.rpcUrls.map((url) => viemHttp(url, { retryCount: 2, retryDelay: 1200 }))
+    ),
     [inkChain.id]: http(NETWORKS.INKCHAIN.rpcUrls[0], {
       timeout: 30000, // 30 seconds timeout
       retryCount: 3,

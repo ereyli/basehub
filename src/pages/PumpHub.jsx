@@ -7,7 +7,7 @@ import {
   ExternalLink, Copy, Check, Flame, Clock, BarChart3, Globe, Star,
   ChevronDown, ChevronUp, RefreshCw, Wallet, AlertCircle, X, ArrowUpRight, Share2
 } from 'lucide-react'
-import ReactApexChart from 'react-apexcharts'
+import { createChart, CandlestickSeries } from 'lightweight-charts'
 import NetworkGuard from '../components/NetworkGuard'
 import BackButton from '../components/BackButton'
 import { usePumpHub, usePumpHubData } from '../hooks/usePumpHub'
@@ -470,17 +470,20 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
   // Progress to graduation
   const progress = Math.min((realETH / 5) * 100, 100)
   
-  // Generate candlestick data: 1 day per candle, last 30 days. X-axis shows days; bars are distinct (OHLC).
+  // Generate candlestick data: 1 day per candle, only from token creation date (no bars before launch).
   const candlestickData = useMemo(() => {
     const bucketMs = 24 * 60 * 60 * 1000 // 1 day
-    const numBuckets = 30
     const now = Date.now()
+    const createdAt = tokenData?.tokenData?.createdAt ? parseInt(tokenData.tokenData.createdAt, 10) * 1000 : null
+    const creationDayStart = createdAt ? new Date(createdAt).setHours(0, 0, 0, 0) : now - 30 * bucketMs
     const data = []
 
     let open = initialMarketCapUSD
-    for (let i = 0; i < numBuckets; i++) {
-      const bucketEnd = now - (numBuckets - 1 - i) * bucketMs
-      const bucketStart = bucketEnd - bucketMs
+    let bucketStart = creationDayStart
+    const maxBuckets = 30
+
+    for (let i = 0; i < maxBuckets && bucketStart < now; i++) {
+      const bucketEnd = Math.min(bucketStart + bucketMs, now)
 
       const bucketTrades = (tradeHistory || []).filter(t => {
         const tradeTime = new Date(t.created_at).getTime()
@@ -509,146 +512,117 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
         y: [open, high, low, close]
       })
       open = close
+      bucketStart += bucketMs
     }
 
     return data
   }, [tradeHistory, initialMarketCapUSD, tokenData])
 
-  // Y-axis range so bars are visible (min range ~5% of current value so candles aren't flat)
-  const yAxisRange = useMemo(() => {
-    if (!candlestickData.length) return { min: undefined, max: undefined }
-    let min = Infinity
-    let max = -Infinity
-    candlestickData.forEach(d => {
-      const [o, h, l, c] = d.y
-      min = Math.min(min, o, h, l, c)
-      max = Math.max(max, o, h, l, c)
-    })
-    const center = (min + max) / 2
-    const range = Math.max(max - min, center * 0.05)
+  // TradingView Lightweight Charts format: { time: 'YYYY-MM-DD', open, high, low, close }
+  const chartDataTV = useMemo(() => candlestickData.map(d => {
+    const t = d.x
+    const y = d.y
     return {
-      min: Math.max(0, center - range / 2 - center * 0.02),
-      max: center + range / 2 + center * 0.02
+      time: `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`,
+      open: y[0],
+      high: y[1],
+      low: y[2],
+      close: y[3]
     }
-  }, [candlestickData])
-  
-  // ApexCharts options
-  const chartOptions = useMemo(() => ({
-    chart: {
-      type: 'candlestick',
-      height: 350,
-      background: 'transparent',
-      toolbar: {
-        show: true,
-        tools: {
-          download: false,
-          selection: true,
-          zoom: true,
-          zoomin: true,
-          zoomout: true,
-          pan: true,
-          reset: true
-        },
-        autoSelected: 'zoom',
-        offsetX: -10
-      },
-      animations: {
-        enabled: true,
-        speed: 500
-      },
-      zoom: {
-        enabled: true,
-        type: 'x',
-        autoScaleYaxis: true
-      },
-      offsetX: 0,
-      offsetY: 0,
-      sparkline: {
-        enabled: false
-      }
-    },
-    theme: {
-      mode: 'dark'
-    },
-    xaxis: {
-      type: 'datetime',
-      labels: {
-        style: {
-          colors: '#9ca3af',
-          fontSize: '11px'
-        },
-        formatter: (val, timestamp) => {
-          const d = new Date(timestamp ?? val)
-          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-          return d.getDate() + ' ' + months[d.getMonth()]
-        }
-      },
-      axisBorder: {
-        color: 'rgba(255,255,255,0.1)'
-      },
-      axisTicks: {
-        color: 'rgba(255,255,255,0.1)'
-      },
-      tickAmount: 8
-    },
-    yaxis: {
-      opposite: true,
-      floating: false,
-      min: yAxisRange.min,
-      max: yAxisRange.max,
-      labels: {
-        style: {
-          colors: '#9ca3af',
-          fontSize: '11px'
-        },
-        formatter: (val) => formatMarketCap(val),
-        offsetX: 0
-      },
-      axisBorder: {
-        show: false
-      },
-      axisTicks: {
-        show: false
-      },
-      tooltip: {
-        enabled: true
-      },
-      crosshairs: {
-        show: false
-      }
-    },
-    grid: {
-      borderColor: 'rgba(255,255,255,0.06)',
-      strokeDashArray: 2
-    },
-    plotOptions: {
-      candlestick: {
-        colors: {
-          upward: '#22c55e',
-          downward: '#ef4444'
-        },
-        wick: {
-          useFillColor: true
-        },
-        columnWidth: '80%'
-      }
-    },
-    tooltip: {
-      enabled: true,
-      theme: 'dark',
-      x: {
-        format: 'dd MMM yyyy'
-      },
-      y: {
-        formatter: (val) => formatMarketCap(val)
+  }), [candlestickData])
+
+  const chartContainerRef = useRef(null)
+  const chartRef = useRef(null)
+  const seriesRef = useRef(null)
+  const lastBarCountRef = useRef(0)
+
+  useEffect(() => {
+    lastBarCountRef.current = 0
+  }, [tokenAddress])
+
+  useEffect(() => {
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.remove()
+        chartRef.current = null
+        seriesRef.current = null
       }
     }
-  }), [yAxisRange])
-  
-  const chartSeries = useMemo(() => [{
-    name: 'Market Cap',
-    data: candlestickData
-  }], [candlestickData])
+  }, [])
+
+  useEffect(() => {
+    if (loadingTrades) return
+    const container = chartContainerRef.current
+    if (!container || container.clientWidth === 0) return
+    if (!chartRef.current) {
+      const chart = createChart(container, {
+        autoSize: true,
+        layout: {
+          background: { color: 'transparent' },
+          textColor: '#9ca3af'
+        },
+        grid: {
+          vertLines: { color: 'rgba(255,255,255,0.06)' },
+          horzLines: { color: 'rgba(255,255,255,0.06)' }
+        },
+        rightPriceScale: {
+          borderColor: 'rgba(255,255,255,0.1)',
+          scaleMargins: { top: 0.1, bottom: 0.1 }
+        },
+        handleScroll: {
+          mouseWheel: true,
+          pressedMouseMove: true,
+          horzTouchDrag: true,
+          vertTouchDrag: true
+        },
+        handleScale: {
+          mouseWheel: true,
+          pinch: true
+        },
+        timeScale: {
+          borderColor: 'rgba(255,255,255,0.1)',
+          timeVisible: false,
+          secondsVisible: false,
+          rightOffset: 0,
+          barSpacing: 12,
+          minBarSpacing: 4,
+          fixRightEdge: true,
+          fixLeftEdge: false,
+          tickMarkFormatter: (time, tickMarkType) => {
+            const str = typeof time === 'string' ? time : (typeof time === 'object' && time?.year ? `${time.year}-${String(time.month).padStart(2, '0')}-${String(time.day).padStart(2, '0')}` : '')
+            if (!str) return null
+            const d = new Date(str + 'T00:00:00Z')
+            const day = d.getUTCDate()
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+            return `${day} ${months[d.getUTCMonth()]}`
+          }
+        },
+        height: 350
+      })
+      const series = chart.addSeries(CandlestickSeries, {
+        upColor: '#22c55e',
+        downColor: '#ef4444',
+        borderUpColor: '#22c55e',
+        borderDownColor: '#ef4444'
+      })
+      chartRef.current = chart
+      seriesRef.current = series
+    }
+    if (chartDataTV.length > 0 && seriesRef.current && chartRef.current) {
+      seriesRef.current.setData(chartDataTV)
+      const ts = chartRef.current.timeScale()
+      const barCount = chartDataTV.length
+      if (lastBarCountRef.current === 0) {
+        ts.fitContent()
+        // Keep minimum ~14 slots so one or few bars don't stretch; range right-aligned to latest data
+        const visibleBars = 14
+        const from = Math.max(0, barCount - visibleBars)
+        const to = barCount + 2
+        ts.setVisibleLogicalRange({ from, to })
+      }
+      lastBarCountRef.current = barCount
+    }
+  }, [loadingTrades, chartDataTV])
 
   return (
     <div style={{
@@ -666,7 +640,10 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
           <div style={{ fontSize: '12px', color: '#9ca3af' }}>Market Cap</div>
         </div>
         
-        <div style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600' }}>1D chart</div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+          <div style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600' }}>1D chart</div>
+          <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '2px' }}>Drag to scroll · Scroll to zoom</div>
+        </div>
       </div>
       
       {/* Progress bar */}
@@ -714,12 +691,7 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
             Loading chart data...
           </div>
         ) : (
-          <ReactApexChart
-            options={chartOptions}
-            series={chartSeries}
-            type="candlestick"
-            height={350}
-          />
+          <div ref={chartContainerRef} style={{ width: '100%', height: '350px', minHeight: '350px' }} />
         )}
       </div>
       
@@ -801,7 +773,7 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
               </thead>
               <tbody>
                 {[...tradeHistory].reverse().slice(0, 15).map((t, i) => (
-                  <tr key={t.tx_hash || i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <tr key={`${t.tx_hash ?? 'tx'}-${t.trader_address ?? ''}-${t.created_at ?? ''}-${i}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <td style={{ padding: '10px 14px', color: '#e2e8f0', fontFamily: 'monospace' }} title={t.trader_address}>
                       {shortenAddress(t.trader_address)}
                     </td>
@@ -840,6 +812,89 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
               </tbody>
             </table>
           )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// TOKEN CREATOR CARD (below buy/sell)
+// ============================================
+const TokenCreatorCard = ({ address }) => {
+  const [copied, setCopied] = useState(false)
+  const fullAddress = String(address)
+  const short = fullAddress.length >= 10 ? `${fullAddress.slice(0, 6)}...${fullAddress.slice(-4)}` : fullAddress
+  const copy = () => {
+    navigator.clipboard.writeText(fullAddress)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <div style={{
+      marginTop: '20px',
+      padding: '14px 16px',
+      background: 'linear-gradient(145deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%)',
+      borderRadius: '12px',
+      border: '1px solid rgba(59, 130, 246, 0.25)',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+    }}>
+      <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px', fontWeight: '600', letterSpacing: '0.5px' }}>
+        TOKEN CREATOR
+      </div>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '10px'
+      }}>
+        <span style={{
+          fontFamily: 'ui-monospace, monospace',
+          fontSize: '14px',
+          color: '#e2e8f0',
+          letterSpacing: '0.02em'
+        }}>
+          {short}
+        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button
+            onClick={copy}
+            title="Copy address"
+            style={{
+              padding: '6px 10px',
+              borderRadius: '8px',
+              border: '1px solid rgba(59, 130, 246, 0.4)',
+              background: copied ? 'rgba(34, 197, 94, 0.2)' : 'rgba(59, 130, 246, 0.15)',
+              color: copied ? '#22c55e' : '#60a5fa',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '12px'
+            }}
+          >
+            {copied ? <Check size={14} /> : <Copy size={14} />}
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+          <a
+            href={`https://basescan.org/address/${fullAddress}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="View on BaseScan"
+            style={{
+              padding: '6px 10px',
+              borderRadius: '8px',
+              border: '1px solid rgba(59, 130, 246, 0.4)',
+              background: 'rgba(59, 130, 246, 0.15)',
+              color: '#60a5fa',
+              display: 'flex',
+              alignItems: 'center',
+              textDecoration: 'none',
+              fontSize: '12px'
+            }}
+          >
+            <ExternalLink size={14} />
+          </a>
         </div>
       </div>
     </div>
@@ -1109,6 +1164,11 @@ const TokenTradePanel = ({ tokenData, tokenAddress, buyTokens, sellTokens, claim
           </div>
         </div>
       )}
+
+      {/* Token Creator — below buy/sell area, in empty space */}
+      {tokenData?.tokenData?.creator && (
+        <TokenCreatorCard address={tokenData.tokenData.creator} />
+      )}
       
       {error && (
         <div style={{
@@ -1346,7 +1406,7 @@ const PumpHub = () => {
   const [category, setCategory] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
   
-  const TOKENS_PER_PAGE = 10
+  const TOKENS_PER_PAGE = 12
   
   // Token creation form
   const [formData, setFormData] = useState({
@@ -1642,9 +1702,13 @@ const PumpHub = () => {
     return () => { cancelled = true }
   }, [publicClient, parseOnChainToken])
   
-  // Fetch selected token data
+  // Fetch selected token data (with retry on 429 rate limit)
   useEffect(() => {
-    const fetchSelectedTokenData = async () => {
+    let cancelled = false
+    const maxRetries = 2
+    const retryDelayMs = 1800
+
+    const fetchSelectedTokenData = async (attempt = 0) => {
       if (!selectedToken || !publicClient) return
       
       try {
@@ -1669,6 +1733,7 @@ const PumpHub = () => {
           })
         ])
         
+        if (cancelled) return
         setSelectedTokenData({
           tokenMeta: { name: meta[0], symbol: meta[1], description: meta[2], image: meta[3] },
           tokenData: {
@@ -1687,11 +1752,19 @@ const PumpHub = () => {
           }
         })
       } catch (err) {
-        console.error('Error fetching selected token data:', err)
+        const msg = (err?.message ?? err?.cause?.message ?? err?.details?.message ?? '').toString().toLowerCase()
+        const isRateLimit = msg.includes('429') || msg.includes('rate limit') || msg.includes('over rate limit')
+        if (isRateLimit && attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, retryDelayMs))
+          if (!cancelled) fetchSelectedTokenData(attempt + 1)
+        } else {
+          console.error('Error fetching selected token data:', err)
+        }
       }
     }
     
     fetchSelectedTokenData()
+    return () => { cancelled = true }
   }, [selectedToken, publicClient])
   
   // Filter and sort tokens
