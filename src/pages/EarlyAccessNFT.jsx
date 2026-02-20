@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { useEarlyAccessMint } from '../hooks/useEarlyAccessMint'
 import { Helmet } from 'react-helmet-async'
@@ -6,7 +7,7 @@ import BackButton from '../components/BackButton'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { getFarcasterUniversalLink } from '../config/farcaster'
-import { Zap, Users, Package, CheckCircle, ExternalLink, Sparkles, Share2, AlertCircle } from 'lucide-react'
+import { Zap, Users, Package, CheckCircle, ExternalLink, Sparkles, Share2, AlertCircle, Gift, Percent, Rocket } from 'lucide-react'
 import { NETWORKS, getTransactionExplorerUrl } from '../config/networks'
 
 const EarlyAccessNFT = () => {
@@ -34,6 +35,12 @@ const EarlyAccessNFT = () => {
   const [mintResult, setMintResult] = useState(null)
   const [isSharing, setIsSharing] = useState(false)
   const [isSharingGeneral, setIsSharingGeneral] = useState(false)
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768)
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
   
   // Check if in Farcaster environment
   let isInFarcaster = false
@@ -141,244 +148,202 @@ const EarlyAccessNFT = () => {
   const remainingSupply = maxSupply - totalMinted
   const progressPercentage = maxSupply > 0 ? (totalMinted / maxSupply) * 100 : 0
 
+  const sectionPad = isMobile ? 16 : 24
+  const titleSize = isMobile ? '1.75rem' : '2.25rem'
+  const cardPad = isMobile ? '20px' : '32px'
+
   return (
     <div className="early-access-nft-page" style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0a1929 0%, #1a2744 50%, #0f172a 100%)',
-      padding: '20px',
-      color: '#fff'
+      background: 'linear-gradient(160deg, #0c1222 0%, #1a2744 40%, #0f172a 100%)',
+      padding: isMobile ? '12px' : '24px',
+      color: '#fff',
+      boxSizing: 'border-box'
     }}>
       <Helmet>
         <title>Early Access NFT - BaseHub</title>
-        <meta name="description" content="Mint your BaseHub Early Access Pass NFT" />
+        <meta name="description" content="Mint your BaseHub Early Access Pass NFT – 2x XP, Wheel game, Launchpad discount & more" />
       </Helmet>
 
       <div style={{
-        maxWidth: '900px',
+        maxWidth: '920px',
         margin: '0 auto',
-        padding: '20px'
+        padding: isMobile ? '0' : '8px'
       }}>
         <BackButton />
-        
+
+        {/* Hero */}
         <div style={{
           textAlign: 'center',
-          marginBottom: '50px',
-          marginTop: '30px'
+          marginBottom: isMobile ? 24 : 32,
+          marginTop: isMobile ? 12 : 20
         }}>
           <div style={{
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            gap: '15px',
-            marginBottom: '20px'
+            gap: isMobile ? 10 : 14,
+            marginBottom: isMobile ? 12 : 16,
+            flexWrap: 'wrap'
           }}>
-            <Sparkles size={40} style={{ color: '#3b82f6' }} />
+            <Sparkles size={isMobile ? 32 : 40} style={{ color: '#60a5fa', flexShrink: 0 }} />
             <h1 style={{
-              fontSize: '2.8rem',
-              fontWeight: '700',
+              fontSize: titleSize,
+              fontWeight: '800',
               margin: 0,
-              background: 'linear-gradient(135deg, #3b82f6 0%, #60a5fa 50%, #93c5fd 100%)',
+              background: 'linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
-              letterSpacing: '-0.5px'
+              letterSpacing: '-0.5px',
+              lineHeight: 1.2
             }}>
               BaseHub Early Access Pass
             </h1>
           </div>
           <p style={{
-            fontSize: '1.15rem',
-            color: '#cbd5e1',
-            marginTop: '10px',
-            fontWeight: '300'
+            fontSize: isMobile ? '0.95rem' : '1.1rem',
+            color: '#94a3b8',
+            marginTop: 6,
+            fontWeight: 400
           }}>
-            Join the BaseHub community and unlock exclusive benefits
+            Join the community and unlock exclusive benefits
           </p>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats – compact grid, mobile friendly */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '24px',
-          marginBottom: '40px'
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: isMobile ? 10 : 16,
+          marginBottom: isMobile ? 20 : 28
         }}>
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%)',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
-            borderRadius: '16px',
-            padding: '24px',
-            textAlign: 'center',
-            backdropFilter: 'blur(10px)',
-            transition: 'transform 0.2s ease',
-            cursor: 'default'
-          }}>
-            <Package size={28} style={{ marginBottom: '12px', color: '#60a5fa' }} />
-            <div style={{ fontSize: '2.2rem', fontWeight: '700', marginBottom: '8px', color: '#fff' }}>
-              {totalMinted} / {maxSupply}
+          {[
+            { icon: Package, value: `${totalMinted} / ${maxSupply}`, label: 'Total Minted' },
+            { icon: Users, value: String(uniqueMinters), label: 'Unique Minters' },
+            { icon: Zap, value: String(remainingSupply), label: 'Remaining' }
+          ].map(({ icon: Icon, value, label }) => (
+            <div
+              key={label}
+              style={{
+                background: 'rgba(30, 58, 138, 0.25)',
+                border: '1px solid rgba(59, 130, 246, 0.25)',
+                borderRadius: 14,
+                padding: isMobile ? 14 : 20,
+                textAlign: 'center',
+                backdropFilter: 'blur(8px)'
+              }}
+            >
+              <Icon size={isMobile ? 22 : 26} style={{ marginBottom: 6, color: '#60a5fa' }} />
+              <div style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: '700', color: '#fff', marginBottom: 4 }}>{value}</div>
+              <div style={{ fontSize: isMobile ? '0.75rem' : '0.85rem', color: '#94a3b8', fontWeight: '500' }}>{label}</div>
             </div>
-            <div style={{ fontSize: '0.95rem', color: '#cbd5e1', fontWeight: '500' }}>Total Minted</div>
-          </div>
-
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%)',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
-            borderRadius: '16px',
-            padding: '24px',
-            textAlign: 'center',
-            backdropFilter: 'blur(10px)'
-          }}>
-            <Users size={28} style={{ marginBottom: '12px', color: '#60a5fa' }} />
-            <div style={{ fontSize: '2.2rem', fontWeight: '700', marginBottom: '8px', color: '#fff' }}>
-              {uniqueMinters}
-            </div>
-            <div style={{ fontSize: '0.95rem', color: '#cbd5e1', fontWeight: '500' }}>Unique Minters</div>
-          </div>
-
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%)',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
-            borderRadius: '16px',
-            padding: '24px',
-            textAlign: 'center',
-            backdropFilter: 'blur(10px)'
-          }}>
-            <Zap size={28} style={{ marginBottom: '12px', color: '#60a5fa' }} />
-            <div style={{ fontSize: '2.2rem', fontWeight: '700', marginBottom: '8px', color: '#fff' }}>
-              {remainingSupply}
-            </div>
-            <div style={{ fontSize: '0.95rem', color: '#cbd5e1', fontWeight: '500' }}>Remaining</div>
-          </div>
+          ))}
         </div>
 
-        {/* Mint Progress Bar */}
+        {/* Progress bar */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%)',
-          border: '1px solid rgba(59, 130, 246, 0.3)',
-          borderRadius: '16px',
-          padding: '28px',
-          marginBottom: '40px',
-          backdropFilter: 'blur(10px)'
+          background: 'rgba(30, 58, 138, 0.2)',
+          border: '1px solid rgba(59, 130, 246, 0.25)',
+          borderRadius: 14,
+          padding: isMobile ? 16 : 24,
+          marginBottom: isMobile ? 24 : 32,
+          backdropFilter: 'blur(8px)'
         }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '16px'
-          }}>
-            <span style={{ fontSize: '1rem', color: '#cbd5e1', fontWeight: '600' }}>Minting Progress</span>
-            <span style={{ fontSize: '1.1rem', color: '#60a5fa', fontWeight: '700' }}>
-              {progressPercentage.toFixed(2)}%
-            </span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span style={{ fontSize: isMobile ? '0.9rem' : '1rem', color: '#cbd5e1', fontWeight: '600' }}>Minting Progress</span>
+            <span style={{ fontSize: isMobile ? '0.95rem' : '1.05rem', color: '#60a5fa', fontWeight: '700' }}>{progressPercentage.toFixed(2)}%</span>
           </div>
           <div style={{
             width: '100%',
-            height: '16px',
-            background: 'rgba(15, 23, 42, 0.6)',
-            borderRadius: '10px',
+            height: isMobile ? 12 : 14,
+            background: 'rgba(15, 23, 42, 0.7)',
+            borderRadius: 8,
             overflow: 'hidden',
-            position: 'relative',
             border: '1px solid rgba(59, 130, 246, 0.2)'
           }}>
             <div style={{
               width: `${progressPercentage}%`,
               height: '100%',
-              background: 'linear-gradient(90deg, #3b82f6 0%, #60a5fa 50%, #93c5fd 100%)',
-              transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-              borderRadius: '10px',
-              boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)',
-              position: 'relative'
-            }}>
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
-                animation: 'shimmer 2s infinite'
-              }} />
-            </div>
+              background: 'linear-gradient(90deg, #3b82f6, #60a5fa)',
+              transition: 'width 0.5s ease',
+              borderRadius: 8,
+              boxShadow: '0 0 16px rgba(59, 130, 246, 0.4)'
+            }} />
           </div>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginTop: '12px',
-            fontSize: '0.85rem',
-            color: '#94a3b8'
-          }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: isMobile ? '0.8rem' : '0.85rem', color: '#94a3b8' }}>
             <span>{totalMinted} minted</span>
             <span>{remainingSupply} remaining</span>
           </div>
         </div>
 
-        {/* NFT Preview */}
+        {/* NFT image + Mint card side-by-side on desktop, stacked on mobile */}
         <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          marginBottom: '40px'
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '260px 1fr',
+          gap: isMobile ? 20 : 28,
+          alignItems: 'start',
+          marginBottom: isMobile ? 28 : 36
         }}>
+          {/* NFT preview */}
           <div style={{
-            position: 'relative',
-            width: '280px',
-            height: '280px',
-            perspective: '1000px'
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: isMobile ? 220 : 260
           }}>
-            <div
-              style={{
-                width: '100%',
-                height: '100%',
-                position: 'relative',
-                animation: 'floatRotate 6s ease-in-out infinite',
-                transformStyle: 'preserve-3d'
-              }}
-            >
+            <div style={{
+              width: isMobile ? '200px' : '240px',
+              height: isMobile ? '200px' : '240px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'linear-gradient(145deg, rgba(59, 130, 246, 0.12) 0%, rgba(37, 99, 235, 0.06) 100%)',
+              borderRadius: 20,
+              border: '2px solid rgba(59, 130, 246, 0.3)',
+              boxShadow: '0 16px 48px rgba(59, 130, 246, 0.25)',
+              animation: 'floatRotate 6s ease-in-out infinite'
+            }}>
               <img
                 src="/BaseHubNFT.png"
-                alt="BaseHub Early Access Pass NFT"
+                alt="BaseHub Early Access Pass"
                 style={{
-                  width: '100%',
-                  height: '100%',
+                  maxWidth: '92%',
+                  maxHeight: '92%',
                   objectFit: 'contain',
-                  borderRadius: '20px',
-                  boxShadow: '0 20px 60px rgba(59, 130, 246, 0.4), 0 0 40px rgba(59, 130, 246, 0.2)',
-                  border: '2px solid rgba(59, 130, 246, 0.3)',
-                  background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%)'
+                  borderRadius: 12
                 }}
               />
             </div>
           </div>
-        </div>
 
-        {/* Mint Section */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%)',
-          border: '1px solid rgba(59, 130, 246, 0.3)',
-          borderRadius: '20px',
-          padding: '40px',
-          textAlign: 'center',
-          backdropFilter: 'blur(10px)'
-        }}>
-          <h2 style={{
-            fontSize: '1.8rem',
-            fontWeight: '700',
-            marginBottom: '24px',
-            color: '#fff',
-            letterSpacing: '-0.3px'
-          }}>
-            Mint Your Early Access Pass
-          </h2>
-
+          {/* Mint card – prominent CTA */}
           <div style={{
-            fontSize: '2.5rem',
-            fontWeight: '700',
-            color: '#60a5fa',
-            marginBottom: '40px',
-            fontFamily: 'monospace',
-            letterSpacing: '1px'
+            background: 'linear-gradient(145deg, rgba(59, 130, 246, 0.18) 0%, rgba(37, 99, 235, 0.1) 100%)',
+            border: '1px solid rgba(59, 130, 246, 0.35)',
+            borderRadius: 20,
+            padding: cardPad,
+            textAlign: 'center',
+            backdropFilter: 'blur(10px)'
           }}>
-            {formatPrice(mintPrice)} ETH
-          </div>
+            <h2 style={{
+              fontSize: isMobile ? '1.35rem' : '1.6rem',
+              fontWeight: '700',
+              marginBottom: isMobile ? 12 : 16,
+              color: '#fff'
+            }}>
+              Mint Your Early Access Pass
+            </h2>
+            <div style={{
+              fontSize: isMobile ? '2rem' : '2.25rem',
+              fontWeight: '800',
+              color: '#60a5fa',
+              marginBottom: isMobile ? 20 : 28,
+              fontFamily: 'monospace',
+              letterSpacing: '0.5px'
+            }}>
+              {formatPrice(mintPrice)} ETH
+            </div>
 
 
           {/* Show network warning if not on Base */}
@@ -447,8 +412,9 @@ const EarlyAccessNFT = () => {
             disabled={!isConnected || isLoading || mintingEnabled === false || totalMinted >= maxSupply}
             style={{
               width: '100%',
-              padding: '18px 32px',
-              fontSize: '1.15rem',
+              minHeight: isMobile ? 52 : 56,
+              padding: isMobile ? '16px 24px' : '18px 32px',
+              fontSize: isMobile ? '1.05rem' : '1.15rem',
               fontWeight: '700',
               background: (!isConnected || isLoading || mintingEnabled === false || totalMinted >= maxSupply)
                 ? 'rgba(100, 100, 100, 0.2)'
@@ -634,142 +600,168 @@ const EarlyAccessNFT = () => {
               )}
             </div>
           )}
+          </div>
         </div>
 
-        {/* Benefits Section */}
+        {/* Benefits Section – with page links */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%)',
+          background: 'rgba(30, 58, 138, 0.2)',
           border: '1px solid rgba(59, 130, 246, 0.3)',
-          borderRadius: '16px',
-          padding: '32px',
-          marginTop: '40px',
+          borderRadius: 20,
+          padding: isMobile ? 20 : 32,
+          marginTop: isMobile ? 28 : 40,
           backdropFilter: 'blur(10px)'
         }}>
           <h3 style={{
-            fontSize: '1.5rem',
+            fontSize: isMobile ? '1.25rem' : '1.5rem',
             fontWeight: '700',
-            marginBottom: '24px',
+            marginBottom: isMobile ? 18 : 24,
             textAlign: 'center',
-            color: '#fff',
-            letterSpacing: '-0.3px'
+            color: '#fff'
           }}>
             Early Access Benefits
           </h3>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '24px'
-          }}>
-            {/* Dynamic XP Multiplier Section */}
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(59, 130, 246, 0.15) 100%)',
-              border: '1px solid rgba(139, 92, 246, 0.4)',
-              borderRadius: '12px',
-              padding: '24px'
-            }}>
-              <div style={{
+
+          {/* Benefit list with links */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 12 : 16 }}>
+            <Link
+              to="/nft-wheel"
+              style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                marginBottom: '16px'
-              }}>
-                <Zap size={24} color="#a78bfa" />
-                <h4 style={{
-                  fontSize: '1.25rem',
-                  fontWeight: '700',
-                  color: '#fff',
-                  margin: 0
-                }}>
-                  Dynamic XP Multiplier System
-                </h4>
-              </div>
-              <p style={{
-                color: '#cbd5e1',
-                fontSize: '1rem',
-                lineHeight: '1.6',
-                marginBottom: '20px'
-              }}>
-                The more NFTs you hold, the higher your XP multiplier! Your multiplier is calculated as <strong style={{ color: '#a78bfa' }}>(NFT Count + 1)</strong>, meaning:
-              </p>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                gap: '10px',
-                marginBottom: '20px'
-              }}>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((nftCount) => (
-                  <div key={nftCount} style={{
-                    background: 'rgba(139, 92, 246, 0.15)',
-                    border: '1px solid rgba(139, 92, 246, 0.3)',
-                    borderRadius: '8px',
-                    padding: '10px',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ color: '#a78bfa', fontSize: '1.3rem', fontWeight: '700', marginBottom: '4px' }}>
-                      {nftCount} {nftCount === 1 ? 'NFT' : 'NFTs'}
-                    </div>
-                    <div style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>
-                      {(nftCount + 1)}x Multiplier
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div style={{
-                background: 'rgba(59, 130, 246, 0.1)',
-                border: '1px solid rgba(59, 130, 246, 0.3)',
-                borderRadius: '8px',
-                padding: '12px',
-                color: '#93c5fd',
-                fontSize: '0.9rem',
-                fontStyle: 'italic'
-              }}>
-                💡 <strong>Pro Tip:</strong> Hold multiple NFTs to maximize your XP earnings! Every NFT you own increases your multiplier by 1x.
-              </div>
+                gap: 12,
+                padding: isMobile ? 14 : 18,
+                background: 'rgba(139, 92, 246, 0.15)',
+                border: '1px solid rgba(139, 92, 246, 0.35)',
+                borderRadius: 12,
+                color: '#e9d5ff',
+                textDecoration: 'none',
+                fontWeight: '600',
+                fontSize: isMobile ? '0.95rem' : '1rem',
+                transition: 'background 0.2s, border-color 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.25)'
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)'
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.35)'
+              }}
+            >
+              <Gift size={22} style={{ flexShrink: 0, color: '#a78bfa' }} />
+              <span>Access the Wheel game and earn XP</span>
+              <ExternalLink size={16} style={{ marginLeft: 'auto', opacity: 0.8 }} />
+            </Link>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: isMobile ? 14 : 18,
+              background: 'rgba(59, 130, 246, 0.12)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              borderRadius: 12,
+              color: '#cbd5e1',
+              fontSize: isMobile ? '0.95rem' : '1rem',
+              fontWeight: '500'
+            }}>
+              <Zap size={22} style={{ flexShrink: 0, color: '#60a5fa' }} />
+              <span>Minimum <strong style={{ color: '#93c5fd' }}>2x XP bonus</strong> – (NFT count + 1)x on every activity</span>
             </div>
 
-            {/* Other Benefits */}
+            <Link
+              to="/nft-launchpad"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: isMobile ? 14 : 18,
+                background: 'rgba(34, 197, 94, 0.12)',
+                border: '1px solid rgba(34, 197, 94, 0.35)',
+                borderRadius: 12,
+                color: '#bbf7d0',
+                textDecoration: 'none',
+                fontWeight: '600',
+                fontSize: isMobile ? '0.95rem' : '1rem',
+                transition: 'background 0.2s, border-color 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(34, 197, 94, 0.22)'
+                e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.5)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(34, 197, 94, 0.12)'
+                e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.35)'
+              }}
+            >
+              <Percent size={22} style={{ flexShrink: 0, color: '#4ade80' }} />
+              <span><strong>75% discount</strong> on NFT Launchpad – normally ~$4, holders can create a collection for ~$1</span>
+              <ExternalLink size={16} style={{ marginLeft: 'auto', opacity: 0.8 }} />
+            </Link>
+
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '20px'
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+              gap: isMobile ? 10 : 14
             }}>
-              <div style={{ 
-                color: '#cbd5e1', 
-                fontSize: '1rem',
-                fontWeight: '500',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}>
-                <CheckCircle size={20} color="#60a5fa" />
-                Early Feature Access
-              </div>
-              <div style={{ 
-                color: '#cbd5e1', 
-                fontSize: '1rem',
-                fontWeight: '500',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}>
-                <CheckCircle size={20} color="#60a5fa" />
-                Priority Airdrops
-              </div>
-              <div style={{ 
-                color: '#cbd5e1', 
-                fontSize: '1rem',
-                fontWeight: '500',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}>
-                <CheckCircle size={20} color="#60a5fa" />
-                Exclusive Quests
-              </div>
+              {[
+                { icon: Rocket, text: 'Early Feature Access' },
+                { icon: CheckCircle, text: 'Priority Airdrops' },
+                { icon: CheckCircle, text: 'Exclusive Quests' }
+              ].map(({ icon: Icon, text }) => (
+                <div
+                  key={text}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: isMobile ? 12 : 14,
+                    background: 'rgba(59, 130, 246, 0.08)',
+                    border: '1px solid rgba(59, 130, 246, 0.2)',
+                    borderRadius: 10,
+                    color: '#cbd5e1',
+                    fontSize: isMobile ? '0.9rem' : '0.95rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  <Icon size={18} style={{ flexShrink: 0, color: '#60a5fa' }} />
+                  {text}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* XP multiplier grid – compact on mobile */}
+          <div style={{
+            marginTop: isMobile ? 20 : 28,
+            paddingTop: isMobile ? 18 : 24,
+            borderTop: '1px solid rgba(59, 130, 246, 0.2)'
+          }}>
+            <h4 style={{ fontSize: isMobile ? '1rem' : '1.1rem', fontWeight: '700', color: '#93c5fd', marginBottom: 12 }}>
+              Dynamic XP multiplier (NFT count + 1)x
+            </h4>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+              gap: 8
+            }}>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                <div key={n} style={{
+                  background: 'rgba(139, 92, 246, 0.12)',
+                  border: '1px solid rgba(139, 92, 246, 0.25)',
+                  borderRadius: 8,
+                  padding: 10,
+                  textAlign: 'center'
+                }}>
+                  <div style={{ color: '#a78bfa', fontWeight: '700', fontSize: isMobile ? '0.85rem' : '0.9rem' }}>{n} NFT</div>
+                  <div style={{ color: '#c4b5fd', fontSize: isMobile ? '0.75rem' : '0.8rem' }}>{(n + 1)}x</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-        
+
         <style>{`
           @keyframes shimmer {
             0% { transform: translateX(-100%); }
@@ -778,16 +770,16 @@ const EarlyAccessNFT = () => {
           
           @keyframes floatRotate {
             0%, 100% {
-              transform: translateY(0px) rotateY(0deg) rotateX(0deg);
+              transform: translate(0, 0) rotateY(0deg) rotateX(0deg);
             }
             25% {
-              transform: translateY(-15px) rotateY(5deg) rotateX(2deg);
+              transform: translate(8px, -12px) rotateY(4deg) rotateX(2deg);
             }
             50% {
-              transform: translateY(-10px) rotateY(0deg) rotateX(0deg);
+              transform: translate(-6px, -8px) rotateY(0deg) rotateX(0deg);
             }
             75% {
-              transform: translateY(-15px) rotateY(-5deg) rotateX(-2deg);
+              transform: translate(-8px, -14px) rotateY(-4deg) rotateX(-2deg);
             }
           }
         `}</style>

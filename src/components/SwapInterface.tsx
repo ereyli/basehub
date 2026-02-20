@@ -800,10 +800,10 @@ export default function SwapInterface() {
         const total = from100 + fromMilestones;
         if (total > 0) {
           const msg = from100 > 0 && fromMilestones > 0
-            ? `$100 eşiği + kademe bonusu!`
+            ? `$100 threshold + milestone bonus!`
             : from100 > 0
-              ? `$100 hacim eşiği geçildi!`
-              : `Kademe bonusu kazandın!`;
+              ? `$100 volume threshold reached!`
+              : `Milestone bonus earned!`;
           setXpSuccessToast({ xp: total, message: msg });
         }
       })

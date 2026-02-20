@@ -141,7 +141,7 @@ export const useNetworkCheck = () => {
           if (Number(addError?.code) === 4001 || String(addError?.code) === '4001') {
             throw new Error('Network addition was cancelled')
           }
-          throw new Error(`Ağ eklenemedi: ${addError?.message || 'Unknown error'}`)
+          throw new Error(`Failed to add network: ${addError?.message || 'Unknown error'}`)
         }
       } else if (Number(switchError?.code) === 4001 || String(switchError?.code) === '4001' || (switchError?.message || '').toLowerCase().includes('reject')) {
         throw new Error('Network switch was cancelled')

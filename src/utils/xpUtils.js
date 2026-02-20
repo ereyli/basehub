@@ -749,7 +749,7 @@ export const getSwapVolumeForWallet = async (walletAddress) => {
 }
 
 // Check per-$100 blocks and big milestones; award XP. Returns { xpFromPer100, xpFromMilestones } for UI toast.
-// NFT sahipleri her 100 dolar eşiği ve kademe bonuslarında 2x (veya daha fazla) XP kazanır (addXP içinde uygulanır).
+// NFT holders get 2x (or more) XP on every $100 threshold and milestone bonus (applied in addXP).
 export const checkSwapVolumeMilestones = async (walletAddress) => {
   const result = { xpFromPer100: 0, xpFromMilestones: 0 }
   if (!walletAddress) return result
@@ -777,7 +777,7 @@ export const checkSwapVolumeMilestones = async (walletAddress) => {
       return result
     }
 
-    // NFT çarpanı: toast'ta gösterilecek gerçek XP = base * multiplier (addXP zaten 2x uyguluyor)
+    // NFT multiplier: actual XP shown in toast = base * multiplier (addXP already applies 2x)
     let nftCount = 0
     try {
       nftCount = await getNFTCount(walletAddress)
