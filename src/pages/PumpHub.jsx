@@ -5,7 +5,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { 
   Rocket, TrendingUp, Users, Zap, Search, Filter, Plus, ArrowLeft, 
   ExternalLink, Copy, Check, Flame, Clock, BarChart3, Globe, Star,
-  ChevronDown, ChevronUp, RefreshCw, Wallet, AlertCircle, X, ArrowUpRight, Share2
+  ChevronDown, ChevronUp, RefreshCw, Wallet, AlertCircle, X, ArrowUpRight, Share2, Link2
 } from 'lucide-react'
 import { createChart, CandlestickSeries } from 'lightweight-charts'
 import NetworkGuard from '../components/NetworkGuard'
@@ -394,30 +394,34 @@ const TokenCard = ({ token, onClick, isMobile = false }) => {
 // ============================================
 // MINI TOKEN CARD (for horizontal scroll when token selected)
 // ============================================
-const MiniTokenCard = ({ token, onClick, isSelected }) => {
+const MiniTokenCard = ({ token, onClick, isSelected, isMobile = false }) => {
   return (
     <div 
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && onClick) { e.preventDefault(); onClick(); } }}
       style={{
         background: isSelected 
           ? 'linear-gradient(145deg, rgba(59, 130, 246, 0.3) 0%, rgba(37, 99, 235, 0.2) 100%)'
           : 'linear-gradient(145deg, rgba(30, 30, 40, 0.9) 0%, rgba(20, 20, 30, 0.95) 100%)',
-        borderRadius: '10px',
-        padding: '8px 12px',
+        borderRadius: 10,
+        padding: isMobile ? '12px 14px' : '8px 12px',
         cursor: 'pointer',
         border: isSelected ? '2px solid #3b82f6' : '1px solid rgba(59, 130, 246, 0.2)',
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
-        minWidth: '120px',
+        gap: isMobile ? 10 : 8,
+        minWidth: isMobile ? 130 : 120,
+        minHeight: isMobile ? 56 : undefined,
         flexShrink: 0,
         transition: 'all 0.2s ease'
       }}
     >
-      <TokenImage src={token.image} alt={token.name} size={32} borderRadius="8px" />
+      <TokenImage src={token.image} alt={token.name} size={isMobile ? 36 : 32} borderRadius="8px" />
       <div>
-        <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff' }}>{token.symbol}</div>
-        <div style={{ fontSize: '10px', color: '#9ca3af' }}>{formatMarketCap(parseFloat(token.virtualETH || 1) * ETH_PRICE_USD)}</div>
+        <div style={{ fontSize: isMobile ? 14 : 12, fontWeight: 'bold', color: '#fff' }}>{token.symbol}</div>
+        <div style={{ fontSize: isMobile ? 11 : 10, color: '#9ca3af' }}>{formatMarketCap(parseFloat(token.virtualETH || 1) * ETH_PRICE_USD)}</div>
       </div>
     </div>
   )
@@ -426,7 +430,7 @@ const MiniTokenCard = ({ token, onClick, isSelected }) => {
 // ============================================
 // TOKEN CHART PANEL
 // ============================================
-const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
+const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt, isMobile = false }) => {
   const [tradeHistory, setTradeHistory] = useState([])
   const [loadingTrades, setLoadingTrades] = useState(true)
   
@@ -579,6 +583,10 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
           mouseWheel: true,
           pinch: true
         },
+        kineticScroll: {
+          touch: true,
+          mouse: true
+        },
         timeScale: {
           borderColor: 'rgba(255,255,255,0.1)',
           timeVisible: false,
@@ -586,7 +594,7 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
           rightOffset: 0,
           barSpacing: 12,
           minBarSpacing: 4,
-          fixRightEdge: true,
+          fixRightEdge: false,
           fixLeftEdge: false,
           tickMarkFormatter: (time, tickMarkType) => {
             const str = typeof time === 'string' ? time : (typeof time === 'object' && time?.year ? `${time.year}-${String(time.month).padStart(2, '0')}-${String(time.day).padStart(2, '0')}` : '')
@@ -597,7 +605,7 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
             return `${day} ${months[d.getUTCMonth()]}`
           }
         },
-        height: 350
+        height: isMobile ? 200 : 350
       })
       const series = chart.addSeries(CandlestickSeries, {
         upColor: '#22c55e',
@@ -607,6 +615,12 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
       })
       chartRef.current = chart
       seriesRef.current = series
+      // Ensure scroll/drag is enabled (apply again so it takes effect)
+      chart.applyOptions({
+        handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: true },
+        handleScale: { mouseWheel: true, pinch: true },
+        timeScale: { fixRightEdge: false, fixLeftEdge: false }
+      })
     }
     if (chartDataTV.length > 0 && seriesRef.current && chartRef.current) {
       seriesRef.current.setData(chartDataTV)
@@ -627,30 +641,42 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
   return (
     <div style={{
       background: 'linear-gradient(145deg, rgba(30, 30, 40, 0.95) 0%, rgba(20, 20, 30, 0.98) 100%)',
-      borderRadius: '16px',
-      padding: '16px',
-      border: '1px solid rgba(59, 130, 246, 0.2)'
+      borderRadius: isMobile ? 14 : 16,
+      padding: isMobile ? 10 : 16,
+      border: '1px solid rgba(59, 130, 246, 0.2)',
+      minWidth: 0,
+      maxWidth: '100%',
+      overflow: 'hidden',
+      boxSizing: 'border-box'
     }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? 8 : 12, minWidth: 0 }}>
         <div>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#fff' }}>
+          <div style={{ fontSize: isMobile ? '20px' : '24px', fontWeight: 'bold', color: '#fff' }}>
             {formatMarketCap(marketCapUSD)}
           </div>
-          <div style={{ fontSize: '12px', color: '#9ca3af' }}>Market Cap</div>
+          <div style={{ fontSize: isMobile ? 11 : 12, color: '#9ca3af' }}>Market Cap</div>
         </div>
         
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-          <div style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600' }}>1D chart</div>
-          <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '2px' }}>Drag to scroll · Scroll to zoom</div>
+          <div style={{ fontSize: isMobile ? 11 : 12, color: '#9ca3af', fontWeight: '600' }}>1D chart</div>
+          <div style={{ fontSize: 9, color: '#6b7280', marginTop: 2 }}>Drag to scroll · Scroll to zoom</div>
         </div>
       </div>
       
       {/* Progress bar */}
-      <div style={{ marginBottom: '12px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-          <span style={{ color: '#9ca3af' }}>Progress to LP Lock</span>
-          <span style={{ color: progress >= 100 ? '#10b981' : '#3b82f6' }}>
+      <div style={{ marginBottom: 12, minWidth: 0 }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          gap: 8,
+          fontSize: isMobile ? 10 : 11, 
+          marginBottom: 4,
+          flexWrap: 'wrap'
+        }}>
+          <span style={{ color: '#94a3b8' }}>Progress to LP Lock</span>
+          <span style={{ color: progress >= 100 ? '#10b981' : '#3b82f6', whiteSpace: 'nowrap' }}>
             {progress >= 100 ? '🎓 Graduated' : `${progress.toFixed(1)}% (${realETH.toFixed(3)}/5 ETH)`}
           </span>
         </div>
@@ -671,17 +697,19 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
         </div>
       </div>
       
-      {/* Chart */}
+      {/* Chart — wrapper so drag/scroll is captured (not page scroll) */}
       <div style={{ 
         background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%)', 
         borderRadius: '12px', 
-        padding: '8px',
+        padding: isMobile ? '6px' : '8px',
         border: '1px solid rgba(59, 130, 246, 0.15)',
-        minHeight: '380px'
+        minHeight: isMobile ? '220px' : '380px',
+        touchAction: 'none',
+        cursor: 'grab'
       }}>
         {loadingTrades ? (
           <div style={{ 
-            height: '350px', 
+            height: isMobile ? '200px' : '350px', 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
@@ -691,26 +719,38 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
             Loading chart data...
           </div>
         ) : (
-          <div ref={chartContainerRef} style={{ width: '100%', height: '350px', minHeight: '350px' }} />
+          <div 
+            ref={chartContainerRef} 
+            style={{ 
+              width: '100%', 
+              height: isMobile ? '200px' : '350px', 
+              minHeight: isMobile ? '200px' : '350px',
+              touchAction: 'none',
+              cursor: 'grab',
+              position: 'relative',
+              overflow: 'hidden'
+            }} 
+          />
         )}
       </div>
       
       {/* Stats row */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '8px',
-        marginTop: '12px'
+        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+        gap: isMobile ? 6 : 8,
+        marginTop: isMobile ? 10 : 12,
+        minWidth: 0
       }}>
-        <div style={{ textAlign: 'center', padding: '8px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
-          <div style={{ fontSize: '10px', color: '#9ca3af' }}>24h High</div>
-          <div style={{ fontSize: '12px', color: '#10b981', fontWeight: '600' }}>
+        <div style={{ textAlign: 'center', padding: isMobile ? 6 : 8, background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+          <div style={{ fontSize: isMobile ? 9 : 10, color: '#9ca3af' }}>24h High</div>
+          <div style={{ fontSize: isMobile ? 11 : 12, color: '#10b981', fontWeight: '600' }}>
             {formatMarketCap(candlestickData.length > 0 ? Math.max(...candlestickData.map(d => d.y[1])) : marketCapUSD)}
           </div>
         </div>
-        <div style={{ textAlign: 'center', padding: '8px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
-          <div style={{ fontSize: '10px', color: '#9ca3af' }}>24h Low</div>
-          <div style={{ fontSize: '12px', color: '#ef4444', fontWeight: '600' }}>
+        <div style={{ textAlign: 'center', padding: isMobile ? 6 : 8, background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+          <div style={{ fontSize: isMobile ? 9 : 10, color: '#9ca3af' }}>24h Low</div>
+          <div style={{ fontSize: isMobile ? 11 : 12, color: '#ef4444', fontWeight: '600' }}>
             {formatMarketCap(candlestickData.length > 0 ? Math.min(...candlestickData.map(d => d.y[2])) : initialMarketCapUSD)}
           </div>
         </div>
@@ -720,9 +760,9 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
             {formatNumber(tokenData?.tokenStats?.volume || 0)} ETH
           </div>
         </div>
-        <div style={{ textAlign: 'center', padding: '8px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
-          <div style={{ fontSize: '10px', color: '#9ca3af' }}>Txns</div>
-          <div style={{ fontSize: '12px', color: '#fff', fontWeight: '600' }}>
+        <div style={{ textAlign: 'center', padding: isMobile ? 6 : 8, background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+          <div style={{ fontSize: isMobile ? 9 : 10, color: '#9ca3af' }}>Txns</div>
+          <div style={{ fontSize: isMobile ? 11 : 12, color: '#fff', fontWeight: '600' }}>
             {parseInt(tokenData?.tokenStats?.buys || 0) + parseInt(tokenData?.tokenStats?.sells || 0)}
           </div>
         </div>
@@ -730,23 +770,23 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
 
       {/* Recent transactions - below chart (Account, Type, Amount, Time, Txn) */}
       <div style={{
-        marginTop: '16px',
+        marginTop: isMobile ? 12 : 16,
         background: 'rgba(0, 0, 0, 0.25)',
-        borderRadius: '12px',
+        borderRadius: isMobile ? 10 : 12,
         border: '1px solid rgba(59, 130, 246, 0.15)',
         overflow: 'hidden'
       }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
-          padding: '12px 14px',
+          gap: 6,
+          padding: isMobile ? '10px 12px' : '12px 14px',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
-          fontSize: '12px',
+          fontSize: isMobile ? 11 : 12,
           fontWeight: '600',
           color: '#9ca3af'
         }}>
-          <BarChart3 size={16} />
+          <BarChart3 size={isMobile ? 14 : 16} />
           Recent transactions
         </div>
         <div style={{ overflowX: 'auto' }}>
@@ -758,26 +798,26 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
           ) : !tradeHistory || tradeHistory.length === 0 ? (
             <div style={{ padding: '24px', textAlign: 'center', color: '#6b7280', fontSize: '12px' }}>No transactions yet</div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: isMobile ? 11 : 12 }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                  <th style={{ textAlign: 'left', padding: '10px 14px', color: '#9ca3af', fontWeight: '600' }}>Account</th>
-                  <th style={{ textAlign: 'left', padding: '10px 14px', color: '#9ca3af', fontWeight: '600' }}>Type</th>
-                  <th style={{ textAlign: 'right', padding: '10px 14px', color: '#9ca3af', fontWeight: '600' }}>Amount (ETH)</th>
-                  <th style={{ textAlign: 'right', padding: '10px 14px', color: '#9ca3af', fontWeight: '600' }}>Amount ({tokenData?.tokenMeta?.symbol || 'Token'})</th>
-                  <th style={{ textAlign: 'center', padding: '10px 14px', color: '#9ca3af', fontWeight: '600' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> Time</span>
+                  <th style={{ textAlign: 'left', padding: isMobile ? '8px 10px' : '10px 14px', color: '#9ca3af', fontWeight: '600' }}>Account</th>
+                  <th style={{ textAlign: 'left', padding: isMobile ? '8px 10px' : '10px 14px', color: '#9ca3af', fontWeight: '600' }}>Type</th>
+                  <th style={{ textAlign: 'right', padding: isMobile ? '8px 10px' : '10px 14px', color: '#9ca3af', fontWeight: '600' }}>Amount (ETH)</th>
+                  <th style={{ textAlign: 'right', padding: isMobile ? '8px 10px' : '10px 14px', color: '#9ca3af', fontWeight: '600' }}>Amount ({tokenData?.tokenMeta?.symbol || 'Token'})</th>
+                  <th style={{ textAlign: 'center', padding: isMobile ? '8px 10px' : '10px 14px', color: '#9ca3af', fontWeight: '600' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={isMobile ? 10 : 12} /> Time</span>
                   </th>
-                  <th style={{ textAlign: 'right', padding: '10px 14px', color: '#9ca3af', fontWeight: '600' }}>Txn</th>
+                  <th style={{ textAlign: 'right', padding: isMobile ? '8px 10px' : '10px 14px', color: '#9ca3af', fontWeight: '600' }}>Txn</th>
                 </tr>
               </thead>
               <tbody>
                 {[...tradeHistory].reverse().slice(0, 15).map((t, i) => (
                   <tr key={`${t.tx_hash ?? 'tx'}-${t.trader_address ?? ''}-${t.created_at ?? ''}-${i}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '10px 14px', color: '#e2e8f0', fontFamily: 'monospace' }} title={t.trader_address}>
+                    <td style={{ padding: isMobile ? '8px 10px' : '10px 14px', color: '#e2e8f0', fontFamily: 'monospace' }} title={t.trader_address}>
                       {shortenAddress(t.trader_address)}
                     </td>
-                    <td style={{ padding: '10px 14px' }}>
+                    <td style={{ padding: isMobile ? '8px 10px' : '10px 14px' }}>
                       <span style={{
                         color: t.trade_type === 'buy' ? '#10b981' : '#ef4444',
                         fontWeight: '600'
@@ -785,16 +825,16 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
                         {t.trade_type === 'buy' ? 'Buy' : 'Sell'}
                       </span>
                     </td>
-                    <td style={{ textAlign: 'right', padding: '10px 14px', color: t.trade_type === 'buy' ? '#10b981' : '#ef4444', fontWeight: '500' }}>
+                    <td style={{ textAlign: 'right', padding: isMobile ? '8px 10px' : '10px 14px', color: t.trade_type === 'buy' ? '#10b981' : '#ef4444', fontWeight: '500' }}>
                       {parseFloat(t.eth_amount || 0).toFixed(4)} ETH
                     </td>
-                    <td style={{ textAlign: 'right', padding: '10px 14px', color: t.trade_type === 'buy' ? '#10b981' : '#ef4444', fontWeight: '500' }}>
+                    <td style={{ textAlign: 'right', padding: isMobile ? '8px 10px' : '10px 14px', color: t.trade_type === 'buy' ? '#10b981' : '#ef4444', fontWeight: '500' }}>
                       {t.token_amount ? formatNumber(t.token_amount) : '-'}
                     </td>
-                    <td style={{ textAlign: 'center', padding: '10px 14px', color: '#94a3b8' }}>
+                    <td style={{ textAlign: 'center', padding: isMobile ? '8px 10px' : '10px 14px', color: '#94a3b8' }}>
                       {timeAgo(t.created_at ? Math.floor(new Date(t.created_at).getTime() / 1000) : null)}
                     </td>
-                    <td style={{ textAlign: 'right', padding: '10px 14px' }}>
+                    <td style={{ textAlign: 'right', padding: isMobile ? '8px 10px' : '10px 14px' }}>
                       {t.tx_hash ? (
                         <a
                           href={`https://basescan.org/tx/${t.tx_hash}`}
@@ -819,84 +859,107 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt }) => {
 }
 
 // ============================================
-// TOKEN CREATOR CARD (below buy/sell)
+// TOKEN CREATOR + TOKEN ADDRESS CARD (below buy/sell)
 // ============================================
-const TokenCreatorCard = ({ address }) => {
+const Row = ({ label, fullAddress, isMobile }) => {
   const [copied, setCopied] = useState(false)
-  const fullAddress = String(address)
-  const short = fullAddress.length >= 10 ? `${fullAddress.slice(0, 6)}...${fullAddress.slice(-4)}` : fullAddress
+  const short = fullAddress && fullAddress.length >= 10 ? `${fullAddress.slice(0, 6)}...${fullAddress.slice(-4)}` : (fullAddress || '')
   const copy = () => {
+    if (!fullAddress) return
     navigator.clipboard.writeText(fullAddress)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+  if (!fullAddress) return null
   return (
     <div style={{
-      marginTop: '20px',
-      padding: '14px 16px',
-      background: 'linear-gradient(145deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%)',
-      borderRadius: '12px',
-      border: '1px solid rgba(59, 130, 246, 0.25)',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+      display: 'flex',
+      flexDirection: isMobile ? 'column' : 'row',
+      alignItems: isMobile ? 'stretch' : 'center',
+      justifyContent: 'space-between',
+      gap: isMobile ? 8 : 10,
+      minWidth: 0
     }}>
-      <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px', fontWeight: '600', letterSpacing: '0.5px' }}>
+      <span style={{
+        fontFamily: 'ui-monospace, monospace',
+        fontSize: isMobile ? 12 : 14,
+        color: '#e2e8f0',
+        letterSpacing: '0.02em',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap'
+      }}>
+        {short}
+      </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+        <button
+          onClick={copy}
+          title="Copy"
+          style={{
+            padding: isMobile ? '8px' : '6px 10px',
+            borderRadius: 8,
+            border: '1px solid rgba(59, 130, 246, 0.4)',
+            background: copied ? 'rgba(34, 197, 94, 0.2)' : 'rgba(59, 130, 246, 0.15)',
+            color: copied ? '#22c55e' : '#60a5fa',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            fontSize: isMobile ? 12 : 12
+          }}
+        >
+          {copied ? <Check size={14} /> : <Copy size={14} />}
+          {!isMobile && (copied ? 'Copied' : 'Copy')}
+        </button>
+        <a
+          href={`https://basescan.org/address/${fullAddress}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="BaseScan"
+          style={{
+            padding: isMobile ? '8px' : '6px 10px',
+            borderRadius: 8,
+            border: '1px solid rgba(59, 130, 246, 0.4)',
+            background: 'rgba(59, 130, 246, 0.15)',
+            color: '#60a5fa',
+            display: 'flex',
+            alignItems: 'center',
+            textDecoration: 'none',
+            fontSize: 12
+          }}
+        >
+          <ExternalLink size={14} />
+        </a>
+      </div>
+    </div>
+  )
+}
+const TokenCreatorCard = ({ creatorAddress, tokenAddress, isMobile = false }) => {
+  return (
+    <div style={{
+      marginTop: isMobile ? 12 : 20,
+      padding: isMobile ? 10 : '14px 16px',
+      background: 'linear-gradient(145deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%)',
+      borderRadius: isMobile ? 10 : 12,
+      border: '1px solid rgba(59, 130, 246, 0.25)',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+      overflow: 'hidden',
+      minWidth: 0,
+      maxWidth: '100%',
+      boxSizing: 'border-box'
+    }}>
+      <div style={{ fontSize: isMobile ? 10 : 11, color: '#94a3b8', marginBottom: 6, fontWeight: '600', letterSpacing: '0.5px' }}>
         TOKEN CREATOR
       </div>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '10px'
-      }}>
-        <span style={{
-          fontFamily: 'ui-monospace, monospace',
-          fontSize: '14px',
-          color: '#e2e8f0',
-          letterSpacing: '0.02em'
-        }}>
-          {short}
-        </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <button
-            onClick={copy}
-            title="Copy address"
-            style={{
-              padding: '6px 10px',
-              borderRadius: '8px',
-              border: '1px solid rgba(59, 130, 246, 0.4)',
-              background: copied ? 'rgba(34, 197, 94, 0.2)' : 'rgba(59, 130, 246, 0.15)',
-              color: copied ? '#22c55e' : '#60a5fa',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '12px'
-            }}
-          >
-            {copied ? <Check size={14} /> : <Copy size={14} />}
-            {copied ? 'Copied' : 'Copy'}
-          </button>
-          <a
-            href={`https://basescan.org/address/${fullAddress}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="View on BaseScan"
-            style={{
-              padding: '6px 10px',
-              borderRadius: '8px',
-              border: '1px solid rgba(59, 130, 246, 0.4)',
-              background: 'rgba(59, 130, 246, 0.15)',
-              color: '#60a5fa',
-              display: 'flex',
-              alignItems: 'center',
-              textDecoration: 'none',
-              fontSize: '12px'
-            }}
-          >
-            <ExternalLink size={14} />
-          </a>
-        </div>
-      </div>
+      <Row label="Creator" fullAddress={creatorAddress} isMobile={isMobile} />
+      {tokenAddress && (
+        <>
+          <div style={{ fontSize: isMobile ? 10 : 11, color: '#94a3b8', marginTop: 12, marginBottom: 6, fontWeight: '600', letterSpacing: '0.5px' }}>
+            TOKEN ADDRESS
+          </div>
+          <Row label="Token" fullAddress={tokenAddress} isMobile={isMobile} />
+        </>
+      )}
     </div>
   )
 }
@@ -904,11 +967,15 @@ const TokenCreatorCard = ({ address }) => {
 // ============================================
 // TOKEN TRADE PANEL
 // ============================================
-const TokenTradePanel = ({ tokenData, tokenAddress, buyTokens, sellTokens, claimFees, isLoading, error }) => {
+const TokenTradePanel = ({ tokenData, tokenAddress, buyTokens, sellTokens, claimFees, isLoading, error, isMobile = false }) => {
   const { address, isConnected } = useAccount()
   const [tradeMode, setTradeMode] = useState('buy')
   const [amount, setAmount] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
+  const pad = isMobile ? 20 : 16
+  const btnPadY = isMobile ? 14 : 12
+  const btnPadX = isMobile ? 16 : 12
+  const minTouch = 44
   
   // Get user's ETH balance
   const { data: ethBalance } = useBalance({ address })
@@ -985,24 +1052,31 @@ const TokenTradePanel = ({ tokenData, tokenAddress, buyTokens, sellTokens, claim
   return (
     <div style={{
       background: 'linear-gradient(145deg, rgba(30, 30, 40, 0.95) 0%, rgba(20, 20, 30, 0.98) 100%)',
-      borderRadius: '16px',
-      padding: '16px',
-      border: '1px solid rgba(59, 130, 246, 0.2)'
+      borderRadius: isMobile ? 16 : 16,
+      padding: isMobile ? 14 : 16,
+      paddingBottom: isMobile ? Math.max(pad + 60, 100) : pad,
+      border: '1px solid rgba(59, 130, 246, 0.2)',
+      minWidth: 0,
+      maxWidth: '100%',
+      overflow: 'hidden',
+      boxSizing: 'border-box'
     }}>
       {/* Trade mode tabs */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', gap: isMobile ? 10 : 8, marginBottom: isMobile ? 20 : 16 }}>
         <button
           onClick={() => { setTradeMode('buy'); setAmount('') }}
           style={{
             flex: 1,
-            padding: '12px',
-            borderRadius: '10px',
+            minHeight: minTouch,
+            padding: `${btnPadY}px ${btnPadX}px`,
+            borderRadius: isMobile ? '12px' : '10px',
             border: 'none',
             background: tradeMode === 'buy' 
               ? 'linear-gradient(135deg, #10b981, #059669)' 
               : 'rgba(255,255,255,0.1)',
             color: '#fff',
             fontWeight: 'bold',
+            fontSize: isMobile ? 16 : 14,
             cursor: 'pointer',
             transition: 'all 0.2s ease'
           }}
@@ -1013,14 +1087,16 @@ const TokenTradePanel = ({ tokenData, tokenAddress, buyTokens, sellTokens, claim
           onClick={() => { setTradeMode('sell'); setAmount('') }}
           style={{
             flex: 1,
-            padding: '12px',
-            borderRadius: '10px',
+            minHeight: minTouch,
+            padding: `${btnPadY}px ${btnPadX}px`,
+            borderRadius: isMobile ? '12px' : '10px',
             border: 'none',
             background: tradeMode === 'sell' 
               ? 'linear-gradient(135deg, #ef4444, #dc2626)' 
               : 'rgba(255,255,255,0.1)',
             color: '#fff',
             fontWeight: 'bold',
+            fontSize: isMobile ? 16 : 14,
             cursor: 'pointer',
             transition: 'all 0.2s ease'
           }}
@@ -1031,12 +1107,12 @@ const TokenTradePanel = ({ tokenData, tokenAddress, buyTokens, sellTokens, claim
       
       {/* Balance display */}
       <div style={{
-        padding: '12px',
+        padding: isMobile ? 16 : 12,
         background: 'rgba(0, 0, 0, 0.2)',
-        borderRadius: '10px',
-        marginBottom: '12px'
+        borderRadius: isMobile ? 12 : 10,
+        marginBottom: isMobile ? 16 : 12
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: isMobile ? 14 : 13 }}>
           <span style={{ color: '#9ca3af' }}>
             {tradeMode === 'buy' ? 'ETH Balance' : 'Token Balance'}
           </span>
@@ -1050,17 +1126,18 @@ const TokenTradePanel = ({ tokenData, tokenAddress, buyTokens, sellTokens, claim
       </div>
       
       {/* Amount input */}
-      <div style={{ marginBottom: '12px' }}>
+      <div style={{ marginBottom: isMobile ? 16 : 12 }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
           background: 'rgba(0, 0, 0, 0.3)',
-          borderRadius: '10px',
+          borderRadius: isMobile ? 12 : 10,
           border: '1px solid rgba(59, 130, 246, 0.3)',
-          padding: '12px'
+          padding: isMobile ? 16 : 12
         }}>
           <input
             type="number"
+            inputMode="decimal"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder={tradeMode === 'buy' ? 'ETH amount' : 'Token amount'}
@@ -1069,31 +1146,33 @@ const TokenTradePanel = ({ tokenData, tokenAddress, buyTokens, sellTokens, claim
               background: 'transparent',
               border: 'none',
               color: '#fff',
-              fontSize: '18px',
+              fontSize: isMobile ? 20 : 18,
               fontWeight: 'bold',
-              outline: 'none'
+              outline: 'none',
+              minWidth: 0
             }}
           />
-          <span style={{ color: '#9ca3af', fontSize: '14px' }}>
+          <span style={{ color: '#9ca3af', fontSize: isMobile ? 16 : 14 }}>
             {tradeMode === 'buy' ? 'ETH' : tokenData?.tokenMeta?.symbol || 'TOKEN'}
           </span>
         </div>
       </div>
       
       {/* Quick amounts */}
-      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', gap: isMobile ? 8 : 6, marginBottom: isMobile ? 20 : 16 }}>
         {quickAmounts.map(val => (
           <button
             key={val}
             onClick={() => handleQuickAmount(val)}
             style={{
               flex: 1,
-              padding: '8px',
-              borderRadius: '8px',
+              minHeight: minTouch,
+              padding: isMobile ? '12px 8px' : '8px',
+              borderRadius: isMobile ? 10 : 8,
               border: '1px solid rgba(59, 130, 246, 0.3)',
               background: 'rgba(59, 130, 246, 0.1)',
               color: '#60a5fa',
-              fontSize: '12px',
+              fontSize: isMobile ? 14 : 12,
               fontWeight: '600',
               cursor: 'pointer'
             }}
@@ -1109,8 +1188,9 @@ const TokenTradePanel = ({ tokenData, tokenAddress, buyTokens, sellTokens, claim
         disabled={!isConnected || !amount || parseFloat(amount) <= 0 || isLoading || isProcessing}
         style={{
           width: '100%',
-          padding: '14px',
-          borderRadius: '12px',
+          minHeight: minTouch,
+          padding: isMobile ? 18 : 14,
+          borderRadius: isMobile ? 14 : 12,
           border: 'none',
           background: !isConnected || !amount || parseFloat(amount) <= 0 || isLoading || isProcessing
             ? 'rgba(255,255,255,0.1)'
@@ -1119,7 +1199,7 @@ const TokenTradePanel = ({ tokenData, tokenAddress, buyTokens, sellTokens, claim
               : 'linear-gradient(135deg, #ef4444, #dc2626)',
           color: '#fff',
           fontWeight: 'bold',
-          fontSize: '16px',
+          fontSize: isMobile ? 18 : 16,
           cursor: !isConnected || !amount || parseFloat(amount) <= 0 || isLoading || isProcessing ? 'not-allowed' : 'pointer',
           transition: 'all 0.2s ease'
         }}
@@ -1132,10 +1212,10 @@ const TokenTradePanel = ({ tokenData, tokenAddress, buyTokens, sellTokens, claim
       {/* Creator claim section */}
       {isCreator && parseFloat(creatorFeesBalance) > 0 && (
         <div style={{
-          marginTop: '16px',
-          padding: '12px',
+          marginTop: isMobile ? 20 : 16,
+          padding: isMobile ? 16 : 12,
           background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.1))',
-          borderRadius: '10px',
+          borderRadius: isMobile ? 12 : 10,
           border: '2px solid rgba(59, 130, 246, 0.5)'
         }}>
           <div style={{ fontSize: '12px', color: '#60a5fa', marginBottom: '8px' }}>
@@ -1165,9 +1245,13 @@ const TokenTradePanel = ({ tokenData, tokenAddress, buyTokens, sellTokens, claim
         </div>
       )}
 
-      {/* Token Creator — below buy/sell area, in empty space */}
-      {tokenData?.tokenData?.creator && (
-        <TokenCreatorCard address={tokenData.tokenData.creator} />
+      {/* Token Creator + Token Address — below buy/sell area */}
+      {(tokenData?.tokenData?.creator || tokenAddress) && (
+        <TokenCreatorCard
+          creatorAddress={tokenData?.tokenData?.creator}
+          tokenAddress={tokenAddress}
+          isMobile={isMobile}
+        />
       )}
       
       {error && (
@@ -1398,6 +1482,28 @@ const PumpHub = () => {
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'tokens')
   const [selectedToken, setSelectedToken] = useState(null)
   const [selectedTokenData, setSelectedTokenData] = useState(null)
+
+  // Sync URL -> selectedToken (open shared link /pumphub?token=0x... or browser back/forward)
+  useEffect(() => {
+    const t = searchParams.get('token')
+    if (!t || typeof t !== 'string') {
+      setSelectedToken(null)
+      return
+    }
+    const addr = t.trim()
+    if (/^0x[a-fA-F0-9]{40}$/.test(addr)) setSelectedToken(addr)
+  }, [searchParams])
+
+  // Update URL when user selects a token (each token has its own shareable link)
+  const setSelectedTokenAndUrl = useCallback((addr) => {
+    setSelectedToken(addr || null)
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      if (addr) next.set('token', addr)
+      else next.delete('token')
+      return next
+    }, { replace: true })
+  }, [setSearchParams])
   const [tokens, setTokens] = useState([])
   const [loadingTokens, setLoadingTokens] = useState(true)
   const [tokensListKey, setTokensListKey] = useState(0)
@@ -1421,6 +1527,15 @@ const PumpHub = () => {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
   const [logoError, setLogoError] = useState(false)
   const [isSharingCast, setIsSharingCast] = useState(false)
+  const [tokenLinkCopied, setTokenLinkCopied] = useState(false)
+  
+  const copyTokenLink = useCallback(() => {
+    if (!selectedToken) return
+    const url = `${window.location.origin}${window.location.pathname}?token=${selectedToken}`
+    navigator.clipboard.writeText(url)
+    setTokenLinkCopied(true)
+    setTimeout(() => setTokenLinkCopied(false), 2000)
+  }, [selectedToken])
   
   const farcaster = useFarcaster()
   const isInFarcaster = farcaster?.isInFarcaster ?? false
@@ -1888,7 +2003,7 @@ const PumpHub = () => {
   // Handle success modal actions
   const handleViewCreatedToken = () => {
     if (lastCreatedToken?.address) {
-      setSelectedToken(lastCreatedToken.address)
+      setSelectedTokenAndUrl(lastCreatedToken.address)
       setActiveTab('tokens')
       clearLastCreatedToken()
     }
@@ -1896,35 +2011,40 @@ const PumpHub = () => {
 
   return (
     <NetworkGuard showWarning={true}>
-      <div className="deploy-token-page" style={{ overflow: 'hidden' }}>
+      <div className="deploy-token-page" style={{ overflow: 'hidden', overflowX: 'hidden', width: '100%', maxWidth: '100vw' }}>
         <div 
           className="deploy-container" 
           style={{ 
-            padding: isMobile ? '12px' : '20px',
+            padding: isMobile ? 10 : 20,
+            paddingBottom: isMobile ? 100 : 20,
             maxWidth: '1400px',
+            width: '100%',
+            boxSizing: 'border-box',
             margin: '0 auto',
-            overflowX: 'hidden'
+            overflowX: 'hidden',
+            minWidth: 0
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: isMobile ? 8 : 12, marginBottom: isMobile ? 16 : 20, flexWrap: 'wrap' }}>
             <BackButton style={{ marginBottom: 0 }} />
             {selectedToken && (
               <button
                 type="button"
-                onClick={() => setSelectedToken(null)}
+                onClick={() => setSelectedTokenAndUrl(null)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                  padding: '8px 14px',
-                  borderRadius: '8px',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  minHeight: isMobile ? 44 : undefined,
+                  padding: isMobile ? '12px 16px' : '8px 14px',
+                  borderRadius: 10,
                   border: '1px solid rgba(59, 130, 246, 0.4)',
                   background: 'rgba(59, 130, 246, 0.15)',
                   color: '#60a5fa',
-                  fontSize: '14px',
+                  fontSize: isMobile ? 14 : 14,
                   fontWeight: '600',
                   cursor: 'pointer',
                 }}
               >
-                <Flame size={16} />
+                <Flame size={isMobile ? 18 : 16} />
                 Tokens
               </button>
             )}
@@ -1934,8 +2054,10 @@ const PumpHub = () => {
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
-            gap: isMobile ? '12px' : '16px', 
-            marginBottom: '20px' 
+            gap: isMobile ? 12 : 16, 
+            marginBottom: isMobile ? 16 : 20,
+            flexWrap: 'wrap',
+            minWidth: 0
           }}>
             <div style={{
               width: isMobile ? '48px' : '60px',
@@ -1948,9 +2070,9 @@ const PumpHub = () => {
             }}>
               <Rocket size={isMobile ? 24 : 32} color="#fff" />
             </div>
-            <div>
+            <div style={{ minWidth: 0, flex: '1 1 auto' }}>
               <h1 style={{ 
-                fontSize: isMobile ? '24px' : '32px', 
+                fontSize: isMobile ? 22 : 32, 
                 fontWeight: 'bold', 
                 color: '#fff',
                 margin: 0
@@ -1960,7 +2082,7 @@ const PumpHub = () => {
               <p style={{ 
                 color: '#9ca3af', 
                 margin: 0,
-                fontSize: isMobile ? '12px' : '14px'
+                fontSize: isMobile ? 12 : 14
               }}>
                 Launch and trade meme tokens on Base
               </p>
@@ -1998,66 +2120,46 @@ const PumpHub = () => {
           <div style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-            gap: '12px',
-            marginBottom: '20px'
+            gap: isMobile ? 8 : 12,
+            marginBottom: isMobile ? 16 : 20
           }}>
-            <div style={{
-              background: 'linear-gradient(145deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%)',
-              borderRadius: '12px',
-              padding: '16px',
-              border: '1px solid rgba(59, 130, 246, 0.2)'
-            }}>
-              <div style={{ color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>Total Tokens</div>
-              <div style={{ color: '#fff', fontSize: '20px', fontWeight: 'bold' }}>
-                {platformStats ? platformStats.totalTokens : '0'}
+            {[
+              { label: 'Total Tokens', value: platformStats ? platformStats.totalTokens : '0', color: '#fff' },
+              { label: 'Graduated', value: platformStats ? platformStats.graduated : '0', color: '#3b82f6' },
+              { label: 'Total Volume', value: platformStats ? `${platformStats.totalVolumeETH.toFixed(2)} ETH` : '0 ETH', color: '#3b82f6' },
+              { label: 'Trading Fee', value: '0.6%', color: '#3b82f6' }
+            ].map(({ label, value, color }) => (
+              <div
+                key={label}
+                style={{
+                  background: 'linear-gradient(145deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%)',
+                  borderRadius: isMobile ? 10 : 12,
+                  padding: isMobile ? 12 : 16,
+                  border: '1px solid rgba(59, 130, 246, 0.2)'
+                }}
+              >
+                <div style={{ color: '#9ca3af', fontSize: isMobile ? 11 : 12, marginBottom: 4 }}>{label}</div>
+                <div style={{ color, fontSize: isMobile ? 16 : 20, fontWeight: 'bold' }}>{value}</div>
               </div>
-            </div>
-            <div style={{
-              background: 'linear-gradient(145deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%)',
-              borderRadius: '12px',
-              padding: '16px',
-              border: '1px solid rgba(59, 130, 246, 0.2)'
-            }}>
-              <div style={{ color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>Graduated</div>
-              <div style={{ color: '#3b82f6', fontSize: '20px', fontWeight: 'bold' }}>
-                {platformStats ? platformStats.graduated : '0'}
-              </div>
-            </div>
-            <div style={{
-              background: 'linear-gradient(145deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%)',
-              borderRadius: '12px',
-              padding: '16px',
-              border: '1px solid rgba(59, 130, 246, 0.2)'
-            }}>
-              <div style={{ color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>Total Volume</div>
-              <div style={{ color: '#3b82f6', fontSize: '20px', fontWeight: 'bold' }}>
-                {platformStats ? `${platformStats.totalVolumeETH.toFixed(2)} ETH` : '0 ETH'}
-              </div>
-            </div>
-            <div style={{
-              background: 'linear-gradient(145deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%)',
-              borderRadius: '12px',
-              padding: '16px',
-              border: '1px solid rgba(59, 130, 246, 0.2)'
-            }}>
-              <div style={{ color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>Trading Fee</div>
-              <div style={{ color: '#3b82f6', fontSize: '20px', fontWeight: 'bold' }}>0.6%</div>
-            </div>
+            ))}
           </div>
           
           {/* Tabs */}
           <div style={{ 
             display: 'flex', 
-            gap: '8px', 
-            marginBottom: '20px',
+            gap: isMobile ? 8 : 8, 
+            marginBottom: isMobile ? 16 : 20,
             overflowX: 'auto',
-            paddingBottom: '4px'
+            paddingBottom: 4,
+            minHeight: isMobile ? 48 : undefined
           }}>
             <button
-              onClick={() => { setActiveTab('tokens'); setSelectedToken(null) }}
+              onClick={() => { setActiveTab('tokens'); setSelectedTokenAndUrl(null) }}
               style={{
-                padding: isMobile ? '10px 16px' : '12px 24px',
-                borderRadius: '10px',
+                flex: isMobile ? 1 : undefined,
+                minHeight: isMobile ? 48 : undefined,
+                padding: isMobile ? '12px 16px' : '12px 24px',
+                borderRadius: 10,
                 border: 'none',
                 background: activeTab === 'tokens' ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : 'rgba(255,255,255,0.1)',
                 color: '#fff',
@@ -2065,19 +2167,22 @@ const PumpHub = () => {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                justifyContent: 'center',
+                gap: 8,
                 whiteSpace: 'nowrap',
-                fontSize: isMobile ? '13px' : '14px'
+                fontSize: isMobile ? 14 : 14
               }}
             >
-              <Flame size={isMobile ? 16 : 18} />
+              <Flame size={isMobile ? 18 : 18} />
               Tokens
             </button>
             <button
               onClick={() => setActiveTab('create')}
               style={{
-                padding: isMobile ? '10px 16px' : '12px 24px',
-                borderRadius: '10px',
+                flex: isMobile ? 1 : undefined,
+                minHeight: isMobile ? 48 : undefined,
+                padding: isMobile ? '12px 16px' : '12px 24px',
+                borderRadius: 10,
                 border: 'none',
                 background: activeTab === 'create' ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(255,255,255,0.1)',
                 color: '#fff',
@@ -2085,12 +2190,13 @@ const PumpHub = () => {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                justifyContent: 'center',
+                gap: 8,
                 whiteSpace: 'nowrap',
-                fontSize: isMobile ? '13px' : '14px'
+                fontSize: isMobile ? 14 : 14
               }}
             >
-              <Plus size={isMobile ? 16 : 18} />
+              <Plus size={isMobile ? 18 : 18} />
               Create Token
             </button>
           </div>
@@ -2102,43 +2208,69 @@ const PumpHub = () => {
               {selectedToken ? (
                 <>
                   {/* Mini token cards (horizontal scroll) */}
-                  <div style={{ marginBottom: '16px' }}>
+                  <div style={{ marginBottom: isMobile ? 12 : 16 }}>
                     <div style={{ 
                       display: 'flex', 
                       alignItems: 'center', 
-                      gap: '12px', 
-                      marginBottom: '12px' 
+                      gap: isMobile ? 8 : 12, 
+                      marginBottom: isMobile ? 10 : 12,
+                      flexWrap: 'wrap',
+                      minWidth: 0,
+                      width: '100%'
                     }}>
                       <button
-                        onClick={() => setSelectedToken(null)}
+                        onClick={() => setSelectedTokenAndUrl(null)}
                         style={{
-                          padding: '8px 12px',
-                          borderRadius: '8px',
+                          minHeight: isMobile ? 44 : undefined,
+                          padding: isMobile ? '12px 14px' : '8px 12px',
+                          borderRadius: 10,
                           border: '1px solid rgba(59, 130, 246, 0.3)',
                           background: 'rgba(59, 130, 246, 0.1)',
                           color: '#60a5fa',
-                          fontSize: '12px',
+                          fontSize: isMobile ? 14 : 12,
                           fontWeight: '600',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '6px'
+                          gap: 6
                         }}
                       >
-                        <ArrowLeft size={14} />
+                        <ArrowLeft size={isMobile ? 18 : 14} />
                         Back
+                      </button>
+                      <button
+                        onClick={copyTokenLink}
+                        title="Copy token link"
+                        style={{
+                          minHeight: isMobile ? 44 : undefined,
+                          padding: isMobile ? '12px 14px' : '8px 12px',
+                          borderRadius: 10,
+                          border: '1px solid rgba(59, 130, 246, 0.3)',
+                          background: tokenLinkCopied ? 'rgba(34, 197, 94, 0.2)' : 'rgba(59, 130, 246, 0.1)',
+                          color: tokenLinkCopied ? '#22c55e' : '#60a5fa',
+                          fontSize: isMobile ? 14 : 12,
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6
+                        }}
+                      >
+                        {tokenLinkCopied ? <Check size={isMobile ? 18 : 14} /> : <Link2 size={isMobile ? 18 : 14} />}
+                        {tokenLinkCopied ? 'Copied' : 'Copy link'}
                       </button>
                       <div style={{
                         flex: 1,
+                        minWidth: isMobile ? '100%' : 120,
                         display: 'flex',
                         alignItems: 'center',
                         background: 'rgba(0, 0, 0, 0.3)',
-                        borderRadius: '8px',
-                        padding: '6px 12px',
+                        borderRadius: 10,
+                        padding: isMobile ? 12 : '6px 12px',
                         border: '1px solid rgba(59, 130, 246, 0.2)',
-                        maxWidth: '250px'
+                        maxWidth: isMobile ? 'none' : 250
                       }}>
-                        <Search size={14} color="#9ca3af" />
+                        <Search size={isMobile ? 18 : 14} color="#9ca3af" />
                         <input
                           type="text"
                           value={searchQuery}
@@ -2149,9 +2281,10 @@ const PumpHub = () => {
                             background: 'transparent',
                             border: 'none',
                             color: '#fff',
-                            fontSize: '12px',
-                            marginLeft: '8px',
-                            outline: 'none'
+                            fontSize: isMobile ? 14 : 12,
+                            marginLeft: 8,
+                            outline: 'none',
+                            minWidth: 0
                           }}
                         />
                       </div>
@@ -2159,41 +2292,74 @@ const PumpHub = () => {
                     
                     <div style={{
                       display: 'flex',
-                      gap: '8px',
+                      gap: isMobile ? 8 : 8,
                       overflowX: 'auto',
-                      paddingBottom: '8px'
+                      paddingBottom: 8,
+                      WebkitOverflowScrolling: 'touch'
                     }}>
                       {filteredTokens.map(token => (
                         <MiniTokenCard
                           key={token.address}
                           token={token}
                           isSelected={token.address === selectedToken}
-                          onClick={() => setSelectedToken(token.address)}
+                          isMobile={isMobile}
+                          onClick={() => setSelectedTokenAndUrl(token.address)}
                         />
                       ))}
                     </div>
                   </div>
                   
-                  {/* Token details */}
+                  {/* Token details: on mobile trade first (fully visible), then chart; desktop side-by-side */}
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: isMobile ? '1fr' : '1fr 350px',
-                    gap: '16px'
+                    gap: isMobile ? 12 : 16,
+                    alignItems: 'start',
+                    paddingBottom: isMobile ? 100 : 0,
+                    width: '100%',
+                    minWidth: 0,
+                    maxWidth: '100%',
+                    overflow: 'hidden'
                   }}>
-                    <TokenChartPanel 
-                      tokenData={selectedTokenData} 
-                      tokenAddress={selectedToken}
-                      lastTradeConfirmedAt={lastTradeConfirmedAt}
-                    />
-                    <TokenTradePanel 
-                      tokenData={selectedTokenData} 
-                      tokenAddress={selectedToken}
-                      buyTokens={buyTokens}
-                      sellTokens={sellTokens}
-                      claimFees={claimFees}
-                      isLoading={isLoading}
-                      error={error}
-                    />
+                    {isMobile ? (
+                      <>
+                        <TokenTradePanel 
+                          tokenData={selectedTokenData} 
+                          tokenAddress={selectedToken}
+                          buyTokens={buyTokens}
+                          sellTokens={sellTokens}
+                          claimFees={claimFees}
+                          isLoading={isLoading}
+                          isMobile={isMobile}
+                          error={error}
+                        />
+                        <TokenChartPanel 
+                          tokenData={selectedTokenData} 
+                          tokenAddress={selectedToken}
+                          lastTradeConfirmedAt={lastTradeConfirmedAt}
+                          isMobile={isMobile}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <TokenChartPanel 
+                          tokenData={selectedTokenData} 
+                          tokenAddress={selectedToken}
+                          lastTradeConfirmedAt={lastTradeConfirmedAt}
+                          isMobile={isMobile}
+                        />
+                        <TokenTradePanel 
+                          tokenData={selectedTokenData} 
+                          tokenAddress={selectedToken}
+                          buyTokens={buyTokens}
+                          sellTokens={sellTokens}
+                          claimFees={claimFees}
+                          isLoading={isLoading}
+                          isMobile={isMobile}
+                          error={error}
+                        />
+                      </>
+                    )}
                   </div>
                 </>
               ) : (
@@ -2202,20 +2368,21 @@ const PumpHub = () => {
                   <div style={{
                     display: 'flex',
                     flexDirection: isMobile ? 'column' : 'row',
-                    gap: '12px',
-                    marginBottom: '16px'
+                    gap: isMobile ? 10 : 12,
+                    marginBottom: isMobile ? 14 : 16
                   }}>
                     {/* Search */}
                     <div style={{
                       flex: 1,
+                      minWidth: 0,
                       display: 'flex',
                       alignItems: 'center',
                       background: 'rgba(0, 0, 0, 0.3)',
-                      borderRadius: '10px',
-                      padding: '10px 14px',
+                      borderRadius: 10,
+                      padding: isMobile ? 14 : '10px 14px',
                       border: '1px solid rgba(59, 130, 246, 0.2)'
                     }}>
-                      <Search size={18} color="#9ca3af" />
+                      <Search size={isMobile ? 20 : 18} color="#9ca3af" />
                       <input
                         type="text"
                         value={searchQuery}
@@ -2226,9 +2393,10 @@ const PumpHub = () => {
                           background: 'transparent',
                           border: 'none',
                           color: '#fff',
-                          fontSize: '14px',
-                          marginLeft: '10px',
-                          outline: 'none'
+                          fontSize: isMobile ? 16 : 14,
+                          marginLeft: 10,
+                          outline: 'none',
+                          minWidth: 0
                         }}
                       />
                     </div>
@@ -2238,14 +2406,16 @@ const PumpHub = () => {
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
                       style={{
-                        padding: '10px 14px',
-                        borderRadius: '10px',
+                        minHeight: isMobile ? 48 : undefined,
+                        padding: isMobile ? '14px 16px' : '10px 14px',
+                        borderRadius: 10,
                         border: '1px solid rgba(59, 130, 246, 0.2)',
                         background: 'rgba(0, 0, 0, 0.3)',
                         color: '#fff',
-                        fontSize: '14px',
+                        fontSize: isMobile ? 16 : 14,
                         cursor: 'pointer',
-                        outline: 'none'
+                        outline: 'none',
+                        width: isMobile ? '100%' : undefined
                       }}
                     >
                       <option value="newest">Newest</option>
@@ -2258,10 +2428,11 @@ const PumpHub = () => {
                   {/* Category filters */}
                   <div style={{
                     display: 'flex',
-                    gap: '8px',
-                    marginBottom: '16px',
+                    gap: isMobile ? 8 : 8,
+                    marginBottom: isMobile ? 14 : 16,
                     overflowX: 'auto',
-                    paddingBottom: '4px'
+                    paddingBottom: 4,
+                    WebkitOverflowScrolling: 'touch'
                   }}>
                     {[
                       { id: 'all', label: 'All', icon: Globe },
@@ -2272,21 +2443,22 @@ const PumpHub = () => {
                         key={cat.id}
                         onClick={() => setCategory(cat.id)}
                         style={{
-                          padding: '8px 14px',
-                          borderRadius: '8px',
+                          minHeight: isMobile ? 44 : undefined,
+                          padding: isMobile ? '12px 16px' : '8px 14px',
+                          borderRadius: 10,
                           border: category === cat.id ? '1px solid #3b82f6' : '1px solid rgba(59, 130, 246, 0.2)',
                           background: category === cat.id ? 'rgba(59, 130, 246, 0.2)' : 'rgba(0, 0, 0, 0.2)',
                           color: category === cat.id ? '#60a5fa' : '#9ca3af',
-                          fontSize: '13px',
+                          fontSize: isMobile ? 14 : 13,
                           fontWeight: '600',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '6px',
+                          gap: 6,
                           whiteSpace: 'nowrap'
                         }}
                       >
-                        <cat.icon size={14} />
+                        <cat.icon size={isMobile ? 16 : 14} />
                         {cat.label}
                       </button>
                     ))}
@@ -2298,30 +2470,33 @@ const PumpHub = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      padding: '60px',
-                      color: '#9ca3af'
+                      padding: isMobile ? 40 : 60,
+                      color: '#9ca3af',
+                      fontSize: isMobile ? 14 : undefined
                     }}>
-                      <RefreshCw size={24} className="animate-spin" style={{ marginRight: '12px' }} />
+                      <RefreshCw size={isMobile ? 22 : 24} className="animate-spin" style={{ marginRight: 12 }} />
                       Loading tokens...
                     </div>
                   ) : filteredTokens.length === 0 ? (
                     <div style={{
                       textAlign: 'center',
-                      padding: '60px',
+                      padding: isMobile ? 40 : 60,
                       color: '#9ca3af'
                     }}>
-                      <Rocket size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-                      <p>No tokens found</p>
+                      <Rocket size={isMobile ? 40 : 48} style={{ marginBottom: 16, opacity: 0.5 }} />
+                      <p style={{ fontSize: isMobile ? 14 : undefined }}>No tokens found</p>
                       <button
                         onClick={() => setActiveTab('create')}
                         style={{
-                          marginTop: '16px',
-                          padding: '12px 24px',
-                          borderRadius: '10px',
+                          marginTop: 16,
+                          minHeight: isMobile ? 48 : undefined,
+                          padding: isMobile ? '14px 24px' : '12px 24px',
+                          borderRadius: 10,
                           border: 'none',
                           background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
                           color: '#fff',
                           fontWeight: '600',
+                          fontSize: isMobile ? 16 : undefined,
                           cursor: 'pointer'
                         }}
                       >
@@ -2343,7 +2518,7 @@ const PumpHub = () => {
                             key={token.address}
                             token={token}
                             isMobile={isMobile}
-                            onClick={() => setSelectedToken(token.address)}
+                            onClick={() => setSelectedTokenAndUrl(token.address)}
                           />
                         ))}
                       </div>
@@ -2353,22 +2528,23 @@ const PumpHub = () => {
                           display: 'flex',
                           justifyContent: 'center',
                           alignItems: 'center',
-                          gap: '6px',
-                          marginTop: '24px',
+                          gap: isMobile ? 8 : 6,
+                          marginTop: isMobile ? 20 : 24,
                           flexWrap: 'wrap',
-                          paddingBottom: '16px'
+                          paddingBottom: isMobile ? 24 : 16
                         }}>
                           <button
                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                             disabled={currentPage === 1}
                             style={{
-                              padding: '8px 12px',
-                              borderRadius: '8px',
+                              minHeight: isMobile ? 44 : undefined,
+                              padding: isMobile ? '12px 14px' : '8px 12px',
+                              borderRadius: 10,
                               border: '1px solid rgba(59, 130, 246, 0.3)',
                               background: currentPage === 1 ? 'rgba(255,255,255,0.05)' : 'rgba(59, 130, 246, 0.15)',
                               color: currentPage === 1 ? '#6b7280' : '#60a5fa',
                               fontWeight: '600',
-                              fontSize: '14px',
+                              fontSize: isMobile ? 16 : 14,
                               cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
                             }}
                           >
@@ -2379,14 +2555,15 @@ const PumpHub = () => {
                               key={page}
                               onClick={() => setCurrentPage(page)}
                               style={{
-                                minWidth: '36px',
-                                padding: '8px 10px',
-                                borderRadius: '8px',
+                                minWidth: isMobile ? 44 : 36,
+                                minHeight: isMobile ? 44 : undefined,
+                                padding: isMobile ? '12px' : '8px 10px',
+                                borderRadius: 10,
                                 border: currentPage === page ? '1px solid #3b82f6' : '1px solid rgba(59, 130, 246, 0.2)',
                                 background: currentPage === page ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : 'rgba(0, 0, 0, 0.2)',
                                 color: currentPage === page ? '#fff' : '#9ca3af',
                                 fontWeight: '600',
-                                fontSize: '14px',
+                                fontSize: isMobile ? 16 : 14,
                                 cursor: 'pointer'
                               }}
                             >
@@ -2397,13 +2574,14 @@ const PumpHub = () => {
                             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                             disabled={currentPage === totalPages}
                             style={{
-                              padding: '8px 12px',
-                              borderRadius: '8px',
+                              minHeight: isMobile ? 44 : undefined,
+                              padding: isMobile ? '12px 14px' : '8px 12px',
+                              borderRadius: 10,
                               border: '1px solid rgba(59, 130, 246, 0.3)',
                               background: currentPage === totalPages ? 'rgba(255,255,255,0.05)' : 'rgba(59, 130, 246, 0.15)',
                               color: currentPage === totalPages ? '#6b7280' : '#60a5fa',
                               fontWeight: '600',
-                              fontSize: '14px',
+                              fontSize: isMobile ? 16 : 14,
                               cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
                             }}
                           >
@@ -2421,19 +2599,20 @@ const PumpHub = () => {
           {/* Create Token Tab */}
           {activeTab === 'create' && (
             <div style={{
-              maxWidth: '600px',
-              margin: '0 auto'
+              maxWidth: isMobile ? '100%' : 600,
+              margin: '0 auto',
+              paddingBottom: isMobile ? 80 : 0
             }}>
               <div style={{
                 background: 'linear-gradient(145deg, rgba(30, 30, 40, 0.95) 0%, rgba(20, 20, 30, 0.98) 100%)',
-                borderRadius: '20px',
-                padding: isMobile ? '20px' : '30px',
+                borderRadius: isMobile ? 16 : 20,
+                padding: isMobile ? 16 : 30,
                 border: '1px solid rgba(59, 130, 246, 0.2)'
               }}>
                 <h2 style={{ 
                   color: '#fff', 
-                  marginBottom: '24px',
-                  fontSize: isMobile ? '20px' : '24px'
+                  marginBottom: isMobile ? 20 : 24,
+                  fontSize: isMobile ? 20 : 24
                 }}>
                   🚀 Launch Your Token
                 </h2>
@@ -2545,12 +2724,13 @@ const PumpHub = () => {
                       required
                       style={{
                         width: '100%',
-                        padding: '14px',
-                        borderRadius: '10px',
+                        minHeight: isMobile ? 48 : undefined,
+                        padding: isMobile ? 16 : 14,
+                        borderRadius: 10,
                         border: '1px solid rgba(59, 130, 246, 0.3)',
                         background: 'rgba(0, 0, 0, 0.3)',
                         color: '#fff',
-                        fontSize: '16px',
+                        fontSize: isMobile ? 16 : 16,
                         outline: 'none',
                         textTransform: 'uppercase'
                       }}
@@ -2567,15 +2747,15 @@ const PumpHub = () => {
                       onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                       placeholder="Tell us about your token..."
                       maxLength={256}
-                      rows={3}
+                      rows={isMobile ? 3 : 3}
                       style={{
                         width: '100%',
-                        padding: '14px',
-                        borderRadius: '10px',
+                        padding: isMobile ? 16 : 14,
+                        borderRadius: 10,
                         border: '1px solid rgba(59, 130, 246, 0.3)',
                         background: 'rgba(0, 0, 0, 0.3)',
                         color: '#fff',
-                        fontSize: '14px',
+                        fontSize: isMobile ? 16 : 14,
                         outline: 'none',
                         resize: 'vertical'
                       }}
@@ -2649,8 +2829,9 @@ const PumpHub = () => {
                     disabled={!isConnected || isLoading || isUploadingLogo}
                     style={{
                       width: '100%',
-                      padding: '16px',
-                      borderRadius: '12px',
+                      minHeight: isMobile ? 52 : undefined,
+                      padding: isMobile ? 18 : 16,
+                      borderRadius: 12,
                       border: logoError ? '2px solid #ef4444' : 'none',
                       boxShadow: logoError ? '0 0 0 1px rgba(239, 68, 68, 0.3)' : 'none',
                       background: !isConnected || isLoading || isUploadingLogo
@@ -2658,7 +2839,7 @@ const PumpHub = () => {
                         : 'linear-gradient(135deg, #3b82f6, #2563eb)',
                       color: '#fff',
                       fontWeight: 'bold',
-                      fontSize: '18px',
+                      fontSize: isMobile ? 18 : 18,
                       cursor: !isConnected || isLoading || isUploadingLogo ? 'not-allowed' : 'pointer',
                       display: 'flex',
                       alignItems: 'center',
