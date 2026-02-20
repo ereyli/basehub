@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
-import { useAccount } from 'wagmi'
+import { useAccount, usePublicClient } from 'wagmi'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Upload, Wand2, Package, AlertCircle, ExternalLink, CheckCircle,
@@ -10,6 +10,7 @@ import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
 import { useNFTLaunchpad } from '../hooks/useNFTLaunchpad'
 import { useX402Payment } from '../hooks/useX402Payment'
+import { NFT_LAUNCH_COLLECTION_ABI } from '../config/nftCollection'
 import { uploadToIPFS } from '../utils/pinata'
 import { generateAIImage } from '../utils/aiImageGenerator'
 import { supabase } from '../config/supabase'
@@ -36,6 +37,11 @@ function formatMintPrice(price) {
   const p = (price ?? '0').toString().trim()
   if (p === '' || Number(p) === 0) return 'Free'
   return `${p} ETH`
+}
+
+function getOpenSeaUrl(contractAddress) {
+  if (!contractAddress) return ''
+  return `https://opensea.io/assets/base/${contractAddress}`
 }
 
 // Convert IPFS hash to gateway URL
@@ -220,6 +226,7 @@ function CollectionCardImage({ imageUrl, name }) {
 /* ═══════════════════════ MAIN COMPONENT ═══════════════════════ */
 export default function NFTLaunchpad() {
   const { address, isConnected } = useAccount()
+  const publicClient = usePublicClient()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
@@ -247,6 +254,7 @@ export default function NFTLaunchpad() {
   // Collections state
   const [collections, setCollections] = useState([])
   const [collectionsLoading, setCollectionsLoading] = useState(true)
+  const [chainStatsByContract, setChainStatsByContract] = useState({})
   const [sortBy, setSortBy] = useState('newest') // newest | most_minted | trending | least_minted | oldest | price_low | price_high | recent_activity
   const [soldOutOnly, setSoldOutOnly] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
@@ -291,24 +299,97 @@ export default function NFTLaunchpad() {
     return () => { cancelled = true }
   }, [success])
 
+  // Read collection state from chain so SOLD OUT / LIVE status stays accurate.
+  useEffect(() => {
+    if (!publicClient || collections.length === 0) {
+      setChainStatsByContract({})
+      return
+    }
+    let cancelled = false
+
+    const fetchChainStats = async () => {
+      const entries = await Promise.all(
+        collections.map(async (c) => {
+          const contract = c.contract_address
+          if (!contract) return null
+          try {
+            const [totalSupply, maxSupply, saleActive] = await Promise.all([
+              publicClient.readContract({
+                address: contract,
+                abi: NFT_LAUNCH_COLLECTION_ABI,
+                functionName: 'totalSupply',
+              }),
+              publicClient.readContract({
+                address: contract,
+                abi: NFT_LAUNCH_COLLECTION_ABI,
+                functionName: 'maxSupply',
+              }),
+              publicClient.readContract({
+                address: contract,
+                abi: NFT_LAUNCH_COLLECTION_ABI,
+                functionName: 'saleActive',
+              }),
+            ])
+            return [
+              contract.toLowerCase(),
+              {
+                totalMinted: Number(totalSupply),
+                maxSupply: Number(maxSupply),
+                saleActive: Boolean(saleActive),
+              },
+            ]
+          } catch (_) {
+            return null
+          }
+        })
+      )
+
+      if (cancelled) return
+      const nextMap = {}
+      entries.forEach((entry) => {
+        if (entry) nextMap[entry[0]] = entry[1]
+      })
+      setChainStatsByContract(nextMap)
+    }
+
+    fetchChainStats()
+    return () => { cancelled = true }
+  }, [collections, publicClient])
+
   // Filter by sold out then sort
   const filteredCollections = useMemo(() => {
+    const getMinted = (c) => {
+      const key = c.contract_address?.toLowerCase()
+      const chainMinted = key ? chainStatsByContract[key]?.totalMinted : undefined
+      return chainMinted ?? Number(c.total_minted || 0)
+    }
+    const getSupply = (c) => {
+      const key = c.contract_address?.toLowerCase()
+      const chainSupply = key ? chainStatsByContract[key]?.maxSupply : undefined
+      return chainSupply ?? Number(c.supply || 0)
+    }
+
     if (soldOutOnly) {
       return collections.filter((c) => {
-        const minted = c.total_minted || 0
-        const supply = c.supply || 0
+        const minted = getMinted(c)
+        const supply = getSupply(c)
         return supply > 0 && minted >= supply
       })
     }
     return collections
-  }, [collections, soldOutOnly])
+  }, [collections, soldOutOnly, chainStatsByContract])
 
   const sortedCollections = useMemo(() => {
     const arr = [...filteredCollections]
     const price = (c) => parseFloat(c.mint_price) || 0
+    const minted = (c) => {
+      const key = c.contract_address?.toLowerCase()
+      const chainMinted = key ? chainStatsByContract[key]?.totalMinted : undefined
+      return chainMinted ?? Number(c.total_minted || 0)
+    }
     if (sortBy === 'newest') arr.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    else if (sortBy === 'most_minted') arr.sort((a, b) => (b.total_minted || 0) - (a.total_minted || 0))
-    else if (sortBy === 'least_minted') arr.sort((a, b) => (a.total_minted || 0) - (b.total_minted || 0))
+    else if (sortBy === 'most_minted') arr.sort((a, b) => minted(b) - minted(a))
+    else if (sortBy === 'least_minted') arr.sort((a, b) => minted(a) - minted(b))
     else if (sortBy === 'oldest') arr.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
     else if (sortBy === 'price_low') arr.sort((a, b) => price(a) - price(b))
     else if (sortBy === 'price_high') arr.sort((a, b) => price(b) - price(a))
@@ -317,13 +398,13 @@ export default function NFTLaunchpad() {
     }
     else if (sortBy === 'trending') {
       arr.sort((a, b) => {
-        const aScore = (a.total_minted || 0) / Math.max(1, (Date.now() - new Date(a.created_at).getTime()) / 3600000)
-        const bScore = (b.total_minted || 0) / Math.max(1, (Date.now() - new Date(b.created_at).getTime()) / 3600000)
+        const aScore = minted(a) / Math.max(1, (Date.now() - new Date(a.created_at).getTime()) / 3600000)
+        const bScore = minted(b) / Math.max(1, (Date.now() - new Date(b.created_at).getTime()) / 3600000)
         return bScore - aScore
       })
     }
     return arr
-  }, [filteredCollections, sortBy])
+  }, [filteredCollections, sortBy, chainStatsByContract])
 
   const totalPages = Math.max(1, Math.ceil(sortedCollections.length / NFTS_PER_PAGE))
   const paginatedCollections = useMemo(() => {
@@ -493,7 +574,7 @@ export default function NFTLaunchpad() {
                         <Rocket size={14} /> Open Mint Page
                       </button>
                     )}
-                    <a href={`https://opensea.io/assets/base/${contractAddress}`} target="_blank" rel="noopener noreferrer"
+                    <a href={getOpenSeaUrl(contractAddress)} target="_blank" rel="noopener noreferrer"
                       style={{ padding: '11px 18px', background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(55,65,81,0.8)', borderRadius: '12px', color: '#93c5fd', fontSize: '13px', fontWeight: '600', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}>
                       OpenSea <ExternalLink size={12} />
                     </a>
@@ -796,7 +877,11 @@ export default function NFTLaunchpad() {
                   background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(55,65,81,0.4)',
                 }}>
                   <div style={{ fontSize: '22px', fontWeight: '800', color: '#e2e8f0' }}>
-                    {collections.reduce((s, c) => s + (c.total_minted || 0), 0)}
+                    {collections.reduce((sum, c) => {
+                      const key = c.contract_address?.toLowerCase()
+                      const chainMinted = key ? chainStatsByContract[key]?.totalMinted : undefined
+                      return sum + (chainMinted ?? Number(c.total_minted || 0))
+                    }, 0)}
                   </div>
                   <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Total Minted</div>
                 </div>
@@ -828,8 +913,10 @@ export default function NFTLaunchpad() {
                     gap: '16px',
                   }}>
                     {paginatedCollections.map((c) => {
-                      const minted = c.total_minted || 0
-                      const total = c.supply || 0
+                      const stats = chainStatsByContract[c.contract_address?.toLowerCase()]
+                      const minted = stats?.totalMinted ?? Number(c.total_minted || 0)
+                      const total = stats?.maxSupply ?? Number(c.supply || 0)
+                      const saleActive = stats?.saleActive ?? Boolean(c.is_active)
                       const pct = total > 0 ? Math.min(100, Math.round((minted / total) * 100)) : 0
                       const isSoldOut = minted >= total && total > 0
                       return (
@@ -886,11 +973,14 @@ export default function NFTLaunchpad() {
                               {isSoldOut && (
                                 <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '700', background: 'rgba(239,68,68,0.2)', color: '#f87171', flexShrink: 0 }}>SOLD OUT</span>
                               )}
-                              {!isSoldOut && minted > 0 && (
+                              {!isSoldOut && saleActive && minted > 0 && (
                                 <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '700', background: 'rgba(34,197,94,0.2)', color: '#4ade80', flexShrink: 0 }}>LIVE</span>
                               )}
-                              {!isSoldOut && minted === 0 && (
+                              {!isSoldOut && saleActive && minted === 0 && (
                                 <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '700', background: 'rgba(59,130,246,0.2)', color: '#60a5fa', flexShrink: 0 }}>NEW</span>
+                              )}
+                              {!isSoldOut && !saleActive && (
+                                <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '700', background: 'rgba(245,158,11,0.2)', color: '#fbbf24', flexShrink: 0 }}>PAUSED</span>
                               )}
                             </div>
                             <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>

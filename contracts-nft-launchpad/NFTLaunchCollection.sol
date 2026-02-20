@@ -13,6 +13,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * Owner = fundsRecipient (creator), so they can setContractURI, toggleSale, setMintPrice (e.g. on OpenSea).
  */
 contract NFTLaunchCollection is ERC721, ERC721URIStorage, Ownable {
+    uint256 public constant MAX_MINT_PER_WALLET = 20;
     uint256 private _nextTokenId;
     uint256 public maxSupply;
     uint256 public mintPrice;
@@ -20,6 +21,7 @@ contract NFTLaunchCollection is ERC721, ERC721URIStorage, Ownable {
     string private _baseTokenURI;
     string private _contractURI;
     bool public saleActive;
+    mapping(address => uint256) public mintedPerWallet;
 
     event Minted(address indexed minter, uint256 quantity, uint256 startTokenId);
     event SaleToggled(bool active);
@@ -49,11 +51,16 @@ contract NFTLaunchCollection is ERC721, ERC721URIStorage, Ownable {
     function mint(uint256 quantity) external payable {
         require(saleActive, "Sale not active");
         require(quantity > 0 && quantity <= 20, "1-20 per tx");
+        require(
+            mintedPerWallet[msg.sender] + quantity <= MAX_MINT_PER_WALLET,
+            "Wallet mint limit exceeded"
+        );
         require(_nextTokenId + quantity <= maxSupply, "Exceeds max supply");
         require(msg.value >= mintPrice * quantity, "Insufficient payment");
 
         uint256 startId = _nextTokenId;
         _nextTokenId += quantity;
+        mintedPerWallet[msg.sender] += quantity;
 
         for (uint256 i = 0; i < quantity; i++) {
             uint256 tokenId = startId + i;

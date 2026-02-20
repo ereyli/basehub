@@ -243,12 +243,30 @@ export default function NFTMintPage() {
           <div style={{ flex: '1 1 400px', minWidth: 0 }}>
             <div style={cardStyle}>
               {collection.image_url ? (
-                <img
-                  src={collection.image_url} alt={collection.name}
-                  style={{ width: '100%', height: '360px', objectFit: 'cover' }}
-                />
+                <div style={{
+                  width: '100%',
+                  height: '320px',
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '12px',
+                  boxSizing: 'border-box',
+                }}>
+                  <img
+                    src={collection.image_url}
+                    alt={collection.name}
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      width: 'auto',
+                      height: 'auto',
+                      objectFit: 'contain',
+                    }}
+                  />
+                </div>
               ) : (
-                <div style={{ width: '100%', height: '360px', background: 'rgba(59, 130, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '100%', height: '320px', background: 'rgba(59, 130, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Package size={64} style={{ color: '#60a5fa', opacity: 0.5 }} />
                 </div>
               )}
@@ -299,6 +317,22 @@ export default function NFTMintPage() {
                   </div>
                 </div>
 
+                <div
+                  style={{
+                    marginBottom: '16px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    color: '#93c5fd',
+                    background: 'rgba(59, 130, 246, 0.12)',
+                    border: '1px solid rgba(59, 130, 246, 0.3)',
+                    borderRadius: '10px',
+                    padding: '8px 10px',
+                    textAlign: 'center',
+                  }}
+                >
+                  Wallet limit: 20 total
+                </div>
+
                 {mintSuccess && txHash && (
                   <div style={{
                     padding: '16px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)',
@@ -312,7 +346,7 @@ export default function NFTMintPage() {
                       <a href={`https://basescan.org/tx/${txHash}`} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         View transaction <ExternalLink size={12} />
                       </a>
-                      <a href={`https://opensea.io/assets/base/${contractAddress}`} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <a href={getOpenSeaUrl(contractAddress)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         View on OpenSea <ExternalLink size={12} />
                       </a>
                     </div>
@@ -382,7 +416,7 @@ export default function NFTMintPage() {
                 )}
 
                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '16px', flexWrap: 'wrap' }}>
-                  <a href={`https://opensea.io/assets/base/${contractAddress}`} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <a href={getOpenSeaUrl(contractAddress)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     OpenSea <ExternalLink size={12} />
                   </a>
                   <a href={`https://basescan.org/address/${contractAddress}`} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -470,7 +504,7 @@ export default function NFTMintPage() {
 
                 <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#9ca3af', marginBottom: '8px', marginTop: '20px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Links</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
-                  <a href={`https://opensea.io/assets/base/${contractAddress}`} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <a href={getOpenSeaUrl(contractAddress)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <ExternalLink size={14} /> OpenSea
                   </a>
                   <a href={`https://basescan.org/address/${contractAddress}`} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
