@@ -1026,6 +1026,53 @@ const Home = () => {
                 </div>
               </div>
 
+              {/* 5. Prediction Category (under NFT) */}
+              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(20, 184, 166, 0.25)` }}>
+                <div style={compactStyles.categoryHeader}>
+                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(20, 184, 166, 0.15)', border: '1px solid rgba(20, 184, 166, 0.3)', color: '#14b8a6' }}>
+                    <Users size={compactStyles.iconSize} />
+                  </div>
+                  <h2 style={compactStyles.categoryTitle}>PREDICTION</h2>
+                  {!isCompactMode && renderNetworkLogos(['base'])}
+                </div>
+                <div style={compactStyles.cardGrid}>
+                  {games.filter(g => g.id === 'prediction-arena').map((game) => (
+                    <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
+                      <div style={{ ...compactStyles.card(game.color), height: '100%', position: 'relative' }}>
+                        <span style={{ position: 'absolute', top: '10px', right: '10px', background: '#f59e0b', color: '#422006', fontWeight: 700, fontSize: '10px', padding: '3px 8px', borderRadius: '999px', letterSpacing: '0.5px', zIndex: 1 }}>BETA</span>
+                        <div style={compactStyles.cardInner}>
+                          {isCompactMode ? (
+                            <>
+                              <div style={{ flexShrink: 0 }}>{game.icon}</div>
+                              <h3 style={compactStyles.cardTitle}>Prediction</h3>
+                              <div style={compactStyles.xpBadge}>{game.xpReward}</div>
+                            </>
+                          ) : (
+                            <>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                                <div style={{ flexShrink: 0 }}>{game.icon}</div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <h3 style={compactStyles.cardTitle}>{game.title}</h3>
+                                  <p style={compactStyles.cardDescription}>{game.description}</p>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                                <div style={compactStyles.xpBadge}>{game.xpReward}</div>
+                                {game.bonusXP && (
+                                  <div style={{ background: 'rgba(255, 215, 0, 0.95)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#92400e' }}>
+                                    {game.bonusXP}
+                                  </div>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
               {/* DEPLOY Category */}
               <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(59, 130, 246, 0.2)` }}>
                 <div style={compactStyles.categoryHeader}>
