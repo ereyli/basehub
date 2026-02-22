@@ -98,10 +98,9 @@ export const useTransactions = () => {
   }
 
   // Get game fee based on network
-  // Base: 0.000005 ETH, InkChain/Soneium/Katana: 0.00002 ETH
+  // Base + all networks: 0.00002 ETH
   const getGameFee = () => {
-    const isOnBase = chainId === NETWORKS.BASE.chainId
-    return isOnBase ? parseEther('0.000005') : parseEther('0.00002')
+    return parseEther('0.00002')
   }
 
   // SlotGame ABI for reading CREDIT_PRICE and simulating purchaseCredits
@@ -160,7 +159,7 @@ export const useTransactions = () => {
         }],
         functionName: 'sendGM',
         args: [message],
-        value: getGameFee(), // Network-specific fee (Base: 0.000005 ETH, InkChain: 0.00002 ETH)
+        value: getGameFee(), // 0.00002 ETH fee
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
       
@@ -286,7 +285,7 @@ export const useTransactions = () => {
         }],
         functionName: 'sendGN',
         args: [message],
-        value: getGameFee(), // Network-specific fee (Base: 0.000005 ETH, InkChain: 0.00002 ETH)
+        value: getGameFee(), // 0.00002 ETH fee
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
       
@@ -407,7 +406,7 @@ export const useTransactions = () => {
         }],
         functionName: 'playFlip',
         args: [choice],
-        value: getGameFee(), // Network-specific fee (Base: 0.000005 ETH, InkChain: 0.00002 ETH)
+        value: getGameFee(), // 0.00002 ETH fee
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
       
@@ -537,7 +536,7 @@ export const useTransactions = () => {
         }],
         functionName: 'guessLuckyNumber',
         args: [guess],
-        value: getGameFee(), // Network-specific fee (Base: 0.000005 ETH, InkChain: 0.00002 ETH)
+        value: getGameFee(), // 0.00002 ETH fee
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
       
@@ -665,7 +664,7 @@ export const useTransactions = () => {
         }],
         functionName: 'rollDice',
         args: [guess],
-        value: getGameFee(), // Network-specific fee (Base: 0.000005 ETH, InkChain: 0.00002 ETH)
+        value: getGameFee(), // 0.00002 ETH fee
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
       
