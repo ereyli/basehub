@@ -33,8 +33,10 @@ export const NETWORKS = {
       decimals: 18,
     },
     rpcUrls: [
+      'https://rpc-qnd.inkonchain.com', // QuickNode - primary (rpc-gel bazen block out of range veriyor)
+      'https://ink.drpc.org',
+      'https://rpc-ten.inkonchain.com',
       'https://rpc-gel.inkonchain.com',
-      'https://rpc-qnd.inkonchain.com',
     ],
     blockExplorerUrls: ['https://explorer.inkonchain.com'],
     iconUrls: [],
@@ -50,7 +52,11 @@ export const NETWORKS = {
       symbol: 'ETH',
       decimals: 18,
     },
-    rpcUrls: ['https://rpc.soneium.org'],
+    rpcUrls: [
+      'https://rpc.soneium.org',
+      'https://soneium.drpc.org',
+      'https://soneium-rpc.publicnode.com',
+    ],
     blockExplorerUrls: ['https://soneium.blockscout.com'],
     iconUrls: [],
     isFarcasterSupported: false,

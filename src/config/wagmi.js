@@ -107,16 +107,12 @@ export const config = createConfig({
     [base.id]: fallback(
       NETWORKS.BASE.rpcUrls.map((url) => viemHttp(url, { retryCount: 2, retryDelay: 1200 }))
     ),
-    [inkChain.id]: http(NETWORKS.INKCHAIN.rpcUrls[0], {
-      timeout: 30000, // 30 seconds timeout
-      retryCount: 3,
-      retryDelay: 1000,
-    }),
-    [soneium.id]: http(NETWORKS.SONEIUM.rpcUrls[0], {
-      timeout: 30000, // 30 seconds timeout
-      retryCount: 3,
-      retryDelay: 1000,
-    }),
+    [inkChain.id]: fallback(
+      NETWORKS.INKCHAIN.rpcUrls.map((url) => viemHttp(url, { timeout: 30000, retryCount: 2, retryDelay: 1000 }))
+    ),
+    [soneium.id]: fallback(
+      NETWORKS.SONEIUM.rpcUrls.map((url) => viemHttp(url, { timeout: 30000, retryCount: 2, retryDelay: 1000 }))
+    ),
     [katana.id]: http(NETWORKS.KATANA.rpcUrls[0], {
       timeout: 30000, // 30 seconds timeout
       retryCount: 3,
