@@ -9,16 +9,11 @@ import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { getFarcasterUniversalLink } from '../config/farcaster'
 import { supabase } from '../config/supabase'
-import { getAddressExplorerUrl, getTransactionExplorerUrl, NETWORKS } from '../config/networks'
+import { getAddressExplorerUrl, getCollectionMarketUrl, getTransactionExplorerUrl, NETWORKS } from '../config/networks'
 import { NFT_LAUNCH_COLLECTION_ABI } from '../config/nftCollection'
 
 const SHARE_BASE_URL = 'https://www.basehub.fun'
 function getMintUrl(slug) { return slug ? `${SHARE_BASE_URL}/mint/${slug}` : '' }
-function getCollectionMarketUrl(contractAddress, chainId) {
-  if (!contractAddress) return ''
-  if (chainId === NETWORKS.BASE.chainId) return `https://opensea.io/assets/base/${contractAddress}`
-  return getAddressExplorerUrl(chainId, contractAddress) || ''
-}
 
 function shortAddress(addr) {
   if (!addr || addr.length < 10) return addr
@@ -353,7 +348,7 @@ export default function NFTMintPage() {
                         View transaction <ExternalLink size={12} />
                       </a>
                       <a href={getCollectionMarketUrl(contractAddress, collection?.chain_id ?? chainId)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        View on {(collection?.chain_id ?? chainId) === NETWORKS.BASE.chainId ? 'OpenSea' : 'Explorer'} <ExternalLink size={12} />
+                        View on OpenSea <ExternalLink size={12} />
                       </a>
                     </div>
                   </div>
@@ -423,7 +418,7 @@ export default function NFTMintPage() {
 
                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '16px', flexWrap: 'wrap' }}>
                   <a href={getCollectionMarketUrl(contractAddress, collection?.chain_id ?? chainId)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    {(collection?.chain_id ?? chainId) === NETWORKS.BASE.chainId ? 'OpenSea' : 'Explorer'} <ExternalLink size={12} />
+                    OpenSea <ExternalLink size={12} />
                   </a>
                   <a href={getAddressExplorerUrl(collection?.chain_id ?? chainId, contractAddress)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     {(collection?.chain_id ?? chainId) === NETWORKS.BASE.chainId ? 'Basescan' : (collection?.chain_id ?? chainId) === NETWORKS.INKCHAIN.chainId ? 'Ink Explorer' : 'Soneium Explorer'} <ExternalLink size={12} />
@@ -511,7 +506,7 @@ export default function NFTMintPage() {
                 <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#9ca3af', marginBottom: '8px', marginTop: '20px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Links</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
                   <a href={getCollectionMarketUrl(contractAddress, collection?.chain_id ?? chainId)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ExternalLink size={14} /> {(collection?.chain_id ?? chainId) === NETWORKS.BASE.chainId ? 'OpenSea' : 'Explorer'}
+                    <ExternalLink size={14} /> OpenSea
                   </a>
                   <a href={getAddressExplorerUrl(collection?.chain_id ?? chainId, contractAddress)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <ExternalLink size={14} /> {(collection?.chain_id ?? chainId) === NETWORKS.BASE.chainId ? 'Basescan' : (collection?.chain_id ?? chainId) === NETWORKS.INKCHAIN.chainId ? 'Ink Explorer' : 'Soneium Explorer'}

@@ -14,7 +14,7 @@ import { NFT_LAUNCH_COLLECTION_ABI } from '../config/nftCollection'
 import { uploadToIPFS } from '../utils/pinata'
 import { generateAIImage } from '../utils/aiImageGenerator'
 import { supabase } from '../config/supabase'
-import { getAddressExplorerUrl, NETWORKS } from '../config/networks'
+import { getAddressExplorerUrl, getCollectionMarketUrl, NETWORKS } from '../config/networks'
 
 function shortAddress(addr) {
   if (!addr || addr.length < 10) return addr
@@ -38,13 +38,6 @@ function formatMintPrice(price) {
   const p = (price ?? '0').toString().trim()
   if (p === '' || Number(p) === 0) return 'Free'
   return `${p} ETH`
-}
-
-/** OpenSea for Base, block explorer for Ink/Soneium (OpenSea doesn't support them) */
-function getCollectionMarketUrl(contractAddress, chainId) {
-  if (!contractAddress) return ''
-  if (chainId === NETWORKS.BASE.chainId) return `https://opensea.io/assets/base/${contractAddress}`
-  return getAddressExplorerUrl(chainId, contractAddress) || ''
 }
 
 // Convert IPFS hash to gateway URL
@@ -622,7 +615,7 @@ export default function NFTLaunchpad() {
                     )}
                     <a href={getCollectionMarketUrl(contractAddress, chainId)} target="_blank" rel="noopener noreferrer"
                       style={{ padding: '11px 18px', background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(55,65,81,0.8)', borderRadius: '12px', color: '#93c5fd', fontSize: '13px', fontWeight: '600', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      {chainId === NETWORKS.BASE.chainId ? 'OpenSea' : 'Explorer'} <ExternalLink size={12} />
+                      OpenSea <ExternalLink size={12} />
                     </a>
                     <a href={getAddressExplorerUrl(chainId, contractAddress)} target="_blank" rel="noopener noreferrer"
                       style={{ padding: '11px 18px', background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(55,65,81,0.8)', borderRadius: '12px', color: '#93c5fd', fontSize: '13px', fontWeight: '600', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}>

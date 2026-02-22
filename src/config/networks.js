@@ -241,6 +241,15 @@ export const getAddressExplorerUrl = (chainId, address) => {
   return `${explorerUrl}/address/${address}`
 }
 
+/** OpenSea market URL. Base, Ink ve Soneium desteklenir. */
+export const getCollectionMarketUrl = (contractAddress, chainId) => {
+  if (!contractAddress) return ''
+  if (chainId === NETWORKS.BASE.chainId) return `https://opensea.io/assets/base/${contractAddress}`
+  if (chainId === NETWORKS.INKCHAIN.chainId) return `https://opensea.io/assets/ink/${contractAddress}`
+  if (chainId === NETWORKS.SONEIUM.chainId) return `https://opensea.io/assets/soneium/${contractAddress}`
+  return getAddressExplorerUrl(chainId, contractAddress) || ''
+}
+
 /** EIP-3085 params for wallet_addEthereumChain. Returns null if chainId not supported. MetaMask requires rpcUrls to be string[]. */
 export const getAddChainParams = (chainId) => {
   const network = getNetworkConfig(chainId)
