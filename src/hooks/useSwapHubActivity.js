@@ -38,12 +38,12 @@ export function useSwapHubActivity(limit = 20) {
       const [swapsRes, xpRes] = await Promise.all([
         supabase
           .from(TABLES.SWAPHUB_SWAPS)
-          .select('wallet_address, amount_usd, created_at')
+          .select('id, wallet_address, amount_usd, created_at')
           .order('created_at', { ascending: false })
           .limit(limit),
         supabase
           .from(TABLES.TRANSACTIONS)
-          .select('wallet_address, game_type, xp_earned, created_at')
+          .select('id, wallet_address, game_type, xp_earned, created_at')
           .in('game_type', SWAP_XP_GAME_TYPES)
           .order('created_at', { ascending: false })
           .limit(limit)
@@ -51,15 +51,15 @@ export function useSwapHubActivity(limit = 20) {
 
       const swapItems = (swapsRes.data || []).map(row => ({
         type: 'swap',
-        id: `swap-${row.created_at}-${row.wallet_address}-${row.amount_usd}`,
+        id: row.id ? `swap-${row.id}` : `swap-${row.created_at}-${row.wallet_address}-${row.amount_usd}`,
         wallet_address: row.wallet_address,
         amount_usd: parseFloat(row.amount_usd) || 0,
         created_at: row.created_at
       }))
 
-      const xpItems = (xpRes.data || []).map(row => ({
+      const xpItems = (xpRes.data || []).map((row, idx) => ({
         type: 'xp',
-        id: `xp-${row.created_at}-${row.wallet_address}-${row.game_type}`,
+        id: row.id ? `xp-${row.id}` : `xp-${row.created_at}-${row.wallet_address}-${row.game_type}-${idx}`,
         wallet_address: row.wallet_address,
         game_type: row.game_type,
         xp_earned: row.xp_earned || 0,
@@ -96,7 +96,7 @@ export function useSwapHubActivity(limit = 20) {
           setActivity(prev => {
             const newItem = {
               type: 'swap',
-              id: `swap-${row.created_at}-${row.wallet_address}-${row.amount_usd}`,
+              id: row.id ? `swap-${row.id}` : `swap-${row.created_at}-${row.wallet_address}-${row.amount_usd}`,
               wallet_address: row.wallet_address,
               amount_usd: parseFloat(row.amount_usd) || 0,
               created_at: row.created_at

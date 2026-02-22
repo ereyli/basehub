@@ -772,22 +772,24 @@ export default function SwapInterface() {
 
   // Record swap volume when tx confirms (use amount stored in ref at submit time so we don't depend on state)
   const lastRecordedHashRef = useRef<string | null>(null);
+  const swapToRecordRef = useRef<{ hash: string; amount: number } | null>(null);
   const [xpSuccessToast, setXpSuccessToast] = useState<{ xp: number; message: string } | null>(null);
   useEffect(() => {
     if (!isSuccess || !address || !hash) return;
-    if (transactionStep !== 'swapping' && transactionStep !== 'success') return;
-    if (lastRecordedHashRef.current === hash) return;
+    // Only record for swap txs (not approval); transactionStep excluded from deps to avoid cancelling the delay
+    if (transactionStep !== 'swapping' && transactionStep !== 'success') {
+      return; // approval tx or wrong step - skip
+    }
 
-    const pending = pendingSwapVolumeRef.current;
-    const swapAmountUSD = pending?.swapAmountUSD ?? 0;
-    lastRecordedHashRef.current = hash;
-    pendingSwapVolumeRef.current = null;
-    if (swapAmountUSD <= 0) return;
-
-    console.log('🎉 Swap confirmed! Recording volume:', { swapAmountUSD, hash: hash.slice(0, 10) + '...' });
-
-    recordSwapTransaction(address, swapAmountUSD, hash)
+    const scheduleRecord = (amount: number) => {
+      if (amount <= 0) return;
+      console.log('🎉 Swap confirmed! Recording volume:', { swapAmountUSD: amount, hash: hash.slice(0, 10) + '...' });
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+      const handleRecord = (retry = false) => {
+        recordSwapTransaction(address, amount, hash)
       .then((awarded: { xpFromPer100?: number; xpFromMilestones?: number } | void) => {
+        const from100 = awarded?.xpFromPer100 ?? 0;
+        const fromMilestones = awarded?.xpFromMilestones ?? 0;
         console.log('✅ Swap volume recorded');
         updateQuestProgress?.('swapsCompleted', 1);
         if (typeof window !== 'undefined') {
@@ -795,8 +797,6 @@ export default function SwapInterface() {
           setTimeout(() => window.dispatchEvent(new CustomEvent('basehub-swap-recorded')), 2500);
           setTimeout(() => window.dispatchEvent(new CustomEvent('basehub-swap-recorded')), 5000);
         }
-        const from100 = awarded?.xpFromPer100 ?? 0;
-        const fromMilestones = awarded?.xpFromMilestones ?? 0;
         const total = from100 + fromMilestones;
         if (total > 0) {
           const msg = from100 > 0 && fromMilestones > 0
@@ -809,9 +809,54 @@ export default function SwapInterface() {
       })
       .catch(err => {
         console.error('❌ Error recording swap volume:', err);
-        lastRecordedHashRef.current = null;
+        if (!retry) setTimeout(() => handleRecord(true), 6000);
+        else lastRecordedHashRef.current = null;
       });
-  }, [isSuccess, address, hash, transactionStep, updateQuestProgress]);
+    };
+      // Fire on visibility change (user switches tab or navigates away) so we don't lose the record
+      const onVisibilityChange = () => {
+        if (document.hidden && timeoutId != null) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+          handleRecord(false);
+        }
+      };
+      const delay = 1000; // 1s - Edge Function retries RPC; fire before user navigates away
+      timeoutId = setTimeout(() => {
+        timeoutId = null;
+        if (typeof window !== 'undefined') window.removeEventListener('visibilitychange', onVisibilityChange);
+        handleRecord(false);
+      }, delay);
+      if (typeof window !== 'undefined') window.addEventListener('visibilitychange', onVisibilityChange);
+      return () => {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (typeof window !== 'undefined') window.removeEventListener('visibilitychange', onVisibilityChange);
+      };
+    };
+
+    // Strict Mode: second run has lastRecordedHashRef === hash but timeout was cleared. Reschedule with stored amount.
+    if (lastRecordedHashRef.current === hash) {
+      const stored = swapToRecordRef.current;
+      if (stored?.hash === hash && stored.amount > 0) {
+        return scheduleRecord(stored.amount);
+      }
+      return;
+    }
+
+    const pending = pendingSwapVolumeRef.current;
+    const swapAmountUSD = pending?.swapAmountUSD ?? 0;
+    if (swapAmountUSD <= 0) {
+      console.warn('⚠️ Swap record skipped: swapAmountUSD <= 0', { pending, swapAmountUSD });
+      return;
+    }
+
+    lastRecordedHashRef.current = hash;
+    pendingSwapVolumeRef.current = null;
+    swapToRecordRef.current = { hash, amount: swapAmountUSD };
+
+    return scheduleRecord(swapAmountUSD);
+    // Note: transactionStep intentionally excluded from deps to avoid cancelling the timeout when step changes.
+  }, [isSuccess, address, hash, updateQuestProgress]);
   useEffect(() => {
     if (!xpSuccessToast) return;
     const t = setTimeout(() => setXpSuccessToast(null), 4000);

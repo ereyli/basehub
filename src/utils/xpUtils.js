@@ -1,8 +1,8 @@
 // XP utility functions with Supabase integration
 import { supabase } from '../config/supabase'
-import { createPublicClient, http } from 'viem'
+import { createPublicClient, http, fallback } from 'viem'
 import { base } from 'viem/chains'
-import { isTestnetChainId } from '../config/networks'
+import { isTestnetChainId, NETWORKS } from '../config/networks'
 
 // Simple in-memory cache for NFT count checks
 const nftCountCache = new Map()
@@ -82,9 +82,18 @@ export const getNFTCount = async (walletAddress) => {
       return 0
     }
 
+    // Use fallback RPCs to avoid 429 from mainnet.base.org rate limits
+    const baseRpcUrls = [
+      'https://base.llamarpc.com',
+      'https://base-rpc.publicnode.com',
+      ...(NETWORKS.BASE.rpcUrls || [])
+    ]
+    const transport = fallback(
+      baseRpcUrls.map((url) => http(url, { retryCount: 1, retryDelay: 500 }))
+    )
     const publicClient = createPublicClient({
       chain: base,
-      transport: http()
+      transport
     })
 
     const balance = await publicClient.readContract({
@@ -481,69 +490,54 @@ export const SWAP_VOLUME_TIERS = [
 ]
 export const SWAP_VOLUME_BAR_MAX_USD = 1_000_000
 
-// Record swap into SwapHub tables (swaphub_swaps + swaphub_volume) then check XP milestones
+// Record swap via Edge Function (tx verified on-chain, RLS-secured)
 export const recordSwapTransaction = async (walletAddress, swapAmountUSD, transactionHash) => {
   if (!walletAddress) {
     console.log('❌ Missing walletAddress for swap record')
-    return
+    return { xpFromPer100: 0, xpFromMilestones: 0 }
   }
   const amount = typeof swapAmountUSD === 'number' ? swapAmountUSD : parseFloat(swapAmountUSD) || 0
   const normalized = walletAddress.toLowerCase()
 
   try {
-    if (!supabase?.from) {
-      console.log('⚠️ Supabase not available, storing swap locally')
-      const local = JSON.parse(localStorage.getItem('basehub_swaphub_swaps') || '[]')
-      local.push({ wallet_address: normalized, amount_usd: amount, tx_hash: transactionHash, created_at: new Date().toISOString() })
-      localStorage.setItem('basehub_swaphub_swaps', JSON.stringify(local))
-      const vol = JSON.parse(localStorage.getItem('basehub_swaphub_volume') || '{}')
-      vol[normalized] = (vol[normalized] || 0) + amount
-      localStorage.setItem('basehub_swaphub_volume', JSON.stringify(vol))
-      const awarded = await checkSwapVolumeMilestones(walletAddress)
-      return awarded
+    if (!transactionHash || amount <= 0) {
+      console.log('❌ Missing tx_hash or invalid amount for swap record')
+      return { xpFromPer100: 0, xpFromMilestones: 0 }
     }
 
-    console.log('📝 Recording swap volume (SwapHub):', { wallet: normalized.slice(0, 10) + '...', amountUSD: amount, txHash: transactionHash?.slice(0, 10) + '...' })
-
-    // 1) Insert into swaphub_swaps (her swap bir satır)
-    const { error: insertErr } = await supabase
-      .from('swaphub_swaps')
-      .insert([{ wallet_address: normalized, amount_usd: amount, tx_hash: transactionHash || null }])
-
-    if (insertErr) {
-      console.error('❌ swaphub_swaps insert error:', insertErr)
-      throw insertErr
+    const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL
+    if (!supabaseUrl) {
+      console.log('⚠️ Supabase URL not configured')
+      return { xpFromPer100: 0, xpFromMilestones: 0 }
     }
 
-    // 2) Upsert swaphub_volume (toplam hacim güncelle)
-    const { data: existing } = await supabase
-      .from('swaphub_volume')
-      .select('total_volume_usd, swap_count')
-      .eq('wallet_address', normalized)
-      .maybeSingle()
+    console.log('📝 Recording swap volume (SwapHub via Edge Function):', { wallet: normalized.slice(0, 10) + '...', amountUSD: amount, txHash: transactionHash.slice(0, 10) + '...' })
 
-    const newTotal = (existing?.total_volume_usd ?? 0) + amount
-    const newCount = (existing?.swap_count ?? 0) + 1
-    const { error: volErr } = await supabase
-      .from('swaphub_volume')
-      .upsert(
-        {
-          wallet_address: normalized,
-          total_volume_usd: newTotal,
-          swap_count: newCount,
-          last_tx_hash: transactionHash || null,
-          updated_at: new Date().toISOString()
-        },
-        { onConflict: 'wallet_address' }
-      )
+    // Direct fetch (verify_jwt=false) - more reliable in Farcaster/miniapp browsers
+    const url = `${supabaseUrl}/functions/v1/record-swap`
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        wallet_address: normalized,
+        swap_amount_usd: amount,
+        tx_hash: transactionHash
+      })
+    })
 
-    if (volErr) {
-      console.error('❌ swaphub_volume upsert error:', volErr)
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      console.error('❌ record-swap HTTP error:', res.status, data?.error || res.statusText)
+      throw new Error(data?.error || `HTTP ${res.status}`)
+    }
+    if (data?.error) {
+      console.error('❌ record-swap returned error:', data.error)
+      throw new Error(data.error)
     }
 
-    // 3) XP milestone kontrolü (per $100 + $1k/$10k/$100k/$1M) — return XP awarded for success toast
-    const awarded = await checkSwapVolumeMilestones(walletAddress)
-    return awarded
+    const xpFromPer100 = data?.xpFromPer100 ?? 0
+    const xpFromMilestones = data?.xpFromMilestones ?? 0
+    return { xpFromPer100, xpFromMilestones }
   } catch (error) {
     console.error('❌ Error in recordSwapTransaction:', error)
     return { xpFromPer100: 0, xpFromMilestones: 0 }
