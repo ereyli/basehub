@@ -6,7 +6,7 @@ import { wrapFetchWithPayment } from 'x402-fetch'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { config } from '../config/wagmi'
 import { isInFarcaster } from '../config/wagmi'
-import { addXP, recordTransaction } from '../utils/xpUtils'
+import { addXP } from '../utils/xpUtils'
 import { useQuestSystem } from './useQuestSystem'
 
 export const useX402Payment = () => {
@@ -221,11 +221,8 @@ export const useX402Payment = () => {
           console.log('🎁 Awarding 500 XP for successful x402 payment...')
           
           // Add XP (500 XP for x402 payment)
-          await addXP(address, 500, 'X402_PAYMENT')
+          await addXP(address, 500, 'X402_PAYMENT', null, false, transactionHash || null)
           console.log('✅ 500 XP added successfully')
-          
-          // Record transaction
-          await recordTransaction(address, 'X402_PAYMENT', 500, transactionHash || 'x402-payment')
           console.log('✅ Transaction recorded successfully')
           
           // Update quest progress

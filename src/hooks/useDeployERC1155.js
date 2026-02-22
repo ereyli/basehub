@@ -3,7 +3,7 @@ import { useAccount, useWalletClient, useChainId } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { parseEther, encodeAbiParameters, parseAbiParameters } from 'viem'
 import { config, DATA_SUFFIX } from '../config/wagmi'
-import { addXP, recordTransaction } from '../utils/xpUtils'
+import { addXP } from '../utils/xpUtils'
 import { useNetworkCheck } from './useNetworkCheck'
 import { useQuestSystem } from './useQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'
@@ -531,18 +531,7 @@ export const useDeployERC1155 = () => {
       }
 
       try {
-        await addXP(address, 850, 'ERC1155 Deployment', chainId)
-        await recordTransaction({
-          wallet_address: address,
-          transaction_type: 'ERC1155_DEPLOY',
-          transaction_hash: deployTxHash,
-          contract_address: contractAddress,
-          amount: deployerAddress ? DEPLOYER_FEE_ETH : '0.00007',
-          currency: 'ETH',
-          status: 'success',
-          game_type: 'ERC1155 Deployment',
-          metadata: { name, symbol, uri },
-        })
+        await addXP(address, 850, 'ERC1155 Deployment', chainId, false, deployTxHash)
       } catch (e) { console.error('❌ XP/record failed:', e) }
       try { await updateQuestProgress('erc1155Deployed', 1) } catch (questError) { console.error('❌ Quest update failed:', questError) }
 

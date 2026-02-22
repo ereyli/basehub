@@ -4,7 +4,7 @@ import { parseEther } from 'viem'
 import { useNetworkCheck } from './useNetworkCheck'
 import { EARLY_ACCESS_CONFIG, EARLY_ACCESS_ABI } from '../config/earlyAccessNFT'
 import { DATA_SUFFIX } from '../config/wagmi'
-import { addXP, recordTransaction } from '../utils/xpUtils'
+import { addXP } from '../utils/xpUtils'
 
 export const useEarlyAccessMint = () => {
   const { address, isConnected } = useAccount()
@@ -158,16 +158,7 @@ export const useEarlyAccessMint = () => {
       const awardXP = async () => {
         try {
           console.log('🎉 Awarding 3000 XP for Early Access NFT minting!')
-          await addXP(address, 3000, 'Early Access NFT Mint')
-          
-          // Record transaction
-          await recordTransaction({
-            wallet_address: address,
-            game_type: 'Early Access NFT Mint',
-            tx_hash: hash,
-            xp_earned: 3000,
-            result: 'success'
-          })
+          await addXP(address, 3000, 'Early Access NFT Mint', null, false, hash)
           
           console.log('✅ XP awarded and transaction recorded!')
         } catch (error) {

@@ -2,12 +2,13 @@ import React from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useChainId } from 'wagmi'
-import { Home, Users, Zap, Sun, Moon, Repeat, Coins, Dice1, TrendingUp, Rocket, Loader2 } from 'lucide-react'
+import { Home, Users, Zap, Sun, Moon, Repeat, Coins, Dice1, TrendingUp, Rocket, Loader2, Activity } from 'lucide-react'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { isTestnetChainId } from '../config/networks'
 import { useFastDeployModal } from '../contexts/FastDeployContext'
 import { getCurrentConfig } from '../config/base'
 import { useProofOfUsage } from '../hooks/useProofOfUsage'
+import { useTotalTxCount } from '../hooks/useTotalTxCount'
 import { getXP, getNFTCount } from '../utils/xpUtils'
 import { useSupabase } from '../hooks/useSupabase'
 import { useTransactions } from '../hooks/useTransactions'
@@ -22,6 +23,7 @@ const WebHeader = () => {
   const { openModal: openFastDeployModal } = useFastDeployModal()
   const baseConfig = getCurrentConfig()
   const { totalUsers, loading: proofLoading } = useProofOfUsage()
+  const { totalTx, loading: txLoading, justIncremented } = useTotalTxCount()
   const { supabase } = useSupabase()
   const { sendGMTransaction, sendGNTransaction } = useTransactions()
   const [isScrolled, setIsScrolled] = React.useState(false)
@@ -222,6 +224,15 @@ const WebHeader = () => {
                 )}
               </div>
             )}
+
+            {/* TX Counter - Platform total transactions */}
+            <div className="header-tx-display" title="Total platform transactions">
+              <Activity size={16} />
+              <span className={`header-tx-value ${justIncremented ? 'tx-pulse' : ''}`}>
+                {txLoading ? '...' : totalTx.toLocaleString()}
+              </span>
+              <span className="header-tx-label">TX</span>
+            </div>
 
             {/* Proof of Usage */}
             <div className="proof-of-usage">

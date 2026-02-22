@@ -3,7 +3,7 @@ import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagm
 import { parseEther } from 'viem';
 import { AI_NFT_CONFIG, getContractAddress, calculateMintFee, calculateMintFeeWei } from '../config/aiNFT';
 import { DATA_SUFFIX } from '../config/wagmi';
-import { addXP, recordTransaction } from '../utils/xpUtils';
+import { addXP } from '../utils/xpUtils';
 import { useQuestSystem } from './useQuestSystem';
 
 // AI Art Collection V2 Contract ABI (Tiered Pricing)
@@ -492,17 +492,7 @@ export function useAINFTMinting(quantity = 1) {
       const awardXPAndUpdateQuests = async () => {
         try {
           console.log('🎉 Awarding 500 XP for AI NFT minting!');
-          await addXP(address, 500, 'AI NFT Minting');
-          
-          // Record transaction
-          await recordTransaction({
-            wallet_address: address,
-            game_type: 'AI NFT Minting',
-            tx_hash: hash,
-            xp_earned: 500,
-            result: 'success',
-            quantity: quantity
-          });
+          await addXP(address, 500, 'AI NFT Minting', null, false, hash);
           
           // Update quest progress
           const { updateQuestProgress } = useQuestSystem();

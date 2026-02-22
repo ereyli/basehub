@@ -3,7 +3,7 @@ import { useAccount, useWaitForTransactionReceipt, useWalletClient, useChainId }
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { parseEther, encodeAbiParameters, parseAbiParameters } from 'viem'
 import { config, DATA_SUFFIX } from '../config/wagmi'
-import { addXP, recordTransaction } from '../utils/xpUtils'
+import { addXP } from '../utils/xpUtils'
 import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/pinata'
 import { useNetworkCheck } from './useNetworkCheck'
 import { useQuestSystem } from './useQuestSystem'
@@ -577,18 +577,7 @@ export const useDeployERC721 = () => {
       }
 
       try {
-        await addXP(address, 850, 'ERC721 Deployment', chainId)
-        await recordTransaction({
-          wallet_address: address,
-          transaction_type: 'ERC721_DEPLOY',
-          transaction_hash: deployTxHash,
-          contract_address: contractAddress,
-          amount: deployerAddress ? DEPLOYER_FEE_ETH : '0.00007',
-          currency: 'ETH',
-          status: 'success',
-          game_type: 'ERC721 Deployment',
-          metadata: { name, symbol, imageUrl: imageUrl || null, metadataUrl },
-        })
+        await addXP(address, 850, 'ERC721 Deployment', chainId, false, deployTxHash)
       } catch (e) { console.error('❌ XP/record failed:', e) }
       try { await updateQuestProgress('erc721Deployed', 1) } catch (questError) { console.error('❌ Quest update failed:', questError) }
 

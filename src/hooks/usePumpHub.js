@@ -4,7 +4,7 @@ import { parseEther, formatEther, formatUnits, parseUnits, decodeEventLog, maxUi
 import { NETWORKS } from '../config/networks'
 import { supabase } from '../config/supabase'
 import { DATA_SUFFIX } from '../config/wagmi'
-import { addXP, recordTransaction } from '../utils/xpUtils'
+import { addXP } from '../utils/xpUtils'
 
 // PumpHubFactory Contract ABI
 const PUMPHUB_FACTORY_ABI = [
@@ -495,8 +495,7 @@ export const usePumpHub = () => {
               // Award XP for token creation (2000 XP)
               try {
                 console.log('🎁 Awarding 2000 XP for token creation...')
-                await addXP(address, 2000, 'PUMPHUB_TOKEN_CREATION')
-                await recordTransaction(address, 'PUMPHUB_TOKEN_CREATION', 2000, currentHash)
+                await addXP(address, 2000, 'PUMPHUB_TOKEN_CREATION', null, false, currentHash)
                 console.log('✅ XP awarded for token creation')
               } catch (xpError) {
                 console.error('⚠️ Error awarding XP for token creation:', xpError)
@@ -533,8 +532,7 @@ export const usePumpHub = () => {
             // Award XP for buy (100 XP)
             try {
               console.log('🎁 Awarding 100 XP for token buy...')
-              await addXP(address, 100, 'PUMPHUB_BUY')
-              await recordTransaction(address, 'PUMPHUB_BUY', 100, currentHash)
+              await addXP(address, 100, 'PUMPHUB_BUY', null, false, currentHash)
               console.log('✅ XP awarded for token buy')
             } catch (xpError) {
               console.error('⚠️ Error awarding XP for buy:', xpError)
@@ -567,8 +565,7 @@ export const usePumpHub = () => {
             // Award XP for sell (100 XP)
             try {
               console.log('🎁 Awarding 100 XP for token sell...')
-              await addXP(address, 100, 'PUMPHUB_SELL')
-              await recordTransaction(address, 'PUMPHUB_SELL', 100, currentHash)
+              await addXP(address, 100, 'PUMPHUB_SELL', null, false, currentHash)
               console.log('✅ XP awarded for token sell')
             } catch (xpError) {
               console.error('⚠️ Error awarding XP for sell:', xpError)

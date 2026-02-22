@@ -105,7 +105,8 @@ export const getNFTCount = async (walletAddress) => {
 
 // Add XP to user's wallet address (every game gives XP)
 // skipNFTBonus: if true, NFT multiplier will not be applied (used for NFT Wheel)
-export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chainId = null, skipNFTBonus = false) => {
+// transactionHash: optional on-chain tx hash for logging
+export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chainId = null, skipNFTBonus = false, transactionHash = null) => {
   if (!walletAddress || !xpAmount) {
     console.log('❌ Missing walletAddress or xpAmount:', { walletAddress, xpAmount })
     return
@@ -159,7 +160,6 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
   // Check if Supabase is available
   if (!supabase || !supabase.from) {
     console.log('⚠️ Supabase not available, XP will be stored locally')
-    // Store in localStorage as fallback
     const localXP = JSON.parse(localStorage.getItem('basehub_xp') || '{}')
     localXP[walletAddress] = (localXP[walletAddress] || 0) + finalXP
     localStorage.setItem('basehub_xp', JSON.stringify(localXP))
@@ -168,175 +168,23 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
   }
 
   try {
-    console.log('📊 Checking if player exists in Supabase...')
-    // Normalize wallet address to lowercase for consistent querying
-    const normalizedWalletAddress = walletAddress.toLowerCase()
-    // First, check if player already exists
-    // All wallet addresses are now normalized to lowercase in Supabase
-    const { data: existingPlayer, error: fetchError } = await supabase
-      .from('players')
-      .select('*')
-      .eq('wallet_address', normalizedWalletAddress)
-      .single()
+    // Use secure RPC - validates game_type and XP amount, bypasses RLS
+    const { data, error } = await supabase.rpc('award_xp', {
+      p_wallet_address: walletAddress,
+      p_final_xp: Math.round(finalXP),
+      p_game_type: gameType,
+      p_transaction_hash: transactionHash || null
+    })
 
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      console.error('❌ Error fetching player:', fetchError)
-      throw fetchError
+    if (error) {
+      console.error('❌ award_xp RPC error:', error)
+      throw error
     }
 
-    console.log('🔍 Player lookup result:', { existingPlayer, fetchError: fetchError?.code })
-
-    if (existingPlayer) {
-      console.log('👤 Updating existing player:', existingPlayer.wallet_address)
-      console.log('🔗 Chain ID for XP update:', chainId)
-      
-      // CRITICAL: Ensure existingPlayer.total_xp is a valid number
-      // Convert to number if it's a string (Supabase sometimes returns strings)
-      let currentXP = existingPlayer.total_xp
-      if (currentXP === null || currentXP === undefined) {
-        currentXP = 0
-      } else if (typeof currentXP === 'string') {
-        currentXP = parseFloat(currentXP) || 0
-      } else if (typeof currentXP !== 'number' || isNaN(currentXP)) {
-        console.error('❌ CRITICAL: existingPlayer.total_xp is invalid:', existingPlayer.total_xp)
-        console.error('❌ Player data:', existingPlayer)
-        // Use 0 as fallback instead of throwing - this prevents XP loss
-        currentXP = 0
-        console.warn('⚠️ Using 0 as fallback for invalid total_xp')
-      }
-      
-      console.log('📊 Current XP value:', { 
-        raw: existingPlayer.total_xp, 
-        processed: currentXP, 
-        type: typeof currentXP 
-      })
-      
-      // Update existing player - add XP
-      const newTotalXP = currentXP + finalXP
-      const newLevel = Math.floor(newTotalXP / 100) + 1
-      const newTotalTransactions = (existingPlayer.total_transactions || 0) + 1
-
-      console.log('📈 Player update data:', { 
-        oldXP: currentXP, 
-        xpToAdd: finalXP, 
-        newXP: newTotalXP, 
-        newLevel, 
-        newTotalTransactions,
-        chainId
-      })
-
-      const { error: updateError } = await supabase
-        .from('players')
-        .update({
-          total_xp: newTotalXP,
-          level: newLevel,
-          total_transactions: newTotalTransactions,
-          updated_at: new Date().toISOString()
-        })
-        .eq('wallet_address', normalizedWalletAddress)
-
-      if (updateError) {
-        console.error('❌ Error updating player:', updateError)
-        throw updateError
-      }
-
-      // Note: Transaction is recorded separately in useTransactions.js with transaction_hash
-      // We don't record here to avoid duplicate entries
-      // Transaction recording happens after transaction confirmation in game hooks
-
-      console.log(`✅ Updated ${walletAddress} with ${xpAmount} XP. Total: ${newTotalXP}`)
-      return newTotalXP
-    } else {
-      console.log('🆕 Creating new player for:', normalizedWalletAddress)
-      
-      // CRITICAL: Before creating new player, double-check if player exists
-      // This prevents race conditions where player might have been created between checks
-      // All wallet addresses are now normalized to lowercase in Supabase
-      const { data: doubleCheckPlayer, error: doubleCheckError } = await supabase
-        .from('players')
-        .select('total_xp, total_transactions')
-        .eq('wallet_address', normalizedWalletAddress)
-        .single()
-      
-      if (doubleCheckPlayer && !doubleCheckError) {
-        console.log('⚠️ Player found on double-check, updating instead of creating')
-        // Player exists, update instead
-        // Handle string/number conversion for total_xp
-        let currentXP = doubleCheckPlayer.total_xp
-        if (currentXP === null || currentXP === undefined) {
-          currentXP = 0
-        } else if (typeof currentXP === 'string') {
-          currentXP = parseFloat(currentXP) || 0
-        } else if (typeof currentXP !== 'number' || isNaN(currentXP)) {
-          console.warn('⚠️ Double-check: Invalid total_xp, using 0 as fallback:', doubleCheckPlayer.total_xp)
-          currentXP = 0
-        }
-        
-        const newTotalXP = currentXP + finalXP
-        const newLevel = Math.floor(newTotalXP / 100) + 1
-        const newTotalTransactions = (doubleCheckPlayer.total_transactions || 0) + 1
-        
-        const { error: updateError } = await supabase
-          .from('players')
-          .update({
-            total_xp: newTotalXP,
-            level: newLevel,
-            total_transactions: newTotalTransactions,
-            updated_at: new Date().toISOString()
-          })
-          .eq('wallet_address', normalizedWalletAddress)
-        
-        if (updateError) {
-          console.error('❌ Error updating player on double-check:', updateError)
-          throw updateError
-        }
-        
-        console.log(`✅ Updated ${walletAddress} with ${xpAmount} XP (double-check). Total: ${newTotalXP}`)
-        return newTotalXP
-      }
-      
-      // Create new player only if double-check confirms player doesn't exist
-      const newPlayerData = {
-        wallet_address: normalizedWalletAddress,
-        total_xp: finalXP,
-        level: Math.floor(finalXP / 100) + 1,
-        total_transactions: 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-
-      console.log('📝 New player data:', newPlayerData)
-
-      const { error: insertError } = await supabase
-        .from('players')
-        .insert([newPlayerData])
-
-      if (insertError) {
-        console.error('❌ Error creating player:', insertError)
-        throw insertError
-      }
-
-      // Record transaction in transactions table
-      try {
-        await recordTransaction({
-          wallet_address: normalizedWalletAddress,
-          game_type: gameType,
-          xp_earned: finalXP,
-          base_xp: xpAmount,
-          bonus_xp: bonusXP,
-          nft_count: nftCount,
-          multiplier: multiplier,
-          transaction_hash: null // Can be added later if needed
-          // Note: chain_id removed - column doesn't exist in Supabase table yet
-        })
-      } catch (txError) {
-        // Don't fail the player creation if transaction recording fails
-        console.warn('⚠️ Failed to record transaction (non-critical):', txError)
-      }
-
-      console.log(`✅ Created new player ${walletAddress} with ${finalXP} XP`)
-      return xpAmount
-    }
+    const newTotalXP = data?.new_total_xp ?? finalXP
+    console.log(`✅ XP awarded via secure RPC. Total: ${newTotalXP}`)
+    localStorage.setItem('basehub_tx_refresh', Date.now().toString())
+    return newTotalXP
   } catch (error) {
     console.error('❌ Error in addXP:', error)
     throw error
@@ -573,7 +421,7 @@ export const recordTransaction = async (transactionData) => {
 }
 
 // Add bonus XP for winning games
-export const addBonusXP = async (walletAddress, gameType, isWin, chainId = null) => {
+export const addBonusXP = async (walletAddress, gameType, isWin, chainId = null, transactionHash = null) => {
   if (!walletAddress || !gameType) return
 
   // Base XP for playing (varies by game type)
@@ -611,7 +459,7 @@ export const addBonusXP = async (walletAddress, gameType, isWin, chainId = null)
   const totalXP = baseXP + bonusXP
   console.log(`${gameType} game: Base ${baseXP} XP + Bonus ${bonusXP} XP = ${totalXP} XP total`)
   
-  return await addXP(walletAddress, totalXP, gameType.toUpperCase() + '_GAME', chainId)
+  return await addXP(walletAddress, totalXP, gameType.toUpperCase() + '_GAME', chainId, false, transactionHash)
 }
 
 // Claim tokens (convert XP to BHUP tokens) - COMING SOON
@@ -796,13 +644,6 @@ export const checkSwapVolumeMilestones = async (walletAddress) => {
     for (let b = blocksAwarded + 1; b <= blocksReached; b++) {
       const blockThreshold = b * 100
       await addXP(walletAddress, SWAP_PER_100_XP, SWAP_PER_100_GAME_TYPE, null, false)
-      await recordTransaction({
-        wallet_address: walletAddress,
-        game_type: SWAP_PER_100_GAME_TYPE,
-        xp_earned: SWAP_PER_100_XP,
-        swap_amount_usd: blockThreshold,
-        transaction_hash: null
-      })
       result.xpFromPer100 += SWAP_PER_100_XP * multiplier
       console.log(`✅ Per $100 awarded: $${blockThreshold} → ${SWAP_PER_100_XP * multiplier} XP${multiplier > 1 ? ` (${multiplier}x NFT)` : ''}`)
     }
@@ -821,13 +662,6 @@ export const checkSwapVolumeMilestones = async (walletAddress) => {
       if (awardedSet.has(tier.key)) continue
 
       await addXP(walletAddress, tier.xp, tier.key, null, false)
-      await recordTransaction({
-        wallet_address: walletAddress,
-        game_type: tier.key,
-        xp_earned: tier.xp,
-        swap_amount_usd: tier.threshold,
-        transaction_hash: null
-      })
       result.xpFromMilestones += tier.xp * multiplier
       awardedSet.add(tier.key)
       console.log(`✅ Swap milestone awarded: ${tier.key} ($${tier.threshold.toLocaleString()}) → ${(tier.xp * multiplier).toLocaleString()} XP${multiplier > 1 ? ` (${multiplier}x NFT)` : ''}`)

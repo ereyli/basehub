@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useWalletClient, useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { wrapFetchWithPayment } from 'x402-fetch'
-import { addXP, recordTransaction } from '../utils/xpUtils'
+import { addXP } from '../utils/xpUtils'
 import { useQuestSystem } from './useQuestSystem'
 import { NETWORKS } from '../config/networks'
 
@@ -137,12 +137,9 @@ export const useWalletAnalysis = () => {
             console.log('🎁 Awarding 400 XP for successful wallet analysis...')
             
             // Add XP (400 XP for wallet analysis)
-            await addXP(address, 400, 'WALLET_ANALYSIS')
+            const transactionHash = result.transactionHash || null
+            await addXP(address, 400, 'WALLET_ANALYSIS', null, false, transactionHash)
             console.log('✅ 400 XP added successfully')
-            
-            // Record transaction
-            const transactionHash = result.transactionHash || 'wallet-analysis'
-            await recordTransaction(address, 'WALLET_ANALYSIS', 400, transactionHash)
             console.log('✅ Transaction recorded successfully')
             
             // Update quest progress (if there's a wallet analysis quest)

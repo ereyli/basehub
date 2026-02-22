@@ -3,7 +3,7 @@ import { useAccount, useChainId, useWriteContract } from 'wagmi'
 import { waitForTransactionReceipt, sendTransaction } from 'wagmi/actions'
 import { parseEther } from 'viem'
 import { config } from '../config/wagmi'
-import { addXP, recordTransaction } from '../utils/xpUtils'
+import { addXP } from '../utils/xpUtils'
 import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/pinata'
 import { useNetworkCheck } from './useNetworkCheck'
 
@@ -235,24 +235,9 @@ export const useDeployNFT = () => {
       // Award XP for successful NFT deployment
       try {
         console.log('🎉 Awarding 850 XP for NFT deployment!')
-        await addXP(address, 850, 'NFT Deployment', chainId)
+        await addXP(address, 850, 'NFT Deployment', chainId, false, feeTxHash)
       } catch (xpError) {
         console.warn('⚠️ Failed to award XP:', xpError)
-      }
-
-      // Record transaction
-      try {
-        await recordTransaction({
-          wallet_address: address,
-          transaction_hash: feeTxHash,
-          game_type: 'NFT_DEPLOYMENT',
-          xp_earned: 850,
-          amount: '0.000001',
-          token: 'ETH',
-          status: 'completed'
-        })
-      } catch (recordError) {
-        console.warn('⚠️ Failed to record transaction:', recordError)
       }
 
       return {

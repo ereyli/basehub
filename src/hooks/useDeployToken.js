@@ -3,7 +3,7 @@ import { useAccount, useWriteContract, useWalletClient, useChainId } from 'wagmi
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { parseEther, encodeAbiParameters, parseAbiParameters } from 'viem'
 import { config, DATA_SUFFIX } from '../config/wagmi'
-import { addXP, recordTransaction } from '../utils/xpUtils'
+import { addXP } from '../utils/xpUtils'
 import { useNetworkCheck } from './useNetworkCheck'
 import { useQuestSystem } from './useQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'
@@ -462,18 +462,7 @@ export const useDeployToken = () => {
 
       // Award XP, record, quest (shared)
       try {
-        await addXP(address, 850, 'Token Deployment', chainId)
-        await recordTransaction({
-          wallet_address: address,
-          game_type: 'Token Deployment',
-          tx_hash: deployTxHash,
-          xp_earned: 850,
-          result: 'success',
-          contract_address: contractAddress,
-          token_name: name,
-          token_symbol: symbol,
-          initial_supply: initialSupply.toString(),
-        })
+        await addXP(address, 850, 'Token Deployment', chainId, false, deployTxHash)
       } catch (xpError) {
         console.error('⚠️ Failed to award XP/record:', xpError)
       }

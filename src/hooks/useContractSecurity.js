@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useWalletClient, useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { wrapFetchWithPayment } from 'x402-fetch'
-import { addXP, recordTransaction } from '../utils/xpUtils'
+import { addXP } from '../utils/xpUtils'
 import { useQuestSystem } from './useQuestSystem'
 import { NETWORKS } from '../config/networks'
 
@@ -137,12 +137,9 @@ export const useContractSecurity = () => {
             console.log('🎁 Awarding 500 XP for successful contract security analysis...')
             
             // Add XP (500 XP for contract analysis)
-            await addXP(address, 500, 'CONTRACT_SECURITY')
+            const transactionHash = result.transactionHash || null
+            await addXP(address, 500, 'CONTRACT_SECURITY', null, false, transactionHash)
             console.log('✅ 500 XP added successfully')
-            
-            // Record transaction
-            const transactionHash = result.transactionHash || 'contract-security-analysis'
-            await recordTransaction(address, 'CONTRACT_SECURITY', 500, transactionHash)
             console.log('✅ Transaction recorded successfully')
             
             // Update quest progress (if there's a contract analysis quest)

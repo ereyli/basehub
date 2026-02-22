@@ -12,7 +12,7 @@ import {
 import { getContractAddressByNetwork, NETWORKS } from '../config/networks'
 import { NFT_COLLECTION_BYTECODE } from '../config/nftCollection'
 import { EARLY_ACCESS_CONFIG, EARLY_ACCESS_ABI } from '../config/earlyAccessNFT'
-import { addXP, recordTransaction } from '../utils/xpUtils'
+import { addXP } from '../utils/xpUtils'
 import { useQuestSystem } from './useQuestSystem'
 import { useNetworkCheck } from './useNetworkCheck'
 import { supabase } from '../config/supabase'
@@ -237,17 +237,7 @@ export function useNFTLaunchpad() {
 
       // XP & quest (2000 XP for launching a collection)
       try {
-        await addXP(address, 2000, 'NFT_LAUNCHPAD_COLLECTION', chainId)
-        await recordTransaction({
-          wallet_address: address,
-          game_type: 'NFT_LAUNCHPAD_COLLECTION',
-          transaction_hash: txHash,
-          contract_address: deployedAddress,
-          amount: feeEthForTx,
-          currency: 'ETH',
-          status: 'success',
-          metadata: { name, symbol, supply, mintPrice, isEarlyAccessHolder: feeEthForTx === DEPLOYER_FEE_NFT_COLLECTION_ETH_HOLDER },
-        })
+        await addXP(address, 2000, 'NFT_LAUNCHPAD_COLLECTION', chainId, false, txHash)
       } catch (e) {
         console.error('XP/record failed:', e)
       }

@@ -9,7 +9,7 @@ import { getFarcasterUniversalLink } from '../config/farcaster'
 import { TUG_OF_WAR_ABI, TUG_OF_WAR_ADDRESS } from '../config/tugOfWar'
 import { supabase } from '../config/supabase'
 import { DATA_SUFFIX } from '../config/wagmi'
-import { addXP, recordTransaction } from '../utils/xpUtils'
+import { addXP } from '../utils/xpUtils'
 
 const formatCountdown = (seconds) => {
   if (seconds <= 0) return 'Ended'
@@ -700,13 +700,7 @@ const PredictionArena = () => {
 
       if (address) {
         try {
-          await addXP(address, XP_REWARDS.CREATE_MARKET, 'PREDICTION_MARKET_CREATE', chainId, true)
-          await recordTransaction({
-            wallet_address: address,
-            game_type: 'PREDICTION_MARKET_CREATE',
-            xp_earned: XP_REWARDS.CREATE_MARKET,
-            transaction_hash: hash,
-          })
+          await addXP(address, XP_REWARDS.CREATE_MARKET, 'PREDICTION_MARKET_CREATE', chainId, true, hash)
         } catch (xpError) {
           console.error('Prediction create XP/record failed:', xpError)
         }
@@ -777,13 +771,7 @@ const PredictionArena = () => {
 
       if (address) {
         try {
-          await addXP(address, XP_REWARDS.PLACE_BET, 'PREDICTION_MARKET_BET', chainId, true)
-          await recordTransaction({
-            wallet_address: address,
-            game_type: 'PREDICTION_MARKET_BET',
-            xp_earned: XP_REWARDS.PLACE_BET,
-            transaction_hash: hash,
-          })
+          await addXP(address, XP_REWARDS.PLACE_BET, 'PREDICTION_MARKET_BET', chainId, true, hash)
         } catch (xpError) {
           console.error('Prediction bet XP/record failed:', xpError)
         }

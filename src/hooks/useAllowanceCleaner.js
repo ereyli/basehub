@@ -4,7 +4,7 @@ import { useWalletClient, useAccount, useWriteContract, useReadContract, useChai
 import { wrapFetchWithPayment } from 'x402-fetch'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { config, DATA_SUFFIX } from '../config/wagmi'
-import { addXP, recordTransaction } from '../utils/xpUtils'
+import { addXP } from '../utils/xpUtils'
 import { useQuestSystem } from './useQuestSystem'
 import { NETWORKS } from '../config/networks'
 import { parseUnits, formatUnits, maxUint256 } from 'viem'
@@ -226,9 +226,8 @@ export const useAllowanceCleaner = () => {
         if (address) {
           try {
             console.log('🎁 Awarding 300 XP for allowance scan...')
-            await addXP(address, 300, 'ALLOWANCE_CLEANER')
-            const transactionHash = result.transactionHash || 'allowance-scan'
-            await recordTransaction(address, 'ALLOWANCE_CLEANER', 300, transactionHash)
+            const transactionHash = result.transactionHash || null
+            await addXP(address, 300, 'ALLOWANCE_CLEANER', null, false, transactionHash)
             await updateQuestProgress('allowanceCleaner', 1)
           } catch (xpError) {
             console.error('⚠️ Error awarding XP:', xpError)
