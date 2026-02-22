@@ -1286,7 +1286,7 @@ const Home = () => {
                           <>
                             <MessageSquare size={24} style={{ color: 'white' }} />
                             <h3 style={compactStyles.cardTitle}>GM</h3>
-                            <div style={compactStyles.xpBadge}>50 XP</div>
+                            <div style={compactStyles.xpBadge}>150 XP</div>
                           </>
                         ) : (
                           <>
@@ -1300,7 +1300,7 @@ const Home = () => {
                               </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                              <div style={compactStyles.xpBadge}>50 XP</div>
+                              <div style={compactStyles.xpBadge}>150 XP</div>
                             </div>
                           </>
                         )}
@@ -1340,7 +1340,7 @@ const Home = () => {
                           <>
                             <MessageSquare size={24} style={{ color: 'white' }} />
                             <h3 style={compactStyles.cardTitle}>GN</h3>
-                            <div style={compactStyles.xpBadge}>50 XP</div>
+                            <div style={compactStyles.xpBadge}>150 XP</div>
                           </>
                         ) : (
                           <>
@@ -1354,7 +1354,7 @@ const Home = () => {
                               </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                              <div style={compactStyles.xpBadge}>50 XP</div>
+                              <div style={compactStyles.xpBadge}>150 XP</div>
                             </div>
                           </>
                         )}

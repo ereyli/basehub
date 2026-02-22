@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../config/supabase'
 import { TABLES } from '../config/supabase'
 
@@ -6,6 +6,7 @@ export const useTotalTxCount = () => {
   const [totalTx, setTotalTx] = useState(0)
   const [loading, setLoading] = useState(true)
   const [justIncremented, setJustIncremented] = useState(false)
+  const prevCountRef = useRef(0)
 
   const fetchTotalTx = useCallback(async () => {
     if (!supabase?.from) {
@@ -18,7 +19,13 @@ export const useTotalTxCount = () => {
         .select('*', { count: 'exact', head: true })
 
       if (!error && count !== null) {
-        setTotalTx(count)
+        const newCount = count
+        if (newCount > prevCountRef.current) {
+          setJustIncremented(true)
+          setTimeout(() => setJustIncremented(false), 450)
+        }
+        prevCountRef.current = newCount
+        setTotalTx(newCount)
       }
     } catch (err) {
       console.warn('useTotalTxCount fetch:', err)
@@ -29,29 +36,9 @@ export const useTotalTxCount = () => {
 
   useEffect(() => {
     fetchTotalTx()
+    const interval = setInterval(fetchTotalTx, 30000)
+    return () => clearInterval(interval)
   }, [fetchTotalTx])
-
-  // Supabase Realtime: listen for new transactions
-  useEffect(() => {
-    if (!supabase?.channel) return
-
-    const channel = supabase
-      .channel('basehub_tx_live')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: TABLES.TRANSACTIONS },
-        () => {
-          setTotalTx((prev) => prev + 1)
-          setJustIncremented(true)
-          setTimeout(() => setJustIncremented(false), 450)
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [])
 
   return { totalTx, loading, justIncremented }
 }
