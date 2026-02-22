@@ -23,6 +23,18 @@ module.exports = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 8453,
     },
+    ink: {
+      type: "http",
+      url: "https://rpc-qnd.inkonchain.com",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 57073,
+    },
+    soneium: {
+      type: "http",
+      url: "https://rpc.soneium.org",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 1868,
+    },
   },
   etherscan: {
     apiKey: {

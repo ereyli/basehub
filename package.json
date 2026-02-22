@@ -12,7 +12,9 @@
     "compile": "hardhat compile",
     "deploy:testnet": "hardhat run scripts/deploy.js --network baseSepolia",
     "deploy:mainnet": "hardhat run scripts/deploy.js --network base",
-    "deploy:local": "hardhat run scripts/deploy.js --network hardhat"
+    "deploy:local": "hardhat run scripts/deploy.js --network hardhat",
+    "deploy:nft-ink": "hardhat run scripts/deploy-nft-collection-deployer-no-early-access.js --config hardhat.config.cjs --network ink",
+    "deploy:nft-soneium": "hardhat run scripts/deploy-nft-collection-deployer-no-early-access.js --config hardhat.config.cjs --network soneium"
   },
   "dependencies": {
     "@coinbase/x402": "^0.7.1",
