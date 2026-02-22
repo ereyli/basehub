@@ -94,7 +94,6 @@ const MobileHeader = () => {
           <img src="/icon.png" alt="BaseHub" className="mobile-header-logo" />
           <div className="mobile-header-title">
             <span className="mobile-header-name">BASEHUB</span>
-            <span className="mobile-header-tagline">Gamified Smart Contracts</span>
           </div>
         </Link>
 
@@ -129,7 +128,6 @@ const MobileHeader = () => {
           <img src="/icon.png" alt="BaseHub" className="mobile-menu-logo" />
           <div className="mobile-menu-brand">
             <span className="mobile-menu-name">BASEHUB</span>
-            <span className="mobile-menu-tagline">Gamified Smart Contracts</span>
           </div>
           <button className="mobile-menu-close" onClick={() => setMenuOpen(false)}>
             <X size={20} />

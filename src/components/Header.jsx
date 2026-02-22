@@ -59,7 +59,6 @@ const Header = () => {
             <div className="header-logo-wrap">
               <img src="/icon.png" alt="BaseHub" className="header-logo-img" />
             </div>
-            <span className="logo-subtitle">Gamified smart contracts</span>
           </Link>
           
           {/* Navigation & Status */}
