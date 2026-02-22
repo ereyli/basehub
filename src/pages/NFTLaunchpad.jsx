@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
-import { useAccount, usePublicClient } from 'wagmi'
+import { useAccount, usePublicClient, useChainId } from 'wagmi'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Upload, Wand2, Package, AlertCircle, ExternalLink, CheckCircle,
@@ -14,6 +14,7 @@ import { NFT_LAUNCH_COLLECTION_ABI } from '../config/nftCollection'
 import { uploadToIPFS } from '../utils/pinata'
 import { generateAIImage } from '../utils/aiImageGenerator'
 import { supabase } from '../config/supabase'
+import { getAddressExplorerUrl, NETWORKS } from '../config/networks'
 
 function shortAddress(addr) {
   if (!addr || addr.length < 10) return addr
@@ -39,9 +40,11 @@ function formatMintPrice(price) {
   return `${p} ETH`
 }
 
-function getOpenSeaUrl(contractAddress) {
+/** OpenSea for Base, block explorer for Ink/Soneium (OpenSea doesn't support them) */
+function getCollectionMarketUrl(contractAddress, chainId) {
   if (!contractAddress) return ''
-  return `https://opensea.io/assets/base/${contractAddress}`
+  if (chainId === NETWORKS.BASE.chainId) return `https://opensea.io/assets/base/${contractAddress}`
+  return getAddressExplorerUrl(chainId, contractAddress) || ''
 }
 
 // Convert IPFS hash to gateway URL
@@ -226,6 +229,7 @@ function CollectionCardImage({ imageUrl, name }) {
 /* ═══════════════════════ MAIN COMPONENT ═══════════════════════ */
 export default function NFTLaunchpad() {
   const { address, isConnected } = useAccount()
+  const chainId = useChainId()
   const publicClient = usePublicClient()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -254,6 +258,7 @@ export default function NFTLaunchpad() {
   // Collections state
   const [collections, setCollections] = useState([])
   const [collectionsLoading, setCollectionsLoading] = useState(true)
+  const [countsByChain, setCountsByChain] = useState({ 8453: 0, 57073: 0, 1868: 0 })
   const [chainStatsByContract, setChainStatsByContract] = useState({})
   const [sortBy, setSortBy] = useState('newest') // newest | most_minted | trending | least_minted | oldest | price_low | price_high | recent_activity
   const [soldOutOnly, setSoldOutOnly] = useState(false)
@@ -277,16 +282,43 @@ export default function NFTLaunchpad() {
     return 'Processing...'
   }
 
-  // Load collections
+  // Fetch deploy counts by network (compact stats row)
+  useEffect(() => {
+    if (!supabase?.from) return
+    let cancelled = false
+    Promise.all([
+      supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).or('chain_id.eq.8453,chain_id.is.null'),
+      supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).eq('chain_id', 57073),
+      supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).eq('chain_id', 1868),
+    ]).then(([r1, r2, r3]) => {
+      if (cancelled) return
+      setCountsByChain({
+        8453: r1?.count ?? 0,
+        57073: r2?.count ?? 0,
+        1868: r3?.count ?? 0,
+      })
+    })
+    return () => { cancelled = true }
+  }, [success])
+
+  // Load collections - filter by current chain (Base, Ink or Soneium)
   useEffect(() => {
     if (!supabase?.from) { setCollectionsLoading(false); return }
     let cancelled = false
-    supabase
+    let query = supabase
       .from('nft_launchpad_collections')
-      .select('contract_address, deployer_address, name, symbol, supply, image_url, mint_price, slug, total_minted, is_active, created_at')
+      .select('contract_address, deployer_address, name, symbol, supply, image_url, mint_price, slug, total_minted, is_active, created_at, chain_id')
       .order('created_at', { ascending: false })
       .limit(100)
-      .then(({ data, error }) => {
+    // Filter by chain: Base (8453), Ink (57073), Soneium (1868). Legacy rows have chain_id NULL = treat as Base
+    if (chainId === NETWORKS.BASE.chainId) {
+      query = query.or('chain_id.eq.8453,chain_id.is.null')
+    } else if (chainId === NETWORKS.INKCHAIN.chainId) {
+      query = query.eq('chain_id', 57073)
+    } else if (chainId === NETWORKS.SONEIUM.chainId) {
+      query = query.eq('chain_id', 1868)
+    }
+    query.then(({ data, error }) => {
         if (cancelled) return
         setCollectionsLoading(false)
         if (error) {
@@ -297,7 +329,7 @@ export default function NFTLaunchpad() {
         setCollections(data ?? [])
       })
     return () => { cancelled = true }
-  }, [success])
+  }, [success, chainId])
 
   // Read collection state from chain so SOLD OUT / LIVE status stays accurate.
   useEffect(() => {
@@ -519,8 +551,22 @@ export default function NFTLaunchpad() {
               NFT Launchpad
             </h1>
             <p style={{ fontSize: '14px', color: '#94a3b8', margin: 0, maxWidth: '420px', marginInline: 'auto', lineHeight: 1.5 }}>
-              Deploy your NFT collection on Base. Set a mint price, get a shareable page, and earn from every mint.
+              Deploy your NFT collection on Base, Ink or Soneium. Set a mint price, get a shareable page, and earn from every mint.
             </p>
+            {/* Network deploy counts - compact row */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '12px', flexWrap: 'wrap' }}>
+              {[
+                { chainId: 8453, logo: '/base-logo.jpg', label: 'Base' },
+                { chainId: 57073, logo: '/ink-logo.jpg', label: 'Ink' },
+                { chainId: 1868, logo: '/soneium-logo.jpg', label: 'Soneium' },
+              ].map(({ chainId, logo, label }) => (
+                <div key={chainId} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'rgba(30,41,59,0.5)', borderRadius: '10px', border: '1px solid rgba(55,65,81,0.5)' }}>
+                  <img src={logo} alt={label} style={{ width: '20px', height: '20px', borderRadius: '50%', objectFit: 'cover' }} />
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#e2e8f0' }}>{countsByChain[chainId] ?? 0}</span>
+                  <span style={{ fontSize: '12px', color: '#94a3b8' }}>{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* ─── Tabs ─── */}
@@ -574,13 +620,13 @@ export default function NFTLaunchpad() {
                         <Rocket size={14} /> Open Mint Page
                       </button>
                     )}
-                    <a href={getOpenSeaUrl(contractAddress)} target="_blank" rel="noopener noreferrer"
+                    <a href={getCollectionMarketUrl(contractAddress, chainId)} target="_blank" rel="noopener noreferrer"
                       style={{ padding: '11px 18px', background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(55,65,81,0.8)', borderRadius: '12px', color: '#93c5fd', fontSize: '13px', fontWeight: '600', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      OpenSea <ExternalLink size={12} />
+                      {chainId === NETWORKS.BASE.chainId ? 'OpenSea' : 'Explorer'} <ExternalLink size={12} />
                     </a>
-                    <a href={`https://basescan.org/address/${contractAddress}`} target="_blank" rel="noopener noreferrer"
+                    <a href={getAddressExplorerUrl(chainId, contractAddress)} target="_blank" rel="noopener noreferrer"
                       style={{ padding: '11px 18px', background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(55,65,81,0.8)', borderRadius: '12px', color: '#93c5fd', fontSize: '13px', fontWeight: '600', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      Basescan <ExternalLink size={12} />
+                      {chainId === NETWORKS.BASE.chainId ? 'Basescan' : chainId === NETWORKS.INKCHAIN.chainId ? 'Ink Explorer' : 'Soneium Explorer'} <ExternalLink size={12} />
                     </a>
                   </div>
                   <p style={{ marginTop: '16px', fontSize: '12px', color: '#64748b' }}>

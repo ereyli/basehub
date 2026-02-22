@@ -3,6 +3,7 @@ import { useAccount, useWalletClient, useChainId, usePublicClient } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { encodeFunctionData } from 'viem'
 import { config, DATA_SUFFIX } from '../config/wagmi'
+import { NETWORKS } from '../config/networks'
 import { NFT_LAUNCH_COLLECTION_ABI } from '../config/nftCollection'
 import { useNetworkCheck } from './useNetworkCheck'
 import { supabase } from '../config/supabase'
@@ -92,7 +93,7 @@ export function useNFTMint(contractAddress) {
       if (!address) throw new Error('Wallet not connected')
       if (!walletClient) throw new Error('Wallet not available')
       if (!isCorrectNetwork) {
-        throw new Error(`Please switch to Base network. You are on ${networkName}.`)
+        throw new Error(`Please switch to Base, InkChain or Soneium. You are on ${networkName}.`)
       }
       if (!contractAddress) throw new Error('No contract address provided')
       if (!saleActive) throw new Error('Sale is not active for this collection')
@@ -101,12 +102,14 @@ export function useNFTMint(contractAddress) {
       }
 
       const totalCost = mintPrice * BigInt(quantity)
-      // Append ERC-8021 Builder Code for Base attribution (walletClient.sendTransaction has no dataSuffix param)
+      // ERC-8021 Builder Code: Base only (Ink doesn't support it)
       const mintData = encodeMintCall(quantity)
-      const dataWithSuffix = `${mintData}${DATA_SUFFIX.startsWith('0x') ? DATA_SUFFIX.slice(2) : DATA_SUFFIX}`
+      const dataToSend = chainId === NETWORKS.BASE.chainId
+        ? `${mintData}${DATA_SUFFIX.startsWith('0x') ? DATA_SUFFIX.slice(2) : DATA_SUFFIX}`
+        : mintData
       const hash = await walletClient.sendTransaction({
         to: contractAddress,
-        data: dataWithSuffix,
+        data: dataToSend,
         value: totalCost,
         chainId,
         gas: 300000n * BigInt(quantity),

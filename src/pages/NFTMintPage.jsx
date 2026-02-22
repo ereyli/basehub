@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useAccount, usePublicClient } from 'wagmi'
+import { useAccount, usePublicClient, useChainId } from 'wagmi'
 import { formatEther } from 'viem'
 import { Package, ExternalLink, AlertCircle, CheckCircle, ArrowLeft, Minus, Plus, Copy, Zap, Users, Share2 } from 'lucide-react'
 import NetworkGuard from '../components/NetworkGuard'
@@ -9,11 +9,16 @@ import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { getFarcasterUniversalLink } from '../config/farcaster'
 import { supabase } from '../config/supabase'
+import { getAddressExplorerUrl, getTransactionExplorerUrl, NETWORKS } from '../config/networks'
+import { NFT_LAUNCH_COLLECTION_ABI } from '../config/nftCollection'
 
 const SHARE_BASE_URL = 'https://www.basehub.fun'
 function getMintUrl(slug) { return slug ? `${SHARE_BASE_URL}/mint/${slug}` : '' }
-function getOpenSeaUrl(contractAddress) { return contractAddress ? `https://opensea.io/assets/base/${contractAddress}` : '' }
-import { NFT_LAUNCH_COLLECTION_ABI } from '../config/nftCollection'
+function getCollectionMarketUrl(contractAddress, chainId) {
+  if (!contractAddress) return ''
+  if (chainId === NETWORKS.BASE.chainId) return `https://opensea.io/assets/base/${contractAddress}`
+  return getAddressExplorerUrl(chainId, contractAddress) || ''
+}
 
 function shortAddress(addr) {
   if (!addr || addr.length < 10) return addr
@@ -36,6 +41,7 @@ function timeAgo(dateStr) {
 export default function NFTMintPage() {
   const { slug } = useParams()
   const navigate = useNavigate()
+  const chainId = useChainId()
   const { address, isConnected } = useAccount()
 
   const [collection, setCollection] = useState(null)
@@ -57,18 +63,18 @@ export default function NFTMintPage() {
   const handleTweetCollection = () => {
     if (!collection?.slug) return
     const mintUrl = getMintUrl(collection.slug)
-    const openseaUrl = getOpenSeaUrl(collection.contract_address)
+    const marketUrl = getCollectionMarketUrl(collection.contract_address, collection.chain_id ?? chainId)
     const name = collection.name || 'NFT Collection'
-    const text = `🎨 "${name}" on Base – mint now!\n\nMint: ${mintUrl}\nOpenSea: ${openseaUrl}\n\n#BaseHub #NFT #Base`
+    const text = `🎨 "${name}" on Base – mint now!\n\nMint: ${mintUrl}\nOpenSea: ${marketUrl}\n\n#BaseHub #NFT #Base`
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank')
   }
 
   const handleCastCollection = async () => {
     if (!castSdk?.actions?.composeCast || !collection?.slug) return
     const mintUrlFarcaster = getFarcasterUniversalLink(`/mint/${collection.slug}`)
-    const openseaUrl = getOpenSeaUrl(collection.contract_address)
+    const marketUrl = getCollectionMarketUrl(collection.contract_address, collection.chain_id ?? chainId)
     const name = collection.name || 'NFT Collection'
-    const castText = `🎨 "${name}" on BaseHub – mint on Base!\n\nMint: ${mintUrlFarcaster}\nOpenSea: ${openseaUrl}\n\n#BaseHub #NFT #Base\n\n🌐 Web: ${SHARE_BASE_URL}/nft-launchpad\n🎭 Farcaster: ${getFarcasterUniversalLink('/nft-launchpad')}`
+    const castText = `🎨 "${name}" on BaseHub – mint on Base!\n\nMint: ${mintUrlFarcaster}\nOpenSea: ${marketUrl}\n\n#BaseHub #NFT #Base\n\n🌐 Web: ${SHARE_BASE_URL}/nft-launchpad\n🎭 Farcaster: ${getFarcasterUniversalLink('/nft-launchpad')}`
     setIsSharingCast(true)
     try {
       await castSdk.actions.composeCast({ text: castText, embeds: [mintUrlFarcaster] })
@@ -277,7 +283,7 @@ export default function NFTMintPage() {
                 <p style={{ fontSize: '14px', color: '#9ca3af', marginBottom: '16px' }}>
                   {collection.symbol} · Created by{' '}
                   <a
-                    href={`https://basescan.org/address/${collection.deployer_address}`}
+                    href={getAddressExplorerUrl(collection?.chain_id ?? chainId, collection.deployer_address)}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ color: '#60a5fa', textDecoration: 'none' }}
@@ -343,11 +349,11 @@ export default function NFTMintPage() {
                       <span style={{ fontWeight: '600', color: '#22c55e' }}>Mint successful!</span>
                     </div>
                     <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                      <a href={`https://basescan.org/tx/${txHash}`} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <a href={getTransactionExplorerUrl(collection?.chain_id ?? chainId, txHash)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         View transaction <ExternalLink size={12} />
                       </a>
-                      <a href={getOpenSeaUrl(contractAddress)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        View on OpenSea <ExternalLink size={12} />
+                      <a href={getCollectionMarketUrl(contractAddress, collection?.chain_id ?? chainId)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        View on {(collection?.chain_id ?? chainId) === NETWORKS.BASE.chainId ? 'OpenSea' : 'Explorer'} <ExternalLink size={12} />
                       </a>
                     </div>
                   </div>
@@ -416,11 +422,11 @@ export default function NFTMintPage() {
                 )}
 
                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '16px', flexWrap: 'wrap' }}>
-                  <a href={getOpenSeaUrl(contractAddress)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    OpenSea <ExternalLink size={12} />
+                  <a href={getCollectionMarketUrl(contractAddress, collection?.chain_id ?? chainId)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {(collection?.chain_id ?? chainId) === NETWORKS.BASE.chainId ? 'OpenSea' : 'Explorer'} <ExternalLink size={12} />
                   </a>
-                  <a href={`https://basescan.org/address/${contractAddress}`} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    Basescan <ExternalLink size={12} />
+                  <a href={getAddressExplorerUrl(collection?.chain_id ?? chainId, contractAddress)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {(collection?.chain_id ?? chainId) === NETWORKS.BASE.chainId ? 'Basescan' : (collection?.chain_id ?? chainId) === NETWORKS.INKCHAIN.chainId ? 'Ink Explorer' : 'Soneium Explorer'} <ExternalLink size={12} />
                   </a>
                 </div>
                 {/* Share: Tweet (web) / Cast (Farcaster) */}
@@ -478,7 +484,7 @@ export default function NFTMintPage() {
                 <div style={{ fontSize: '13px', color: '#d1d5db', marginBottom: '12px' }}>
                   <div style={{ marginBottom: '6px' }}>
                     <span style={{ color: '#64748b' }}>Creator </span>
-                    <a href={`https://basescan.org/address/${collection.deployer_address}`} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa' }}>{shortAddress(collection.deployer_address)}</a>
+                    <a href={getAddressExplorerUrl(collection?.chain_id ?? chainId, collection.deployer_address)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa' }}>{shortAddress(collection.deployer_address)}</a>
                   </div>
                   {collection.created_at && (
                     <div style={{ marginBottom: '6px' }}>
@@ -504,11 +510,11 @@ export default function NFTMintPage() {
 
                 <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#9ca3af', marginBottom: '8px', marginTop: '20px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Links</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
-                  <a href={getOpenSeaUrl(contractAddress)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ExternalLink size={14} /> OpenSea
+                  <a href={getCollectionMarketUrl(contractAddress, collection?.chain_id ?? chainId)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <ExternalLink size={14} /> {(collection?.chain_id ?? chainId) === NETWORKS.BASE.chainId ? 'OpenSea' : 'Explorer'}
                   </a>
-                  <a href={`https://basescan.org/address/${contractAddress}`} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ExternalLink size={14} /> Basescan
+                  <a href={getAddressExplorerUrl(collection?.chain_id ?? chainId, contractAddress)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <ExternalLink size={14} /> {(collection?.chain_id ?? chainId) === NETWORKS.BASE.chainId ? 'Basescan' : (collection?.chain_id ?? chainId) === NETWORKS.INKCHAIN.chainId ? 'Ink Explorer' : 'Soneium Explorer'}
                   </a>
                 </div>
 
@@ -524,7 +530,7 @@ export default function NFTMintPage() {
                     {holders.map(({ address, count }) => (
                       <a
                         key={address}
-                        href={`https://basescan.org/address/${address}`}
+                        href={getAddressExplorerUrl(collection?.chain_id ?? chainId, address)}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{ fontSize: '13px', color: '#60a5fa', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}

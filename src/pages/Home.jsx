@@ -989,7 +989,7 @@ const Home = () => {
                     <Image size={compactStyles.iconSize} />
                   </div>
                   <h2 style={compactStyles.categoryTitle}>NFT</h2>
-                  {!isCompactMode && renderNetworkLogos(['base'])}
+                  {!isCompactMode && renderNetworkLogos(['base', 'ink', 'soneium'])}
                 </div>
                 <div style={compactStyles.cardGrid}>
                   {games.filter(g => ['nft-launchpad', 'nft-launchpad-explore'].includes(g.id)).map((game) => (
@@ -1250,7 +1250,7 @@ const Home = () => {
                     <MessageSquare size={compactStyles.iconSize} />
                   </div>
                   <h2 style={compactStyles.categoryTitle}>GM & GN</h2>
-                  {!isCompactMode && renderNetworkLogos(['base'])}
+                  {!isCompactMode && renderNetworkLogos(['base', 'ink', 'soneium', 'katana', 'arc-restnet', 'robinhood-testnet'])}
                 </div>
                 <div style={compactStyles.cardGrid}>
                   <button

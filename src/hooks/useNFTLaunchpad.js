@@ -9,7 +9,7 @@ import {
   DEPLOYER_FEE_NFT_COLLECTION_ETH,
   DEPLOYER_FEE_NFT_COLLECTION_ETH_HOLDER,
 } from '../config/deployer'
-import { getContractAddressByNetwork } from '../config/networks'
+import { getContractAddressByNetwork, NETWORKS } from '../config/networks'
 import { NFT_COLLECTION_BYTECODE } from '../config/nftCollection'
 import { EARLY_ACCESS_CONFIG, EARLY_ACCESS_ABI } from '../config/earlyAccessNFT'
 import { addXP, recordTransaction } from '../utils/xpUtils'
@@ -39,7 +39,7 @@ export function useNFTLaunchpad() {
   const { isCorrectNetwork, networkName } = useNetworkCheck()
   const { updateQuestProgress } = useQuestSystem()
 
-  const shouldFetchEarlyAccess = !!address && !!EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS
+  const shouldFetchEarlyAccess = !!address && !!EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS && chainId === NETWORKS.BASE.chainId
   const { data: earlyAccessBalance } = useReadContract({
     address: shouldFetchEarlyAccess ? EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS : undefined,
     abi: EARLY_ACCESS_ABI,
@@ -61,7 +61,7 @@ export function useNFTLaunchpad() {
   const validateNetwork = async () => {
     if (!isCorrectNetwork) {
       throw new Error(
-        `Please switch to Base network. You are currently on ${networkName}. Use the network selector.`
+        `Please switch to Base, InkChain or Soneium. You are currently on ${networkName}. Use the network selector.`
       )
     }
   }
@@ -151,9 +151,9 @@ export function useNFTLaunchpad() {
       if (!deployerAddress) throw new Error('NFT Launchpad deployer not configured for this network.')
       if (!walletClient) throw new Error('Wallet not available.')
 
-      // Fee at tx time: read Early Access balance on current chain so we never use stale/empty hook state
+      // Fee at tx time: read Early Access balance on Base only (Early Access Pass is Base-only)
       let feeEthForTx = DEPLOYER_FEE_NFT_COLLECTION_ETH
-      if (publicClient && address && EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS) {
+      if (chainId === NETWORKS.BASE.chainId && publicClient && address && EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS) {
         try {
           const balance = await publicClient.readContract({
             address: EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS,
@@ -168,11 +168,13 @@ export function useNFTLaunchpad() {
       }
 
       const deployData = encodeDeployerCall('deployNFTCollection', initCodeHex)
-      // Append ERC-8021 Builder Code for Base attribution (walletClient.sendTransaction has no dataSuffix param)
-      const dataWithSuffix = `${deployData}${DATA_SUFFIX.startsWith('0x') ? DATA_SUFFIX.slice(2) : DATA_SUFFIX}`
+      // ERC-8021 Builder Code: Base only (Ink doesn't support it)
+      const dataToSend = chainId === NETWORKS.BASE.chainId
+        ? `${deployData}${DATA_SUFFIX.startsWith('0x') ? DATA_SUFFIX.slice(2) : DATA_SUFFIX}`
+        : deployData
       const txHash = await walletClient.sendTransaction({
         to: deployerAddress,
-        data: dataWithSuffix,
+        data: dataToSend,
         value: parseEther(feeEthForTx),
         chainId,
         gas: 5000000n,
@@ -209,7 +211,7 @@ export function useNFTLaunchpad() {
 
       if (supabase?.from) {
         try {
-          await supabase.from('nft_launchpad_collections').insert({
+          const insertRow = {
             contract_address: deployedAddress.toLowerCase(),
             deployer_address: address.toLowerCase(),
             name,
@@ -223,7 +225,9 @@ export function useNFTLaunchpad() {
             base_token_uri: baseTokenURI,
             is_active: true,
             total_minted: 0,
-          })
+          }
+          if (typeof chainId === 'number') insertRow.chain_id = chainId
+          await supabase.from('nft_launchpad_collections').insert(insertRow)
         } catch (e) {
           console.error('Supabase nft_launchpad_collections insert failed:', e)
         }
