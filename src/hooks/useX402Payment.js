@@ -1,7 +1,7 @@
 // Hook for x402 payment using x402-fetch
 // x402-fetch automatically handles wallet UI and payment flow
 import { useState, useEffect } from 'react'
-import { useWalletClient, useAccount } from 'wagmi'
+import { useWalletClient, useAccount, useChainId } from 'wagmi'
 import { wrapFetchWithPayment } from 'x402-fetch'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { config } from '../config/wagmi'
@@ -12,6 +12,7 @@ import { useQuestSystem } from './useQuestSystem'
 export const useX402Payment = () => {
   const { data: walletClient } = useWalletClient() // Get wallet client from wagmi
   const { isConnected, address } = useAccount()
+  const chainId = useChainId()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [isFarcaster, setIsFarcaster] = useState(false)
@@ -221,7 +222,7 @@ export const useX402Payment = () => {
           console.log('🎁 Awarding 500 XP for successful x402 payment...')
           
           // Add XP (500 XP for x402 payment)
-          await addXP(address, 500, 'X402_PAYMENT', null, false, transactionHash || null)
+          await addXP(address, 500, 'X402_PAYMENT', chainId ?? 8453, false, transactionHash || null)
           console.log('✅ 500 XP added successfully')
           console.log('✅ Transaction recorded successfully')
           

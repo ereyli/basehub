@@ -165,50 +165,30 @@ export const useTransactions = () => {
       
       console.log('✅ GM transaction sent! Hash:', txHash)
       
-      // Award XP immediately after transaction is sent (don't wait for confirmation)
-      // This ensures XP is awarded even if confirmation takes time or fails
-      // Separate try-catch blocks to ensure XP is awarded even if transaction recording fails
+      // ÖNCE confirmation bekle - award-xp-verified receipt gerektirir (pending tx için null döner)
+      console.log('⏳ Waiting for confirmation before awarding XP...')
       try {
-        console.log('🎯 Awarding XP for GM transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName })
-        await addXP(address, 150, 'GM_GAME', chainId, false, txHash)
-        console.log('✅ XP added successfully')
-      } catch (xpError) {
-        console.error('❌ Error adding XP:', xpError)
-        // Don't throw - XP failure shouldn't block the transaction
-      }
-      
-      // Transaction recorded via award_xp RPC
-      
-      // Update quest progress separately (non-blocking)
-      try {
-        await updateQuestProgress('gmUsed', 1)
-        await updateQuestProgress('transactions', 1)
-        console.log('✅ Quest progress updated')
-      } catch (questError) {
-        console.error('⚠️ Error updating quest progress (non-critical):', questError)
-        // Don't throw - quest progress failure shouldn't block XP
-      }
-      
-      // Try to wait for confirmation (non-blocking, for better UX)
-      console.log('⏳ Waiting for transaction confirmation...')
-      console.log('📋 Transaction hash:', txHash)
-      
-      try {
-        // Wait for confirmation with timeout - use publicClient for proper network
-        // Wait for confirmation using helper function
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
-        const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
-        
+        const timeoutDuration = isOnInkChain ? 120000 : 60000
         const receipt = await waitForTxReceipt(txHash, timeoutDuration)
-        
         console.log('✅ GM transaction confirmed!')
-        console.log('📦 Receipt:', receipt)
-        console.log('🔢 Block number:', receipt.blockNumber)
-        console.log('⛽ Gas used:', receipt.gasUsed?.toString())
+        
+        // Receipt mevcut → on-chain doğrulama çalışır
+        try {
+          await addXP(address, 150, 'GM_GAME', chainId, false, txHash)
+          console.log('✅ XP added successfully')
+        } catch (xpError) {
+          console.error('❌ Error adding XP:', xpError)
+        }
+        try {
+          await updateQuestProgress('gmUsed', 1)
+          await updateQuestProgress('transactions', 1)
+        } catch (questError) {
+          console.error('⚠️ Quest progress error:', questError)
+        }
       } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
-        // XP already awarded, so we don't throw error - just log warning
-        // For InkChain, transaction might still be processing, so we don't show error
+        console.warn('⚠️ Confirmation timeout:', confirmError.message)
+        // XP verilmedi - receipt yok, doğrulama başarısız olur
       }
       
       // Clear any previous errors on success
@@ -279,41 +259,27 @@ export const useTransactions = () => {
       
       console.log('✅ GN transaction sent! Hash:', txHash)
       
-      // Award XP immediately after transaction is sent
-      // Separate try-catch blocks to ensure XP is awarded even if transaction recording fails
+      console.log('⏳ Waiting for confirmation before awarding XP...')
       try {
-        console.log('🎯 Awarding XP for GN transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName })
-        await addXP(address, 150, 'GN_GAME', chainId, false, txHash)
-        console.log('✅ XP added successfully')
-      } catch (xpError) {
-        console.error('❌ Error adding XP:', xpError)
-        // Don't throw - XP failure shouldn't block the transaction
-      }
-      
-      // Transaction recorded via award_xp RPC
-      
-      // Update quest progress separately (non-blocking)
-      try {
-        await updateQuestProgress('gnUsed', 1)
-        await updateQuestProgress('transactions', 1)
-        console.log('✅ Quest progress updated')
-      } catch (questError) {
-        console.error('⚠️ Error updating quest progress (non-critical):', questError)
-        // Don't throw - quest progress failure shouldn't block XP
-      }
-      
-      // Try to wait for confirmation (non-blocking)
-      console.log('⏳ Waiting for transaction confirmation...')
-      try {
-        // Wait for confirmation with optimized polling
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
-        const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
-        
+        const timeoutDuration = isOnInkChain ? 120000 : 60000
         const receipt = await waitForTxReceipt(txHash, timeoutDuration)
+        console.log('✅ GN transaction confirmed!')
         
-        console.log('✅ GN transaction confirmed!', receipt)
+        try {
+          await addXP(address, 150, 'GN_GAME', chainId, false, txHash)
+          console.log('✅ XP added successfully')
+        } catch (xpError) {
+          console.error('❌ Error adding XP:', xpError)
+        }
+        try {
+          await updateQuestProgress('gnUsed', 1)
+          await updateQuestProgress('transactions', 1)
+        } catch (questError) {
+          console.error('⚠️ Quest progress error:', questError)
+        }
       } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
+        console.warn('⚠️ Confirmation timeout:', confirmError.message)
       }
       
       // Clear any previous errors on success
@@ -395,43 +361,29 @@ export const useTransactions = () => {
       
       console.log('🎲 Flip result:', { selectedSide, actualResult, playerWon })
       
-      // Award XP immediately after transaction is sent
-      // Separate try-catch blocks to ensure XP is awarded even if transaction recording fails
-      try {
-        console.log('🎯 Awarding XP for Flip transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName, playerWon })
-        await addBonusXP(address, 'flip', playerWon, chainId, txHash)
-        console.log('✅ XP added successfully')
-      } catch (xpError) {
-        console.error('❌ Error adding XP:', xpError)
-        // Don't throw - XP failure shouldn't block the transaction
-      }
-      
       const xpEarned = playerWon ? 150 + 500 : 150
       
-      // Transaction recorded via award_xp RPC
-      
-      // Update quest progress separately (non-blocking)
+      console.log('⏳ Waiting for confirmation before awarding XP...')
       try {
-        await updateQuestProgress('coinFlipUsed', 1)
-        await updateQuestProgress('transactions', 1)
-        console.log('✅ Quest progress updated')
-      } catch (questError) {
-        console.error('⚠️ Error updating quest progress (non-critical):', questError)
-        // Don't throw - quest progress failure shouldn't block XP
-      }
-      
-      // Try to wait for confirmation (non-blocking)
-      console.log('⏳ Waiting for transaction confirmation...')
-      try {
-        // Wait for confirmation with optimized polling
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
-        const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
-        
+        const timeoutDuration = isOnInkChain ? 120000 : 60000
         const receipt = await waitForTxReceipt(txHash, timeoutDuration)
+        console.log('✅ Flip transaction confirmed!')
         
-        console.log('✅ Flip transaction confirmed!', receipt)
+        try {
+          await addBonusXP(address, 'flip', playerWon, chainId, txHash)
+          console.log('✅ XP added successfully')
+        } catch (xpError) {
+          console.error('❌ Error adding XP:', xpError)
+        }
+        try {
+          await updateQuestProgress('coinFlipUsed', 1)
+          await updateQuestProgress('transactions', 1)
+        } catch (questError) {
+          console.error('⚠️ Quest progress error:', questError)
+        }
       } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
+        console.warn('⚠️ Confirmation timeout:', confirmError.message)
       }
       
       // Clear any previous errors on success
@@ -512,44 +464,35 @@ export const useTransactions = () => {
       
       console.log('🎲 Lucky Number result:', { guess, winningNumber, playerWon })
       
-      // Award XP immediately after transaction is sent
-      // Separate try-catch blocks to ensure XP is awarded even if transaction recording fails
+      // Wait for confirmation first (verified XP needs on-chain receipt)
+      console.log('⏳ Waiting for transaction confirmation...')
       try {
-        console.log('🎯 Awarding XP for Lucky Number transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName, playerWon })
-        await addBonusXP(address, 'luckynumber', playerWon, chainId, txHash)
-        console.log('✅ XP added successfully')
-      } catch (xpError) {
-        console.error('❌ Error adding XP:', xpError)
-        // Don't throw - XP failure shouldn't block the transaction
+        const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+        const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
+        const receipt = await waitForTxReceipt(txHash, timeoutDuration)
+        console.log('✅ Lucky Number transaction confirmed!', receipt)
+        
+        // Award XP after confirmation (verified via tx receipt)
+        try {
+          console.log('🎯 Awarding XP for Lucky Number transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName, playerWon })
+          await addBonusXP(address, 'luckynumber', playerWon, chainId, txHash)
+          console.log('✅ XP added successfully')
+        } catch (xpError) {
+          console.error('❌ Error adding XP:', xpError)
+        }
+        
+        try {
+          await updateQuestProgress('luckyNumberUsed', 1)
+          await updateQuestProgress('transactions', 1)
+          console.log('✅ Quest progress updated')
+        } catch (questError) {
+          console.error('⚠️ Quest progress error (non-critical):', questError)
+        }
+      } catch (confirmError) {
+        console.warn('⚠️ Confirmation timeout:', confirmError.message)
       }
       
       const xpEarned = playerWon ? 150 + 1000 : 150
-      
-      // Transaction recorded via award_xp RPC
-      
-      // Update quest progress separately (non-blocking)
-      try {
-        await updateQuestProgress('luckyNumberUsed', 1)
-        await updateQuestProgress('transactions', 1)
-        console.log('✅ Quest progress updated')
-      } catch (questError) {
-        console.error('⚠️ Error updating quest progress (non-critical):', questError)
-        // Don't throw - quest progress failure shouldn't block XP
-      }
-      
-      // Try to wait for confirmation (non-blocking)
-      console.log('⏳ Waiting for transaction confirmation...')
-      try {
-        // Wait for confirmation with optimized polling
-        const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
-        const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
-        
-        const receipt = await waitForTxReceipt(txHash, timeoutDuration)
-        
-        console.log('✅ Lucky Number transaction confirmed!', receipt)
-      } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
-      }
       
       // Clear any previous errors on success
       setError(null)
@@ -630,44 +573,35 @@ export const useTransactions = () => {
       
       console.log('🎲 Dice Roll result:', { guess, dice1, dice2, diceTotal, playerWon })
       
-      // Award XP immediately after transaction is sent
-      // Separate try-catch blocks to ensure XP is awarded even if transaction recording fails
+      // Wait for confirmation first (verified XP needs on-chain receipt)
+      console.log('⏳ Waiting for transaction confirmation...')
       try {
-        console.log('🎯 Awarding XP for Dice Roll transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName, playerWon })
-        await addBonusXP(address, 'diceroll', playerWon, chainId, txHash)
-        console.log('✅ XP added successfully')
-      } catch (xpError) {
-        console.error('❌ Error adding XP:', xpError)
-        // Don't throw - XP failure shouldn't block the transaction
+        const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+        const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
+        const receipt = await waitForTxReceipt(txHash, timeoutDuration)
+        console.log('✅ Dice Roll transaction confirmed!', receipt)
+        
+        // Award XP after confirmation (verified via tx receipt)
+        try {
+          console.log('🎯 Awarding XP for Dice Roll transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName, playerWon })
+          await addBonusXP(address, 'diceroll', playerWon, chainId, txHash)
+          console.log('✅ XP added successfully')
+        } catch (xpError) {
+          console.error('❌ Error adding XP:', xpError)
+        }
+        
+        try {
+          await updateQuestProgress('diceRollUsed', 1)
+          await updateQuestProgress('transactions', 1)
+          console.log('✅ Quest progress updated')
+        } catch (questError) {
+          console.error('⚠️ Quest progress error (non-critical):', questError)
+        }
+      } catch (confirmError) {
+        console.warn('⚠️ Confirmation timeout:', confirmError.message)
       }
       
       const xpEarned = playerWon ? 150 + 1500 : 150
-      
-      // Transaction recorded via award_xp RPC
-      
-      // Update quest progress separately (non-blocking)
-      try {
-        await updateQuestProgress('diceRollUsed', 1)
-        await updateQuestProgress('transactions', 1)
-        console.log('✅ Quest progress updated')
-      } catch (questError) {
-        console.error('⚠️ Error updating quest progress (non-critical):', questError)
-        // Don't throw - quest progress failure shouldn't block XP
-      }
-      
-      // Try to wait for confirmation (non-blocking)
-      console.log('⏳ Waiting for transaction confirmation...')
-      try {
-        // Wait for confirmation with optimized polling
-        const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
-        const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
-        
-        const receipt = await waitForTxReceipt(txHash, timeoutDuration)
-        
-        console.log('✅ Dice Roll transaction confirmed!', receipt)
-      } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
-      }
       
       // Clear any previous errors on success
       setError(null)
@@ -833,39 +767,33 @@ export const useTransactions = () => {
           
           xpEarned = 150 + bonusXp // Base XP + bonus
           
-          // Award XP separately (non-blocking)
+          // Wait for confirmation first (verified XP needs on-chain receipt)
+          console.log('⏳ Waiting for transaction confirmation...')
           try {
-            console.log('🎯 Awarding XP for Slot transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName, xpEarned })
-            await addXP(address, xpEarned, 'SLOT_GAME', chainId, false, txHash)
-            console.log('✅ XP added successfully')
-          } catch (xpError) {
-            console.error('❌ Error adding XP:', xpError)
-            // Don't throw - XP failure shouldn't block the transaction
+            const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+            const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
+            const receipt = await waitForTxReceipt(txHash, timeoutDuration)
+            console.log('✅ Slot transaction confirmed!', receipt)
+            
+            // Award XP after confirmation (verified via tx receipt)
+            try {
+              console.log('🎯 Awarding XP for Slot transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName, xpEarned })
+              await addXP(address, xpEarned, 'SLOT_GAME', chainId, false, txHash)
+              console.log('✅ XP added successfully')
+            } catch (xpError) {
+              console.error('❌ Error adding XP:', xpError)
+            }
+            
+            try {
+              await updateQuestProgress('slotUsed', 1)
+              await updateQuestProgress('transactions', 1)
+              console.log('✅ Quest progress updated')
+            } catch (questError) {
+              console.error('⚠️ Quest progress error (non-critical):', questError)
+            }
+          } catch (confirmError) {
+            console.warn('⚠️ Confirmation timeout:', confirmError.message)
           }
-          
-          // Update quest progress separately (non-blocking)
-          try {
-            await updateQuestProgress('slotUsed', 1)
-            await updateQuestProgress('transactions', 1)
-            console.log('✅ Quest progress updated')
-          } catch (questError) {
-            console.error('⚠️ Error updating quest progress (non-critical):', questError)
-            // Don't throw - quest progress failure shouldn't block XP
-          }
-        
-        // Try to wait for confirmation (non-blocking)
-        console.log('⏳ Waiting for transaction confirmation...')
-        try {
-          // Wait for confirmation with optimized polling
-          const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
-          const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
-          
-          const receipt = await waitForTxReceipt(txHash, timeoutDuration)
-          
-          console.log('✅ Slot transaction confirmed!', receipt)
-        } catch (confirmError) {
-          console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
-        }
         
         // Clear any previous errors on success
         setError(null)
@@ -877,27 +805,7 @@ export const useTransactions = () => {
           xpEarned
         }
       } else {
-        // Credits purchase - award XP immediately
-        // Award XP separately (non-blocking)
-        try {
-          console.log('🎯 Awarding XP for Slot credits purchase:', { address, chainId, chainName: currentNetworkConfig?.chainName })
-          await addXP(address, 10, 'SLOT_GAME_CREDITS', chainId, false, txHash)
-          console.log('✅ XP added successfully')
-        } catch (xpError) {
-          console.error('❌ Error adding XP:', xpError)
-          // Don't throw - XP failure shouldn't block the transaction
-        }
-        
-        // Update quest progress separately (non-blocking)
-        try {
-          await updateQuestProgress('transactions', 1)
-          console.log('✅ Quest progress updated')
-        } catch (questError) {
-          console.error('⚠️ Error updating quest progress (non-critical):', questError)
-          // Don't throw - quest progress failure shouldn't block XP
-        }
-        
-        // Wait for confirmation and verify success (required so UI only shows credits on real success)
+        // Credits purchase - wait for confirmation first, then award XP
         console.log('⏳ Waiting for transaction confirmation...')
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
         const timeoutDuration = isOnInkChain ? 120000 : 60000
@@ -908,6 +816,22 @@ export const useTransactions = () => {
           throw new Error('Transaction reverted. Credits were not added.')
         }
         console.log('✅ Slot credits purchase confirmed!', receipt)
+        
+        // Award XP after confirmation (verified via tx receipt)
+        try {
+          console.log('🎯 Awarding XP for Slot credits purchase:', { address, chainId, chainName: currentNetworkConfig?.chainName })
+          await addXP(address, 10, 'SLOT_GAME_CREDITS', chainId, false, txHash)
+          console.log('✅ XP added successfully')
+        } catch (xpError) {
+          console.error('❌ Error adding XP:', xpError)
+        }
+        
+        try {
+          await updateQuestProgress('transactions', 1)
+          console.log('✅ Quest progress updated')
+        } catch (questError) {
+          console.error('⚠️ Quest progress error (non-critical):', questError)
+        }
 
         setError(null)
         return {

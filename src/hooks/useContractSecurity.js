@@ -138,7 +138,7 @@ export const useContractSecurity = () => {
             
             // Add XP (500 XP for contract analysis)
             const transactionHash = result.transactionHash || null
-            await addXP(address, 500, 'CONTRACT_SECURITY', null, false, transactionHash)
+            await addXP(address, 500, 'CONTRACT_SECURITY', chainId ?? 8453, false, transactionHash)
             console.log('✅ 500 XP added successfully')
             console.log('✅ Transaction recorded successfully')
             

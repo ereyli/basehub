@@ -227,7 +227,7 @@ export const useAllowanceCleaner = () => {
           try {
             console.log('🎁 Awarding 300 XP for allowance scan...')
             const transactionHash = result.transactionHash || null
-            await addXP(address, 300, 'ALLOWANCE_CLEANER', null, false, transactionHash)
+            await addXP(address, 300, 'ALLOWANCE_CLEANER', chainId, false, transactionHash)
             await updateQuestProgress('allowanceCleaner', 1)
           } catch (xpError) {
             console.error('⚠️ Error awarding XP:', xpError)

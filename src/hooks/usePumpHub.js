@@ -495,7 +495,7 @@ export const usePumpHub = () => {
               // Award XP for token creation (2000 XP)
               try {
                 console.log('🎁 Awarding 2000 XP for token creation...')
-                await addXP(address, 2000, 'PUMPHUB_TOKEN_CREATION', null, false, currentHash)
+                await addXP(address, 2000, 'PUMPHUB_TOKEN_CREATION', chainId ?? NETWORKS.BASE.chainId, false, currentHash)
                 console.log('✅ XP awarded for token creation')
               } catch (xpError) {
                 console.error('⚠️ Error awarding XP for token creation:', xpError)
@@ -532,7 +532,7 @@ export const usePumpHub = () => {
             // Award XP for buy (100 XP)
             try {
               console.log('🎁 Awarding 100 XP for token buy...')
-              await addXP(address, 100, 'PUMPHUB_BUY', null, false, currentHash)
+              await addXP(address, 100, 'PUMPHUB_BUY', chainId ?? NETWORKS.BASE.chainId, false, currentHash)
               console.log('✅ XP awarded for token buy')
             } catch (xpError) {
               console.error('⚠️ Error awarding XP for buy:', xpError)
@@ -565,7 +565,7 @@ export const usePumpHub = () => {
             // Award XP for sell (100 XP)
             try {
               console.log('🎁 Awarding 100 XP for token sell...')
-              await addXP(address, 100, 'PUMPHUB_SELL', null, false, currentHash)
+              await addXP(address, 100, 'PUMPHUB_SELL', chainId ?? NETWORKS.BASE.chainId, false, currentHash)
               console.log('✅ XP awarded for token sell')
             } catch (xpError) {
               console.error('⚠️ Error awarding XP for sell:', xpError)
@@ -586,7 +586,7 @@ export const usePumpHub = () => {
     }
 
     processTransaction().catch(err => console.error('Error processing transaction:', err))
-  }, [isConfirmed, receipt, currentHash, address, publicClient])
+  }, [isConfirmed, receipt, currentHash, address, publicClient, chainId])
 
   // Buy tokens
   const buyTokens = useCallback(async (tokenAddress, ethAmount, minTokensOut = 0n) => {

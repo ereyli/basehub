@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount, useChainId, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
 import { AI_NFT_CONFIG, getContractAddress, calculateMintFee, calculateMintFeeWei } from '../config/aiNFT';
 import { DATA_SUFFIX } from '../config/wagmi';
@@ -119,6 +119,8 @@ const AI_NFT_CONTRACT_ADDRESS = getContractAddress();
  */
 export function useAINFTMinting(quantity = 1) {
   const { address } = useAccount();
+  const chainId = useChainId();
+  const { updateQuestProgress } = useQuestSystem();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isMinting, setIsMinting] = useState(false);
@@ -492,10 +494,8 @@ export function useAINFTMinting(quantity = 1) {
       const awardXPAndUpdateQuests = async () => {
         try {
           console.log('🎉 Awarding 500 XP for AI NFT minting!');
-          await addXP(address, 500, 'AI NFT Minting', null, false, hash);
+          await addXP(address, 500, 'AI NFT Minting', chainId ?? 8453, false, hash);
           
-          // Update quest progress
-          const { updateQuestProgress } = useQuestSystem();
           await updateQuestProgress('nftMinted', 1);
           await updateQuestProgress('transactions', 1);
           
@@ -507,7 +507,7 @@ export function useAINFTMinting(quantity = 1) {
       
       awardXPAndUpdateQuests();
     }
-  }, [isConfirmed, hash, address, quantity]);
+  }, [isConfirmed, hash, address, quantity, chainId, updateQuestProgress]);
 
 
   return {

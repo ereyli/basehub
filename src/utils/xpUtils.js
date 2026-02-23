@@ -177,21 +177,72 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
   }
 
   try {
-    // Use secure RPC - validates game_type and XP amount, bypasses RLS
+    // On-chain verification: tx_hash + chainId varsa Edge Function ile doğrula (SwapHub gibi güvenli)
+    const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke
+    if (useVerified) {
+      const invokeVerified = async () => {
+        const { data, error } = await supabase.functions.invoke('award-xp-verified', {
+          body: {
+            wallet_address: walletAddress.toLowerCase(),
+            game_type: gameType,
+            xp_amount: Math.round(finalXP),
+            tx_hash: transactionHash,
+            chain_id: Number(chainId)
+          }
+        })
+        let errMsg = null
+        if (error) {
+          errMsg = error?.message || String(error)
+          if (typeof error?.context?.json === 'function') {
+            try {
+              const body = await error.context.json()
+              if (body?.error) errMsg = body.error
+            } catch (_) { /* ignore */ }
+          }
+          throw new Error(errMsg)
+        }
+        if (data?.error) throw new Error(data.error)
+        return data
+      }
+      const XP_VERIFY_RETRIES = 3
+      const XP_VERIFY_DELAY_MS = 4000
+      let lastErr = null
+      for (let attempt = 1; attempt <= XP_VERIFY_RETRIES; attempt++) {
+        try {
+          const data = await invokeVerified()
+          const newTotalXP = data?.new_total_xp ?? finalXP
+          console.log(`✅ XP awarded via verified Edge Function. Total: ${newTotalXP}`)
+          localStorage.setItem('basehub_tx_refresh', Date.now().toString())
+          return newTotalXP
+        } catch (e) {
+          lastErr = e
+          const msg = (e?.message || '').toLowerCase()
+          const isRetryable = /invalid|failed|transaction on-chain/i.test(msg) && attempt < XP_VERIFY_RETRIES
+          if (isRetryable) {
+            console.warn(`⚠️ XP verification attempt ${attempt}/${XP_VERIFY_RETRIES} failed (RPC lag), retrying in ${XP_VERIFY_DELAY_MS / 1000}s...`, e?.message)
+            await new Promise(r => setTimeout(r, XP_VERIFY_DELAY_MS))
+          } else {
+            console.error('❌ award-xp-verified Edge Function error:', e?.message)
+            throw e
+          }
+        }
+      }
+      throw lastErr
+    }
+
+    // tx_hash yoksa (NFT Wheel vb.) veya Edge Function yoksa: direkt RPC (API-based flows)
     const { data, error } = await supabase.rpc('award_xp', {
       p_wallet_address: walletAddress,
       p_final_xp: Math.round(finalXP),
       p_game_type: gameType,
       p_transaction_hash: transactionHash || null
     })
-
     if (error) {
       console.error('❌ award_xp RPC error:', error)
       throw error
     }
-
     const newTotalXP = data?.new_total_xp ?? finalXP
-    console.log(`✅ XP awarded via secure RPC. Total: ${newTotalXP}`)
+    console.log(`✅ XP awarded via RPC. Total: ${newTotalXP}`)
     localStorage.setItem('basehub_tx_refresh', Date.now().toString())
     return newTotalXP
   } catch (error) {
@@ -467,8 +518,18 @@ export const addBonusXP = async (walletAddress, gameType, isWin, chainId = null,
 
   const totalXP = baseXP + bonusXP
   console.log(`${gameType} game: Base ${baseXP} XP + Bonus ${bonusXP} XP = ${totalXP} XP total`)
-  
-  return await addXP(walletAddress, totalXP, gameType.toUpperCase() + '_GAME', chainId, false, transactionHash)
+
+  // Map to DB game_type (get_max_xp_for_game_type expects LUCKY_NUMBER, DICE_ROLL, FLIP_GAME, etc.)
+  const dbGameType = {
+    flip: 'FLIP_GAME',
+    luckynumber: 'LUCKY_NUMBER',
+    diceroll: 'DICE_ROLL',
+    gm: 'GM_GAME',
+    gn: 'GN_GAME',
+    slot: 'SLOT_GAME'
+  }[gameTypeLower] || (gameType.toUpperCase() + '_GAME')
+
+  return await addXP(walletAddress, totalXP, dbGameType, chainId, false, transactionHash)
 }
 
 // Claim tokens (convert XP to BHUP tokens) - COMING SOON
@@ -490,7 +551,7 @@ export const SWAP_VOLUME_TIERS = [
 ]
 export const SWAP_VOLUME_BAR_MAX_USD = 1_000_000
 
-// Record swap via Edge Function (tx verified on-chain, RLS-secured)
+// Record swap via Edge Function (on-chain verification) - Supabase corsHeaders ile CORS düzeltildi (v8)
 export const recordSwapTransaction = async (walletAddress, swapAmountUSD, transactionHash) => {
   if (!walletAddress) {
     console.log('❌ Missing walletAddress for swap record')
@@ -505,34 +566,47 @@ export const recordSwapTransaction = async (walletAddress, swapAmountUSD, transa
       return { xpFromPer100: 0, xpFromMilestones: 0 }
     }
 
-    const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL
-    if (!supabaseUrl) {
-      console.log('⚠️ Supabase URL not configured')
+    if (!supabase?.functions?.invoke) {
+      console.log('⚠️ Supabase functions not configured')
       return { xpFromPer100: 0, xpFromMilestones: 0 }
     }
 
     console.log('📝 Recording swap volume (SwapHub via Edge Function):', { wallet: normalized.slice(0, 10) + '...', amountUSD: amount, txHash: transactionHash.slice(0, 10) + '...' })
 
-    // Direct fetch (verify_jwt=false) - more reliable in Farcaster/miniapp browsers
-    const url = `${supabaseUrl}/functions/v1/record-swap`
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    const { data, error } = await supabase.functions.invoke('record-swap', {
+      body: {
         wallet_address: normalized,
         swap_amount_usd: amount,
         tx_hash: transactionHash
-      })
+      }
     })
 
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      console.error('❌ record-swap HTTP error:', res.status, data?.error || res.statusText)
-      throw new Error(data?.error || `HTTP ${res.status}`)
+    if (error) {
+      let errMsg = error?.message || String(error)
+      let body = null
+      if (typeof error.context?.json === 'function') {
+        try {
+          body = await error.context.json()
+          if (body?.error) errMsg = body.error
+        } catch (_) { /* ignore */ }
+      } else if (error.context && typeof error.context === 'object' && !Array.isArray(error.context)) {
+        body = error.context
+        if (body?.error) errMsg = body.error
+      }
+      const retryable =
+        /invalid|failed|transaction on-chain/i.test(String(errMsg)) ||
+        error?.name === 'FunctionsRelayError' ||
+        error?.name === 'FunctionsFetchError'
+      const err = new Error(errMsg || 'record-swap failed')
+      err.retryable = retryable
+      throw err
     }
+
     if (data?.error) {
-      console.error('❌ record-swap returned error:', data.error)
-      throw new Error(data.error)
+      const errMsg = data.error
+      const err = new Error(errMsg)
+      err.retryable = /invalid|failed|transaction on-chain/i.test(String(errMsg))
+      throw err
     }
 
     const xpFromPer100 = data?.xpFromPer100 ?? 0
@@ -540,7 +614,7 @@ export const recordSwapTransaction = async (walletAddress, swapAmountUSD, transa
     return { xpFromPer100, xpFromMilestones }
   } catch (error) {
     console.error('❌ Error in recordSwapTransaction:', error)
-    return { xpFromPer100: 0, xpFromMilestones: 0 }
+    throw error
   }
 }
 

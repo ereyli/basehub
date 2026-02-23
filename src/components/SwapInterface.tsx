@@ -773,6 +773,7 @@ export default function SwapInterface() {
   // Record swap volume when tx confirms (use amount stored in ref at submit time so we don't depend on state)
   const lastRecordedHashRef = useRef<string | null>(null);
   const swapToRecordRef = useRef<{ hash: string; amount: number } | null>(null);
+  const recordSentForHashRef = useRef<string | null>(null);
   const [xpSuccessToast, setXpSuccessToast] = useState<{ xp: number; message: string } | null>(null);
   useEffect(() => {
     if (!isSuccess || !address || !hash) return;
@@ -784,9 +785,14 @@ export default function SwapInterface() {
     const scheduleRecord = (amount: number) => {
       if (amount <= 0) return;
       console.log('🎉 Swap confirmed! Recording volume:', { swapAmountUSD: amount, hash: hash.slice(0, 10) + '...' });
-      let timeoutId: ReturnType<typeof setTimeout> | null = null;
       const handleRecord = (retry = false) => {
-        recordSwapTransaction(address, amount, hash)
+        recordSentForHashRef.current = hash;
+        const doRecord = () => recordSwapTransaction(address, amount, hash);
+        const call = retry ? doRecord() : new Promise<{ xpFromPer100?: number; xpFromMilestones?: number }>((resolve, reject) => {
+          console.log('⏳ Waiting 2s for receipt indexing before Edge Function call...');
+          setTimeout(() => doRecord().then(resolve).catch(reject), 2000);
+        });
+        call
       .then((awarded: { xpFromPer100?: number; xpFromMilestones?: number } | void) => {
         const from100 = awarded?.xpFromPer100 ?? 0;
         const fromMilestones = awarded?.xpFromMilestones ?? 0;
@@ -809,33 +815,23 @@ export default function SwapInterface() {
       })
       .catch(err => {
         console.error('❌ Error recording swap volume:', err);
-        if (!retry) setTimeout(() => handleRecord(true), 6000);
-        else lastRecordedHashRef.current = null;
+        const canRetry = err?.retryable !== false && !retry;
+        if (canRetry) {
+          console.log('🔄 Retrying in 4s (receipt may not be indexed yet)...');
+          setTimeout(() => handleRecord(true), 4000);
+        } else if (retry) {
+          lastRecordedHashRef.current = null;
+        }
       });
     };
-      // Fire on visibility change (user switches tab or navigates away) so we don't lose the record
-      const onVisibilityChange = () => {
-        if (document.hidden && timeoutId != null) {
-          clearTimeout(timeoutId);
-          timeoutId = null;
-          handleRecord(false);
-        }
-      };
-      const delay = 1000; // 1s - Edge Function retries RPC; fire before user navigates away
-      timeoutId = setTimeout(() => {
-        timeoutId = null;
-        if (typeof window !== 'undefined') window.removeEventListener('visibilitychange', onVisibilityChange);
-        handleRecord(false);
-      }, delay);
-      if (typeof window !== 'undefined') window.addEventListener('visibilitychange', onVisibilityChange);
-      return () => {
-        if (timeoutId) clearTimeout(timeoutId);
-        if (typeof window !== 'undefined') window.removeEventListener('visibilitychange', onVisibilityChange);
-      };
+      // 2s delay for receipt indexing; Edge Function v8: Supabase corsHeaders (x-client-info, apikey) eklendi
+      handleRecord(false);
+      return () => {};
     };
 
-    // Strict Mode: second run has lastRecordedHashRef === hash but timeout was cleared. Reschedule with stored amount.
+    // Strict Mode: second run has lastRecordedHashRef === hash. Skip if we already sent (handleRecord fires immediately).
     if (lastRecordedHashRef.current === hash) {
+      if (recordSentForHashRef.current === hash) return; // already sent in first run
       const stored = swapToRecordRef.current;
       if (stored?.hash === hash && stored.amount > 0) {
         return scheduleRecord(stored.amount);

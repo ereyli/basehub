@@ -138,7 +138,7 @@ export const useWalletAnalysis = () => {
             
             // Add XP (400 XP for wallet analysis)
             const transactionHash = result.transactionHash || null
-            await addXP(address, 400, 'WALLET_ANALYSIS', null, false, transactionHash)
+            await addXP(address, 400, 'WALLET_ANALYSIS', chainId ?? 8453, false, transactionHash)
             console.log('✅ 400 XP added successfully')
             console.log('✅ Transaction recorded successfully')
             
