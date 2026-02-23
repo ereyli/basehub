@@ -246,11 +246,11 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
   }
 
   try {
-    // Web + Miniapp: tx_hash + chainId varsa receipt doğrulaması (award-xp-verified EF). Miniapp'ta deniyoruz; çalışmazsa geri alınabilir.
-    const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke
+    // Web: receipt doğrulaması (award-xp-verified EF). Miniapp: doğrulama timeout/RPC sorunlu olduğu için doğrudan award_xp RPC (hash yeterli).
+    const isMiniapp = isMiniappDomain() || isLikelyBaseApp() || isLikelyFarcaster()
+    const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke && !isMiniapp
     if (useVerified) {
-      const isMiniapp = isMiniappDomain() || isLikelyBaseApp() || isLikelyFarcaster()
-      const source = isMiniapp ? (isLikelyBaseApp() ? 'base_app' : 'farcaster') : 'web'
+      const source = 'web'
       const invokeVerified = async () => {
         const { data, error } = await supabase.functions.invoke('award-xp-verified', {
           body: {
@@ -302,9 +302,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
       throw lastErr
     }
 
-    // tx_hash yoksa (NFT Wheel vb.) veya Edge Function yoksa: direkt RPC (API-based flows)
-    // basehub-alpha.vercel.app = miniapp (farcaster | base_app); basehub.fun = web → transactions
-    const isMiniapp = isMiniappDomain() || isLikelyBaseApp() || isLikelyFarcaster()
+    // tx_hash yoksa (NFT Wheel vb.) veya miniapp (EF kullanılmıyor): direkt award_xp RPC
     const source = !isMiniapp ? 'web' : (isLikelyBaseApp() ? 'base_app' : 'farcaster')
     const { data, error } = await supabase.rpc('award_xp', {
       p_wallet_address: walletAddress,
