@@ -293,11 +293,14 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
     }
 
     // tx_hash yoksa (NFT Wheel vb.) veya Edge Function yoksa: direkt RPC (API-based flows)
+    // Farcaster/Base app → miniapp_transactions; web → transactions (RPC içinde p_source ile ayrılır)
+    const source = isLikelyBaseApp() ? 'base_app' : (isLikelyFarcaster() ? 'farcaster' : 'web')
     const { data, error } = await supabase.rpc('award_xp', {
       p_wallet_address: walletAddress,
       p_final_xp: Math.round(finalXP),
       p_game_type: gameType,
-      p_transaction_hash: transactionHash || null
+      p_transaction_hash: transactionHash || null,
+      p_source: source
     })
     if (error) {
       console.error('❌ award_xp RPC error:', error)
