@@ -37,32 +37,40 @@ export const useTransactions = () => {
   // Use ref to prevent double popup - more reliable than state
   const isTransactionPendingRef = useRef(false)
 
+  // Max time we let the UI wait for receipt (Base in-app browser often never gets RPC response)
+  const UI_MAX_WAIT_MS = 7000
+
   // Helper function to wait for transaction receipt with optimized polling for InkChain
   const waitForTxReceipt = async (txHash, timeoutDuration = 60000) => {
-    // Always use wagmi's waitForTransactionReceipt - it handles RPC correctly
-    // The manual polling was causing issues with RPC URL resolution
-    try {
-      return await Promise.race([
-        waitForTransactionReceipt(config, {
-          hash: txHash,
-          chainId: chainId || NETWORKS.BASE.chainId, // Fallback to Base if chainId is undefined
-          confirmations: chainId === NETWORKS.INKCHAIN.chainId ? 0 : 1, // 0 for InkChain, 1 for Base
-          pollingInterval: chainId === NETWORKS.INKCHAIN.chainId ? 500 : 4000, // Faster for InkChain
-        }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
-        )
-      ])
-    } catch (error) {
-      // Suppress 405 errors from basehub.fun/h endpoint
-      if (error?.message?.includes('405') || 
-          error?.message?.includes('Method Not Allowed') ||
-          error?.stack?.includes('basehub.fun/h')) {
-        console.warn('⚠️ Transaction confirmation error suppressed:', error.message)
-        throw new Error('Transaction confirmation timeout')
+    const receiptPromise = (async () => {
+      try {
+        return await Promise.race([
+          waitForTransactionReceipt(config, {
+            hash: txHash,
+            chainId: chainId || NETWORKS.BASE.chainId,
+            confirmations: chainId === NETWORKS.INKCHAIN.chainId ? 0 : 1,
+            pollingInterval: chainId === NETWORKS.INKCHAIN.chainId ? 500 : 4000,
+          }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Transaction confirmation timeout')), timeoutDuration)
+          )
+        ])
+      } catch (error) {
+        if (error?.message?.includes('405') || error?.message?.includes('Method Not Allowed') || error?.stack?.includes('basehub.fun/h')) {
+          console.warn('⚠️ Transaction confirmation error suppressed:', error.message)
+          throw new Error('Transaction confirmation timeout')
+        }
+        throw error
       }
-      throw error
-    }
+    })()
+
+    // Never block UI longer than UI_MAX_WAIT_MS (Base app often hangs on RPC)
+    return await Promise.race([
+      receiptPromise,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Transaction confirmation timeout')), UI_MAX_WAIT_MS)
+      )
+    ])
   }
   const [error, setError] = useState(null)
 
