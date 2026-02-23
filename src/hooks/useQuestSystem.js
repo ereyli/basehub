@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import { useSupabase } from './useSupabase'
+import { calcLevel } from '../utils/xpUtils'
 
 export const useQuestSystem = () => {
   const { address } = useAccount()
@@ -280,7 +281,7 @@ export const useQuestSystem = () => {
       if (existingPlayer) {
         // Update existing player - add quest XP
         const newTotalXP = existingPlayer.total_xp + xpAmount
-        const newLevel = Math.floor(newTotalXP / 100) + 1 // 100 XP per level
+        const newLevel = calcLevel(newTotalXP)
 
         console.log(`📈 Adding quest XP to existing player: ${existingPlayer.total_xp} + ${xpAmount} = ${newTotalXP}`)
 
@@ -311,7 +312,7 @@ export const useQuestSystem = () => {
         const newPlayerData = {
           wallet_address: address,
           total_xp: xpAmount,
-          level: Math.floor(xpAmount / 100) + 1,
+          level: calcLevel(xpAmount),
           total_transactions: 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()

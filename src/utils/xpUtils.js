@@ -4,6 +4,13 @@ import { createPublicClient, http, fallback } from 'viem'
 import { base } from 'viem/chains'
 import { isTestnetChainId, NETWORKS } from '../config/networks'
 
+// Level calculation - DB calc_level ile uyumlu (max 100)
+export const calcLevel = (xp) => {
+  if (xp == null || xp < 0) return 1
+  if (xp < 1000) return Math.min(10, Math.max(1, Math.floor(xp / 100) + 1))
+  return Math.min(100, 10 + Math.floor(Math.log10(Math.max(xp, 1000) / 1000) * 10))
+}
+
 // Simple in-memory cache for NFT count checks
 const nftCountCache = new Map()
 const NFT_CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
@@ -324,7 +331,7 @@ export const getLeaderboard = async () => {
       const players = Object.entries(localXP).map(([wallet_address, total_xp]) => ({
         wallet_address,
         total_xp,
-        level: Math.floor(total_xp / 100) + 1,
+        level: calcLevel(total_xp),
         total_transactions: 1,
         token_balance: calculateTokens(total_xp)
       })).sort((a, b) => b.total_xp - a.total_xp).slice(0, 10)
@@ -372,7 +379,7 @@ export const getExtendedLeaderboard = async (offset = 0, limit = 5) => {
       const players = Object.entries(localXP).map(([wallet_address, total_xp]) => ({
         wallet_address,
         total_xp,
-        level: Math.floor(total_xp / 100) + 1,
+        level: calcLevel(total_xp),
         total_transactions: 1,
         token_balance: calculateTokens(total_xp)
       })).sort((a, b) => b.total_xp - a.total_xp).slice(offset, offset + limit)

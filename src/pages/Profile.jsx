@@ -6,7 +6,7 @@ import {
   Award, Target, CheckCircle, Clock, BarChart3, Activity,
   Gamepad2, Coins, Layers, MessageSquare, RefreshCw, Medal, Sparkles
 } from 'lucide-react'
-import { getXP } from '../utils/xpUtils'
+import { getXP, calcLevel } from '../utils/xpUtils'
 import { useQuestSystem } from '../hooks/useQuestSystem'
 import { useSupabase } from '../hooks/useSupabase'
 import BackButton from '../components/BackButton'
@@ -51,11 +51,6 @@ const Profile = () => {
   // Safely convert to number, default to 0 if error or undefined
   const userNFTCount = (shouldFetchNFTBalance && nftBalance && !nftBalanceError) ? Number(nftBalance) : 0
 
-  // Calculate level from XP
-  const calculateLevel = (xp) => {
-    return Math.floor(xp / 100) + 1
-  }
-
   // Load all user data
   useEffect(() => {
     const loadUserData = async () => {
@@ -70,7 +65,7 @@ const Profile = () => {
         const xp = await getXP(address)
         console.log('📊 Profile XP loaded:', xp)
         setTotalXP(xp)
-        setLevel(calculateLevel(xp))
+        setLevel(calcLevel(xp))
 
         // Load player data from Supabase
         if (supabase) {
@@ -91,10 +86,10 @@ const Profile = () => {
             if (player.total_xp !== undefined && player.total_xp !== null) {
               console.log('📊 Using total_xp from player data:', player.total_xp)
               setTotalXP(player.total_xp)
-              setLevel(player.level || calculateLevel(player.total_xp))
+              setLevel(player.level || calcLevel(player.total_xp))
             } else {
               // Fallback to getXP result if total_xp is not available
-              setLevel(player.level || calculateLevel(xp))
+              setLevel(player.level || calcLevel(xp))
             }
             // Use total_transactions from players table (most accurate)
             console.log('📊 Total transactions from player:', player.total_transactions)
