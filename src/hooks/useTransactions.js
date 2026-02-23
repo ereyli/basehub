@@ -3,7 +3,7 @@ import { useAccount, useWriteContract, useChainId, usePublicClient } from 'wagmi
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from './useNetworkCheck'
-import { addXP, addBonusXP, shouldAwardXPOnHashOnly, isLikelyBaseApp } from '../utils/xpUtils'
+import { addXP, addBonusXP, shouldAwardXPOnHashOnly, isLikelyBaseApp, showXPErrorToast } from '../utils/xpUtils'
 import { getCurrentConfig, getContractAddress, GAS_CONFIG, GAME_CONFIG } from '../config/base'
 import { getContractAddressByNetwork, NETWORKS, isNetworkSupported } from '../config/networks'
 import { parseEther, formatEther } from 'viem'
@@ -202,7 +202,10 @@ export const useTransactions = () => {
       if (isBaseApp) console.log('[Base app] GM: shouldAwardXPOnHashOnly=', shouldAwardXPOnHashOnly(), 'using getTxHashBaseApp')
       const txHash = isBaseApp ? await getTxHashBaseApp(writePromise) : await writePromise
       if (!txHash) {
-        if (isBaseApp) console.warn('[Base app] GM: no hash – XP and tx count will not update')
+        if (isBaseApp) {
+          console.warn('[Base app] GM: no hash – XP and tx count will not update')
+          showXPErrorToast('Transaction sent. XP may not have been recorded – check your profile later.')
+        }
         setError(null)
         return { txHash: null, xpEarned: 0 }
       }
@@ -295,6 +298,7 @@ export const useTransactions = () => {
       })
       const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
       if (!txHash) {
+        if (isLikelyBaseApp()) showXPErrorToast('Transaction sent. XP may not have been recorded – check your profile later.')
         setError(null)
         return { txHash: null, xpEarned: 0 }
       }
@@ -389,6 +393,7 @@ export const useTransactions = () => {
       })
       const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
       if (!txHash) {
+        if (isLikelyBaseApp()) showXPErrorToast('Transaction sent. XP may not have been recorded – check your profile later.')
         setError(null)
         return { txHash: null, playerChoice: selectedSide, result: '', isWin: false, xpEarned: 0 }
       }
@@ -484,6 +489,7 @@ export const useTransactions = () => {
       })
       const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
       if (!txHash) {
+        if (isLikelyBaseApp()) showXPErrorToast('Transaction sent. XP may not have been recorded – check your profile later.')
         setError(null)
         return { txHash: null, playerGuess: guess, winningNumber: 0, isWin: false, xpEarned: 0 }
       }
@@ -577,6 +583,7 @@ export const useTransactions = () => {
       })
       const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
       if (!txHash) {
+        if (isLikelyBaseApp()) showXPErrorToast('Transaction sent. XP may not have been recorded – check your profile later.')
         setError(null)
         return { txHash: null, playerGuess: guess, dice1: 0, dice2: 0, diceTotal: 0, isWin: false, xpEarned: 0 }
       }
@@ -715,6 +722,7 @@ export const useTransactions = () => {
         })
         txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromiseCredits) : await writePromiseCredits
         if (!txHash) {
+          if (isLikelyBaseApp()) showXPErrorToast('Transaction sent. XP may not have been recorded – check your profile later.')
           setError(null)
           return { txHash: null, creditsPurchased: 0, xpEarned: 0 }
         }
@@ -737,6 +745,7 @@ export const useTransactions = () => {
         })
         txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromiseSpin) : await writePromiseSpin
         if (!txHash) {
+          if (isLikelyBaseApp()) showXPErrorToast('Transaction sent. XP may not have been recorded – check your profile later.')
           setError(null)
           return { txHash: null, symbols: [], won: false, xpEarned: 0 }
         }

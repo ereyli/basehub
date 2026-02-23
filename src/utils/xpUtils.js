@@ -94,6 +94,37 @@ const showXPToast = (multiplier, nftCount, finalXP, baseXP) => {
   })
 }
 
+// Mobilde konsol yok; Base/Farcaster'da XP veya tx hatası kullanıcıya toast ile gösterilir
+export function showXPErrorToast (message, durationMs = 5500) {
+  if (typeof document === 'undefined') return
+  const id = 'xp-error-toast'
+  const existing = document.getElementById(id)
+  if (existing) existing.remove()
+  const toast = document.createElement('div')
+  toast.id = id
+  toast.textContent = message
+  toast.style.position = 'fixed'
+  toast.style.bottom = '20px'
+  toast.style.left = '12px'
+  toast.style.right = '12px'
+  toast.style.padding = '14px 16px'
+  toast.style.background = 'linear-gradient(135deg, #b91c1c 0%, #991b1b 100%)'
+  toast.style.color = '#fff'
+  toast.style.borderRadius = '12px'
+  toast.style.boxShadow = '0 10px 30px rgba(185, 28, 28, 0.35)'
+  toast.style.fontSize = '14px'
+  toast.style.fontWeight = '600'
+  toast.style.zIndex = '10000'
+  toast.style.opacity = '0'
+  toast.style.transition = 'opacity 0.2s ease'
+  document.body.appendChild(toast)
+  requestAnimationFrame(() => { toast.style.opacity = '1' })
+  setTimeout(() => {
+    toast.style.opacity = '0'
+    setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast) }, 200)
+  }, durationMs)
+}
+
 // Get NFT count for wallet (returns 0 if no NFT)
 export const getNFTCount = async (walletAddress) => {
   if (!walletAddress) return 0
@@ -270,7 +301,13 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
     })
     if (error) {
       console.error('❌ award_xp RPC error:', error)
-      if (isLikelyBaseApp() || isLikelyFarcaster()) console.error('[Base/Farcaster] award_xp failed – check Supabase, CORS, RLS:', error?.message || error)
+      const isMiniApp = isLikelyBaseApp() || isLikelyFarcaster()
+      if (isMiniApp) {
+        try {
+          sessionStorage.setItem('basehub_last_xp_error', error?.message || JSON.stringify(error))
+        } catch (_) {}
+        showXPErrorToast('XP could not be saved. Check connection or try again.')
+      }
       throw error
     }
     const newTotalXP = data?.new_total_xp ?? finalXP
@@ -279,7 +316,13 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
     return newTotalXP
   } catch (error) {
     console.error('❌ Error in addXP:', error)
-    if (isLikelyBaseApp() || isLikelyFarcaster()) console.error('[Base/Farcaster] addXP failed:', error?.message || error)
+    const isMiniApp = isLikelyBaseApp() || isLikelyFarcaster()
+    if (isMiniApp) {
+      try {
+        sessionStorage.setItem('basehub_last_xp_error', error?.message || String(error))
+      } catch (_) {}
+      showXPErrorToast('XP could not be saved. Check connection or try again.')
+    }
     throw error
   }
 }

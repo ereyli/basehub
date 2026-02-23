@@ -121,7 +121,39 @@ Sonuç: Base app’te **useWriteContract’ın `data`’sı** bazen güncelleniy
 
 ---
 
-## 6. Kısa Özet
+## 6. Supabase Engelleyebilir mi?
+
+Evet. Base app / Farcaster’dan gelen istekler farklı **origin** ile gelir; Supabase bu origin’e izin vermiyorsa **CORS** hatası alırsınız ve `award_xp` RPC hiç başarılı olmaz.
+
+### 6.1 Kontrol
+
+- **Mobilde:** Artık **XP hatası ekranda toast ile** gösteriliyor:
+  - **"XP could not be saved. Check connection or try again."** → Büyük ihtimalle **award_xp RPC** hata döndü (ağ, CORS veya RLS).
+  - **"Transaction sent. XP may not have been recorded – check your profile later."** → **Hash alınamadı** (Base app’te tx hash gelmedi).
+- **Son hata mesajı:** Base app’te `sessionStorage`’a `basehub_last_xp_error` yazılıyor; masaüstünde aynı siteyi açıp Console’da `sessionStorage.getItem('basehub_last_xp_error')` ile son RPC hata metnini görebilirsiniz.
+
+### 6.2 Supabase CORS (Dashboard)
+
+1. Supabase Dashboard → **Project Settings** → **API**.
+2. **CORS / Allowed origins** (veya ilgili ayar) kısmına Base app / Farcaster’dan yüklenen sayfanın **origin**’ini ekleyin.
+3. Örnek origin’ler: `https://base.org`, `https://www.base.org`, `https://warpcast.com`, `https://*.base.org` (wildcard destekleniyorsa). Base app’in tam origin’i dokümantasyondan veya bir test sayfasında `window.location.origin` ile öğrenilebilir.
+
+### 6.3 RLS ve award_xp
+
+- `award_xp` bir **RPC**; genelde anon key ile çağrılır ve RLS’ten muaf (SECURITY DEFINER) olur. Eğer RPC içinde `auth.uid()` gibi bir kontrol varsa ve Base app’te oturum açılmıyorsa RPC başarısız olabilir. Backend’de RPC’nin anon çağrıya izin verdiğinden emin olun.
+
+---
+
+## 7. Mobilde Log Yerine Toast
+
+- Konsol mobilde görünmediği için:
+  - **Hash alınamadığında:** "Transaction sent. XP may not have been recorded – check your profile later." toast’ı çıkar.
+  - **award_xp RPC hata verdiğinde:** "XP could not be saved. Check connection or try again." toast’ı çıkar (Supabase CORS/RLS şüphesi).
+  - Son RPC hata metni `sessionStorage.basehub_last_xp_error` içine yazılır; masaüstünde aynı domain’de Console’dan okunabilir.
+
+---
+
+## 8. Kısa Özet
 
 - **fcbe2b0** sadece TX sayacı ve GM/GN badge’ini değiştirdi; oyun tx/XP akışı önceden de “hash alınca XP” mantığındaydı.
 - Base app’te sorun: **hash’in hiç gelmemesi** (writeContractAsync resolve etmiyor; bazen useWriteContract `data`’sı da güncellenmeyebiliyor).
