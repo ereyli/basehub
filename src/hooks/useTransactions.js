@@ -3,7 +3,7 @@ import { useAccount, useWriteContract, useChainId, usePublicClient } from 'wagmi
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from './useNetworkCheck'
-import { addXP, addBonusXP } from '../utils/xpUtils'
+import { addXP, addBonusXP, shouldAwardXPOnHashOnly } from '../utils/xpUtils'
 import { getCurrentConfig, getContractAddress, GAS_CONFIG, GAME_CONFIG } from '../config/base'
 import { getContractAddressByNetwork, NETWORKS, isNetworkSupported } from '../config/networks'
 import { parseEther, formatEther } from 'viem'
@@ -173,15 +173,21 @@ export const useTransactions = () => {
       
       console.log('✅ GM transaction sent! Hash:', txHash)
       
-      // ÖNCE confirmation bekle - award-xp-verified receipt gerektirir (pending tx için null döner)
+      // Farcaster/Base app: hash yeterli, receipt beklemeden XP ver (web'e dokunulmaz)
+      if (shouldAwardXPOnHashOnly()) {
+        try { await addXP(address, 150, 'GM_GAME', chainId, false, txHash) } catch (_) {}
+        try { await updateQuestProgress('gmUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
+        setError(null)
+        return { txHash, xpEarned: 30 }
+      }
+      
+      // Web: confirmation bekle, sonra XP
       console.log('⏳ Waiting for confirmation before awarding XP...')
       try {
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
         const timeoutDuration = isOnInkChain ? 120000 : 60000
         const receipt = await waitForTxReceipt(txHash, timeoutDuration)
         console.log('✅ GM transaction confirmed!')
-        
-        // Receipt mevcut → on-chain doğrulama çalışır
         try {
           await addXP(address, 150, 'GM_GAME', chainId, false, txHash)
           console.log('✅ XP added successfully')
@@ -202,14 +208,8 @@ export const useTransactions = () => {
           await updateQuestProgress('transactions', 1)
         } catch (_) {}
       }
-      
-      // Clear any previous errors on success
       setError(null)
-      
-      return { 
-        txHash,
-        xpEarned: 30 
-      }
+      return { txHash, xpEarned: 30 }
     } catch (err) {
       // Check for user cancellation - case insensitive and multiple patterns
       const errorMsg = err.message?.toLowerCase() || ''
@@ -271,13 +271,19 @@ export const useTransactions = () => {
       
       console.log('✅ GN transaction sent! Hash:', txHash)
       
+      if (shouldAwardXPOnHashOnly()) {
+        try { await addXP(address, 150, 'GN_GAME', chainId, false, txHash) } catch (_) {}
+        try { await updateQuestProgress('gnUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
+        setError(null)
+        return { txHash, xpEarned: 30 }
+      }
+      
       console.log('⏳ Waiting for confirmation before awarding XP...')
       try {
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
         const timeoutDuration = isOnInkChain ? 120000 : 60000
         const receipt = await waitForTxReceipt(txHash, timeoutDuration)
         console.log('✅ GN transaction confirmed!')
-        
         try {
           await addXP(address, 150, 'GN_GAME', chainId, false, txHash)
           console.log('✅ XP added successfully')
@@ -298,14 +304,8 @@ export const useTransactions = () => {
           await updateQuestProgress('transactions', 1)
         } catch (_) {}
       }
-      
-      // Clear any previous errors on success
       setError(null)
-      
-      return { 
-        txHash,
-        xpEarned: 30 
-      }
+      return { txHash, xpEarned: 30 }
     } catch (err) {
       // Check for user cancellation - case insensitive and multiple patterns
       const errorMsg = err.message?.toLowerCase() || ''
@@ -378,7 +378,12 @@ export const useTransactions = () => {
       
       console.log('🎲 Flip result:', { selectedSide, actualResult, playerWon })
       
-      const xpEarned = playerWon ? 150 + 500 : 150
+      if (shouldAwardXPOnHashOnly()) {
+        try { await addBonusXP(address, 'flip', playerWon, chainId, txHash) } catch (_) {}
+        try { await updateQuestProgress('coinFlipUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
+        setError(null)
+        return { txHash, playerChoice: selectedSide, result: actualResult, isWin: playerWon, xpEarned: playerWon ? 560 : 60 }
+      }
       
       console.log('⏳ Waiting for confirmation before awarding XP...')
       try {
@@ -386,7 +391,6 @@ export const useTransactions = () => {
         const timeoutDuration = isOnInkChain ? 120000 : 60000
         const receipt = await waitForTxReceipt(txHash, timeoutDuration)
         console.log('✅ Flip transaction confirmed!')
-        
         try {
           await addBonusXP(address, 'flip', playerWon, chainId, txHash)
           console.log('✅ XP added successfully')
@@ -407,17 +411,8 @@ export const useTransactions = () => {
           await updateQuestProgress('transactions', 1)
         } catch (_) {}
       }
-      
-      // Clear any previous errors on success
       setError(null)
-      
-      return { 
-        txHash, 
-        playerChoice: selectedSide, 
-        result: actualResult, 
-        isWin: playerWon,
-        xpEarned: playerWon ? 560 : 60
-      }
+      return { txHash, playerChoice: selectedSide, result: actualResult, isWin: playerWon, xpEarned: playerWon ? 560 : 60 }
     } catch (err) {
       // Check for user cancellation - case insensitive and multiple patterns
       const errorMsg = err.message?.toLowerCase() || ''
@@ -486,27 +481,28 @@ export const useTransactions = () => {
       
       console.log('🎲 Lucky Number result:', { guess, winningNumber, playerWon })
       
-      // Wait for confirmation first (verified XP needs on-chain receipt)
+      if (shouldAwardXPOnHashOnly()) {
+        try { await addBonusXP(address, 'luckynumber', playerWon, chainId, txHash) } catch (_) {}
+        try { await updateQuestProgress('luckyNumberUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
+        setError(null)
+        return { txHash, playerGuess: guess, winningNumber, isWin: playerWon, xpEarned: playerWon ? 1060 : 60 }
+      }
+      
       console.log('⏳ Waiting for transaction confirmation...')
       try {
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
-        const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
+        const timeoutDuration = isOnInkChain ? 120000 : 60000
         const receipt = await waitForTxReceipt(txHash, timeoutDuration)
         console.log('✅ Lucky Number transaction confirmed!', receipt)
-        
-        // Award XP after confirmation (verified via tx receipt)
         try {
-          console.log('🎯 Awarding XP for Lucky Number transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName, playerWon })
           await addBonusXP(address, 'luckynumber', playerWon, chainId, txHash)
           console.log('✅ XP added successfully')
         } catch (xpError) {
           console.error('❌ Error adding XP:', xpError)
         }
-        
         try {
           await updateQuestProgress('luckyNumberUsed', 1)
           await updateQuestProgress('transactions', 1)
-          console.log('✅ Quest progress updated')
         } catch (questError) {
           console.error('⚠️ Quest progress error (non-critical):', questError)
         }
@@ -518,19 +514,8 @@ export const useTransactions = () => {
           await updateQuestProgress('transactions', 1)
         } catch (_) {}
       }
-      
-      const xpEarned = playerWon ? 150 + 1000 : 150
-      
-      // Clear any previous errors on success
       setError(null)
-      
-      return { 
-        txHash, 
-        playerGuess: guess, 
-        winningNumber, 
-        isWin: playerWon,
-        xpEarned: playerWon ? 1060 : 60
-      }
+      return { txHash, playerGuess: guess, winningNumber, isWin: playerWon, xpEarned: playerWon ? 1060 : 60 }
     } catch (err) {
       // Check for user cancellation - case insensitive and multiple patterns
       const errorMsg = err.message?.toLowerCase() || ''
@@ -600,27 +585,28 @@ export const useTransactions = () => {
       
       console.log('🎲 Dice Roll result:', { guess, dice1, dice2, diceTotal, playerWon })
       
-      // Wait for confirmation first (verified XP needs on-chain receipt)
+      if (shouldAwardXPOnHashOnly()) {
+        try { await addBonusXP(address, 'diceroll', playerWon, chainId, txHash) } catch (_) {}
+        try { await updateQuestProgress('diceRollUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
+        setError(null)
+        return { txHash, playerGuess: guess, dice1, dice2, diceTotal, isWin: playerWon, xpEarned: playerWon ? 1560 : 60 }
+      }
+      
       console.log('⏳ Waiting for transaction confirmation...')
       try {
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
-        const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
+        const timeoutDuration = isOnInkChain ? 120000 : 60000
         const receipt = await waitForTxReceipt(txHash, timeoutDuration)
         console.log('✅ Dice Roll transaction confirmed!', receipt)
-        
-        // Award XP after confirmation (verified via tx receipt)
         try {
-          console.log('🎯 Awarding XP for Dice Roll transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName, playerWon })
           await addBonusXP(address, 'diceroll', playerWon, chainId, txHash)
           console.log('✅ XP added successfully')
         } catch (xpError) {
           console.error('❌ Error adding XP:', xpError)
         }
-        
         try {
           await updateQuestProgress('diceRollUsed', 1)
           await updateQuestProgress('transactions', 1)
-          console.log('✅ Quest progress updated')
         } catch (questError) {
           console.error('⚠️ Quest progress error (non-critical):', questError)
         }
@@ -632,21 +618,8 @@ export const useTransactions = () => {
           await updateQuestProgress('transactions', 1)
         } catch (_) {}
       }
-      
-      const xpEarned = playerWon ? 150 + 1500 : 150
-      
-      // Clear any previous errors on success
       setError(null)
-      
-      return { 
-        txHash, 
-        playerGuess: guess, 
-        dice1,
-        dice2,
-        diceTotal, 
-        isWin: playerWon,
-        xpEarned: playerWon ? 1560 : 60
-      }
+      return { txHash, playerGuess: guess, dice1, dice2, diceTotal, isWin: playerWon, xpEarned: playerWon ? 1560 : 60 }
     } catch (err) {
       // Check for user cancellation - case insensitive and multiple patterns
       const errorMsg = err.message?.toLowerCase() || ''
@@ -799,27 +772,28 @@ export const useTransactions = () => {
           
           xpEarned = 150 + bonusXp // Base XP + bonus
           
-          // Wait for confirmation first (verified XP needs on-chain receipt)
+          if (shouldAwardXPOnHashOnly()) {
+            try { await addXP(address, xpEarned, 'SLOT_GAME', chainId, false, txHash) } catch (_) {}
+            try { await updateQuestProgress('slotUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
+            setError(null)
+            return { txHash, symbols, won, xpEarned }
+          }
+          
           console.log('⏳ Waiting for transaction confirmation...')
           try {
             const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
-            const timeoutDuration = isOnInkChain ? 120000 : 60000 // 120 seconds for InkChain, 60 for Base
+            const timeoutDuration = isOnInkChain ? 120000 : 60000
             const receipt = await waitForTxReceipt(txHash, timeoutDuration)
             console.log('✅ Slot transaction confirmed!', receipt)
-            
-            // Award XP after confirmation (verified via tx receipt)
             try {
-              console.log('🎯 Awarding XP for Slot transaction:', { address, chainId, chainName: currentNetworkConfig?.chainName, xpEarned })
               await addXP(address, xpEarned, 'SLOT_GAME', chainId, false, txHash)
               console.log('✅ XP added successfully')
             } catch (xpError) {
               console.error('❌ Error adding XP:', xpError)
             }
-            
             try {
               await updateQuestProgress('slotUsed', 1)
               await updateQuestProgress('transactions', 1)
-              console.log('✅ Quest progress updated')
             } catch (questError) {
               console.error('⚠️ Quest progress error (non-critical):', questError)
             }
@@ -831,18 +805,16 @@ export const useTransactions = () => {
               await updateQuestProgress('transactions', 1)
             } catch (_) {}
           }
-        
-        // Clear any previous errors on success
-        setError(null)
-        
-        return {
-          txHash,
-          symbols,
-          won,
-          xpEarned
-        }
+          setError(null)
+          return { txHash, symbols, won, xpEarned }
       } else {
-        // Credits purchase - wait for confirmation first, then award XP
+        // Credits purchase
+        if (shouldAwardXPOnHashOnly()) {
+          try { await addXP(address, 10, 'SLOT_GAME_CREDITS', chainId, false, txHash) } catch (_) {}
+          try { await updateQuestProgress('transactions', 1) } catch (_) {}
+          setError(null)
+          return { txHash, creditsPurchased: params.amount, xpEarned: 10 }
+        }
         console.log('⏳ Waiting for transaction confirmation...')
         let receipt
         try {
@@ -858,7 +830,6 @@ export const useTransactions = () => {
           setError(null)
           return { txHash, creditsPurchased: params.amount, xpEarned: 10 }
         }
-
         if (receipt?.status !== 'success') {
           console.error('❌ Slot credits purchase reverted', receipt)
           throw new Error('Transaction reverted. Credits were not added.')

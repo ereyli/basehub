@@ -19,6 +19,11 @@ function isLikelyFarcaster () {
   return href.includes('farcaster.xyz') || href.includes('warpcast.com')
 }
 
+// Farcaster/Base app: receipt beklenmez, hash alındığında hemen XP verilir (web'e dokunulmaz)
+export function shouldAwardXPOnHashOnly () {
+  return isLikelyBaseApp() || isLikelyFarcaster()
+}
+
 // Level calculation - DB calc_level ile uyumlu (max 100)
 export const calcLevel = (xp) => {
   if (xp == null || xp < 0) return 1
