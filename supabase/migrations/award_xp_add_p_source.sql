@@ -43,6 +43,22 @@ BEGIN
   WHERE wallet_address = v_normalized
   LIMIT 1;
 
+  -- Duplicate: aynı (wallet, game_type, tx_hash) zaten ödüllendirildiyse tekrar XP verme
+  IF p_transaction_hash IS NOT NULL AND trim(p_transaction_hash) <> '' THEN
+    IF v_src IN ('farcaster', 'base_app') THEN
+      PERFORM 1 FROM public.miniapp_transactions
+        WHERE wallet_address = v_normalized AND game_type = p_game_type AND transaction_hash = p_transaction_hash
+        LIMIT 1;
+    ELSE
+      PERFORM 1 FROM public.transactions
+        WHERE wallet_address = v_normalized AND game_type = p_game_type AND transaction_hash = p_transaction_hash
+        LIMIT 1;
+    END IF;
+    IF FOUND THEN
+      RETURN jsonb_build_object('success', true, 'new_total_xp', coalesce(v_existing.total_xp, 0));
+    END IF;
+  END IF;
+
   IF v_existing IS NOT NULL THEN
     v_new_total_xp := coalesce(v_existing.total_xp, 0)::int + p_final_xp;
     v_new_total_tx := coalesce(v_existing.total_transactions, 0)::int + 1;
