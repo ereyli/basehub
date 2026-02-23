@@ -1,9 +1,9 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useAccount, useWriteContract, useChainId, usePublicClient } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from './useNetworkCheck'
-import { addXP, addBonusXP, shouldAwardXPOnHashOnly, isLikelyBaseApp } from '../utils/xpUtils'
+import { addXP, addBonusXP, shouldAwardXPOnHashOnly } from '../utils/xpUtils'
 import { getCurrentConfig, getContractAddress, GAS_CONFIG, GAME_CONFIG } from '../config/base'
 import { getContractAddressByNetwork, NETWORKS, isNetworkSupported } from '../config/networks'
 import { parseEther, formatEther } from 'viem'
@@ -29,41 +29,14 @@ export const useTransactions = () => {
   const { address } = useAccount()
   const chainId = useChainId()
   const publicClient = usePublicClient({ chainId })
-  const { writeContractAsync, data: txData } = useWriteContract()
+  const { writeContractAsync } = useWriteContract()
   const { isCorrectNetwork, networkName, currentNetworkConfig, switchToNetwork, supportedNetworks } = useNetworkCheck()
   const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)
   
-  // Use ref to prevent double popup - more reliable than state
   const isTransactionPendingRef = useRef(false)
-  // Base app: writeContractAsync bazen resolve etmiyor; hash hook state'ten (txData) gelir
-  const latestTxHashRef = useRef(null)
-  useEffect(() => {
-    if (txData) latestTxHashRef.current = txData
-  }, [txData])
 
-  // Base app'da hash almak için: ya writeContractAsync resolve eder ya da txData (ref) güncellenir
-  const getTxHashBaseApp = useCallback((writePromise, timeoutMs = 15000) => {
-    const hashBefore = latestTxHashRef.current
-    return Promise.race([
-      writePromise,
-      new Promise((resolve) => {
-        const deadline = Date.now() + timeoutMs
-        const id = setInterval(() => {
-          const current = latestTxHashRef.current
-          if (current && current !== hashBefore) {
-            clearInterval(id)
-            resolve(current)
-          } else if (Date.now() > deadline) {
-            clearInterval(id)
-            resolve(null)
-          }
-        }, 400)
-      })
-    ])
-  }, [])
-
-  // Max time we let the UI wait for receipt (Base in-app browser often never gets RPC response)
+  // Web: receipt için max bekleme. Base/Farcaster: XP zaten hash ile verildi, receipt opsiyonel
   const UI_MAX_WAIT_MS = 7000
 
   // Helper function to wait for transaction receipt with optimized polling for InkChain
@@ -181,8 +154,7 @@ export const useTransactions = () => {
       const contractAddress = getContractAddressForCurrentNetwork('GM_GAME')
       console.log('📡 Contract address for GM_GAME:', contractAddress)
       console.log('📡 Sending GM transaction to blockchain...')
-      
-      const writePromise = writeContractAsync({
+      const txHash = await writeContractAsync({
         address: contractAddress,
         abi: [{
           name: 'sendGM',
@@ -195,47 +167,36 @@ export const useTransactions = () => {
         value: getGameFee(), // 0.00002 ETH fee
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
-      const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
-      if (!txHash) {
-        setError(null)
-        return { txHash: null, xpEarned: 0 }
-      }
       console.log('✅ GM transaction sent! Hash:', txHash)
       
-      // Farcaster/Base app: hash yeterli, receipt beklemeden XP ver (web'e dokunulmaz)
+      // Base app / Farcaster (fcbe2b0 yapısı): hash alır almaz XP + quest, receipt arka planda
       if (shouldAwardXPOnHashOnly()) {
-        try { await addXP(address, 150, 'GM_GAME', chainId, false, txHash) } catch (_) {}
+        try { await addXP(address, 150, 'GM_GAME', chainId, false, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
         try { await updateQuestProgress('gmUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
+        try {
+          const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+          await waitForTxReceipt(txHash, isOnInkChain ? 120000 : 60000)
+          console.log('✅ GM transaction confirmed!')
+        } catch (confirmError) {
+          console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
+        }
         setError(null)
         return { txHash, xpEarned: 30 }
       }
       
-      // Web: confirmation bekle, sonra XP
+      // Web: önce receipt bekle, sonra XP
       console.log('⏳ Waiting for confirmation before awarding XP...')
       try {
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
         const timeoutDuration = isOnInkChain ? 120000 : 60000
-        const receipt = await waitForTxReceipt(txHash, timeoutDuration)
+        await waitForTxReceipt(txHash, timeoutDuration)
         console.log('✅ GM transaction confirmed!')
-        try {
-          await addXP(address, 150, 'GM_GAME', chainId, false, txHash)
-          console.log('✅ XP added successfully')
-        } catch (xpError) {
-          console.error('❌ Error adding XP:', xpError)
-        }
-        try {
-          await updateQuestProgress('gmUsed', 1)
-          await updateQuestProgress('transactions', 1)
-        } catch (questError) {
-          console.error('⚠️ Quest progress error:', questError)
-        }
+        try { await addXP(address, 150, 'GM_GAME', chainId, false, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
+        try { await updateQuestProgress('gmUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
       } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout (e.g. Base app):', confirmError.message)
-        try {
-          await addXP(address, 150, 'GM_GAME', chainId, false, txHash)
-          await updateQuestProgress('gmUsed', 1)
-          await updateQuestProgress('transactions', 1)
-        } catch (_) {}
+        console.warn('⚠️ Confirmation timeout:', confirmError.message)
+        try { await addXP(address, 150, 'GM_GAME', chainId, false, txHash) } catch (_) {}
+        try { await updateQuestProgress('gmUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
       }
       setError(null)
       return { txHash, xpEarned: 30 }
@@ -264,7 +225,7 @@ export const useTransactions = () => {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, isCorrectNetwork, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp])
+  }, [address, chainId, currentNetworkConfig, isCorrectNetwork, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
 
   const sendGNTransaction = useCallback(async (message = 'GN!') => {
     if (!address) {
@@ -282,7 +243,7 @@ export const useTransactions = () => {
       const contractAddress = getContractAddressForCurrentNetwork('GN_GAME')
       
       console.log('📡 Sending GN transaction to blockchain...')
-      const writePromise = writeContractAsync({
+      const txHash = await writeContractAsync({
         address: contractAddress,
         abi: [{
           name: 'sendGN',
@@ -295,45 +256,32 @@ export const useTransactions = () => {
         value: getGameFee(), // 0.00002 ETH fee
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
-      const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
-      if (!txHash) {
-        setError(null)
-        return { txHash: null, xpEarned: 0 }
-      }
       console.log('✅ GN transaction sent! Hash:', txHash)
-      
       if (shouldAwardXPOnHashOnly()) {
-        try { await addXP(address, 150, 'GN_GAME', chainId, false, txHash) } catch (_) {}
+        try { await addXP(address, 150, 'GN_GAME', chainId, false, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
         try { await updateQuestProgress('gnUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
+        try {
+          const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+          await waitForTxReceipt(txHash, isOnInkChain ? 120000 : 60000)
+          console.log('✅ GN transaction confirmed!')
+        } catch (confirmError) {
+          console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
+        }
         setError(null)
         return { txHash, xpEarned: 30 }
       }
-      
       console.log('⏳ Waiting for confirmation before awarding XP...')
       try {
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
         const timeoutDuration = isOnInkChain ? 120000 : 60000
-        const receipt = await waitForTxReceipt(txHash, timeoutDuration)
+        await waitForTxReceipt(txHash, timeoutDuration)
         console.log('✅ GN transaction confirmed!')
-        try {
-          await addXP(address, 150, 'GN_GAME', chainId, false, txHash)
-          console.log('✅ XP added successfully')
-        } catch (xpError) {
-          console.error('❌ Error adding XP:', xpError)
-        }
-        try {
-          await updateQuestProgress('gnUsed', 1)
-          await updateQuestProgress('transactions', 1)
-        } catch (questError) {
-          console.error('⚠️ Quest progress error:', questError)
-        }
+        try { await addXP(address, 150, 'GN_GAME', chainId, false, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
+        try { await updateQuestProgress('gnUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
       } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout (e.g. Base app):', confirmError.message)
-        try {
-          await addXP(address, 150, 'GN_GAME', chainId, false, txHash)
-          await updateQuestProgress('gnUsed', 1)
-          await updateQuestProgress('transactions', 1)
-        } catch (_) {}
+        console.warn('⚠️ Confirmation timeout:', confirmError.message)
+        try { await addXP(address, 150, 'GN_GAME', chainId, false, txHash) } catch (_) {}
+        try { await updateQuestProgress('gnUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
       }
       setError(null)
       return { txHash, xpEarned: 30 }
@@ -362,7 +310,7 @@ export const useTransactions = () => {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp])
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
 
   const sendFlipTransaction = useCallback(async (selectedSide) => {
     if (!address) {
@@ -384,7 +332,7 @@ export const useTransactions = () => {
       const choice = selectedSide === 'heads' ? 0 : 1
       
       console.log('📡 Sending Flip transaction to blockchain...')
-      const writePromise = writeContractAsync({
+      const txHash = await writeContractAsync({
         address: contractAddress,
         abi: [{
           name: 'playFlip',
@@ -397,52 +345,36 @@ export const useTransactions = () => {
         value: getGameFee(), // 0.00002 ETH fee
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
-      const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
-      if (!txHash) {
-        setError(null)
-        return { txHash: null, playerChoice: selectedSide, result: '', isWin: false, xpEarned: 0 }
-      }
       console.log('✅ Flip transaction sent! Hash:', txHash)
-      
-      // Generate game result immediately (don't wait for confirmation)
       const actualResult = Math.random() < 0.5 ? 'heads' : 'tails'
       const playerWon = (selectedSide === 'heads' && actualResult === 'heads') || 
                        (selectedSide === 'tails' && actualResult === 'tails')
-      
       console.log('🎲 Flip result:', { selectedSide, actualResult, playerWon })
-      
       if (shouldAwardXPOnHashOnly()) {
-        try { await addBonusXP(address, 'flip', playerWon, chainId, txHash) } catch (_) {}
+        try { await addBonusXP(address, 'flip', playerWon, chainId, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
         try { await updateQuestProgress('coinFlipUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
+        try {
+          const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+          await waitForTxReceipt(txHash, isOnInkChain ? 120000 : 60000)
+          console.log('✅ Flip transaction confirmed!')
+        } catch (confirmError) {
+          console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
+        }
         setError(null)
         return { txHash, playerChoice: selectedSide, result: actualResult, isWin: playerWon, xpEarned: playerWon ? 560 : 60 }
       }
-      
       console.log('⏳ Waiting for confirmation before awarding XP...')
       try {
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
         const timeoutDuration = isOnInkChain ? 120000 : 60000
-        const receipt = await waitForTxReceipt(txHash, timeoutDuration)
+        await waitForTxReceipt(txHash, timeoutDuration)
         console.log('✅ Flip transaction confirmed!')
-        try {
-          await addBonusXP(address, 'flip', playerWon, chainId, txHash)
-          console.log('✅ XP added successfully')
-        } catch (xpError) {
-          console.error('❌ Error adding XP:', xpError)
-        }
-        try {
-          await updateQuestProgress('coinFlipUsed', 1)
-          await updateQuestProgress('transactions', 1)
-        } catch (questError) {
-          console.error('⚠️ Quest progress error:', questError)
-        }
+        try { await addBonusXP(address, 'flip', playerWon, chainId, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
+        try { await updateQuestProgress('coinFlipUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
       } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout (e.g. Base app):', confirmError.message)
-        try {
-          await addBonusXP(address, 'flip', playerWon, chainId, txHash)
-          await updateQuestProgress('coinFlipUsed', 1)
-          await updateQuestProgress('transactions', 1)
-        } catch (_) {}
+        console.warn('⚠️ Confirmation timeout:', confirmError.message)
+        try { await addBonusXP(address, 'flip', playerWon, chainId, txHash) } catch (_) {}
+        try { await updateQuestProgress('coinFlipUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
       }
       setError(null)
       return { txHash, playerChoice: selectedSide, result: actualResult, isWin: playerWon, xpEarned: playerWon ? 560 : 60 }
@@ -470,7 +402,7 @@ export const useTransactions = () => {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp])
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
 
 
   const sendLuckyNumberTransaction = useCallback(async (guess) => {
@@ -490,7 +422,7 @@ export const useTransactions = () => {
       const contractAddress = getContractAddressForCurrentNetwork('LUCKY_NUMBER')
       
       console.log('📡 Sending Lucky Number transaction to blockchain...')
-      const writePromise = writeContractAsync({
+      const txHash = await writeContractAsync({
         address: contractAddress,
         abi: [{
           name: 'guessLuckyNumber',
@@ -503,51 +435,35 @@ export const useTransactions = () => {
         value: getGameFee(), // 0.00002 ETH fee
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
-      const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
-      if (!txHash) {
-        setError(null)
-        return { txHash: null, playerGuess: guess, winningNumber: 0, isWin: false, xpEarned: 0 }
-      }
       console.log('✅ Lucky Number transaction sent! Hash:', txHash)
-      
-      // Generate game result immediately
       const winningNumber = Math.floor(Math.random() * 10) + 1
       const playerWon = guess === winningNumber
-      
       console.log('🎲 Lucky Number result:', { guess, winningNumber, playerWon })
-      
       if (shouldAwardXPOnHashOnly()) {
-        try { await addBonusXP(address, 'luckynumber', playerWon, chainId, txHash) } catch (_) {}
+        try { await addBonusXP(address, 'luckynumber', playerWon, chainId, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
         try { await updateQuestProgress('luckyNumberUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
+        try {
+          const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+          await waitForTxReceipt(txHash, isOnInkChain ? 120000 : 60000)
+          console.log('✅ Lucky Number transaction confirmed!')
+        } catch (confirmError) {
+          console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
+        }
         setError(null)
         return { txHash, playerGuess: guess, winningNumber, isWin: playerWon, xpEarned: playerWon ? 1060 : 60 }
       }
-      
       console.log('⏳ Waiting for transaction confirmation...')
       try {
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
         const timeoutDuration = isOnInkChain ? 120000 : 60000
-        const receipt = await waitForTxReceipt(txHash, timeoutDuration)
-        console.log('✅ Lucky Number transaction confirmed!', receipt)
-        try {
-          await addBonusXP(address, 'luckynumber', playerWon, chainId, txHash)
-          console.log('✅ XP added successfully')
-        } catch (xpError) {
-          console.error('❌ Error adding XP:', xpError)
-        }
-        try {
-          await updateQuestProgress('luckyNumberUsed', 1)
-          await updateQuestProgress('transactions', 1)
-        } catch (questError) {
-          console.error('⚠️ Quest progress error (non-critical):', questError)
-        }
+        await waitForTxReceipt(txHash, timeoutDuration)
+        console.log('✅ Lucky Number transaction confirmed!')
+        try { await addBonusXP(address, 'luckynumber', playerWon, chainId, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
+        try { await updateQuestProgress('luckyNumberUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
       } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout (e.g. Base app):', confirmError.message)
-        try {
-          await addBonusXP(address, 'luckynumber', playerWon, chainId, txHash)
-          await updateQuestProgress('luckyNumberUsed', 1)
-          await updateQuestProgress('transactions', 1)
-        } catch (_) {}
+        console.warn('⚠️ Confirmation timeout:', confirmError.message)
+        try { await addBonusXP(address, 'luckynumber', playerWon, chainId, txHash) } catch (_) {}
+        try { await updateQuestProgress('luckyNumberUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
       }
       setError(null)
       return { txHash, playerGuess: guess, winningNumber, isWin: playerWon, xpEarned: playerWon ? 1060 : 60 }
@@ -575,7 +491,7 @@ export const useTransactions = () => {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp])
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
 
   const sendDiceRollTransaction = useCallback(async (guess) => {
     if (!address) {
@@ -594,7 +510,7 @@ export const useTransactions = () => {
       const contractAddress = getContractAddressForCurrentNetwork('DICE_ROLL')
       
       console.log('📡 Sending Dice Roll transaction to blockchain...')
-      const writePromise = writeContractAsync({
+      const txHash = await writeContractAsync({
         address: contractAddress,
         abi: [{
           name: 'rollDice',
@@ -607,34 +523,31 @@ export const useTransactions = () => {
         value: getGameFee(), // 0.00002 ETH fee
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
-      const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
-      if (!txHash) {
-        setError(null)
-        return { txHash: null, playerGuess: guess, dice1: 0, dice2: 0, diceTotal: 0, isWin: false, xpEarned: 0 }
-      }
       console.log('✅ Dice Roll transaction sent! Hash:', txHash)
-      
-      // Generate game result immediately
       const dice1 = Math.floor(Math.random() * 6) + 1
       const dice2 = Math.floor(Math.random() * 6) + 1
       const diceTotal = dice1 + dice2
       const playerWon = guess === diceTotal
-      
       console.log('🎲 Dice Roll result:', { guess, dice1, dice2, diceTotal, playerWon })
-      
       if (shouldAwardXPOnHashOnly()) {
-        try { await addBonusXP(address, 'diceroll', playerWon, chainId, txHash) } catch (_) {}
+        try { await addBonusXP(address, 'diceroll', playerWon, chainId, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
         try { await updateQuestProgress('diceRollUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
+        try {
+          const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+          await waitForTxReceipt(txHash, isOnInkChain ? 120000 : 60000)
+          console.log('✅ Dice Roll transaction confirmed!')
+        } catch (confirmError) {
+          console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
+        }
         setError(null)
         return { txHash, playerGuess: guess, dice1, dice2, diceTotal, isWin: playerWon, xpEarned: playerWon ? 1560 : 60 }
       }
-      
       console.log('⏳ Waiting for transaction confirmation...')
       try {
         const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
         const timeoutDuration = isOnInkChain ? 120000 : 60000
-        const receipt = await waitForTxReceipt(txHash, timeoutDuration)
-        console.log('✅ Dice Roll transaction confirmed!', receipt)
+        await waitForTxReceipt(txHash, timeoutDuration)
+        console.log('✅ Dice Roll transaction confirmed!')
         try {
           await addBonusXP(address, 'diceroll', playerWon, chainId, txHash)
           console.log('✅ XP added successfully')
@@ -681,7 +594,7 @@ export const useTransactions = () => {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp])
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
 
   const sendSlotTransaction = useCallback(async (action, params = {}) => {
     if (!address) {
@@ -734,7 +647,7 @@ export const useTransactions = () => {
         }
 
         const gasLimit = 500000n
-        const creditsWritePromise = writeContractAsync({
+        txHash = await writeContractAsync({
           address: contractAddress,
           abi: SLOT_GAME_ABI,
           functionName: 'purchaseCredits',
@@ -743,15 +656,10 @@ export const useTransactions = () => {
           gas: gasLimit,
           dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
         })
-        txHash = isLikelyBaseApp() ? await getTxHashBaseApp(creditsWritePromise) : await creditsWritePromise
-        if (!txHash) {
-          setError(null)
-          return { txHash: null, creditsPurchased: params.amount, xpEarned: 0 }
-        }
         console.log('✅ Credits purchase transaction sent! Hash:', txHash)
       } else if (action === 'spinSlot') {
         const spinGasLimit = 250000n
-        const spinWritePromise = writeContractAsync({
+        txHash = await writeContractAsync({
           address: contractAddress,
           abi: [{
             name: 'spinSlot',
@@ -765,11 +673,6 @@ export const useTransactions = () => {
           gas: spinGasLimit,
           dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
         })
-        txHash = isLikelyBaseApp() ? await getTxHashBaseApp(spinWritePromise) : await spinWritePromise
-        if (!txHash) {
-          setError(null)
-          return { txHash: null, symbols: [0, 0, 0, 0], won: false, xpEarned: 0 }
-        }
         console.log('✅ Slot spin transaction sent! Hash:', txHash)
       }
       
@@ -814,14 +717,19 @@ export const useTransactions = () => {
           console.log('🎰 Max count:', maxCount, 'Bonus XP:', bonusXp)
           
           xpEarned = 150 + bonusXp // Base XP + bonus
-          
           if (shouldAwardXPOnHashOnly()) {
-            try { await addXP(address, xpEarned, 'SLOT_GAME', chainId, false, txHash) } catch (_) {}
+            try { await addXP(address, xpEarned, 'SLOT_GAME', chainId, false, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
             try { await updateQuestProgress('slotUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
+            try {
+              const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+              await waitForTxReceipt(txHash, isOnInkChain ? 120000 : 60000)
+              console.log('✅ Slot transaction confirmed!')
+            } catch (confirmError) {
+              console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
+            }
             setError(null)
             return { txHash, symbols, won, xpEarned }
           }
-          
           console.log('⏳ Waiting for transaction confirmation...')
           try {
             const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
@@ -853,8 +761,15 @@ export const useTransactions = () => {
       } else {
         // Credits purchase
         if (shouldAwardXPOnHashOnly()) {
-          try { await addXP(address, 10, 'SLOT_GAME_CREDITS', chainId, false, txHash) } catch (_) {}
+          try { await addXP(address, 10, 'SLOT_GAME_CREDITS', chainId, false, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
           try { await updateQuestProgress('transactions', 1) } catch (_) {}
+          try {
+            const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+            await waitForTxReceipt(txHash, isOnInkChain ? 120000 : 60000)
+            console.log('✅ Slot credits purchase confirmed!')
+          } catch (confirmError) {
+            console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
+          }
           setError(null)
           return { txHash, creditsPurchased: params.amount, xpEarned: 10 }
         }
@@ -938,7 +853,7 @@ export const useTransactions = () => {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getSlotCreditPrice, publicClient, getTxHashBaseApp])
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getSlotCreditPrice, publicClient])
 
   const sendCustomTransaction = useCallback(async (contractAddressParam, functionData, value = '0') => {
     if (!address) {
