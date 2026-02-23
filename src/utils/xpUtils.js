@@ -20,9 +20,16 @@ function isLikelyFarcaster () {
   return href.includes('farcaster.xyz') || href.includes('warpcast.com')
 }
 
+// Miniapp ayrı domain'de: basehub-alpha.vercel.app = Farcaster/Base app; basehub.fun = web
+export function isMiniappDomain () {
+  if (typeof window === 'undefined' || !window.location?.hostname) return false
+  const host = window.location.hostname.toLowerCase()
+  return host === 'basehub-alpha.vercel.app' || host.endsWith('.basehub-alpha.vercel.app')
+}
+
 // Farcaster/Base app: receipt beklenmez, hash alındığında hemen XP verilir (web'e dokunulmaz)
 export function shouldAwardXPOnHashOnly () {
-  return isLikelyBaseApp() || isLikelyFarcaster()
+  return isMiniappDomain() || isLikelyBaseApp() || isLikelyFarcaster()
 }
 
 // Level calculation - DB calc_level ile uyumlu (max 100)
@@ -240,7 +247,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
 
   try {
     // Base app / Farcaster: Edge Function receipt verification often fails/hangs; use direct RPC (hash for logging only), like SwapHub
-    const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke && !isLikelyBaseApp() && !isLikelyFarcaster()
+    const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke && !isMiniappDomain() && !isLikelyBaseApp() && !isLikelyFarcaster()
     if (useVerified) {
       const invokeVerified = async () => {
         const { data, error } = await supabase.functions.invoke('award-xp-verified', {
@@ -293,8 +300,9 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
     }
 
     // tx_hash yoksa (NFT Wheel vb.) veya Edge Function yoksa: direkt RPC (API-based flows)
-    // Farcaster/Base app → miniapp_transactions; web → transactions (RPC içinde p_source ile ayrılır)
-    const source = isLikelyBaseApp() ? 'base_app' : (isLikelyFarcaster() ? 'farcaster' : 'web')
+    // basehub-alpha.vercel.app = miniapp (farcaster | base_app); basehub.fun = web → transactions
+    const isMiniapp = isMiniappDomain() || isLikelyBaseApp() || isLikelyFarcaster()
+    const source = !isMiniapp ? 'web' : (isLikelyBaseApp() ? 'base_app' : 'farcaster')
     const { data, error } = await supabase.rpc('award_xp', {
       p_wallet_address: walletAddress,
       p_final_xp: Math.round(finalXP),
@@ -304,7 +312,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
     })
     if (error) {
       console.error('❌ award_xp RPC error:', error)
-      const isMiniApp = isLikelyBaseApp() || isLikelyFarcaster()
+      const isMiniApp = isMiniappDomain() || isLikelyBaseApp() || isLikelyFarcaster()
       if (isMiniApp) {
         try {
           sessionStorage.setItem('basehub_last_xp_error', error?.message || JSON.stringify(error))
@@ -319,7 +327,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
     return newTotalXP
   } catch (error) {
     console.error('❌ Error in addXP:', error)
-    const isMiniApp = isLikelyBaseApp() || isLikelyFarcaster()
+    const isMiniApp = isMiniappDomain() || isLikelyBaseApp() || isLikelyFarcaster()
     if (isMiniApp) {
       try {
         sessionStorage.setItem('basehub_last_xp_error', error?.message || String(error))

@@ -4,6 +4,12 @@
 
 - **Web** işlemleri → mevcut `transactions` tablosuna yazılmaya devam eder.
 - **Farcaster / Base app** işlemleri → yeni `miniapp_transactions` tablosuna yazılır.
+
+## Domain ayrımı
+
+- **basehub-alpha.vercel.app** = Miniapp (Farcaster / Base app bu URL’den açılıyor) → `p_source`: `farcaster` veya `base_app`.
+- **basehub.fun** = Web → `p_source`: `web`.
+- Tespit: `isMiniappDomain()` (hostname) + `isLikelyBaseApp()` (user agent) + `isLikelyFarcaster()` (iframe / URL).
 - **XP** her iki durumda da aynı şekilde `players.total_xp` (ve level) üzerinde birikir; mevcut XP’ler bozulmaz.
 
 ## Tablo
@@ -44,8 +50,8 @@ award_xp(
 
 Frontend, Farcaster/Base app’te `p_source` ile `'farcaster'` veya `'base_app'` gönderir; web’de `'web'` gönderir.
 
-## Sıra
+## Sıra (tamamlandı)
 
-1. Supabase’de `miniapp_transactions` tablosunu oluşturun: `supabase/migrations/miniapp_transactions.sql` içeriğini SQL Editor’da çalıştırın.
-2. `award_xp` RPC’ye `p_source` parametresini ekleyip yukarıdaki mantığa göre `miniapp_transactions` / `transactions` ayrımını yapın.
-3. Frontend zaten `p_source` gönderiyor; RPC güncellenene kadar miniapp’ten gelen çağrılar “unknown parameter” hatası verebilir.
+1. ~~Supabase’de `miniapp_transactions` tablosu~~ oluşturuldu (MCP veya migration ile).
+2. ~~`award_xp` RPC~~ güncellendi: `supabase/migrations/award_xp_add_p_source.sql` ile `p_source` eklendi; farcaster/base_app → `miniapp_transactions`, web → `transactions`. Eski 4-param overload kaldırıldı.
+3. Frontend `p_source` gönderiyor; RPC hazır.
