@@ -1211,6 +1211,9 @@ body {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
+.web-header .header-container {
+  overflow: hidden;
+}
 
 .web-header.scrolled {
   background: rgba(30, 41, 59, 0.98);
@@ -1218,9 +1221,10 @@ body {
 }
 
 .header-container {
+  width: 100%;
   max-width: 100%;
-  margin: 0 auto;
-  padding: 0 24px 0 8px;
+  margin: 0;
+  padding: 0 16px;
   box-sizing: border-box;
 }
 
@@ -1229,8 +1233,9 @@ body {
   align-items: center;
   justify-content: space-between;
   height: 96px;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
+  min-width: 0; /* allow flex children to shrink */
 }
 
 .logo-section {
@@ -1319,31 +1324,47 @@ body {
   transform: scale(1.05);
 }
 
-/* Quick Actions Bar - Web Dashboard */
+/* Quick Actions Bar - GM, GN, Fast Deploy, Gaming - content width only */
 .quick-actions-bar {
   display: flex;
   align-items: center;
-  gap: 3px;
-  padding: 4px 5px;
-  background: rgba(15, 23, 42, 0.6);
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(15, 23, 42, 0.5);
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   position: relative;
   justify-content: center;
-  margin: 0 12px;
-  min-width: 0; /* Prevent overflow */
+  margin: 0 8px;
+  flex: 0 0 auto;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.quick-actions-bar::-webkit-scrollbar {
+  height: 4px;
+}
+.quick-actions-bar::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+}
+.quick-actions-bar::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 4px;
 }
 
 .quick-action-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 8px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 5px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   color: #e5e7eb;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1448,6 +1469,10 @@ body {
   gap: 8px;
   flex-shrink: 0;
   min-width: 0;
+}
+.web-app .web-header .header-right {
+  flex-shrink: 0;
+  min-width: fit-content; /* XP, TX, Users, buttons stay visible and don't overlap */
 }
 
 .header-xp-display {
@@ -2314,6 +2339,50 @@ body {
   background: rgba(255, 255, 255, 0.15);
 }
 
+/* Mobile header: compact Open in app (icon only) */
+.mobile-open-in-app-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #9ca3af;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.mobile-open-in-app-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+/* Open in app in mobile slide-out menu */
+.mobile-menu-open-in-app {
+  padding: 0 16px 12px;
+}
+.mobile-menu-open-in-app-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.mobile-menu-open-in-app-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+}
+
 /* Mobile Menu Overlay */
 .mobile-menu-overlay {
   position: fixed;
@@ -3101,6 +3170,20 @@ textarea {
   transform: translateX(4px);
 }
 
+.footer-link-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+}
+
+.footer-link-button:hover {
+  transform: translateX(4px);
+}
+
 .footer-bottom {
   display: flex;
   justify-content: space-between;
@@ -3572,4 +3655,118 @@ textarea {
     max-width: 100% !important;
     margin: 8px !important;
   }
+}
+
+/* Open in App (QR) modal */
+.open-in-app-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.open-in-app-modal {
+  background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 360px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.open-in-app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.open-in-app-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.open-in-app-close {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.open-in-app-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.open-in-app-qr-wrap {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.open-in-app-qr {
+  max-width: 240px;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.open-in-app-instruction {
+  font-size: 14px;
+  color: #9ca3af;
+  text-align: center;
+  margin: 0 0 16px;
+  line-height: 1.4;
+}
+
+.open-in-app-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.open-in-app-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  color: #fff;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.open-in-app-link-base {
+  background: rgba(0, 113, 227, 0.25);
+  border: 1px solid rgba(0, 113, 227, 0.4);
+}
+
+.open-in-app-link-base:hover {
+  background: rgba(0, 113, 227, 0.4);
+  transform: translateY(-1px);
+}
+
+.open-in-app-link-farcaster {
+  background: rgba(138, 43, 226, 0.2);
+  border: 1px solid rgba(138, 43, 226, 0.4);
+}
+
+.open-in-app-link-farcaster:hover {
+  background: rgba(138, 43, 226, 0.35);
+  transform: translateY(-1px);
 }

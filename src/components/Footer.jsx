@@ -1,8 +1,13 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Twitter, ExternalLink } from 'lucide-react'
+import { Twitter, ExternalLink, Smartphone } from 'lucide-react'
+import { useOpenInApp } from '../contexts/OpenInAppContext'
+
+const BASE_APP_URL = 'https://base.app/app/basehub-alpha.vercel.app'
+const FARCASTER_URL = 'https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub'
 
 const Footer = () => {
+  const { openModal: openOpenInAppModal } = useOpenInApp()
   // Check if we're in Farcaster environment (safe check without hook)
   const isInFarcaster = typeof window !== 'undefined' && 
     (window.location !== window.parent.location ||
@@ -39,6 +44,29 @@ const Footer = () => {
               >
                 Follow on X
               </a>
+            </div>
+            <div className="footer-link-group">
+              <h4 className="footer-link-title">Use in app</h4>
+              <a 
+                href={BASE_APP_URL} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="footer-link"
+              >
+                Base App
+              </a>
+              <a 
+                href={FARCASTER_URL} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="footer-link"
+              >
+                Farcaster
+              </a>
+              <button type="button" className="footer-link footer-link-button" onClick={openOpenInAppModal}>
+                <Smartphone size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                Show QR
+              </button>
             </div>
             <div className="footer-link-group">
               <h4 className="footer-link-title">Legal</h4>

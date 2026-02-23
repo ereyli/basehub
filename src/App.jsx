@@ -13,6 +13,7 @@ import FarcasterBottomNav from './components/FarcasterBottomNav'
 import ResponsiveHeader from './components/ResponsiveHeader'
 import WebBottomNav from './components/WebBottomNav'
 import Footer from './components/Footer'
+import { OpenInAppProvider } from './contexts/OpenInAppContext'
 import SkeletonLoader from './components/SkeletonLoader'
 import { useNetworkInterceptor } from './hooks/useNetworkInterceptor'
 import { RainbowKitChainInterceptor } from './components/RainbowKitChainInterceptor'
@@ -314,6 +315,7 @@ function FarcasterAppContent() {
         )}
         
         <FarcasterXPDisplay />
+        <OpenInAppProvider>
         <main className="container farcaster-main" style={{ paddingBottom: '100px' }}>
           <Suspense fallback={<SkeletonLoader />}>
             <Routes>
@@ -351,6 +353,7 @@ function FarcasterAppContent() {
         </main>
         <FarcasterBottomNav />
         <Footer />
+        </OpenInAppProvider>
       </div>
     </Router>
   )
@@ -367,6 +370,7 @@ function WebAppContent() {
       <RainbowKitChainInterceptor />
       <FastDeployProvider>
         <FastDeployModal />
+        <OpenInAppProvider>
         <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <GlobalErrorHandler />
           <div className="App web-app">
@@ -410,6 +414,7 @@ function WebAppContent() {
         <Footer />
       </div>
     </Router>
+        </OpenInAppProvider>
       </FastDeployProvider>
     </>
   )

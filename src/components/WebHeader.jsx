@@ -2,7 +2,7 @@ import React from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useChainId } from 'wagmi'
-import { Home, Users, Zap, Sun, Moon, Repeat, Coins, Dice1, TrendingUp, Rocket, Loader2, Activity } from 'lucide-react'
+import { Users, Zap, Sun, Moon, Loader2, Activity, Smartphone, Gamepad2 } from 'lucide-react'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { isTestnetChainId } from '../config/networks'
 import { useFastDeployModal } from '../contexts/FastDeployContext'
@@ -13,8 +13,10 @@ import { getXP, getNFTCount } from '../utils/xpUtils'
 import { useSupabase } from '../hooks/useSupabase'
 import { useTransactions } from '../hooks/useTransactions'
 import UserProfile from './UserProfile'
+import { useOpenInApp } from '../contexts/OpenInAppContext'
 
 const WebHeader = () => {
+  const { openModal: openOpenInAppModal } = useOpenInApp()
   const location = useLocation()
   const navigate = useNavigate()
   const { isConnected, address } = useAccount()
@@ -141,59 +143,51 @@ const WebHeader = () => {
   }, [isConnected, address, supabase])
 
 
-  // Quick action buttons config
   const quickActions = [
     { id: 'gm', label: 'GM', icon: Sun, color: '#10b981', onClick: handleQuickGM, loading: isLoadingGM },
     { id: 'gn', label: 'GN', icon: Moon, color: '#3b82f6', onClick: handleQuickGN, loading: isLoadingGN },
-    { id: 'swap', label: 'Swap', icon: Repeat, color: '#667eea', path: '/swap' },
-    { id: 'flip', label: 'Flip', icon: Coins, color: '#f59e0b', path: '/flip' },
-    { id: 'dice', label: 'Dice', icon: Dice1, color: '#10b981', path: '/dice' },
-    { id: 'analysis', label: 'Analysis', icon: TrendingUp, color: '#8b5cf6', path: '/wallet-analysis' },
-    { id: 'deploy', label: 'Deploy', icon: Rocket, color: '#ec4899', path: '/deploy' },
     { id: 'fast-deploy', label: 'Fast Deploy', icon: Zap, color: '#ec4899', onClick: openFastDeployModal },
+    { id: 'gaming', label: 'Gaming', icon: Gamepad2, color: '#f59e0b', path: '/', hash: 'gaming' },
   ]
+
+  const renderAction = (action) => {
+    const IconComponent = action.icon
+    if (action.path) {
+      const href = action.hash ? `${action.path}#${action.hash}` : action.path
+      return (
+        <a key={action.id} href={href} className="quick-action-btn" style={{ '--action-color': action.color }}>
+          <IconComponent size={16} />
+          <span>{action.label}</span>
+        </a>
+      )
+    }
+    return (
+      <button
+        key={action.id}
+        onClick={action.onClick}
+        disabled={!isConnected || action.loading}
+        className="quick-action-btn"
+        style={{ '--action-color': action.color }}
+      >
+        {action.loading ? <Loader2 size={16} className="spinning" /> : <IconComponent size={16} />}
+        <span>{action.label}</span>
+      </button>
+    )
+  }
 
   return (
     <header className={`web-header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="header-container">
         <div className="header-content">
-          {/* Logo Section */}
           <Link to="/" className="logo-section">
             <div className="header-logo-wrap">
               <img src="/icon.png" alt="BaseHub" className="header-logo-img" />
             </div>
           </Link>
 
-          {/* Quick Actions Bar - Center */}
+          {/* Quick Actions: GM, GN, Fast Deploy, Gaming */}
           <div className="quick-actions-bar">
-            {quickActions.map((action) => {
-              const IconComponent = action.icon
-              if (action.path) {
-                return (
-                  <Link
-                    key={action.id}
-                    to={action.path}
-                    className="quick-action-btn"
-                    style={{ '--action-color': action.color }}
-                  >
-                    <IconComponent size={16} />
-                    <span>{action.label}</span>
-                  </Link>
-                )
-              }
-              return (
-                <button
-                  key={action.id}
-                  onClick={action.onClick}
-                  disabled={!isConnected || action.loading}
-                  className="quick-action-btn"
-                  style={{ '--action-color': action.color }}
-                >
-                  {action.loading ? <Loader2 size={16} className="spinning" /> : <IconComponent size={16} />}
-                  <span>{action.label}</span>
-                </button>
-              )
-            })}
+            {quickActions.map(renderAction)}
             {quickActionMessage && (
               <div className="quick-action-message">
                 {quickActionMessage}
@@ -243,12 +237,16 @@ const WebHeader = () => {
               </div>
             </div>
 
-            {location.pathname !== '/' && (
-              <Link to="/" className="nav-button">
-                <Home size={16} />
-                <span>Home</span>
-              </Link>
-            )}
+            {/* Open in Base App / Farcaster - QR modal */}
+            <button
+              type="button"
+              onClick={openOpenInAppModal}
+              className="nav-button"
+              title="Open BaseHub in Base App or Farcaster"
+            >
+              <Smartphone size={16} />
+              <span>Open in app</span>
+            </button>
 
             {/* User Profile */}
             {isConnected && <UserProfile />}

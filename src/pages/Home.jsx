@@ -47,11 +47,17 @@ const Home = () => {
   // Check if we're on web (not Farcaster)
   const isWeb = shouldUseRainbowKit()
   
-  // Check if mobile (for Farcaster compact layout)
-  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
+  // Check if mobile (for Farcaster compact + web mobile 2-column layout); reactive on resize
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
   const isCompactMode = isInFarcaster && isMobile
+  const isWebMobile = isWeb && isMobile
   
-  // Compact styles for Farcaster mobile
+  // Compact styles: Farcaster mobile (very compact) | Web mobile (2 columns, compact) | Desktop
   const compactStyles = {
     // Category container
     categoryContainer: isCompactMode ? {
@@ -60,6 +66,12 @@ const Home = () => {
       padding: '10px',
       boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
       border: '1px solid rgba(59, 130, 246, 0.2)'
+    } : isWebMobile ? {
+      background: 'rgba(30, 41, 59, 0.95)',
+      borderRadius: '14px',
+      padding: '12px',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.12)',
+      border: '1px solid rgba(255, 255, 255, 0.08)'
     } : {
       background: 'rgba(30, 41, 59, 0.95)',
       borderRadius: '20px',
@@ -73,6 +85,11 @@ const Home = () => {
       alignItems: 'center',
       gap: '6px',
       marginBottom: '8px'
+    } : isWebMobile ? {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      marginBottom: '10px'
     } : {
       display: 'flex',
       alignItems: 'center',
@@ -83,6 +100,17 @@ const Home = () => {
     categoryIconBox: isCompactMode ? {
       width: '28px',
       height: '28px',
+      borderRadius: '8px',
+      background: 'rgba(59, 130, 246, 0.15)',
+      border: '1px solid rgba(59, 130, 246, 0.3)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#3b82f6',
+      flexShrink: 0
+    } : isWebMobile ? {
+      width: '32px',
+      height: '32px',
       borderRadius: '8px',
       background: 'rgba(59, 130, 246, 0.15)',
       border: '1px solid rgba(59, 130, 246, 0.3)',
@@ -109,6 +137,12 @@ const Home = () => {
       color: '#e5e7eb',
       margin: 0,
       fontFamily: 'Poppins, sans-serif'
+    } : isWebMobile ? {
+      fontSize: '13px',
+      fontWeight: '700',
+      color: '#e5e7eb',
+      margin: 0,
+      fontFamily: 'Poppins, sans-serif'
     } : {
       fontSize: '28px',
       fontWeight: '700',
@@ -116,11 +150,15 @@ const Home = () => {
       margin: 0,
       fontFamily: 'Poppins, sans-serif'
     },
-    // Grid layout
+    // Grid layout: web mobile = 2 columns for more info on screen
     cardGrid: isCompactMode ? {
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(75px, 1fr))',
       gap: '6px'
+    } : isWebMobile ? {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+      gap: '10px'
     } : {
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
@@ -142,6 +180,20 @@ const Home = () => {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center'
+    } : isWebMobile ? {
+      textDecoration: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      position: 'relative',
+      background: color,
+      color: 'white',
+      padding: '12px',
+      borderRadius: '12px',
+      transition: 'all 0.2s ease',
+      minHeight: '88px',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center'
     } : {
       textDecoration: 'none',
       border: 'none',
@@ -161,6 +213,12 @@ const Home = () => {
       alignItems: 'center',
       justifyContent: 'center',
       width: '100%'
+    } : isWebMobile ? {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '6px',
+      width: '100%',
+      minHeight: 0
     } : {
       display: 'flex',
       flexDirection: 'column',
@@ -180,6 +238,18 @@ const Home = () => {
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       maxWidth: '100%'
+    } : isWebMobile ? {
+      fontSize: '12px',
+      fontWeight: '600',
+      margin: 0,
+      color: 'white',
+      lineHeight: '1.25',
+      fontFamily: 'Poppins, sans-serif',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      display: '-webkit-box',
+      WebkitLineClamp: 2,
+      WebkitBoxOrient: 'vertical'
     } : {
       fontSize: '20px',
       fontWeight: '600',
@@ -188,8 +258,10 @@ const Home = () => {
       lineHeight: '1.2',
       fontFamily: 'Poppins, sans-serif'
     },
-    // Card description (hidden in compact mode)
+    // Card description (hidden in compact / web mobile to save space)
     cardDescription: isCompactMode ? {
+      display: 'none'
+    } : isWebMobile ? {
       display: 'none'
     } : {
       color: 'rgba(255, 255, 255, 0.9)',
@@ -212,6 +284,16 @@ const Home = () => {
       whiteSpace: 'nowrap',
       lineHeight: '1.2',
       fontFamily: 'Poppins, sans-serif'
+    } : isWebMobile ? {
+      background: 'rgba(30, 41, 59, 0.9)',
+      borderRadius: '6px',
+      padding: '3px 6px',
+      fontSize: '10px',
+      fontWeight: '600',
+      color: '#10b981',
+      whiteSpace: 'nowrap',
+      lineHeight: '1.2',
+      fontFamily: 'Poppins, sans-serif'
     } : {
       background: 'rgba(30, 41, 59, 0.95)',
       borderRadius: '12px',
@@ -229,6 +311,11 @@ const Home = () => {
       flexDirection: 'column',
       gap: '8px',
       marginTop: '8px'
+    } : isWebMobile ? {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '14px',
+      marginTop: '16px'
     } : {
       display: 'flex',
       flexDirection: 'column',
@@ -236,7 +323,7 @@ const Home = () => {
       marginTop: '40px'
     },
     // Icon size
-    iconSize: isCompactMode ? 14 : 22
+    iconSize: isCompactMode ? 14 : isWebMobile ? 18 : 22
   }
 
   const [leaderboard, setLeaderboard] = useState([])
@@ -582,13 +669,17 @@ const Home = () => {
               {isCompactMode ? 'Web3 hub for Base, InkChain & more' : 'Games, tokens and XP on Base, InkChain and more — all in one Web3 hub.'}
             </p>
 
-            {/* Network Selector - compact for Farcaster mobile */}
+            {/* Network Selector - compact for Farcaster mobile; grid + compact for web mobile */}
             <div style={{ 
-              display: 'flex',
-              justifyContent: 'center',
-              gap: isCompactMode ? '6px' : '20px',
-              marginBottom: isCompactMode ? '12px' : '28px',
-              flexWrap: 'wrap'
+              display: isWebMobile ? 'grid' : 'flex',
+              gridTemplateColumns: isWebMobile ? 'repeat(2, minmax(0, 1fr))' : undefined,
+              justifyContent: isWebMobile ? 'stretch' : 'center',
+              gap: isCompactMode ? '6px' : isWebMobile ? '8px' : '20px',
+              marginBottom: isCompactMode ? '12px' : isWebMobile ? '16px' : '28px',
+              flexWrap: isWebMobile ? undefined : 'wrap',
+              maxWidth: isWebMobile ? '320px' : undefined,
+              marginLeft: isWebMobile ? 'auto' : undefined,
+              marginRight: isWebMobile ? 'auto' : undefined
             }}>
               {[
                 { key: 'BASE',  label: 'Base',     logo: '/base-logo.jpg',   chainId: NETWORKS.BASE.chainId },
@@ -599,6 +690,8 @@ const Home = () => {
                 ...(NETWORKS.ROBINHOOD_TESTNET ? [{ key: 'RH', label: 'Robinhood Testnet', logo: '/robinhood-testnet-logo.png', chainId: NETWORKS.ROBINHOOD_TESTNET.chainId }] : []),
               ].map((net) => {
                 const isActive = chainId === net.chainId
+                const logoSize = isCompactMode ? 24 : isWebMobile ? 28 : 40
+                const showLabel = !isCompactMode
                 return (
                   <button
                     key={net.key}
@@ -615,27 +708,30 @@ const Home = () => {
                       background: isActive 
                         ? 'linear-gradient(135deg, rgba(59,130,246,0.25), rgba(37,99,235,0.35))'
                         : 'rgba(15,23,42,0.9)',
-                      borderRadius: isCompactMode ? '10px' : '18px',
-                      padding: isCompactMode ? '6px 8px' : '10px 16px',
+                      borderRadius: isCompactMode ? '10px' : isWebMobile ? '12px' : '18px',
+                      padding: isCompactMode ? '6px 8px' : isWebMobile ? '8px 10px' : '10px 16px',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: isCompactMode ? '4px' : '10px',
+                      gap: isCompactMode ? '4px' : isWebMobile ? '8px' : '10px',
                       cursor: 'pointer',
                       boxShadow: isActive 
                         ? '0 4px 12px rgba(59,130,246,0.25)'
                         : '0 2px 8px rgba(15,23,42,0.6)',
                       transform: isActive ? 'translateY(-1px)' : 'translateY(0)',
                       transition: 'all 0.2s ease',
-                      minWidth: isCompactMode ? 'auto' : '140px',
+                      minWidth: isCompactMode ? 'auto' : isWebMobile ? 0 : '140px',
+                      width: isWebMobile ? '100%' : undefined,
                       justifyContent: isCompactMode ? 'center' : 'flex-start',
                       flex: isCompactMode ? '1' : 'none',
-                      maxWidth: isCompactMode ? '80px' : 'none'
+                      maxWidth: isCompactMode ? '80px' : undefined
                     }}
                   >
                     <div
                       style={{
-                        width: isCompactMode ? '24px' : '40px',
-                        height: isCompactMode ? '24px' : '40px',
+                        width: logoSize,
+                        height: logoSize,
+                        minWidth: logoSize,
+                        minHeight: logoSize,
                         borderRadius: '50%',
                         overflow: 'hidden',
                         border: isActive
@@ -652,21 +748,24 @@ const Home = () => {
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     </div>
-                    {!isCompactMode && (
-                      <div style={{ textAlign: 'left' }}>
+                    {showLabel && (
+                      <div style={{ textAlign: 'left', minWidth: 0, flex: 1 }}>
                         <div style={{ 
-                          fontSize: '14px', 
+                          fontSize: isWebMobile ? '12px' : '14px', 
                           fontWeight: 600, 
                           color: '#e5e7eb',
-                          fontFamily: 'Poppins, sans-serif'
+                          fontFamily: 'Poppins, sans-serif',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
                         }}>
                           {net.label}
                         </div>
                         <div style={{ 
-                          fontSize: '11px', 
+                          fontSize: isWebMobile ? '10px' : '11px', 
                           color: isActive ? '#a5b4fc' : '#6b7280'
                         }}>
-                          {isActive ? 'Connected' : 'Switch network'}
+                          {isActive ? 'Connected' : 'Switch'}
                         </div>
                       </div>
                     )}
@@ -767,6 +866,15 @@ const Home = () => {
                             <h3 style={compactStyles.cardTitle}>Pass</h3>
                             <div style={compactStyles.xpBadge}>3000 XP</div>
                           </>
+                        ) : isWebMobile ? (
+                          <>
+                            <Rocket size={28} style={{ color: 'white', flexShrink: 0 }} />
+                            <h3 style={compactStyles.cardTitle}>Early Access Pass</h3>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                              <div style={compactStyles.xpBadge}>3000 XP</div>
+                              <span style={{ background: 'rgba(255,215,0,0.9)', borderRadius: '6px', padding: '2px 6px', fontSize: '10px', fontWeight: '600', color: '#92400e' }}>0.001 ETH</span>
+                            </div>
+                          </>
                         ) : (
                           <>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
@@ -793,6 +901,12 @@ const Home = () => {
                             <Sparkles size={24} style={{ color: 'white' }} />
                             <h3 style={compactStyles.cardTitle}>Wheel</h3>
                             <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-50K</div>
+                          </>
+                        ) : isWebMobile ? (
+                          <>
+                            <Sparkles size={28} style={{ color: 'white', flexShrink: 0 }} />
+                            <h3 style={compactStyles.cardTitle}>NFT Wheel</h3>
+                            <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-50K XP</div>
                           </>
                         ) : (
                           <>
@@ -822,7 +936,7 @@ const Home = () => {
                     <Repeat size={compactStyles.iconSize} />
                   </div>
                   <h2 style={compactStyles.categoryTitle}>
-                    {isCompactMode ? 'DEX' : 'DEX AGGREGATOR'}
+                    {isCompactMode ? 'DEX' : isWebMobile ? 'DEX' : 'DEX AGGREGATOR'}
                   </h2>
                   {!isCompactMode && renderNetworkLogos(['base'])}
                 </div>
@@ -854,6 +968,12 @@ const Home = () => {
                               <div style={compactStyles.xpBadge}>
                                 {game.xpReward}
                               </div>
+                            </>
+                          ) : isWebMobile ? (
+                            <>
+                              <div style={{ flexShrink: 0 }}>{game.icon}</div>
+                              <h3 style={compactStyles.cardTitle}>{game.title}</h3>
+                              <div style={compactStyles.xpBadge}>{game.xpReward}</div>
                             </>
                           ) : (
                             <>
@@ -899,12 +1019,10 @@ const Home = () => {
                 </div>
               </div>
 
-              {/* 3. PumpHub - Token Launchpad Category */}
+              {/* 3. PumpHub - Token Launchpad Category (same window style as NFT/PREDICTION) */}
               <div style={{ 
                 ...compactStyles.categoryContainer, 
-                background: isCompactMode ? 'rgba(30, 41, 59, 0.95)' : 'linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 82, 255, 0.1))',
-                border: `${isCompactMode ? '1px' : '2px'} solid rgba(0, 212, 255, 0.3)`,
-                boxShadow: isCompactMode ? compactStyles.categoryContainer.boxShadow : '0 8px 32px rgba(0, 212, 255, 0.15)'
+                border: `${isCompactMode ? '1px' : '2px'} solid rgba(0, 212, 255, 0.2)`
               }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(0, 212, 255, 0.15)', border: '1px solid rgba(0, 212, 255, 0.3)', color: '#00d4ff' }}>
@@ -1033,13 +1151,24 @@ const Home = () => {
                     <Users size={compactStyles.iconSize} />
                   </div>
                   <h2 style={compactStyles.categoryTitle}>PREDICTION</h2>
+                  <span style={{
+                    padding: '4px 10px',
+                    background: 'rgba(245, 158, 11, 0.2)',
+                    border: '1px solid rgba(245, 158, 11, 0.5)',
+                    borderRadius: '6px',
+                    color: '#f59e0b',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    letterSpacing: '0.5px'
+                  }}>
+                    BETA
+                  </span>
                   {!isCompactMode && renderNetworkLogos(['base'])}
                 </div>
                 <div style={compactStyles.cardGrid}>
                   {games.filter(g => g.id === 'prediction-arena').map((game) => (
                     <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
-                      <div style={{ ...compactStyles.card(game.color), height: '100%', position: 'relative' }}>
-                        <span style={{ position: 'absolute', top: '10px', right: '10px', background: '#f59e0b', color: '#422006', fontWeight: 700, fontSize: '10px', padding: '3px 8px', borderRadius: '999px', letterSpacing: '0.5px', zIndex: 1 }}>BETA</span>
+                      <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
                         <div style={compactStyles.cardInner}>
                           {isCompactMode ? (
                             <>
@@ -1083,36 +1212,46 @@ const Home = () => {
                   {!isCompactMode && renderNetworkLogos(['base', 'ink', 'soneium', 'katana', 'arc-restnet', 'robinhood-testnet'])}
                 </div>
                 <div style={compactStyles.cardGrid}>
-                  {/* Fast Deploy card - opens modal */}
+                  {/* Fast Deploy card - same window as others: do not override padding/background so .game-card frame shows */}
                   {shouldUseRainbowKit() && (
                     <button
                       type="button"
                       onClick={openFastDeployModal}
                       className="game-card"
-                      style={{ textDecoration: 'none', display: 'block', border: 'none', background: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                      style={{ textDecoration: 'none', display: 'block', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}
                     >
-                      <div style={{ ...compactStyles.card('#ec4899'), height: '100%' }}>
+                      <div style={{ ...compactStyles.card('#db2777'), height: '100%' }}>
                         <div style={compactStyles.cardInner}>
-                          {isCompactMode ? (
-                            <>
-                              <div style={{ flexShrink: 0 }}><Zap size={40} style={{ color: 'white' }} /></div>
-                              <h3 style={compactStyles.cardTitle}>Fast Deploy</h3>
-                              <div style={compactStyles.xpBadge}>850 XP each</div>
-                            </>
-                          ) : (
-                            <>
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                                <div style={{ flexShrink: 0 }}><Zap size={40} style={{ color: 'white' }} /></div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <h3 style={compactStyles.cardTitle}>Fast Deploy</h3>
-                                  <p style={compactStyles.cardDescription}>Deploy ERC20 + ERC721 + ERC1155 in one flow</p>
-                                </div>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                          {(() => {
+                            const iconWindowStyle = { width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }
+                            const iconSizeCompact = compactStyles.iconSize === 14 ? 24 : compactStyles.iconSize === 18 ? 28 : 32
+                            return isCompactMode ? (
+                              <>
+                                <div style={iconWindowStyle}><Zap size={iconSizeCompact} style={{ color: 'white' }} /></div>
+                                <h3 style={compactStyles.cardTitle}>Fast Deploy</h3>
                                 <div style={compactStyles.xpBadge}>850 XP each</div>
-                              </div>
-                            </>
-                          )}
+                              </>
+                            ) : isWebMobile ? (
+                              <>
+                                <div style={{ ...iconWindowStyle, width: '36px', height: '36px', borderRadius: '10px' }}><Zap size={22} style={{ color: 'white' }} /></div>
+                                <h3 style={compactStyles.cardTitle}>Fast Deploy</h3>
+                                <div style={compactStyles.xpBadge}>850 XP each</div>
+                              </>
+                            ) : (
+                              <>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                                  <div style={iconWindowStyle}><Zap size={24} style={{ color: 'white' }} /></div>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <h3 style={compactStyles.cardTitle}>Fast Deploy</h3>
+                                    <p style={compactStyles.cardDescription}>Deploy ERC20 + ERC721 + ERC1155 in one flow</p>
+                                  </div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                                  <div style={compactStyles.xpBadge}>850 XP each</div>
+                                </div>
+                              </>
+                            )
+                          })()}
                         </div>
                       </div>
                     </button>
@@ -1365,7 +1504,7 @@ const Home = () => {
               </div>
 
               {/* GAMING Category - en altta */}
-              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(245, 158, 11, 0.2)` }}>
+              <div id="gaming" style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(245, 158, 11, 0.2)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b' }}>
                     <Gamepad2 size={compactStyles.iconSize} />

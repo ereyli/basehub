@@ -2,15 +2,17 @@ import React from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount } from 'wagmi'
-import { Menu, X, Zap, Home, Users, User, Wallet, Repeat, Rocket, TrendingUp, Coins, Dice1, Award } from 'lucide-react'
+import { Menu, X, Zap, Home, Users, User, Wallet, Repeat, Rocket, TrendingUp, Coins, Dice1, Award, Smartphone } from 'lucide-react'
 import { getMobileMenuItems } from '../config/products'
 import { useProofOfUsage } from '../hooks/useProofOfUsage'
 
 const LUCIDE_ICONS = { Home, Repeat, Zap, Rocket, Coins, Dice1, TrendingUp, Award, User }
 import { getXP, getNFTCount } from '../utils/xpUtils'
 import { useSupabase } from '../hooks/useSupabase'
+import { useOpenInApp } from '../contexts/OpenInAppContext'
 
 const MobileHeader = () => {
+  const { openModal: openOpenInAppModal } = useOpenInApp()
   const location = useLocation()
   const navigate = useNavigate()
   const { isConnected, address } = useAccount()
@@ -97,9 +99,17 @@ const MobileHeader = () => {
           </div>
         </Link>
 
-        {/* Right: XP (always visible) + Menu Button */}
+        {/* Right: Open in app (compact) + XP + Menu Button */}
         <div className="mobile-header-right">
-          {/* XP Display - Always Visible */}
+          <button
+            type="button"
+            className="mobile-open-in-app-btn"
+            onClick={openOpenInAppModal}
+            aria-label="Open in app"
+            title="Open BaseHub in Base App or Farcaster"
+          >
+            <Smartphone size={18} />
+          </button>
           {isConnected && address && (
             <div className="mobile-header-xp">
               <Zap size={14} color="#ffc107" />
@@ -107,8 +117,6 @@ const MobileHeader = () => {
               {multiplier > 1 && <span className="mobile-xp-mult">{multiplier}x</span>}
             </div>
           )}
-
-          {/* Menu Toggle */}
           <button 
             className="mobile-menu-btn"
             onClick={() => setMenuOpen(!menuOpen)}
@@ -191,6 +199,14 @@ const MobileHeader = () => {
             )
           })}
         </nav>
+
+        {/* Open in app */}
+        <div className="mobile-menu-open-in-app">
+          <button type="button" className="mobile-menu-open-in-app-btn" onClick={() => { openOpenInAppModal(); setMenuOpen(false); }}>
+            <Smartphone size={20} />
+            <span>Open in Base App / Farcaster</span>
+          </button>
+        </div>
 
         {/* Footer with Social Links */}
         <div className="mobile-menu-footer">
