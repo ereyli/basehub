@@ -1,9 +1,9 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useAccount, useWriteContract, useChainId, usePublicClient } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useNetworkCheck } from './useNetworkCheck'
-import { addXP, addBonusXP, shouldAwardXPOnHashOnly } from '../utils/xpUtils'
+import { addXP, addBonusXP, shouldAwardXPOnHashOnly, isLikelyBaseApp } from '../utils/xpUtils'
 import { getCurrentConfig, getContractAddress, GAS_CONFIG, GAME_CONFIG } from '../config/base'
 import { getContractAddressByNetwork, NETWORKS, isNetworkSupported } from '../config/networks'
 import { parseEther, formatEther } from 'viem'
@@ -36,6 +36,32 @@ export const useTransactions = () => {
   
   // Use ref to prevent double popup - more reliable than state
   const isTransactionPendingRef = useRef(false)
+  // Base app: writeContractAsync bazen resolve etmiyor; hash hook state'ten (txData) gelir
+  const latestTxHashRef = useRef(null)
+  useEffect(() => {
+    if (txData) latestTxHashRef.current = txData
+  }, [txData])
+
+  // Base app'da hash almak için: ya writeContractAsync resolve eder ya da txData (ref) güncellenir
+  const getTxHashBaseApp = useCallback((writePromise, timeoutMs = 15000) => {
+    const hashBefore = latestTxHashRef.current
+    return Promise.race([
+      writePromise,
+      new Promise((resolve) => {
+        const deadline = Date.now() + timeoutMs
+        const id = setInterval(() => {
+          const current = latestTxHashRef.current
+          if (current && current !== hashBefore) {
+            clearInterval(id)
+            resolve(current)
+          } else if (Date.now() > deadline) {
+            clearInterval(id)
+            resolve(null)
+          }
+        }, 400)
+      })
+    ])
+  }, [])
 
   // Max time we let the UI wait for receipt (Base in-app browser often never gets RPC response)
   const UI_MAX_WAIT_MS = 7000
@@ -156,8 +182,7 @@ export const useTransactions = () => {
       console.log('📡 Contract address for GM_GAME:', contractAddress)
       console.log('📡 Sending GM transaction to blockchain...')
       
-      // Send transaction to blockchain
-      const txHash = await writeContractAsync({
+      const writePromise = writeContractAsync({
         address: contractAddress,
         abi: [{
           name: 'sendGM',
@@ -170,7 +195,11 @@ export const useTransactions = () => {
         value: getGameFee(), // 0.00002 ETH fee
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
-      
+      const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
+      if (!txHash) {
+        setError(null)
+        return { txHash: null, xpEarned: 0 }
+      }
       console.log('✅ GM transaction sent! Hash:', txHash)
       
       // Farcaster/Base app: hash yeterli, receipt beklemeden XP ver (web'e dokunulmaz)
@@ -235,7 +264,7 @@ export const useTransactions = () => {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, isCorrectNetwork, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
+  }, [address, chainId, currentNetworkConfig, isCorrectNetwork, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp])
 
   const sendGNTransaction = useCallback(async (message = 'GN!') => {
     if (!address) {
@@ -253,9 +282,7 @@ export const useTransactions = () => {
       const contractAddress = getContractAddressForCurrentNetwork('GN_GAME')
       
       console.log('📡 Sending GN transaction to blockchain...')
-      
-      // Send transaction to blockchain
-      const txHash = await writeContractAsync({
+      const writePromise = writeContractAsync({
         address: contractAddress,
         abi: [{
           name: 'sendGN',
@@ -268,7 +295,11 @@ export const useTransactions = () => {
         value: getGameFee(), // 0.00002 ETH fee
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
-      
+      const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
+      if (!txHash) {
+        setError(null)
+        return { txHash: null, xpEarned: 0 }
+      }
       console.log('✅ GN transaction sent! Hash:', txHash)
       
       if (shouldAwardXPOnHashOnly()) {
@@ -331,7 +362,7 @@ export const useTransactions = () => {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp])
 
   const sendFlipTransaction = useCallback(async (selectedSide) => {
     if (!address) {
@@ -353,9 +384,7 @@ export const useTransactions = () => {
       const choice = selectedSide === 'heads' ? 0 : 1
       
       console.log('📡 Sending Flip transaction to blockchain...')
-      
-      // Send transaction to blockchain
-      const txHash = await writeContractAsync({
+      const writePromise = writeContractAsync({
         address: contractAddress,
         abi: [{
           name: 'playFlip',
@@ -368,7 +397,11 @@ export const useTransactions = () => {
         value: getGameFee(), // 0.00002 ETH fee
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
-      
+      const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
+      if (!txHash) {
+        setError(null)
+        return { txHash: null, playerChoice: selectedSide, result: '', isWin: false, xpEarned: 0 }
+      }
       console.log('✅ Flip transaction sent! Hash:', txHash)
       
       // Generate game result immediately (don't wait for confirmation)
@@ -437,7 +470,7 @@ export const useTransactions = () => {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp])
 
 
   const sendLuckyNumberTransaction = useCallback(async (guess) => {
@@ -457,9 +490,7 @@ export const useTransactions = () => {
       const contractAddress = getContractAddressForCurrentNetwork('LUCKY_NUMBER')
       
       console.log('📡 Sending Lucky Number transaction to blockchain...')
-      
-      // Send transaction to blockchain
-      const txHash = await writeContractAsync({
+      const writePromise = writeContractAsync({
         address: contractAddress,
         abi: [{
           name: 'guessLuckyNumber',
@@ -472,7 +503,11 @@ export const useTransactions = () => {
         value: getGameFee(), // 0.00002 ETH fee
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
-      
+      const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
+      if (!txHash) {
+        setError(null)
+        return { txHash: null, playerGuess: guess, winningNumber: 0, isWin: false, xpEarned: 0 }
+      }
       console.log('✅ Lucky Number transaction sent! Hash:', txHash)
       
       // Generate game result immediately
@@ -540,7 +575,7 @@ export const useTransactions = () => {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp])
 
   const sendDiceRollTransaction = useCallback(async (guess) => {
     if (!address) {
@@ -559,9 +594,7 @@ export const useTransactions = () => {
       const contractAddress = getContractAddressForCurrentNetwork('DICE_ROLL')
       
       console.log('📡 Sending Dice Roll transaction to blockchain...')
-      
-      // Send transaction to blockchain
-      const txHash = await writeContractAsync({
+      const writePromise = writeContractAsync({
         address: contractAddress,
         abi: [{
           name: 'rollDice',
@@ -574,7 +607,11 @@ export const useTransactions = () => {
         value: getGameFee(), // 0.00002 ETH fee
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
-      
+      const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
+      if (!txHash) {
+        setError(null)
+        return { txHash: null, playerGuess: guess, dice1: 0, dice2: 0, diceTotal: 0, isWin: false, xpEarned: 0 }
+      }
       console.log('✅ Dice Roll transaction sent! Hash:', txHash)
       
       // Generate game result immediately
@@ -644,7 +681,7 @@ export const useTransactions = () => {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee])
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp])
 
   const sendSlotTransaction = useCallback(async (action, params = {}) => {
     if (!address) {
@@ -697,7 +734,7 @@ export const useTransactions = () => {
         }
 
         const gasLimit = 500000n
-        txHash = await writeContractAsync({
+        const creditsWritePromise = writeContractAsync({
           address: contractAddress,
           abi: SLOT_GAME_ABI,
           functionName: 'purchaseCredits',
@@ -706,13 +743,15 @@ export const useTransactions = () => {
           gas: gasLimit,
           dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
         })
-        
+        txHash = isLikelyBaseApp() ? await getTxHashBaseApp(creditsWritePromise) : await creditsWritePromise
+        if (!txHash) {
+          setError(null)
+          return { txHash: null, creditsPurchased: params.amount, xpEarned: 0 }
+        }
         console.log('✅ Credits purchase transaction sent! Hash:', txHash)
-        
       } else if (action === 'spinSlot') {
-        // Spin the slot - cap gas so wallet doesn't show inflated fee
         const spinGasLimit = 250000n
-        txHash = await writeContractAsync({
+        const spinWritePromise = writeContractAsync({
           address: contractAddress,
           abi: [{
             name: 'spinSlot',
@@ -726,7 +765,11 @@ export const useTransactions = () => {
           gas: spinGasLimit,
           dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
         })
-        
+        txHash = isLikelyBaseApp() ? await getTxHashBaseApp(spinWritePromise) : await spinWritePromise
+        if (!txHash) {
+          setError(null)
+          return { txHash: null, symbols: [0, 0, 0, 0], won: false, xpEarned: 0 }
+        }
         console.log('✅ Slot spin transaction sent! Hash:', txHash)
       }
       
@@ -895,7 +938,7 @@ export const useTransactions = () => {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getSlotCreditPrice, publicClient])
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getSlotCreditPrice, publicClient, getTxHashBaseApp])
 
   const sendCustomTransaction = useCallback(async (contractAddressParam, functionData, value = '0') => {
     if (!address) {

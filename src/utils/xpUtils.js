@@ -5,7 +5,8 @@ import { base } from 'viem/chains'
 import { isTestnetChainId, NETWORKS } from '../config/networks'
 
 // Base/Coinbase in-app browser: receipt wait often hangs; use RPC path (hash-only) like SwapHub
-function isLikelyBaseApp () {
+// Export for useTransactions: Base app'da writeContractAsync bazen resolve etmiyor, hash hook'tan alınır
+export function isLikelyBaseApp () {
   if (typeof navigator === 'undefined' || !navigator.userAgent) return false
   const ua = navigator.userAgent.toLowerCase()
   return ua.includes('coinbase') || ua.includes('base wallet') || ua.includes('cbwallet')
