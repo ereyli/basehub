@@ -11,9 +11,9 @@ Büyük XP kazandıran tüm özellikler **on-chain doğrulama** ile güvenli: tx
 1. Kullanıcı işlem yapar (GM, GN, Flip, Lucky Number, Dice Roll, Slot, NFT Mint, PumpHub vb.) → tx hash alınır
 2. **Confirmation bekleme**: XP verilmeden önce `waitForTransactionReceipt` ile tx onayı beklenir (RPC lag önlemi)
 3. Frontend `addXP(wallet, xp, gameType, chainId, skipNFTBonus, txHash)` çağırır
-4. `addXP` → tx_hash + chainId varsa `award-xp-verified` Edge Function
+4. `addXP` → tx_hash + chainId varsa **web ve miniapp** için `award-xp-verified` Edge Function (body'de `source`: web | farcaster | base_app)
 5. Edge Function → 3s başlangıç gecikmesi (RPC propagation) + `eth_getTransactionReceipt` ile tx doğrular
-6. Doğrulama OK → `award_xp` RPC çağrılır
+6. Doğrulama OK → `award_xp` RPC çağrılır (`p_source` ile; miniapp → miniapp_transactions, web → transactions)
 7. **Client retry**: "Invalid or failed transaction on-chain" hatası alınırsa 3 deneme, 4s aralık ile yeniden denenir
 
 ---
@@ -67,6 +67,10 @@ Büyük XP kazandıran tüm özellikler **on-chain doğrulama** ile güvenli: tx
 | Deploy / Mint | Çeşitli | confirmation sonrası |
 
 ---
+
+## Miniapp (Farcaster / Base app)
+
+- Miniapp’te de tx_hash + chainId varsa **award-xp-verified** kullanılıyor (receipt doğrulaması). EF’e `source` (farcaster | base_app) gönderilir; EF `award_xp`’e `p_source` iletir. Çalışmazsa (timeout vb.) frontend’de tekrar doğrudan RPC path’ine dönülebilir; bkz. `EDGE_FUNCTION_AWARD_XP_VERIFIED_SOURCE.md`.
 
 ## Doğrulanmayan (tx_hash yok veya farklı akış)
 

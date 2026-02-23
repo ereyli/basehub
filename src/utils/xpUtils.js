@@ -246,9 +246,11 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
   }
 
   try {
-    // Base app / Farcaster: Edge Function receipt verification often fails/hangs; use direct RPC (hash for logging only), like SwapHub
-    const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke && !isMiniappDomain() && !isLikelyBaseApp() && !isLikelyFarcaster()
+    // Web + Miniapp: tx_hash + chainId varsa receipt doğrulaması (award-xp-verified EF). Miniapp'ta deniyoruz; çalışmazsa geri alınabilir.
+    const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke
     if (useVerified) {
+      const isMiniapp = isMiniappDomain() || isLikelyBaseApp() || isLikelyFarcaster()
+      const source = isMiniapp ? (isLikelyBaseApp() ? 'base_app' : 'farcaster') : 'web'
       const invokeVerified = async () => {
         const { data, error } = await supabase.functions.invoke('award-xp-verified', {
           body: {
@@ -256,7 +258,8 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
             game_type: gameType,
             xp_amount: Math.round(finalXP),
             tx_hash: transactionHash,
-            chain_id: Number(chainId)
+            chain_id: Number(chainId),
+            source
           }
         })
         let errMsg = null
