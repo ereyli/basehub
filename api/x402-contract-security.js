@@ -17,7 +17,8 @@ const NETWORK = 'base' // Payment network (Base mainnet)
 const RECEIVING_ADDRESS = '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
 const PRICE = '$0.50' // 0.50 USDC
 const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' // Base USDC
-const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || 'SI8ECAC19FPN92K9MCNQENMGY6Z6MRM14Q'
+// Use env only – no fallback in repo (best practice for secrets)
+const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || ''
 
 // Supported networks for contract analysis (same as wallet analysis)
 const SUPPORTED_NETWORKS = {
@@ -39,10 +40,10 @@ const SUPPORTED_NETWORKS = {
 }
 
 // Log API key status
-if (BASESCAN_API_KEY && BASESCAN_API_KEY !== 'SI8ECAC19FPN92K9MCNQENMGY6Z6MRM14Q') {
-  console.log('✅ Etherscan API Key loaded from environment:', `${BASESCAN_API_KEY.substring(0, 10)}...`)
+if (BASESCAN_API_KEY) {
+  console.log('✅ Etherscan/Basescan API Key loaded from environment:', `${BASESCAN_API_KEY.substring(0, 10)}...`)
 } else {
-  console.log('⚠️ Using default API key (fallback)')
+  console.warn('⚠️ BASESCAN_API_KEY not set – set it in env for Etherscan/Basescan API calls')
 }
 
 // Configure facilitator

@@ -82,11 +82,11 @@ app.use(
 // Configuration - Etherscan API V2 (one key for all chains!)
 // Reference: https://docs.etherscan.io/v2-migration
 // "Contract verification using Hardhat/Remix/Foundry also support using a single Etherscan API key for all chains"
+// Use env only – no fallback in repo (best practice for secrets)
 const API_KEYS = {
-  ALCHEMY: process.env.ALCHEMY_API_KEY || 'e_3LRKM0RipM2jfrPRn-CemN5EgByDgA',
+  ALCHEMY: process.env.ALCHEMY_API_KEY || '',
   // Etherscan API V2 - Single key works for ALL Etherscan family chains
-  // (Ethereum, Base, Polygon, Arbitrum, Optimism, BSC, Avalanche, etc.)
-  ETHERSCAN: process.env.ETHERSCAN_API_KEY || 'SI8ECAC19FPN92K9MCNQENMGY6Z6MRM14Q',
+  ETHERSCAN: process.env.ETHERSCAN_API_KEY || '',
 }
 
 // Rate limits per API (calls per second)
