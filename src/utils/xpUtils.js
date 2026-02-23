@@ -354,14 +354,22 @@ export const getLeaderboard = async () => {
       throw error
     }
 
-    // Add token_balance calculation to each player
+    // Add token_balance + NFT status (parallel RPC for top 10)
     const playersWithTokens = (players || []).map(player => ({
       ...player,
       token_balance: calculateTokens(player.total_xp)
     }))
+    const withNft = await Promise.all(playersWithTokens.map(async (p) => {
+      try {
+        const nftCount = await getNFTCount(p.wallet_address)
+        return { ...p, hasNft: nftCount > 0 }
+      } catch (_) {
+        return { ...p, hasNft: false }
+      }
+    }))
 
-    console.log('✅ Returning leaderboard data:', playersWithTokens)
-    return playersWithTokens
+    console.log('✅ Returning leaderboard data:', withNft)
+    return withNft
   } catch (error) {
     console.error('❌ Error in getLeaderboard:', error)
     return []
@@ -402,14 +410,22 @@ export const getExtendedLeaderboard = async (offset = 0, limit = 5) => {
       throw error
     }
 
-    // Add token_balance calculation to each player
+    // Add token_balance + NFT status (parallel RPC)
     const playersWithTokens = (players || []).map(player => ({
       ...player,
       token_balance: calculateTokens(player.total_xp)
     }))
+    const withNft = await Promise.all(playersWithTokens.map(async (p) => {
+      try {
+        const nftCount = await getNFTCount(p.wallet_address)
+        return { ...p, hasNft: nftCount > 0 }
+      } catch (_) {
+        return { ...p, hasNft: false }
+      }
+    }))
 
-    console.log('✅ Returning extended leaderboard data:', playersWithTokens)
-    return playersWithTokens
+    console.log('✅ Returning extended leaderboard data:', withNft)
+    return withNft
   } catch (error) {
     console.error('❌ Error in getExtendedLeaderboard:', error)
     return []

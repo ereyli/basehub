@@ -187,8 +187,12 @@ export const useTransactions = () => {
           console.error('⚠️ Quest progress error:', questError)
         }
       } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout:', confirmError.message)
-        // XP verilmedi - receipt yok, doğrulama başarısız olur
+        console.warn('⚠️ Confirmation timeout (e.g. Base app):', confirmError.message)
+        try {
+          await addXP(address, 150, 'GM_GAME', chainId, false, txHash)
+          await updateQuestProgress('gmUsed', 1)
+          await updateQuestProgress('transactions', 1)
+        } catch (_) {}
       }
       
       // Clear any previous errors on success
@@ -279,7 +283,12 @@ export const useTransactions = () => {
           console.error('⚠️ Quest progress error:', questError)
         }
       } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout:', confirmError.message)
+        console.warn('⚠️ Confirmation timeout (e.g. Base app):', confirmError.message)
+        try {
+          await addXP(address, 150, 'GN_GAME', chainId, false, txHash)
+          await updateQuestProgress('gnUsed', 1)
+          await updateQuestProgress('transactions', 1)
+        } catch (_) {}
       }
       
       // Clear any previous errors on success
@@ -383,7 +392,12 @@ export const useTransactions = () => {
           console.error('⚠️ Quest progress error:', questError)
         }
       } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout:', confirmError.message)
+        console.warn('⚠️ Confirmation timeout (e.g. Base app):', confirmError.message)
+        try {
+          await addBonusXP(address, 'flip', playerWon, chainId, txHash)
+          await updateQuestProgress('coinFlipUsed', 1)
+          await updateQuestProgress('transactions', 1)
+        } catch (_) {}
       }
       
       // Clear any previous errors on success
@@ -489,7 +503,12 @@ export const useTransactions = () => {
           console.error('⚠️ Quest progress error (non-critical):', questError)
         }
       } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout:', confirmError.message)
+        console.warn('⚠️ Confirmation timeout (e.g. Base app):', confirmError.message)
+        try {
+          await addBonusXP(address, 'luckynumber', playerWon, chainId, txHash)
+          await updateQuestProgress('luckyNumberUsed', 1)
+          await updateQuestProgress('transactions', 1)
+        } catch (_) {}
       }
       
       const xpEarned = playerWon ? 150 + 1000 : 150
@@ -598,7 +617,12 @@ export const useTransactions = () => {
           console.error('⚠️ Quest progress error (non-critical):', questError)
         }
       } catch (confirmError) {
-        console.warn('⚠️ Confirmation timeout:', confirmError.message)
+        console.warn('⚠️ Confirmation timeout (e.g. Base app):', confirmError.message)
+        try {
+          await addBonusXP(address, 'diceroll', playerWon, chainId, txHash)
+          await updateQuestProgress('diceRollUsed', 1)
+          await updateQuestProgress('transactions', 1)
+        } catch (_) {}
       }
       
       const xpEarned = playerWon ? 150 + 1500 : 150
@@ -792,7 +816,12 @@ export const useTransactions = () => {
               console.error('⚠️ Quest progress error (non-critical):', questError)
             }
           } catch (confirmError) {
-            console.warn('⚠️ Confirmation timeout:', confirmError.message)
+            console.warn('⚠️ Confirmation timeout (e.g. Base app):', confirmError.message)
+            try {
+              await addXP(address, xpEarned, 'SLOT_GAME', chainId, false, txHash)
+              await updateQuestProgress('slotUsed', 1)
+              await updateQuestProgress('transactions', 1)
+            } catch (_) {}
           }
         
         // Clear any previous errors on success
@@ -807,9 +836,20 @@ export const useTransactions = () => {
       } else {
         // Credits purchase - wait for confirmation first, then award XP
         console.log('⏳ Waiting for transaction confirmation...')
-        const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
-        const timeoutDuration = isOnInkChain ? 120000 : 60000
-        const receipt = await waitForTxReceipt(txHash, timeoutDuration)
+        let receipt
+        try {
+          const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+          const timeoutDuration = isOnInkChain ? 120000 : 60000
+          receipt = await waitForTxReceipt(txHash, timeoutDuration)
+        } catch (confirmError) {
+          console.warn('⚠️ Confirmation timeout (e.g. Base app):', confirmError.message)
+          try {
+            await addXP(address, 10, 'SLOT_GAME_CREDITS', chainId, false, txHash)
+            await updateQuestProgress('transactions', 1)
+          } catch (_) {}
+          setError(null)
+          return { txHash, creditsPurchased: params.amount, xpEarned: 10 }
+        }
 
         if (receipt?.status !== 'success') {
           console.error('❌ Slot credits purchase reverted', receipt)

@@ -16,9 +16,7 @@ const Leaderboard = () => {
 
   useEffect(() => {
     loadLeaderboard()
-    // Refresh every 10 seconds
-    const interval = setInterval(loadLeaderboard, 10000)
-    return () => clearInterval(interval)
+    // No auto-refresh - updates only on page load / manual refresh
   }, [])
 
   const loadLeaderboard = async () => {
@@ -247,6 +245,20 @@ const Leaderboard = () => {
                     }}>
                       {formatAddress(player.wallet_address)}
                     </span>
+                    {player.hasNft && (
+                      <img
+                        src="/BaseHubNFT.png"
+                        alt="BaseHub NFT"
+                        title="Early Access Pass holder"
+                        style={{
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: '1px solid rgba(251, 191, 36, 0.5)'
+                        }}
+                      />
+                    )}
                     {index < 3 && (
                       <span style={{
                         background: 'rgba(255, 255, 255, 0.1)',
@@ -334,6 +346,20 @@ const Leaderboard = () => {
                       }}>
                         {formatAddress(player.wallet_address)}
                       </span>
+                      {player.hasNft && (
+                        <img
+                          src="/BaseHubNFT.png"
+                          alt="BaseHub NFT"
+                          title="Early Access Pass holder"
+                          style={{
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            border: '1px solid rgba(251, 191, 36, 0.5)'
+                          }}
+                        />
+                      )}
                     </div>
                     
                     <div style={{ 

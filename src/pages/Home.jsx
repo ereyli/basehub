@@ -1704,6 +1704,20 @@ const Home = () => {
                       }}>
                         {formatAddress(player.wallet_address)}
                       </span>
+                      {player.hasNft && (
+                        <img
+                          src="/BaseHubNFT.png"
+                          alt="BaseHub NFT"
+                          title="Early Access Pass holder"
+                          style={{
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            border: '1px solid rgba(251, 191, 36, 0.5)'
+                          }}
+                        />
+                      )}
                       {index < 3 && (
                         <span style={{
                           background: index === 0 ? 'rgba(245, 158, 11, 0.2)' : 
