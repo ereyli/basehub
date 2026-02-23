@@ -4,6 +4,13 @@ import { createPublicClient, http, fallback } from 'viem'
 import { base } from 'viem/chains'
 import { isTestnetChainId, NETWORKS } from '../config/networks'
 
+// Base/Coinbase in-app browser: receipt wait often hangs; use RPC path (hash-only) like SwapHub
+function isLikelyBaseApp () {
+  if (typeof navigator === 'undefined' || !navigator.userAgent) return false
+  const ua = navigator.userAgent.toLowerCase()
+  return ua.includes('coinbase') || ua.includes('base wallet') || ua.includes('cbwallet')
+}
+
 // Level calculation - DB calc_level ile uyumlu (max 100)
 export const calcLevel = (xp) => {
   if (xp == null || xp < 0) return 1
@@ -184,8 +191,8 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
   }
 
   try {
-    // On-chain verification: tx_hash + chainId varsa Edge Function ile doğrula (SwapHub gibi güvenli)
-    const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke
+    // Base app: Edge Function receipt verification often fails/hangs; use direct RPC (hash for logging only), like SwapHub
+    const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke && !isLikelyBaseApp()
     if (useVerified) {
       const invokeVerified = async () => {
         const { data, error } = await supabase.functions.invoke('award-xp-verified', {
