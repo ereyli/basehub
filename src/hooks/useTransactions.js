@@ -38,21 +38,29 @@ export const useTransactions = () => {
   // Base app: writeContractAsync bazen hiç resolve etmiyor; hash wagmi hook (txData) ile gelebilir
   const latestTxHashRef = useRef(null)
   useEffect(() => {
-    if (txData) latestTxHashRef.current = txData
+    if (txData) {
+      latestTxHashRef.current = txData
+      if (isLikelyBaseApp()) console.log('[Base app] useWriteContract data (txData) updated:', txData?.slice(0, 18) + '...')
+    }
   }, [txData])
   const getTxHashBaseApp = useCallback((writePromise, timeoutMs = 45000) => {
     const hashBefore = latestTxHashRef.current
     return Promise.race([
-      writePromise,
+      writePromise.then((h) => {
+        if (isLikelyBaseApp()) console.log('[Base app] Hash from writeContractAsync promise')
+        return h
+      }),
       new Promise((resolve) => {
         const deadline = Date.now() + timeoutMs
         const id = setInterval(() => {
           const current = latestTxHashRef.current
           if (current && current !== hashBefore) {
             clearInterval(id)
+            if (isLikelyBaseApp()) console.log('[Base app] Hash from txData ref (polling)')
             resolve(current)
           } else if (Date.now() > deadline) {
             clearInterval(id)
+            if (isLikelyBaseApp()) console.warn('[Base app] getTxHashBaseApp timeout – no hash from promise or ref')
             resolve(null)
           }
         }, 500)
@@ -190,8 +198,11 @@ export const useTransactions = () => {
         value: getGameFee(), // 0.00002 ETH fee
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       })
-      const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
+      const isBaseApp = isLikelyBaseApp()
+      if (isBaseApp) console.log('[Base app] GM: shouldAwardXPOnHashOnly=', shouldAwardXPOnHashOnly(), 'using getTxHashBaseApp')
+      const txHash = isBaseApp ? await getTxHashBaseApp(writePromise) : await writePromise
       if (!txHash) {
+        if (isBaseApp) console.warn('[Base app] GM: no hash – XP and tx count will not update')
         setError(null)
         return { txHash: null, xpEarned: 0 }
       }

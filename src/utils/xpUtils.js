@@ -9,7 +9,7 @@ import { isTestnetChainId, NETWORKS } from '../config/networks'
 export function isLikelyBaseApp () {
   if (typeof navigator === 'undefined' || !navigator.userAgent) return false
   const ua = navigator.userAgent.toLowerCase()
-  return ua.includes('coinbase') || ua.includes('base wallet') || ua.includes('cbwallet')
+  return ua.includes('coinbase') || ua.includes('base wallet') || ua.includes('cbwallet') || (ua.includes('base') && (ua.includes('app') || ua.includes('in-app')))
 }
 
 // Farcaster mini app (iframe / warpcast): same receipt/RPC issues; use RPC path for XP
@@ -155,7 +155,10 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
     return
   }
 
-  console.log('🎯 Adding XP:', { walletAddress, xpAmount, gameType, chainId, skipNFTBonus })
+  const isBase = isLikelyBaseApp()
+  const isFarcaster = isLikelyFarcaster()
+  if (isBase || isFarcaster) console.log('🎯 Adding XP:', { walletAddress: walletAddress?.slice(0, 10) + '...', xpAmount, gameType, chainId, isBaseApp: isBase, isFarcaster })
+  else console.log('🎯 Adding XP:', { walletAddress, xpAmount, gameType, chainId, skipNFTBonus })
 
   // Get NFT count and calculate multiplier
   let finalXP = xpAmount
@@ -267,6 +270,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
     })
     if (error) {
       console.error('❌ award_xp RPC error:', error)
+      if (isLikelyBaseApp() || isLikelyFarcaster()) console.error('[Base/Farcaster] award_xp failed – check Supabase, CORS, RLS:', error?.message || error)
       throw error
     }
     const newTotalXP = data?.new_total_xp ?? finalXP
@@ -275,6 +279,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
     return newTotalXP
   } catch (error) {
     console.error('❌ Error in addXP:', error)
+    if (isLikelyBaseApp() || isLikelyFarcaster()) console.error('[Base/Farcaster] addXP failed:', error?.message || error)
     throw error
   }
 }
