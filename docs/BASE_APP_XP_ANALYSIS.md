@@ -1,8 +1,8 @@
-# Base App: SwapHub XP Çalışıyor, Oyunlar Çalışmıyor – Analiz
+# Base App & Farcaster: SwapHub XP Çalışıyor, Oyunlar Çalışmıyor – Analiz
 
 ## Gözlem
-- **Base app’te SwapHub:** Supabase düzgün çalışıyor, XP hemen veriliyor.
-- **Base app’te oyunlar (GM, GN, Flip, Lucky Number, Dice Roll, Slot):** İşlem onaylansa bile uygulama “bekliyor” kalıyor, XP gelmiyor (veya gecikmeli).
+- **Base app / Farcaster’da SwapHub:** Supabase düzgün çalışıyor, XP hemen veriliyor.
+- **Base app / Farcaster’da oyunlar (GM, GN, Flip, Lucky Number, Dice Roll, Slot):** İşlem onaylansa bile uygulama “bekliyor” kalıyor, XP gelmiyor (veya gecikmeli).
 
 ## Kök Neden: İki Farklı XP Yolu
 
@@ -29,9 +29,8 @@
 | SwapHub     | Client beklemiyor; wagmi state | `record-swap` EF (sunucu RPC + XP) | Çalışıyor           |
 | GM / Flip … | Client: `waitForTxReceipt`  | `award-xp-verified` EF (client tetikler) | Takılma / gecikme   |
 
-## Önerilen Çözüm (uygulanabilir)
-Base app ortamı tespit edildiğinde, oyunlar için **doğrulama için Edge Function’a hiç girme**: `addXP` içinde `transactionHash` olsa bile **doğrudan `award_xp` RPC** kullan (hash sadece log için gönderilsin). Böylece:
-- Client 7 sn sonra fallback ile `addXP` çağırıyor (zaten var).
-- Base app’te bu çağrı **award-xp-verified** yerine **award_xp RPC**’ye gidecek → Supabase doğrudan XP yazar, Edge Function ve on-chain doğrulama atlanır; SwapHub’daki “direkt Supabase” davranışına yaklaşır.
-
-Bu mantık `docs/BASE_APP_XP_ANALYSIS.md` ile uyumludur; implementasyon `xpUtils.js` içinde “Base app ise useVerified = false” yapılarak yapılabilir.
+## Uygulanan Çözüm
+Base app **ve Farcaster** ortamı tespit edildiğinde, oyunlar için **doğrulama için Edge Function’a hiç girilmiyor**: `addXP` içinde `transactionHash` olsa bile **doğrudan `award_xp` RPC** kullanılıyor (hash sadece log için gönderiliyor).
+- **Base app:** `isLikelyBaseApp()` — userAgent’ta coinbase/base wallet/cbwallet.
+- **Farcaster:** `isLikelyFarcaster()` — iframe (location !== parent) veya URL’de farcaster.xyz / warpcast.com.
+- Bu ortamlarda `useVerified = false` → **award_xp RPC** ile XP veriliyor; SwapHub’daki “direkt Supabase” davranışına uyumlu.

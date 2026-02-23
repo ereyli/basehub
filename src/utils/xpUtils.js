@@ -11,6 +11,14 @@ function isLikelyBaseApp () {
   return ua.includes('coinbase') || ua.includes('base wallet') || ua.includes('cbwallet')
 }
 
+// Farcaster mini app (iframe / warpcast): same receipt/RPC issues; use RPC path for XP
+function isLikelyFarcaster () {
+  if (typeof window === 'undefined') return false
+  if (window.location !== window.parent.location || window.parent !== window) return true
+  const href = (window.location.href || '').toLowerCase()
+  return href.includes('farcaster.xyz') || href.includes('warpcast.com')
+}
+
 // Level calculation - DB calc_level ile uyumlu (max 100)
 export const calcLevel = (xp) => {
   if (xp == null || xp < 0) return 1
@@ -191,8 +199,8 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
   }
 
   try {
-    // Base app: Edge Function receipt verification often fails/hangs; use direct RPC (hash for logging only), like SwapHub
-    const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke && !isLikelyBaseApp()
+    // Base app / Farcaster: Edge Function receipt verification often fails/hangs; use direct RPC (hash for logging only), like SwapHub
+    const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke && !isLikelyBaseApp() && !isLikelyFarcaster()
     if (useVerified) {
       const invokeVerified = async () => {
         const { data, error } = await supabase.functions.invoke('award-xp-verified', {
