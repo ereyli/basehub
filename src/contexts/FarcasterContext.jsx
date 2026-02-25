@@ -202,10 +202,15 @@ export const FarcasterProvider = ({ children }) => {
           console.log('ℹ️ No cast share context:', shareError.message)
         }
 
-        // Her açılışta "Add to Farcaster" / favorilere ekle prompt'u göster (sdk.actions.addMiniApp)
+        // Miniapp zaten eklenmemişse "Add to Farcaster" / favorilere ekle prompt'u göster (sdk.context.client.added)
         if (sdk.actions && typeof sdk.actions.addMiniApp === 'function') {
           setTimeout(async () => {
             try {
+              const context = await sdk.context
+              if (context?.client?.added) {
+                console.log('ℹ️ Miniapp zaten ekli, addMiniApp atlanıyor')
+                return
+              }
               await sdk.actions.addMiniApp()
               console.log('✅ User added app to Farcaster')
             } catch (addErr) {
