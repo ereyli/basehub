@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Twitter, ExternalLink, Smartphone } from 'lucide-react'
 import { useOpenInApp } from '../contexts/OpenInAppContext'
 
-const BASE_APP_URL = 'https://base.app/app/basehub-alpha.vercel.app'
+const BASE_APP_URL = 'https://base.app/app/www.basehub.fun'
 const FARCASTER_URL = 'https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub'
 
 const Footer = () => {

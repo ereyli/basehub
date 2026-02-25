@@ -138,8 +138,7 @@ export const isInFarcaster = () => {
   return window.location !== window.parent.location ||
          window.parent !== window ||
          window.location.href.includes('farcaster.xyz') ||
-         window.location.href.includes('warpcast.com') ||
-         window.location.href.includes('basehub-alpha.vercel.app')
+         window.location.href.includes('warpcast.com')
 }
 
 // Helper function to check if we should use RainbowKit (web only)

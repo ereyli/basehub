@@ -20,11 +20,11 @@ function isLikelyFarcaster () {
   return href.includes('farcaster.xyz') || href.includes('warpcast.com')
 }
 
-// Miniapp ayrı domain'de: basehub-alpha.vercel.app = Farcaster/Base app; basehub.fun = web
+// Miniapp = iframe içinde veya Farcaster/Base ortamı (domain değil bağlam; tek domain basehub.fun)
 export function isMiniappDomain () {
-  if (typeof window === 'undefined' || !window.location?.hostname) return false
-  const host = window.location.hostname.toLowerCase()
-  return host === 'basehub-alpha.vercel.app' || host.endsWith('.basehub-alpha.vercel.app')
+  if (typeof window === 'undefined') return false
+  if (window.location !== window.parent.location || window.parent !== window) return true
+  return isLikelyFarcaster() || isLikelyBaseApp()
 }
 
 // Farcaster/Base app: receipt beklenmez, hash alındığında hemen XP verilir (web'e dokunulmaz)

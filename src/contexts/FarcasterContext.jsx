@@ -23,12 +23,11 @@ export const FarcasterProvider = ({ children }) => {
   const [isInFarcaster, setIsInFarcaster] = useState(() => {
     if (typeof window === 'undefined') return false
     
-    // Check if we're in Farcaster Mini App environment
+    // Check if we're in Farcaster Mini App environment (iframe or Farcaster URL; domain-agnostic)
     const isInFarcasterEnv = window.location !== window.parent.location || 
                             window.parent !== window ||
                             window.location.href.includes('farcaster.xyz') ||
-                            window.location.href.includes('warpcast.com') ||
-                            window.location.href.includes('basehub-alpha.vercel.app')
+                            window.location.href.includes('warpcast.com')
     
     console.log('🔍 Farcaster Context Environment Check:', { isInFarcasterEnv })
     return isInFarcasterEnv
@@ -44,8 +43,7 @@ export const FarcasterProvider = ({ children }) => {
           (window.location !== window.parent.location || 
            window.parent !== window ||
            window.location.href.includes('farcaster.xyz') ||
-           window.location.href.includes('warpcast.com') ||
-           window.location.href.includes('basehub-alpha.vercel.app'))
+           window.location.href.includes('warpcast.com'))
         
         setIsInFarcaster(actuallyInFarcaster)
         console.log('🔍 Farcaster environment check:', actuallyInFarcaster)
