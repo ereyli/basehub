@@ -12,25 +12,30 @@ const CHAIN_RPC: Record<number, string> = {
   57073: "https://rpc-qnd.inkonchain.com",
   1868: "https://rpc.soneium.org",
   747474: "https://rpc.katana.network",
-  4326: "https://mainnet.megaeth.com/rpc",
+  // 4326 MegaETH: not in CHAIN_RPC – receipt verification disabled; XP awarded without server-side check
 }
 
 async function getTransactionReceipt(txHash: string, chainId: number): Promise<{ status: string; from?: string } | null> {
   const rpc = CHAIN_RPC[chainId] || CHAIN_RPC[8453]
-  const res = await fetch(rpc, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      method: "eth_getTransactionReceipt",
-      params: [txHash],
-      id: 1,
-    }),
-  })
-  const json = await res.json()
-  const receipt = json?.result
-  if (!receipt) return null
-  return { status: receipt.status, from: receipt.from }
+  try {
+    const res = await fetch(rpc, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        method: "eth_getTransactionReceipt",
+        params: [txHash],
+        id: 1,
+      }),
+    })
+    const json = await res.json()
+    const receipt = json?.result
+    if (!receipt) return null
+    const status = receipt.status != null ? String(receipt.status) : ""
+    return { status, from: receipt.from }
+  } catch (_) {
+    return null
+  }
 }
 
 function normalizeAddress(addr: string): string {
@@ -76,35 +81,38 @@ Deno.serve(async (req) => {
       })
     }
 
-    // 3s gecikme (RPC propagation) + receipt için kısa retry
-    await new Promise((r) => setTimeout(r, 3000))
-    let receipt: { status: string; from?: string } | null = null
-    for (let attempt = 0; attempt < 8; attempt++) {
-      receipt = await getTransactionReceipt(tx_hash, Number(chain_id))
-      if (receipt) break
-      await new Promise((r) => setTimeout(r, 2000))
-    }
-    if (!receipt) {
-      return new Response(JSON.stringify({ error: "Transaction not found or not yet mined" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      })
-    }
+    const chainIdNum = Number(chain_id)
+    const isMegaETH = chainIdNum === 4326
 
-    const statusOk = receipt.status === "0x1" || receipt.status === 1 || receipt.status === "1"
-    if (!statusOk) {
-      return new Response(JSON.stringify({ error: "Transaction failed on-chain" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      })
-    }
-
-    const fromAddr = receipt.from ? normalizeAddress(receipt.from) : ""
-    if (fromAddr && fromAddr !== wallet) {
-      return new Response(JSON.stringify({ error: "Transaction from address does not match wallet" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      })
+    // MegaETH (4326): receipt verification disabled – award XP without RPC check
+    if (!isMegaETH) {
+      await new Promise((r) => setTimeout(r, 3000))
+      let receipt: { status: string; from?: string } | null = null
+      for (let attempt = 0; attempt < 8; attempt++) {
+        receipt = await getTransactionReceipt(tx_hash, chainIdNum)
+        if (receipt) break
+        await new Promise((r) => setTimeout(r, 2000))
+      }
+      if (!receipt) {
+        return new Response(JSON.stringify({ error: "Transaction not found or not yet mined" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        })
+      }
+      const statusOk = receipt.status === "0x1" || receipt.status === 1 || receipt.status === "1"
+      if (!statusOk) {
+        return new Response(JSON.stringify({ error: "Transaction failed on-chain" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        })
+      }
+      const fromAddr = receipt.from ? normalizeAddress(receipt.from) : ""
+      if (fromAddr && fromAddr !== wallet) {
+        return new Response(JSON.stringify({ error: "Transaction from address does not match wallet" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        })
+      }
     }
 
     const pSource = source === "farcaster" || source === "base_app" ? source : "web"
