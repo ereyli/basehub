@@ -75,7 +75,7 @@ const ShareButton = ({
           if (isCastShare && castData) {
             // For cast sharing, create a compose cast with the shared cast context (English + app link)
             const shareUrl = getFarcasterUniversalLink(`/share?castHash=${castData.hash}&castFid=${castData.author?.fid}`)
-            const castText = `🎮 Check out this cast from @${castData.author?.username || 'unknown'} on BaseHub!\n\n${castData.text?.slice(0, 200)}${castData.text?.length > 200 ? '...' : ''}\n\nMulti-chain Web3 platform. Deploy contracts, swap tokens, analyze wallets, and earn XP! 🚀\n\n🌐 Web: https://www.basehub.fun/\n🎭 Farcaster: ${getFarcasterUniversalLink('/')}`
+            const castText = `🎮 Check out this cast from @${castData.author?.username || 'unknown'} on BaseHub!\n\n${castData.text?.slice(0, 200)}${castData.text?.length > 200 ? '...' : ''}\n\nMulti-chain Web3 platform. Deploy contracts, swap tokens, analyze wallets, and earn XP! 🚀\n\n🌐 Web: https://basehub.fun/\n🎭 Farcaster: ${getFarcasterUniversalLink('/')}`
             
             console.log('🎭 Composing cast with text:', castText)
             await sdk.actions.composeCast({
@@ -88,7 +88,7 @@ const ShareButton = ({
             await awardCastShareXP()
           } else {
             // Regular share with compose cast (English + app link)
-            const composeText = `${shareText}\n\n🌐 Web: https://www.basehub.fun/\n🎭 Farcaster: ${getFarcasterUniversalLink('/')}`
+            const composeText = `${shareText}\n\n🌐 Web: https://basehub.fun/\n🎭 Farcaster: ${getFarcasterUniversalLink('/')}`
             
             console.log('🎭 Composing regular cast with text:', composeText)
             await sdk.actions.composeCast({

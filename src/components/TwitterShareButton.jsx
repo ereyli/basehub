@@ -27,7 +27,7 @@ const TwitterShareButton = ({
 
   const generateTwitterUrl = () => {
     const tweetText = generateTwitterContent()
-    const webUrl = 'https://www.basehub.fun/'
+    const webUrl = 'https://basehub.fun/'
     const farcasterUrl = getFarcasterUniversalLink('/')
     const fullText = `${tweetText}🌐 Web: ${webUrl}\n🎭 Farcaster: ${farcasterUrl}`
     
@@ -63,7 +63,7 @@ const TwitterShareButton = ({
   const handleCopyTweet = async (e) => {
     e.stopPropagation()
     const tweetText = generateTwitterContent()
-    const webUrl = 'https://www.basehub.fun/'
+    const webUrl = 'https://basehub.fun/'
     const farcasterUrl = getFarcasterUniversalLink('/')
     const fullText = `${tweetText}🌐 Web: ${webUrl}\n🎭 Farcaster: ${farcasterUrl}`
     

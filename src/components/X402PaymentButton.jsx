@@ -36,7 +36,7 @@ const X402PaymentButton = () => {
       // 3. Payment creation with wallet
       // 4. Retry with X-PAYMENT header
       
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://www.basehub.fun';
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://basehub.fun';
       
       // Create wrapped fetch function with payment support
       const fetchWithPayment = wrapFetchWithPayment(

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { getFarcasterUniversalLink } from '../config/farcaster'
 
-const WEB_OG_IMAGE = 'https://www.basehub.fun/icon.png?v=2'
+const WEB_OG_IMAGE = 'https://basehub.fun/icon.png?v=2'
 
 const FRAME_CONFIG = {
   'launch-token': {

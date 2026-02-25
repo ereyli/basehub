@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async'
 import { getFarcasterUniversalLink } from '../config/farcaster'
 
 // Web (X, etc.) share image: basehub.fun + cache-bust. Farcaster embed keeps relative/current domain.
-const WEB_OG_IMAGE = 'https://www.basehub.fun/icon.png?v=2'
+const WEB_OG_IMAGE = 'https://basehub.fun/icon.png?v=2'
 
 const EmbedMeta = ({ 
   title, 
@@ -17,7 +17,7 @@ const EmbedMeta = ({
   const fullTitle = title ? `${title} - BaseHub` : "BaseHub - Web3 Tools & Interactions"
   const fullDescription = description || "Multi-chain Web3 platform. Deploy smart contracts, swap tokens, analyze wallets, and interact with blockchain to earn XP across multiple EVM networks. Available on Base and InkChain!"
   // Farcaster: image as-is (relative /icon.png → stays on Vercel domain). Web: always basehub.fun for og/twitter.
-  const webOgImage = image === '/icon.png' || !image ? WEB_OG_IMAGE : (image.startsWith('http') ? image : `https://www.basehub.fun${image.startsWith('/') ? image : '/' + image}?v=2`)
+  const webOgImage = image === '/icon.png' || !image ? WEB_OG_IMAGE : (image.startsWith('http') ? image : `https://basehub.fun${image.startsWith('/') ? image : '/' + image}?v=2`)
 
   const embedContent = {
     version: "1",

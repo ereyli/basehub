@@ -124,7 +124,7 @@ const PredictionArena = () => {
   }, [now])
 
   const getMarketShareIntentUrl = useCallback((market) => {
-    const webBase = typeof window !== 'undefined' ? window.location.origin : 'https://www.basehub.fun'
+    const webBase = typeof window !== 'undefined' ? window.location.origin : 'https://basehub.fun'
     const marketUrl = `${webBase}/prediction-arena?market=${market.id}#market-${market.id}`
     const farcasterUrl = getFarcasterUniversalLink(`/prediction-arena?market=${market.id}`)
     const tweetText = `Prediction Arena: "${market.question}"\n\nJoin this market:`

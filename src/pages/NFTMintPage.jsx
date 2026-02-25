@@ -12,7 +12,7 @@ import { supabase } from '../config/supabase'
 import { getAddressExplorerUrl, getCollectionMarketUrl, getTransactionExplorerUrl, NETWORKS } from '../config/networks'
 import { NFT_LAUNCH_COLLECTION_ABI } from '../config/nftCollection'
 
-const SHARE_BASE_URL = 'https://www.basehub.fun'
+const SHARE_BASE_URL = 'https://basehub.fun'
 function getMintUrl(slug) { return slug ? `${SHARE_BASE_URL}/mint/${slug}` : '' }
 
 function shortAddress(addr) {

@@ -72,7 +72,7 @@ const EarlyAccessNFT = () => {
       let castText = ''
       
       const earlyAccessUrl = getFarcasterUniversalLink('/early-access')
-      const appLinks = `\n\n🌐 Web: https://www.basehub.fun/early-access\n🎭 Farcaster: ${earlyAccessUrl}`
+      const appLinks = `\n\n🌐 Web: https://basehub.fun/early-access\n🎭 Farcaster: ${earlyAccessUrl}`
       if (isAfterMint) {
         castText = `🎉 Just minted my BaseHub Early Access Pass! 🚀\n\n✨ Unlock exclusive benefits:\n• Dynamic XP multiplier: (NFT Count + 1)x on ALL activities\n• 1 NFT = 2x, 2 NFTs = 3x, 10 NFTs = 11x!\n• Priority access to airdrops\n• Exclusive quests & rewards\n• Early feature access\n\n🔥 Only ${remainingSupply} passes left!\n\nJoin the BaseHub community and level up faster! 💎\n\n#BaseHub #BaseNetwork #NFT #EarlyAccess${appLinks}`
       } else {

@@ -1546,7 +1546,7 @@ const PumpHub = () => {
     setIsSharingCast(true)
     try {
       const pumphubUrl = getFarcasterUniversalLink('/pumphub')
-      const castText = `🚀 PumpHub on BaseHub – Launch & trade meme tokens! 🔥\n\n✨ Fair launch, no presale\n💎 Create token with 0.001 ETH\n📈 Bonding curve → graduate to DEX\n🎯 Earn 2000 XP for creating, 100 XP per trade\n\nTry it on Base 👇\n\n#BaseHub #PumpHub #Base #Memecoin\n\n🌐 Web: https://www.basehub.fun/pumphub\n🎭 Farcaster: ${pumphubUrl}`
+      const castText = `🚀 PumpHub on BaseHub – Launch & trade meme tokens! 🔥\n\n✨ Fair launch, no presale\n💎 Create token with 0.001 ETH\n📈 Bonding curve → graduate to DEX\n🎯 Earn 2000 XP for creating, 100 XP per trade\n\nTry it on Base 👇\n\n#BaseHub #PumpHub #Base #Memecoin\n\n🌐 Web: https://basehub.fun/pumphub\n🎭 Farcaster: ${pumphubUrl}`
       await sdk.actions.composeCast({
         text: castText,
         embeds: [pumphubUrl]

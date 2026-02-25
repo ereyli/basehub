@@ -46,7 +46,7 @@ export default function ContractSecurity() {
       parts.push(`✅ ${analysis.safeFeatures.length} safe feature(s)`)
     }
     parts.push('Powered by BaseHub x402')
-    parts.push('Web: https://www.basehub.fun/contract-security')
+    parts.push('Web: https://basehub.fun/contract-security')
     parts.push(`Farcaster: ${getFarcasterUniversalLink('/contract-security')}`)
     return parts.join(' • ')
   }
