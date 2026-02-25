@@ -63,6 +63,24 @@ const katana = defineChain({
   },
 })
 
+// MegaETH mainnet
+const megaeth = defineChain({
+  id: NETWORKS.MEGAETH.chainId,
+  name: NETWORKS.MEGAETH.chainName,
+  nativeCurrency: NETWORKS.MEGAETH.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.MEGAETH.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'MegaETH Explorer',
+      url: NETWORKS.MEGAETH.blockExplorerUrls[0],
+    },
+  },
+})
+
 // Arc Testnet - USDC as native/gas
 const arcRestnet = defineChain({
   id: NETWORKS.ARC_RESTNET.chainId,
@@ -101,7 +119,7 @@ const robinhoodTestnet = defineChain({
 
 // Wagmi config with multiple wallet support
 export const config = createConfig({
-  chains: [base, inkChain, soneium, katana, arcRestnet, robinhoodTestnet],
+  chains: [base, inkChain, soneium, katana, megaeth, arcRestnet, robinhoodTestnet],
   dataSuffix: DATA_SUFFIX,
   transports: {
     [base.id]: fallback(
@@ -114,7 +132,12 @@ export const config = createConfig({
       NETWORKS.SONEIUM.rpcUrls.map((url) => viemHttp(url, { timeout: 30000, retryCount: 2, retryDelay: 1000 }))
     ),
     [katana.id]: http(NETWORKS.KATANA.rpcUrls[0], {
-      timeout: 30000, // 30 seconds timeout
+      timeout: 30000,
+      retryCount: 3,
+      retryDelay: 1000,
+    }),
+    [megaeth.id]: http(NETWORKS.MEGAETH.rpcUrls[0], {
+      timeout: 30000,
       retryCount: 3,
       retryDelay: 1000,
     }),

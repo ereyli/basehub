@@ -61,7 +61,7 @@ export function useNFTLaunchpad() {
   const validateNetwork = async () => {
     if (!isCorrectNetwork) {
       throw new Error(
-        `Please switch to Base, InkChain or Soneium. You are currently on ${networkName}. Use the network selector.`
+        `Please switch to Base, InkChain, Soneium or MegaETH. You are currently on ${networkName}. Use the network selector.`
       )
     }
   }

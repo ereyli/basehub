@@ -63,6 +63,25 @@ const katana = defineChain({
   iconBackground: '#ffffff',
 })
 
+// MegaETH mainnet for RainbowKit
+const megaeth = defineChain({
+  id: NETWORKS.MEGAETH.chainId,
+  name: NETWORKS.MEGAETH.chainName,
+  nativeCurrency: NETWORKS.MEGAETH.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.MEGAETH.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'MegaETH Explorer',
+      url: NETWORKS.MEGAETH.blockExplorerUrls[0],
+    },
+  },
+  iconBackground: '#3b82f6',
+})
+
 // Arc Testnet for RainbowKit
 const arcRestnet = defineChain({
   id: NETWORKS.ARC_RESTNET.chainId,
@@ -107,7 +126,7 @@ const robinhoodTestnet = defineChain({
 export const rainbowkitConfig = getDefaultConfig({
   appName: 'BaseHub',
   projectId: '21fef48091f12692cad574a6f7753643', // Temporary project ID - replace with your own
-  chains: [base, inkChain, soneium, katana, arcRestnet, robinhoodTestnet],
+  chains: [base, inkChain, soneium, katana, megaeth, arcRestnet, robinhoodTestnet],
   ssr: false, // Client-side rendering
 })
 

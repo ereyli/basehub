@@ -93,7 +93,7 @@ export function useNFTMint(contractAddress) {
       if (!address) throw new Error('Wallet not connected')
       if (!walletClient) throw new Error('Wallet not available')
       if (!isCorrectNetwork) {
-        throw new Error(`Please switch to Base, InkChain or Soneium. You are on ${networkName}.`)
+        throw new Error(`Please switch to Base, InkChain, Soneium or MegaETH. You are on ${networkName}.`)
       }
       if (!contractAddress) throw new Error('No contract address provided')
       if (!saleActive) throw new Error('Sale is not active for this collection')

@@ -76,6 +76,21 @@ export const NETWORKS = {
     iconUrls: [],
     isFarcasterSupported: false,
   },
+  MEGAETH: {
+    chainId: 4326,
+    networkKey: 'megaeth',
+    chainName: 'MegaETH',
+    isTestnet: false,
+    nativeCurrency: {
+      name: 'Ethereum',
+      symbol: 'ETH',
+      decimals: 18,
+    },
+    rpcUrls: ['https://mainnet.megaeth.com/rpc'],
+    blockExplorerUrls: ['https://megaeth.blockscout.com'],
+    iconUrls: [],
+    isFarcasterSupported: false,
+  },
   // Arc Testnet - para birimi USDC, cüzdanda yoksa otomatik "Ağ ekle" onayı açılır
   ARC_RESTNET: {
     chainId: 5042002, // 0x4cef52
@@ -153,6 +168,16 @@ export const CONTRACT_ADDRESSES = {
     DICE_ROLL: '0xCaA2a1FB271AE0a04415654e62FB26BDd1AdAC64',
     SLOT_GAME: '0xB2b2c587E51175a2aE4713d8Ea68A934a8527a4b',
     BASEHUB_DEPLOYER: '0x3Ce4AbC8c6921Cd84C76848200D35BA70609aB69',
+  },
+  MEGAETH: {
+    GM_GAME: '0x84e4dD821c8F848470Fc49Def3B14Fc870Fa97f0',
+    GN_GAME: '0x5E86e9Cd50E7F64b692b90FaE1487d2F6ED1AbA9',
+    FLIP_GAME: '0x74A2C6466d98253cA932fe6a6CcB811d4d7d5784',
+    DICE_ROLL: '0x933570b7A6B872e1be0A1585AACcDbf609C5F981',
+    LUCKY_NUMBER: '0xA15CE1eAdA8E34ec67d82f8D7aB242a42C767C2d',
+    SLOT_GAME: '0xB2b2c587E51175a2aE4713d8Ea68A934a8527a4b',
+    BASEHUB_DEPLOYER: '0xff48b92CbCFc1679Aa16a1D8a712A5d489220D0B',
+    BASEHUB_NFT_COLLECTION_DEPLOYER: '0xCaA2a1FB271AE0a04415654e62FB26BDd1AdAC64',
   },
   ARC_RESTNET: {
     DICE_ROLL: '0x5E86e9Cd50E7F64b692b90FaE1487d2F6ED1AbA9',

@@ -4,6 +4,39 @@ import { NETWORKS, getNetworkConfig, getMainnetNetworks, getTestnetNetworks } fr
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { Wifi, ChevronDown } from 'lucide-react'
 
+const iconStyle = { width: '20px', height: '20px', borderRadius: '6px', objectFit: 'cover' }
+function MegaETHIcon({ isActive }) {
+  const [imgError, setImgError] = useState(false)
+  if (imgError) {
+    return (
+      <span
+        style={{
+          ...iconStyle,
+          background: '#3b82f6',
+          color: '#fff',
+          fontSize: '11px',
+          fontWeight: '700',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: isActive ? 1 : 0.6,
+        }}
+        aria-hidden
+      >
+        M
+      </span>
+    )
+  }
+  return (
+    <img
+      src="/megaeth-logo.jpg"
+      alt="MegaETH"
+      style={{ ...iconStyle, opacity: isActive ? 1 : 0.6 }}
+      onError={() => setImgError(true)}
+    />
+  )
+}
+
 const NetworkSelector = () => {
   const { chainId, isConnected } = useAccount()
   const { switchToNetwork } = useNetworkCheck()
@@ -217,6 +250,18 @@ const NetworkSelector = () => {
               objectFit: 'cover'
             }}
           />
+        ) : currentNetwork.chainId === NETWORKS.MEGAETH?.chainId ? (
+          <img 
+            src="/megaeth-logo.jpg" 
+            alt="MegaETH" 
+            style={{
+              width: '20px',
+              height: '20px',
+              borderRadius: '6px',
+              objectFit: 'cover'
+            }}
+            onError={(e) => { e.target.style.display = 'none' }}
+          />
         ) : currentNetwork.chainId === NETWORKS.ARC_RESTNET?.chainId ? (
           <img 
             src="/arc-testnet-logo.jpg" 
@@ -344,6 +389,8 @@ function renderNetworkButton(network, currentChainId, handleNetworkSelect) {
         <img src="/soneium-logo.jpg" alt="Soneium" style={{ width: '20px', height: '20px', borderRadius: '6px', objectFit: 'cover', opacity: isActive ? 1 : 0.6 }} />
       ) : network.chainId === NETWORKS.KATANA?.chainId ? (
         <img src="/katana-logo.jpg" alt="Katana" style={{ width: '20px', height: '20px', borderRadius: '6px', objectFit: 'cover', opacity: isActive ? 1 : 0.6 }} />
+      ) : network.chainId === NETWORKS.MEGAETH?.chainId ? (
+        <img src="/megaeth-logo.jpg" alt="MegaETH" style={{ width: '20px', height: '20px', borderRadius: '6px', objectFit: 'cover', opacity: isActive ? 1 : 0.6 }} onError={(e) => { e.target.style.display = 'none' }} />
       ) : network.chainId === NETWORKS.ARC_RESTNET?.chainId ? (
         <img src="/arc-testnet-logo.jpg" alt="Arc Testnet" style={{ width: 20, height: 20, minWidth: 20, minHeight: 20, borderRadius: '6px', objectFit: 'contain', opacity: isActive ? 1 : 0.6, display: 'block', backgroundColor: 'rgba(255,255,255,0.1)' }} />
       ) : network.chainId === NETWORKS.ROBINHOOD_TESTNET?.chainId ? (

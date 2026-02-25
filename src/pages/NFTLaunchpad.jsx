@@ -251,7 +251,7 @@ export default function NFTLaunchpad() {
   // Collections state
   const [collections, setCollections] = useState([])
   const [collectionsLoading, setCollectionsLoading] = useState(true)
-  const [countsByChain, setCountsByChain] = useState({ 8453: 0, 57073: 0, 1868: 0 })
+  const [countsByChain, setCountsByChain] = useState({ 8453: 0, 57073: 0, 1868: 0, 4326: 0 })
   const [chainStatsByContract, setChainStatsByContract] = useState({})
   const [sortBy, setSortBy] = useState('newest') // newest | most_minted | trending | least_minted | oldest | price_low | price_high | recent_activity
   const [soldOutOnly, setSoldOutOnly] = useState(false)
@@ -283,12 +283,14 @@ export default function NFTLaunchpad() {
       supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).or('chain_id.eq.8453,chain_id.is.null'),
       supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).eq('chain_id', 57073),
       supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).eq('chain_id', 1868),
-    ]).then(([r1, r2, r3]) => {
+      supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).eq('chain_id', 4326),
+    ]).then(([r1, r2, r3, r4]) => {
       if (cancelled) return
       setCountsByChain({
         8453: r1?.count ?? 0,
         57073: r2?.count ?? 0,
         1868: r3?.count ?? 0,
+        4326: r4?.count ?? 0,
       })
     })
     return () => { cancelled = true }
@@ -303,13 +305,15 @@ export default function NFTLaunchpad() {
       .select('contract_address, deployer_address, name, symbol, supply, image_url, mint_price, slug, total_minted, is_active, created_at, chain_id')
       .order('created_at', { ascending: false })
       .limit(100)
-    // Filter by chain: Base (8453), Ink (57073), Soneium (1868). Legacy rows have chain_id NULL = treat as Base
+    // Filter by chain: Base (8453), Ink (57073), Soneium (1868), MegaETH (4326). Legacy rows have chain_id NULL = treat as Base
     if (chainId === NETWORKS.BASE.chainId) {
       query = query.or('chain_id.eq.8453,chain_id.is.null')
     } else if (chainId === NETWORKS.INKCHAIN.chainId) {
       query = query.eq('chain_id', 57073)
     } else if (chainId === NETWORKS.SONEIUM.chainId) {
       query = query.eq('chain_id', 1868)
+    } else if (chainId === NETWORKS.MEGAETH.chainId) {
+      query = query.eq('chain_id', 4326)
     }
     query.then(({ data, error }) => {
         if (cancelled) return
@@ -544,7 +548,7 @@ export default function NFTLaunchpad() {
               NFT Launchpad
             </h1>
             <p style={{ fontSize: '14px', color: '#94a3b8', margin: 0, maxWidth: '420px', marginInline: 'auto', lineHeight: 1.5 }}>
-              Deploy your NFT collection on Base, Ink or Soneium. Set a mint price, get a shareable page, and earn from every mint.
+              Deploy your NFT collection on Base, Ink, Soneium or MegaETH. Set a mint price, get a shareable page, and earn from every mint.
             </p>
             {/* Network deploy counts - compact row */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '12px', flexWrap: 'wrap' }}>
@@ -552,10 +556,11 @@ export default function NFTLaunchpad() {
                 { chainId: 8453, logo: '/base-logo.jpg', label: 'Base' },
                 { chainId: 57073, logo: '/ink-logo.jpg', label: 'Ink' },
                 { chainId: 1868, logo: '/soneium-logo.jpg', label: 'Soneium' },
-              ].map(({ chainId, logo, label }) => (
-                <div key={chainId} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'rgba(30,41,59,0.5)', borderRadius: '10px', border: '1px solid rgba(55,65,81,0.5)' }}>
-                  <img src={logo} alt={label} style={{ width: '20px', height: '20px', borderRadius: '50%', objectFit: 'cover' }} />
-                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#e2e8f0' }}>{countsByChain[chainId] ?? 0}</span>
+                { chainId: 4326, logo: '/megaeth-logo.jpg', label: 'MegaETH' },
+              ].map(({ chainId: cid, logo, label }) => (
+                <div key={cid} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'rgba(30,41,59,0.5)', borderRadius: '10px', border: '1px solid rgba(55,65,81,0.5)' }}>
+                  <img src={logo} alt={label} style={{ width: '20px', height: '20px', borderRadius: '50%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none' }} />
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#e2e8f0' }}>{countsByChain[cid] ?? 0}</span>
                   <span style={{ fontSize: '12px', color: '#94a3b8' }}>{label}</span>
                 </div>
               ))}
@@ -619,7 +624,7 @@ export default function NFTLaunchpad() {
                     </a>
                     <a href={getAddressExplorerUrl(chainId, contractAddress)} target="_blank" rel="noopener noreferrer"
                       style={{ padding: '11px 18px', background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(55,65,81,0.8)', borderRadius: '12px', color: '#93c5fd', fontSize: '13px', fontWeight: '600', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      {chainId === NETWORKS.BASE.chainId ? 'Basescan' : chainId === NETWORKS.INKCHAIN.chainId ? 'Ink Explorer' : 'Soneium Explorer'} <ExternalLink size={12} />
+                      {chainId === NETWORKS.BASE.chainId ? 'Basescan' : chainId === NETWORKS.INKCHAIN.chainId ? 'Ink Explorer' : chainId === NETWORKS.SONEIUM.chainId ? 'Soneium Explorer' : 'MegaETH Explorer'} <ExternalLink size={12} />
                     </a>
                   </div>
                   <p style={{ marginTop: '16px', fontSize: '12px', color: '#64748b' }}>

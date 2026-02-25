@@ -12,7 +12,7 @@ import { useFastDeployModal } from '../contexts/FastDeployContext'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { NETWORKS, getNetworkKey } from '../config/networks'
-import { getProductsForHome, getProductsForHomeByNetwork } from '../config/products'
+import { getProductsForHome, getProductsForHomeByNetwork, getNetworksForProductIds } from '../config/products'
 import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat, Sparkles, RotateCcw, Gift } from 'lucide-react'
 
 const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Search, Shield, Trash2, Star, Layers, Package, Factory, Rocket, Image, Sparkles, ArrowLeftRight, Repeat, Zap }
@@ -444,6 +444,14 @@ const Home = () => {
             style={baseStyle} 
           />
         )}
+        {networks.includes('megaeth') && (
+          <img 
+            src="/megaeth-logo.jpg" 
+            alt="MegaETH" 
+            style={baseStyle} 
+            onError={(e) => { e.target.style.display = 'none' }}
+          />
+        )}
         {networks.includes('katana') && (
           <img 
             src="/katana-logo.jpg" 
@@ -686,6 +694,7 @@ const Home = () => {
                 { key: 'INK',   label: 'InkChain', logo: '/ink-logo.jpg',    chainId: NETWORKS.INKCHAIN.chainId },
                 { key: 'SONE',  label: 'Soneium',  logo: '/soneium-logo.jpg', chainId: NETWORKS.SONEIUM.chainId },
                 { key: 'KAT',   label: 'Katana',   logo: '/katana-logo.jpg', chainId: NETWORKS.KATANA.chainId },
+                { key: 'MEGA',  label: 'MegaETH',  logo: '/megaeth-logo.jpg', chainId: NETWORKS.MEGAETH.chainId },
                 ...(NETWORKS.ARC_RESTNET ? [{ key: 'ARC', label: 'Arc Testnet', logo: '/arc-testnet-logo.jpg', chainId: NETWORKS.ARC_RESTNET.chainId }] : []),
                 ...(NETWORKS.ROBINHOOD_TESTNET ? [{ key: 'RH', label: 'Robinhood Testnet', logo: '/robinhood-testnet-logo.png', chainId: NETWORKS.ROBINHOOD_TESTNET.chainId }] : []),
               ].map((net) => {
@@ -854,7 +863,7 @@ const Home = () => {
                   }}>
                     BETA
                   </span>
-                  {!isCompactMode && renderNetworkLogos(['base'])}
+                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['early-access', 'nft-wheel']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
                   <Link to="/early-access" className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
@@ -938,7 +947,7 @@ const Home = () => {
                   <h2 style={compactStyles.categoryTitle}>
                     {isCompactMode ? 'DEX' : isWebMobile ? 'DEX' : 'DEX AGGREGATOR'}
                   </h2>
-                  {!isCompactMode && renderNetworkLogos(['base'])}
+                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['swap']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
                   {games.filter(g => g.id === 'swap').map((game) => (
@@ -1107,7 +1116,7 @@ const Home = () => {
                     <Image size={compactStyles.iconSize} />
                   </div>
                   <h2 style={compactStyles.categoryTitle}>NFT</h2>
-                  {!isCompactMode && renderNetworkLogos(['base', 'ink', 'soneium'])}
+                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['nft-launchpad', 'nft-launchpad-explore']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
                   {games.filter(g => ['nft-launchpad', 'nft-launchpad-explore'].includes(g.id)).map((game) => (
@@ -1163,7 +1172,7 @@ const Home = () => {
                   }}>
                     BETA
                   </span>
-                  {!isCompactMode && renderNetworkLogos(['base'])}
+                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['prediction-arena']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
                   {games.filter(g => g.id === 'prediction-arena').map((game) => (
@@ -1209,7 +1218,7 @@ const Home = () => {
                     <Rocket size={compactStyles.iconSize} />
                   </div>
                   <h2 style={compactStyles.categoryTitle}>DEPLOY</h2>
-                  {!isCompactMode && renderNetworkLogos(['base', 'ink', 'soneium', 'katana', 'arc-restnet', 'robinhood-testnet'])}
+                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['deploy', 'deploy-erc721', 'deploy-erc1155']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
                   {/* Fast Deploy card - same window as others: do not override padding/background so .game-card frame shows */}
@@ -1297,7 +1306,7 @@ const Home = () => {
                     <TrendingUp size={compactStyles.iconSize} />
                   </div>
                   <h2 style={compactStyles.categoryTitle}>ANALYSIS</h2>
-                  {!isCompactMode && renderMultiChainText()}
+                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['wallet-analysis', 'contract-security', 'allowance-cleaner']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
                   {games.filter(g => ['wallet-analysis', 'contract-security', 'allowance-cleaner'].includes(g.id)).map((game) => (
@@ -1343,7 +1352,7 @@ const Home = () => {
                     <Users size={compactStyles.iconSize} />
                   </div>
                   <h2 style={compactStyles.categoryTitle}>SOCIAL</h2>
-                  {!isCompactMode && renderNetworkLogos(['base'])}
+                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['featured-profiles']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
                   {games.filter(g => ['featured-profiles'].includes(g.id)).map((game) => (
@@ -1389,7 +1398,7 @@ const Home = () => {
                     <MessageSquare size={compactStyles.iconSize} />
                   </div>
                   <h2 style={compactStyles.categoryTitle}>GM & GN</h2>
-                  {!isCompactMode && renderNetworkLogos(['base', 'ink', 'soneium', 'katana', 'arc-restnet', 'robinhood-testnet'])}
+                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['flip', 'dice', 'slot', 'lucky']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
                   <button
@@ -1510,7 +1519,7 @@ const Home = () => {
                     <Gamepad2 size={compactStyles.iconSize} />
                   </div>
                   <h2 style={compactStyles.categoryTitle}>GAMING</h2>
-                  {!isCompactMode && renderNetworkLogos(['base', 'ink', 'soneium', 'katana', 'arc-restnet', 'robinhood-testnet'])}
+                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['flip', 'dice', 'slot', 'lucky']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
                   {games.filter(g => ['flip', 'dice', 'slot', 'lucky'].includes(g.id)).map((game) => (
