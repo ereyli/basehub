@@ -79,6 +79,7 @@ const megaeth = defineChain({
       url: NETWORKS.MEGAETH.blockExplorerUrls[0],
     },
   },
+  iconUrl: '/megaeth-logo.jpg',
   iconBackground: '#3b82f6',
 })
 

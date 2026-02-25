@@ -495,10 +495,10 @@ export const useDeployERC1155 = () => {
           gas: 3000000n,
         })
         console.log('✅ Deploy transaction sent:', deployTxHash)
-        const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
-        const timeoutDuration = isOnInkChain ? 120000 : 60000
+        const isFastChain = chainId === NETWORKS.INKCHAIN.chainId || chainId === NETWORKS.SONEIUM.chainId || chainId === NETWORKS.MEGAETH.chainId
+        const timeoutDuration = isFastChain ? 120000 : 60000
         const deployReceipt = await Promise.race([
-          waitForTransactionReceipt(config, { hash: deployTxHash, chainId, confirmations: 1, pollingInterval: isOnInkChain ? 1000 : 4000 }),
+          waitForTransactionReceipt(config, { hash: deployTxHash, chainId, confirmations: 1, pollingInterval: isFastChain ? 1000 : 4000 }),
           new Promise((_, reject) => setTimeout(() => reject(new Error('Deploy confirmation timeout')), timeoutDuration)),
         ]).catch((e) => { console.warn('⚠️ Deploy confirmation timeout:', e.message); return null })
         if (deployReceipt?.logs?.length) {
@@ -512,18 +512,18 @@ export const useDeployERC1155 = () => {
         if (!walletClient) throw new Error('Wallet not available. Please connect your wallet.')
         const feeTxHash = await walletClient.sendTransaction({ to: feeWallet, value: parseEther('0.00007'), chainId })
         try {
-          const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+          const isFastChain = chainId === NETWORKS.INKCHAIN.chainId || chainId === NETWORKS.SONEIUM.chainId || chainId === NETWORKS.MEGAETH.chainId
           await Promise.race([
-            waitForTransactionReceipt(config, { hash: feeTxHash, chainId, confirmations: 1, pollingInterval: isOnInkChain ? 1000 : 4000 }),
+            waitForTransactionReceipt(config, { hash: feeTxHash, chainId, confirmations: 1, pollingInterval: isFastChain ? 1000 : 4000 }),
             new Promise((_, reject) => setTimeout(() => reject(new Error('Fee confirmation timeout')), 60000)),
           ])
         } catch (e) { console.warn('⚠️ Fee confirmation timeout (proceeding):', e.message) }
         const initCodeWithSuffix = `${initCode}${DATA_SUFFIX.startsWith('0x') ? DATA_SUFFIX.slice(2) : DATA_SUFFIX}`
         deployTxHash = await walletClient.sendTransaction({ data: initCodeWithSuffix, gas: 2000000n })
         try {
-          const isOnInkChain = chainId === NETWORKS.INKCHAIN.chainId
+          const isFastChain = chainId === NETWORKS.INKCHAIN.chainId || chainId === NETWORKS.SONEIUM.chainId || chainId === NETWORKS.MEGAETH.chainId
           const deployReceipt = await Promise.race([
-            waitForTransactionReceipt(config, { hash: deployTxHash, chainId, confirmations: 1, pollingInterval: isOnInkChain ? 1000 : 4000 }),
+            waitForTransactionReceipt(config, { hash: deployTxHash, chainId, confirmations: 1, pollingInterval: isFastChain ? 1000 : 4000 }),
             new Promise((_, reject) => setTimeout(() => reject(new Error('Deploy confirmation timeout')), 60000)),
           ])
           contractAddress = deployReceipt?.contractAddress ?? null

@@ -116,10 +116,12 @@ export function useNFTMint(contractAddress) {
       })
       setTxHash(hash)
 
+      const isFastChain = chainId === NETWORKS.INKCHAIN.chainId || chainId === NETWORKS.SONEIUM.chainId || chainId === NETWORKS.MEGAETH.chainId
       await waitForTransactionReceipt(config, {
         hash,
         chainId,
-        confirmations: 1,
+        confirmations: isFastChain ? 0 : 1,
+        pollingInterval: isFastChain ? 1000 : 4000,
       })
 
       setSuccess(true)

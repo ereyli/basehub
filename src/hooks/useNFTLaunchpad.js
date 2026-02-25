@@ -181,10 +181,12 @@ export function useNFTLaunchpad() {
       })
       setDeployTxHash(txHash)
 
+      const isFastChain = chainId === NETWORKS.INKCHAIN.chainId || chainId === NETWORKS.SONEIUM.chainId || chainId === NETWORKS.MEGAETH.chainId
       const receipt = await waitForTransactionReceipt(config, {
         hash: txHash,
         chainId,
-        confirmations: 1,
+        confirmations: isFastChain ? 0 : 1,
+        pollingInterval: isFastChain ? 1000 : 4000,
       })
 
       // Parse Deployed(address indexed, uint8) event

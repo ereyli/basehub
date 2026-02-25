@@ -12,6 +12,7 @@ const CHAIN_RPC: Record<number, string> = {
   57073: "https://rpc-qnd.inkonchain.com",
   1868: "https://rpc.soneium.org",
   747474: "https://rpc.katana.network",
+  4326: "https://mainnet.megaeth.com/rpc",
 }
 
 async function getTransactionReceipt(txHash: string, chainId: number): Promise<{ status: string; from?: string } | null> {
