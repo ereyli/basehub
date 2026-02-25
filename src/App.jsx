@@ -420,21 +420,28 @@ function WebAppContent() {
   )
 }
 
+// Miniapp layout = Farcaster (iframe/URL) OR Base app (mobile WebView). Both get same UI (FarcasterBottomNav).
+function getUseMiniappLayout() {
+  if (typeof window === 'undefined') return false
+  const isFarcasterSync = window.location !== window.parent.location ||
+    window.parent !== window ||
+    window.location.href.includes('farcaster.xyz') ||
+    window.location.href.includes('warpcast.com')
+  if (isFarcasterSync) return true
+  // Base app opens in mobile WebView (basehub.fun, no iframe) – treat mobile as miniapp so same UI as Farcaster
+  const isMobile = window.innerWidth <= 768 || ('ontouchstart' in window && window.innerWidth < 1024)
+  return isMobile
+}
+
 // Main App component with providers
 function App() {
-  // Check if we're in Farcaster environment first
-  const isFarcaster = typeof window !== 'undefined' && 
-    (window.location !== window.parent.location ||
-     window.parent !== window ||
-     window.location.href.includes('farcaster.xyz') ||
-     window.location.href.includes('warpcast.com'))
+  const useMiniapp = getUseMiniappLayout()
+  const isWeb = shouldUseRainbowKit() && !useMiniapp
   
-  const isWeb = shouldUseRainbowKit() && !isFarcaster
-  
-  console.log('🔍 App Environment Check:', { isFarcaster, isWeb })
+  console.log('🔍 App Environment Check:', { useMiniappLayout: useMiniapp, isWeb })
   
   if (isWeb) {
-    // Web users get RainbowKit + FarcasterProvider for Featured Profiles
+    // Web (desktop) users get RainbowKit + FarcasterProvider for Featured Profiles
     console.log('🌐 Using RainbowKit for web users')
     return (
       <HelmetProvider>
@@ -451,8 +458,8 @@ function App() {
     )
   }
   
-  // Farcaster users get the original setup
-  console.log('🎭 Using Farcaster setup')
+  // Miniapp (Farcaster + Base app) – same UI for both
+  console.log('🎭 Using miniapp setup (Farcaster/Base)')
   return (
     <HelmetProvider>
       <WagmiProvider config={config}>
