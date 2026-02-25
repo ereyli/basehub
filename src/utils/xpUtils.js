@@ -161,11 +161,10 @@ export const getNFTCount = async (walletAddress) => {
       return 0
     }
 
-    // Use fallback RPCs to avoid 429 from mainnet.base.org rate limits
+    // Use fallback RPCs that support CORS (browser). LlamaRPC blocks browser origin.
     const baseRpcUrls = [
-      'https://base.llamarpc.com',
+      ...(NETWORKS.BASE.rpcUrls || []),
       'https://base-rpc.publicnode.com',
-      ...(NETWORKS.BASE.rpcUrls || [])
     ]
     const transport = fallback(
       baseRpcUrls.map((url) => http(url, { retryCount: 1, retryDelay: 500 }))
