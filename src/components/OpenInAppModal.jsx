@@ -2,7 +2,7 @@ import React from 'react'
 import { X, ExternalLink, Smartphone } from 'lucide-react'
 
 const BASE_APP_URL = 'https://base.app/app/www.basehub.fun'
-const FARCASTER_URL = 'https://farcaster.xyz/miniapps/t2NxuDgwJYsl/basehub'
+const FARCASTER_URL = 'https://farcaster.xyz/miniapps/_9JX6QCRPZzq/basehub'
 
 const OpenInAppModal = ({ open, onClose }) => {
   if (!open) return null
