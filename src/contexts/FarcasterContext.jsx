@@ -201,6 +201,22 @@ export const FarcasterProvider = ({ children }) => {
         } catch (shareError) {
           console.log('ℹ️ No cast share context:', shareError.message)
         }
+
+        // Her açılışta "Add to Farcaster" / favorilere ekle prompt'u göster (sdk.actions.addMiniApp)
+        if (sdk.actions && typeof sdk.actions.addMiniApp === 'function') {
+          setTimeout(async () => {
+            try {
+              await sdk.actions.addMiniApp()
+              console.log('✅ User added app to Farcaster')
+            } catch (addErr) {
+              if (addErr?.name === 'RejectedByUser' || addErr?.message?.includes('RejectedByUser')) {
+                console.log('ℹ️ User skipped Add to Farcaster')
+              } else {
+                console.warn('⚠️ addMiniApp failed:', addErr?.message)
+              }
+            }
+          }, 800)
+        }
         
       } catch (err) {
         console.error('❌ Failed to call ready():', err)

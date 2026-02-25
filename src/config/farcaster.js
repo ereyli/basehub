@@ -4,7 +4,7 @@
  * @see https://docs.farcaster.xyz/developers/guides/sharing#universal-links
  */
 
-export const FARCASTER_MINIAPP_BASE = 'https://farcaster.xyz/miniapps/_9JX6QCRPZzq/basehub'
+export const FARCASTER_MINIAPP_BASE = 'https://farcaster.xyz/miniapps/yg3cAP3Gq6b5/basehub'
 
 /** Build Farcaster Universal Link for a path (e.g. /mint/xyz, /pumphub) */
 export function getFarcasterUniversalLink(path = '') {
