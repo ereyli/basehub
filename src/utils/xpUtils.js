@@ -246,9 +246,10 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
   }
 
   try {
-    // Web: receipt doğrulaması (award-xp-verified EF). Miniapp: doğrulama timeout/RPC sorunlu olduğu için doğrudan award_xp RPC (hash yeterli).
+    // Web: receipt doğrulaması (award-xp-verified EF). Miniapp + MegaETH: doğrudan award_xp RPC (MegaETH'de EF receipt bulamıyor).
     const isMiniapp = isMiniappDomain() || isLikelyBaseApp() || isLikelyFarcaster()
-    const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke && !isMiniapp
+    const isMegaETH = chainId != null && Number(chainId) === NETWORKS.MEGAETH?.chainId
+    const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke && !isMiniapp && !isMegaETH
     if (useVerified) {
       const source = 'web'
       const invokeVerified = async () => {
