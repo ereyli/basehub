@@ -231,7 +231,7 @@ const Leaderboard = () => {
                   {getRankIcon(index + 1)}
                 </div>
 
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
@@ -251,11 +251,12 @@ const Leaderboard = () => {
                         alt="BaseHub NFT"
                         title="Early Access Pass holder"
                         style={{
-                          width: '20px',
-                          height: '20px',
+                          width: '14px',
+                          height: '14px',
                           borderRadius: '50%',
                           objectFit: 'cover',
-                          border: '1px solid rgba(251, 191, 36, 0.5)'
+                          border: '1px solid rgba(251, 191, 36, 0.5)',
+                          flexShrink: 0
                         }}
                       />
                     )}
@@ -263,11 +264,12 @@ const Leaderboard = () => {
                       <span style={{
                         background: 'rgba(255, 255, 255, 0.1)',
                         color: '#e5e7eb',
-                        padding: '2px 8px',
-                        borderRadius: '12px',
-                        fontSize: '10px',
+                        padding: '2px 6px',
+                        borderRadius: '8px',
+                        fontSize: '9px',
                         fontWeight: 'bold',
-                        border: '1px solid rgba(255, 255, 255, 0.2)'
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        flexShrink: 0
                       }}>
                         TOP {index + 1}
                       </span>
@@ -290,7 +292,9 @@ const Leaderboard = () => {
                   textAlign: 'right',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px'
+                  gap: '6px',
+                  flexShrink: 0,
+                  minWidth: '72px'
                 }}>
                   <TrendingUp size={16} style={{ color: '#e5e7eb' }} />
                   <span style={{ 
@@ -332,7 +336,7 @@ const Leaderboard = () => {
                     <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#e5e7eb' }}>#{globalIndex}</span>
                   </div>
 
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ 
                       display: 'flex', 
                       alignItems: 'center', 
@@ -352,11 +356,12 @@ const Leaderboard = () => {
                           alt="BaseHub NFT"
                           title="Early Access Pass holder"
                           style={{
-                            width: '20px',
-                            height: '20px',
+                            width: '14px',
+                            height: '14px',
                             borderRadius: '50%',
                             objectFit: 'cover',
-                            border: '1px solid rgba(251, 191, 36, 0.5)'
+                            border: '1px solid rgba(251, 191, 36, 0.5)',
+                            flexShrink: 0
                           }}
                         />
                       )}
@@ -378,7 +383,9 @@ const Leaderboard = () => {
                     textAlign: 'right',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: '6px',
+                    flexShrink: 0,
+                    minWidth: '72px'
                   }}>
                     <TrendingUp size={16} style={{ color: '#10b981' }} />
                     <span style={{ 

@@ -203,20 +203,39 @@ export const useNFTWheel = () => {
     })
 
     if (!response.ok) {
-      let errorMessage = 'Payment failed'
+      let errorMessage = 'Payment failed. Please try again.'
       try {
         const errorData = await response.json()
         if (response.status === 402) {
-          if (errorData.error === 'insufficient_funds' || errorData.error?.includes?.('insufficient_funds')) {
-            errorMessage = 'Insufficient USDC balance. Please ensure you have at least 0.05 USDC.'
-          } else if (errorData.error) {
-            errorMessage = `Payment error: ${typeof errorData.error === 'object' ? JSON.stringify(errorData.error) : errorData.error}`
+          const err = errorData.error
+          const errStr = typeof err === 'string' ? err : (err?.message || (typeof err === 'object' ? JSON.stringify(err) : ''))
+          if (errStr === 'insufficient_funds' || (errStr && errStr.includes && errStr.includes('insufficient_funds'))) {
+            errorMessage = 'Insufficient USDC. You need at least 0.05 USDC on Base to spin the wheel.'
+          } else if (errStr && (errStr.toLowerCase().includes('reject') || errStr.toLowerCase().includes('denied') || errStr.toLowerCase().includes('declined'))) {
+            errorMessage = 'Payment was declined or cancelled.'
+          } else if (errStr) {
+            errorMessage = `Payment error: ${errStr}. Please check your wallet and try again.`
+          } else {
+            errorMessage = 'Payment required. Complete the payment in your wallet to spin.'
           }
+        } else if (response.status === 500) {
+          errorMessage = 'Payment could not be completed. Make sure you have at least 0.05 USDC on Base and try again.'
         } else if (errorData.message) {
-          errorMessage = errorData.message
+          const msg = String(errorData.message).toLowerCase()
+          if (msg.includes('insufficient') || msg.includes('usdc')) {
+            errorMessage = 'Insufficient USDC. You need at least 0.05 USDC on Base to spin the wheel.'
+          } else if (msg.includes('reject') || msg.includes('denied') || msg.includes('declined')) {
+            errorMessage = 'Payment was declined or cancelled.'
+          } else {
+            errorMessage = errorData.message
+          }
         }
       } catch (e) {
-        errorMessage = `Payment failed with status ${response.status}`
+        if (response.status === 500) {
+          errorMessage = 'Payment could not be completed. Make sure you have at least 0.05 USDC on Base and try again.'
+        } else {
+          errorMessage = `Payment failed with status ${response.status}. Please try again.`
+        }
       }
       throw new Error(errorMessage)
     }
@@ -293,7 +312,14 @@ export const useNFTWheel = () => {
       
     } catch (err) {
       console.error('Error spinning wheel:', err)
-      setError(err.message)
+      const msg = err?.message || ''
+      const lower = msg.toLowerCase()
+      const userFacing = lower.includes('insufficient') || lower.includes('usdc')
+        ? msg
+        : lower.includes('reject') || lower.includes('denied') || lower.includes('declined') || lower.includes('user denied')
+          ? 'Payment was declined or cancelled.'
+          : msg || 'Payment failed. Please try again.'
+      setError(userFacing)
       setIsSpinning(false)
       setIsPaying(false)
       setWinningSegment(null)

@@ -193,7 +193,7 @@ export const useX402Payment = () => {
         } else if (response.status === 404) {
           errorMessage = 'Payment endpoint not found (404). Please check server configuration.'
         } else if (response.status === 500) {
-          errorMessage = 'Server error. Please try again later.'
+          errorMessage = 'Payment could not be completed. If you don\'t have enough USDC (0.1 USDC required on Base), add funds and try again. Otherwise please try again later.'
         } else if (errorData.message) {
           errorMessage = errorData.message
         } else if (errorData.error) {
@@ -248,7 +248,13 @@ export const useX402Payment = () => {
         name: err.name,
       })
       
-      const errorMessage = err.message || 'Payment failed. Please try again.'
+      let errorMessage = err.message || 'Payment failed. Please try again.'
+      const lower = (errorMessage || '').toLowerCase()
+      if (lower.includes('reject') || lower.includes('denied') || lower.includes('declined') || lower.includes('user denied')) {
+        errorMessage = 'Payment was declined or cancelled.'
+      } else if (lower.includes('insufficient') || lower.includes('usdc')) {
+        errorMessage = 'Insufficient USDC. You need at least 0.1 USDC on Base to complete this payment.'
+      }
       setError(errorMessage)
       throw err
     } finally {

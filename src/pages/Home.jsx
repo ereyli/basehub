@@ -1838,7 +1838,7 @@ const Home = () => {
                     {getRankIcon(index + 1)}
                   </div>
 
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ 
                       display: 'flex', 
                       alignItems: 'center', 
@@ -1858,11 +1858,12 @@ const Home = () => {
                           alt="BaseHub NFT"
                           title="Early Access Pass holder"
                           style={{
-                            width: '20px',
-                            height: '20px',
+                            width: '14px',
+                            height: '14px',
                             borderRadius: '50%',
                             objectFit: 'cover',
-                            border: '1px solid rgba(251, 191, 36, 0.5)'
+                            border: '1px solid rgba(251, 191, 36, 0.5)',
+                            flexShrink: 0
                           }}
                         />
                       )}
@@ -1875,10 +1876,11 @@ const Home = () => {
                           border: index === 0 ? '1px solid rgba(245, 158, 11, 0.4)' : 
                                   index === 1 ? '1px solid rgba(192, 192, 192, 0.4)' :
                                   '1px solid rgba(205, 127, 50, 0.4)',
-                          padding: '2px 6px',
+                          padding: '2px 5px',
                           borderRadius: '6px',
                           fontSize: '9px',
-                          fontWeight: '600'
+                          fontWeight: '600',
+                          flexShrink: 0
                         }}>
                           TOP {index + 1}
                         </span>
@@ -1900,7 +1902,9 @@ const Home = () => {
                     textAlign: 'right',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px'
+                    gap: '4px',
+                    flexShrink: 0,
+                    minWidth: '64px'
                   }}>
                     <Star size={14} style={{ color: '#f59e0b' }} />
                     <span style={{ 
