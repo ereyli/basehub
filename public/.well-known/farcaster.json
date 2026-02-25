@@ -19,8 +19,8 @@
   },
   "accountAssociation": {
     "header": "eyJmaWQiOjI1MTYxOSwidHlwZSI6ImF1dGgiLCJrZXkiOiIweDk3Njc1RjAzRDY1RkFCNzM3MWZhMkJlQjNkYkY5YzY4NDJjOGQ1MjUifQ",
-    "payload": "eyJkb21haW4iOiJiYXNlaHViLmZ1biJ9",
-    "signature": "tXNVvB89m2mpnKfRui8Ai5ZSNY2nh4j4dpW845LSxLAIdBTyBke4X5Iq4A+9VdTEVNaQK0Fdw6BZlLTiZmQukxw="
+    "payload": "eyJkb21haW4iOiJ3d3cuYmFzZWh1Yi5mdW4ifQ",
+    "signature": "zaPQvgMCwySQ4I821LuKs9vRhvgxizY/kI1ZVHn4iYFl4cQ59o+k51LxrfDYNetRSLra9GtNrpTkY5Y8sS6KsBw="
   },
   "baseBuilder": {
     "allowedAddresses": ["0xcF1B5d6CD8e0bfd6B1a8B2c2ceAb0bc165EEE5B3"]
