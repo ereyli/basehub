@@ -56,6 +56,8 @@ const Home = () => {
   }, [])
   const isCompactMode = isInFarcaster && isMobile
   const isWebMobile = isWeb && isMobile
+  // Miniapp (Farcaster + Base app) ağlar bölümü hep aynı: flex wrap (5+2). Sadece web mobil tarayıcıda 2 sütun grid.
+  const networksUseGrid = isWebMobile && !isInFarcaster
   
   // Compact styles: Farcaster mobile (very compact) | Web mobile (2 columns, compact) | Desktop
   const compactStyles = {
@@ -677,17 +679,17 @@ const Home = () => {
               {isCompactMode ? 'Web3 hub for Base, InkChain & more' : 'Games, tokens and XP on Base, InkChain and more — all in one Web3 hub.'}
             </p>
 
-            {/* Network Selector - compact for Farcaster mobile; grid + compact for web mobile */}
+            {/* Network Selector - miniapp (Farcaster + Base app): flex wrap 5+2; sadece web mobil tarayıcıda 2 sütun grid */}
             <div style={{ 
-              display: isWebMobile ? 'grid' : 'flex',
-              gridTemplateColumns: isWebMobile ? 'repeat(2, minmax(0, 1fr))' : undefined,
-              justifyContent: isWebMobile ? 'stretch' : 'center',
-              gap: isCompactMode ? '6px' : isWebMobile ? '8px' : '20px',
-              marginBottom: isCompactMode ? '12px' : isWebMobile ? '16px' : '28px',
-              flexWrap: isWebMobile ? undefined : 'wrap',
-              maxWidth: isWebMobile ? '320px' : undefined,
-              marginLeft: isWebMobile ? 'auto' : undefined,
-              marginRight: isWebMobile ? 'auto' : undefined
+              display: networksUseGrid ? 'grid' : 'flex',
+              gridTemplateColumns: networksUseGrid ? 'repeat(2, minmax(0, 1fr))' : undefined,
+              justifyContent: networksUseGrid ? 'stretch' : 'center',
+              gap: isCompactMode ? '6px' : networksUseGrid ? '8px' : '20px',
+              marginBottom: isCompactMode ? '12px' : networksUseGrid ? '16px' : '28px',
+              flexWrap: networksUseGrid ? undefined : 'wrap',
+              maxWidth: networksUseGrid ? '320px' : undefined,
+              marginLeft: networksUseGrid ? 'auto' : undefined,
+              marginRight: networksUseGrid ? 'auto' : undefined
             }}>
               {[
                 { key: 'BASE',  label: 'Base',     logo: '/base-logo.jpg',   chainId: NETWORKS.BASE.chainId },
@@ -699,7 +701,7 @@ const Home = () => {
                 ...(NETWORKS.ROBINHOOD_TESTNET ? [{ key: 'RH', label: 'Robinhood Testnet', logo: '/robinhood-testnet-logo.png', chainId: NETWORKS.ROBINHOOD_TESTNET.chainId }] : []),
               ].map((net) => {
                 const isActive = chainId === net.chainId
-                const logoSize = isCompactMode ? 24 : isWebMobile ? 28 : 40
+                const logoSize = isCompactMode ? 24 : networksUseGrid ? 28 : 40
                 const showLabel = !isCompactMode
                 return (
                   <button
@@ -717,19 +719,19 @@ const Home = () => {
                       background: isActive 
                         ? 'linear-gradient(135deg, rgba(59,130,246,0.25), rgba(37,99,235,0.35))'
                         : 'rgba(15,23,42,0.9)',
-                      borderRadius: isCompactMode ? '10px' : isWebMobile ? '12px' : '18px',
-                      padding: isCompactMode ? '6px 8px' : isWebMobile ? '8px 10px' : '10px 16px',
+                      borderRadius: isCompactMode ? '10px' : networksUseGrid ? '12px' : '18px',
+                      padding: isCompactMode ? '6px 8px' : networksUseGrid ? '8px 10px' : '10px 16px',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: isCompactMode ? '4px' : isWebMobile ? '8px' : '10px',
+                      gap: isCompactMode ? '4px' : networksUseGrid ? '8px' : '10px',
                       cursor: 'pointer',
                       boxShadow: isActive 
                         ? '0 4px 12px rgba(59,130,246,0.25)'
                         : '0 2px 8px rgba(15,23,42,0.6)',
                       transform: isActive ? 'translateY(-1px)' : 'translateY(0)',
                       transition: 'all 0.2s ease',
-                      minWidth: isCompactMode ? 'auto' : isWebMobile ? 0 : '140px',
-                      width: isWebMobile ? '100%' : undefined,
+                      minWidth: isCompactMode ? 'auto' : networksUseGrid ? 0 : '140px',
+                      width: networksUseGrid ? '100%' : undefined,
                       justifyContent: isCompactMode ? 'center' : 'flex-start',
                       flex: isCompactMode ? '1' : 'none',
                       maxWidth: isCompactMode ? '80px' : undefined
@@ -760,7 +762,7 @@ const Home = () => {
                     {showLabel && (
                       <div style={{ textAlign: 'left', minWidth: 0, flex: 1 }}>
                         <div style={{ 
-                          fontSize: isWebMobile ? '12px' : '14px', 
+                          fontSize: networksUseGrid ? '12px' : '14px', 
                           fontWeight: 600, 
                           color: '#e5e7eb',
                           fontFamily: 'Poppins, sans-serif',
@@ -771,7 +773,7 @@ const Home = () => {
                           {net.label}
                         </div>
                         <div style={{ 
-                          fontSize: isWebMobile ? '10px' : '11px', 
+                          fontSize: networksUseGrid ? '10px' : '11px', 
                           color: isActive ? '#a5b4fc' : '#6b7280'
                         }}>
                           {isActive ? 'Connected' : 'Switch'}
