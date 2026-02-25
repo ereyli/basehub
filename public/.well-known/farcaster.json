@@ -1,20 +1,21 @@
 {
   "frame": {
     "name": "BaseHub",
-    "version": "1",
-    "iconUrl": "https://www.basehub.fun/icon.png",
+    "version": "2",
+    "iconUrl": "https://www.basehub.fun/icon.png?v=2",
     "homeUrl": "https://www.basehub.fun",
-    "imageUrl": "https://www.basehub.fun/image.png",
+    "canonicalDomain": "basehub.fun",
+    "imageUrl": "https://www.basehub.fun/image.png?v=2",
     "buttonTitle": "Open BaseHub",
-    "splashImageUrl": "https://www.basehub.fun/splash.png",
+    "splashImageUrl": "https://www.basehub.fun/splash.png?v=2",
     "splashBackgroundColor": "#4A90E2",
     "subtitle": "BaseHub",
-    "description": "BaseHub - Play games",
+    "description": "Web3 hub on Base, InkChain & more. Games, tokens, swap, XP.",
     "primaryCategory": "games",
     "tags": ["base", "farcaster", "airdrop", "basehub", "game"],
     "tagline": "Gamified contracts on Base",
-    "ogTitle": "BaseHub",
-    "ogDescription": "BaseHub Play games"
+    "ogTitle": "BaseHub — basehub.fun",
+    "ogDescription": "Web3 hub on Base, InkChain & more. Games, tokens, swap, XP."
   },
   "accountAssociation": {
     "header": "eyJmaWQiOjI1MTYxOSwidHlwZSI6ImF1dGgiLCJrZXkiOiIweDk3Njc1RjAzRDY1RkFCNzM3MWZhMkJlQjNkYkY5YzY4NDJjOGQ1MjUifQ",
