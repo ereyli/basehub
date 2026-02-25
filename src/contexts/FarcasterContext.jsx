@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { sdk } from '@farcaster/miniapp-sdk'
+import { setMiniappDetectionFromSDK, BASE_APP_CLIENT_FID } from '../utils/xpUtils'
 
 const FarcasterContext = createContext()
 
@@ -38,7 +39,7 @@ export const FarcasterProvider = ({ children }) => {
       try {
         console.log('🚀 Initializing Farcaster Mini App...')
         
-        // Check if we're actually in Farcaster environment
+        // Check if we're actually in Farcaster environment (iframe / URL)
         const actuallyInFarcaster = typeof window !== 'undefined' && 
           (window.location !== window.parent.location || 
            window.parent !== window ||
@@ -50,6 +51,23 @@ export const FarcasterProvider = ({ children }) => {
         
         // Wait a bit for SDK to load properly
         await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // SDK-based miniapp/Base detection: Base app often has generic mobile UA, so we use sdk.isInMiniApp() + context.client.clientFid
+        try {
+          const inMiniApp = await sdk.isInMiniApp()
+          if (inMiniApp) {
+            const context = await sdk.context
+            const isBaseApp = context?.client?.clientFid === BASE_APP_CLIENT_FID
+            setMiniappDetectionFromSDK(true, isBaseApp)
+            if (!actuallyInFarcaster) setIsInFarcaster(true) // Base app (basehub.fun in WebView): treat as miniapp so ready()/context work
+            console.log('🔍 SDK miniapp detection:', { inMiniApp, isBaseApp, clientFid: context?.client?.clientFid })
+          } else {
+            setMiniappDetectionFromSDK(false, false)
+          }
+        } catch (sdkErr) {
+          setMiniappDetectionFromSDK(false, false)
+          console.log('ℹ️ SDK miniapp check skipped:', sdkErr?.message)
+        }
         
         // Mark as initialized
         setIsInitialized(true)

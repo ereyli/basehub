@@ -4,9 +4,20 @@ import { createPublicClient, http, fallback } from 'viem'
 import { base } from 'viem/chains'
 import { isTestnetChainId, NETWORKS } from '../config/networks'
 
+// SDK-derived miniapp/Base detection (set async from FarcasterContext) – Base app UA often generic, so we rely on sdk.context.clientFid
+let _sdkSaysMiniapp = null // null = not yet known, true/false after sdk.isInMiniApp()
+let _sdkSaysBaseApp = null  // null = not yet known, true if clientFid === BASE_APP_CLIENT_FID
+export const BASE_APP_CLIENT_FID = 309857 // Base app's FID in Farcaster miniapp context
+
+export function setMiniappDetectionFromSDK (isMiniapp, isBaseApp) {
+  _sdkSaysMiniapp = isMiniapp
+  _sdkSaysBaseApp = isBaseApp
+}
+
 // Base/Coinbase in-app browser: receipt wait often hangs; use RPC path (hash-only) like SwapHub
 // Export for useTransactions: Base app'da writeContractAsync bazen resolve etmiyor, hash hook'tan alınır
 export function isLikelyBaseApp () {
+  if (_sdkSaysBaseApp === true) return true
   if (typeof navigator === 'undefined' || !navigator.userAgent) return false
   const ua = navigator.userAgent.toLowerCase()
   return ua.includes('coinbase') || ua.includes('base wallet') || ua.includes('cbwallet') || (ua.includes('base') && (ua.includes('app') || ua.includes('in-app')))
@@ -21,8 +32,10 @@ function isLikelyFarcaster () {
 }
 
 // Miniapp = iframe içinde veya Farcaster/Base ortamı (domain değil bağlam; tek domain basehub.fun)
+// SDK says miniapp (sdk.isInMiniApp()) => Base app mobil WebView da böyle tespit edilir
 export function isMiniappDomain () {
   if (typeof window === 'undefined') return false
+  if (_sdkSaysMiniapp === true) return true
   if (window.location !== window.parent.location || window.parent !== window) return true
   return isLikelyFarcaster() || isLikelyBaseApp()
 }

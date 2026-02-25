@@ -20,7 +20,7 @@
 ## Commit 38c4918 (12 Şubat 2026) – "x402 API base for web"
 
 ### Ne değişti?
-- **`src/config/x402.js` eklendi:** `getX402ApiBase()` = `VITE_API_URL || 'https://basehub-alpha.vercel.app'`.
+- **`src/config/x402.js` eklendi:** `getX402ApiBase()` = `VITE_API_URL || 'https://www.basehub.fun'`.
 - Tüm x402 hook'ları **absolute URL** kullanmaya başladı:  
   `fetchWithPayment(\`${getX402ApiBase()}/api/x402-allowance-cleaner\`, ...)`.
 

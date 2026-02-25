@@ -7,7 +7,7 @@
 
 ## Domain ayrımı
 
-- **basehub-alpha.vercel.app** = Miniapp (Farcaster / Base app bu URL’den açılıyor) → `p_source`: `farcaster` veya `base_app`.
+- **basehub.fun** = Miniapp (Farcaster / Base app bu URL’den açılıyor) → `p_source`: `farcaster` veya `base_app`.
 - **basehub.fun** = Web → `p_source`: `web`.
 - Tespit: `isMiniappDomain()` (hostname) + `isLikelyBaseApp()` (user agent) + `isLikelyFarcaster()` (iframe / URL).
 - **XP** her iki durumda da aynı şekilde `players.total_xp` (ve level) üzerinde birikir; mevcut XP’ler bozulmaz.

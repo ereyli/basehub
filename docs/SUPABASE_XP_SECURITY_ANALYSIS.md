@@ -5,7 +5,7 @@
 | Taraf   | XP yolu                    | On-chain doğrulama | XP manipüle edilebilir mi? |
 |--------|----------------------------|--------------------|----------------------------|
 | **Web** (basehub.fun) | award-xp-verified EF → award_xp RPC | Evet (receipt) | Zor (gerçek tx gerekir) |
-| **Miniapp** (basehub-alpha.vercel.app) | Doğrudan award_xp RPC | Hayır | Evet (RPC doğrudan çağrılabilir) |
+| **Miniapp** (basehub.fun) | Doğrudan award_xp RPC | Hayır | Evet (RPC doğrudan çağrılabilir) |
 
 **Web daha güvenli;** miniapp tarafında XP, doğrulama olmadan RPC ile verildiği için manipüle edilebilir.
 
@@ -29,7 +29,7 @@
 
 ---
 
-## 2. Miniapp tarafı (basehub-alpha.vercel.app)
+## 2. Miniapp tarafı (basehub.fun)
 
 ### Akış
 
