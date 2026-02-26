@@ -28,6 +28,22 @@ writeContract({
 })
 ```
 
+## When using EIP-5792 `sendCalls` (akıllı cüzdanlar / smart contract wallets)
+
+Wallets that use `wallet_sendCalls` need the Builder Code in `capabilities` so the wallet can append the suffix:
+
+```js
+import { BUILDER_CODE_CAPABILITIES } from '../config/wagmi'
+import { sendCalls } from '@wagmi/core'
+
+await sendCalls(config, {
+  calls: [{ to: '0x...', data: '0x...', value: 0n }],
+  capabilities: BUILDER_CODE_CAPABILITIES, // ERC-8021 attribution
+})
+```
+
+Ref: [Base Builder Codes](https://docs.base.org/base-chain/builder-codes/builder-codes), [sendCalls · Wagmi](https://wagmi.sh/core/api/actions/sendCalls).
+
 ## When using `walletClient.sendTransaction` or raw `data`
 
 There is no `dataSuffix` parameter. Append the suffix to the `data` hex string:

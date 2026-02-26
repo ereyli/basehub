@@ -7,9 +7,10 @@ import { addXP, addBonusXP, shouldAwardXPOnHashOnly, isLikelyBaseApp, showXPErro
 import { getCurrentConfig, getContractAddress, GAS_CONFIG, GAME_CONFIG } from '../config/base'
 import { getContractAddressByNetwork, NETWORKS, isNetworkSupported } from '../config/networks'
 import { parseEther, formatEther } from 'viem'
-import { config, DATA_SUFFIX } from '../config/wagmi'
+import { config, DATA_SUFFIX } from '../config/wagmi' // DATA_SUFFIX: Base app/miniapp’te akıllı cüzdan işlemlerinde attribution için zorunlu
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { useQuestSystem } from './useQuestSystem'
+import { sendContractCallBaseApp, shouldUseSendCallsForBaseApp } from '../utils/baseAppSendCalls'
 
 export const useTransactions = () => {
   // Check if we're in web environment
@@ -186,24 +187,25 @@ export const useTransactions = () => {
         address 
       })
       const contractAddress = getContractAddressForCurrentNetwork('GM_GAME')
-      console.log('📡 Contract address for GM_GAME:', contractAddress)
-      console.log('📡 Sending GM transaction to blockchain...')
-      const writePromise = writeContractAsync({
-        address: contractAddress,
-        abi: [{
-          name: 'sendGM',
-          type: 'function',
-          stateMutability: 'payable',
-          inputs: [{ name: 'message', type: 'string' }]
-        }],
-        functionName: 'sendGM',
-        args: [message],
-        value: getGameFee(), // 0.00002 ETH fee
-        dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
-      })
+      const gmAbi = [{ name: 'sendGM', type: 'function', stateMutability: 'payable', inputs: [{ name: 'message', type: 'string' }] }]
       const isBaseApp = isLikelyBaseApp()
-      if (isBaseApp) console.log('[Base app] GM: shouldAwardXPOnHashOnly=', shouldAwardXPOnHashOnly(), 'using getTxHashBaseApp')
-      const txHash = isBaseApp ? await getTxHashBaseApp(writePromise) : await writePromise
+      const useSendCalls = shouldUseSendCallsForBaseApp(isBaseApp, chainId)
+      console.log('📡 Contract address for GM_GAME:', contractAddress)
+      console.log('📡 Sending GM transaction to blockchain...' + (useSendCalls ? ' (Base app sendCalls + Builder Code)' : ''))
+      let txHash
+      if (useSendCalls) {
+        txHash = await sendContractCallBaseApp({ address: contractAddress, abi: gmAbi, functionName: 'sendGM', args: [message], value: getGameFee() })
+      } else {
+        const writePromise = writeContractAsync({
+          address: contractAddress,
+          abi: gmAbi,
+          functionName: 'sendGM',
+          args: [message],
+          value: getGameFee(),
+          dataSuffix: DATA_SUFFIX,
+        })
+        txHash = isBaseApp ? await getTxHashBaseApp(writePromise) : await writePromise
+      }
       if (!txHash) {
         if (isBaseApp) {
           console.warn('[Base app] GM: no hash – XP and tx count will not update')
@@ -284,22 +286,24 @@ export const useTransactions = () => {
 
     try {
       const contractAddress = getContractAddressForCurrentNetwork('GN_GAME')
-      
-      console.log('📡 Sending GN transaction to blockchain...')
-      const writePromise = writeContractAsync({
-        address: contractAddress,
-        abi: [{
-          name: 'sendGN',
-          type: 'function',
-          stateMutability: 'payable',
-          inputs: [{ name: 'message', type: 'string' }]
-        }],
-        functionName: 'sendGN',
-        args: [message],
-        value: getGameFee(), // 0.00002 ETH fee
-        dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
-      })
-      const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
+      const gnAbi = [{ name: 'sendGN', type: 'function', stateMutability: 'payable', inputs: [{ name: 'message', type: 'string' }] }]
+      const isBaseApp = isLikelyBaseApp()
+      const useSendCalls = shouldUseSendCallsForBaseApp(isBaseApp, chainId)
+      console.log('📡 Sending GN transaction to blockchain...' + (useSendCalls ? ' (Base app sendCalls + Builder Code)' : ''))
+      let txHash
+      if (useSendCalls) {
+        txHash = await sendContractCallBaseApp({ address: contractAddress, abi: gnAbi, functionName: 'sendGN', args: [message], value: getGameFee() })
+      } else {
+        const writePromise = writeContractAsync({
+          address: contractAddress,
+          abi: gnAbi,
+          functionName: 'sendGN',
+          args: [message],
+          value: getGameFee(),
+          dataSuffix: DATA_SUFFIX,
+        })
+        txHash = isBaseApp ? await getTxHashBaseApp(writePromise) : await writePromise
+      }
       if (!txHash) {
         if (isLikelyBaseApp()) showXPErrorToast('Transaction sent. XP may not have been recorded – check your profile later.')
         setError(null)
@@ -376,25 +380,25 @@ export const useTransactions = () => {
     try {
 
       const contractAddress = getContractAddressForCurrentNetwork('FLIP_GAME')
-      
-      // Encode the function call: playFlip(uint8 choice) where 0=Heads, 1=Tails
       const choice = selectedSide === 'heads' ? 0 : 1
-      
-      console.log('📡 Sending Flip transaction to blockchain...')
-      const writePromise = writeContractAsync({
-        address: contractAddress,
-        abi: [{
-          name: 'playFlip',
-          type: 'function',
-          stateMutability: 'payable',
-          inputs: [{ name: 'choice', type: 'uint8' }]
-        }],
-        functionName: 'playFlip',
-        args: [choice],
-        value: getGameFee(), // 0.00002 ETH fee
-        dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
-      })
-      const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
+      const flipAbi = [{ name: 'playFlip', type: 'function', stateMutability: 'payable', inputs: [{ name: 'choice', type: 'uint8' }] }]
+      const isBaseApp = isLikelyBaseApp()
+      const useSendCalls = shouldUseSendCallsForBaseApp(isBaseApp, chainId)
+      console.log('📡 Sending Flip transaction to blockchain...' + (useSendCalls ? ' (Base app sendCalls + Builder Code)' : ''))
+      let txHash
+      if (useSendCalls) {
+        txHash = await sendContractCallBaseApp({ address: contractAddress, abi: flipAbi, functionName: 'playFlip', args: [choice], value: getGameFee() })
+      } else {
+        const writePromise = writeContractAsync({
+          address: contractAddress,
+          abi: flipAbi,
+          functionName: 'playFlip',
+          args: [choice],
+          value: getGameFee(),
+          dataSuffix: DATA_SUFFIX,
+        })
+        txHash = isBaseApp ? await getTxHashBaseApp(writePromise) : await writePromise
+      }
       if (!txHash) {
         if (isLikelyBaseApp()) showXPErrorToast('Transaction sent. XP may not have been recorded – check your profile later.')
         setError(null)
@@ -475,22 +479,24 @@ export const useTransactions = () => {
     try {
 
       const contractAddress = getContractAddressForCurrentNetwork('LUCKY_NUMBER')
-      
-      console.log('📡 Sending Lucky Number transaction to blockchain...')
-      const writePromise = writeContractAsync({
-        address: contractAddress,
-        abi: [{
-          name: 'guessLuckyNumber',
-          type: 'function',
-          stateMutability: 'payable',
-          inputs: [{ name: 'guess', type: 'uint256' }]
-        }],
-        functionName: 'guessLuckyNumber',
-        args: [guess],
-        value: getGameFee(), // 0.00002 ETH fee
-        dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
-      })
-      const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
+      const luckyAbi = [{ name: 'guessLuckyNumber', type: 'function', stateMutability: 'payable', inputs: [{ name: 'guess', type: 'uint256' }] }]
+      const isBaseApp = isLikelyBaseApp()
+      const useSendCalls = shouldUseSendCallsForBaseApp(isBaseApp, chainId)
+      console.log('📡 Sending Lucky Number transaction to blockchain...' + (useSendCalls ? ' (Base app sendCalls + Builder Code)' : ''))
+      let txHash
+      if (useSendCalls) {
+        txHash = await sendContractCallBaseApp({ address: contractAddress, abi: luckyAbi, functionName: 'guessLuckyNumber', args: [guess], value: getGameFee() })
+      } else {
+        const writePromise = writeContractAsync({
+          address: contractAddress,
+          abi: luckyAbi,
+          functionName: 'guessLuckyNumber',
+          args: [guess],
+          value: getGameFee(),
+          dataSuffix: DATA_SUFFIX,
+        })
+        txHash = isBaseApp ? await getTxHashBaseApp(writePromise) : await writePromise
+      }
       if (!txHash) {
         if (isLikelyBaseApp()) showXPErrorToast('Transaction sent. XP may not have been recorded – check your profile later.')
         setError(null)
@@ -569,22 +575,24 @@ export const useTransactions = () => {
     try {
 
       const contractAddress = getContractAddressForCurrentNetwork('DICE_ROLL')
-      
-      console.log('📡 Sending Dice Roll transaction to blockchain...')
-      const writePromise = writeContractAsync({
-        address: contractAddress,
-        abi: [{
-          name: 'rollDice',
-          type: 'function',
-          stateMutability: 'payable',
-          inputs: [{ name: 'guess', type: 'uint256' }]
-        }],
-        functionName: 'rollDice',
-        args: [guess],
-        value: getGameFee(), // 0.00002 ETH fee
-        dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
-      })
-      const txHash = isLikelyBaseApp() ? await getTxHashBaseApp(writePromise) : await writePromise
+      const diceAbi = [{ name: 'rollDice', type: 'function', stateMutability: 'payable', inputs: [{ name: 'guess', type: 'uint256' }] }]
+      const isBaseApp = isLikelyBaseApp()
+      const useSendCalls = shouldUseSendCallsForBaseApp(isBaseApp, chainId)
+      console.log('📡 Sending Dice Roll transaction to blockchain...' + (useSendCalls ? ' (Base app sendCalls + Builder Code)' : ''))
+      let txHash
+      if (useSendCalls) {
+        txHash = await sendContractCallBaseApp({ address: contractAddress, abi: diceAbi, functionName: 'rollDice', args: [guess], value: getGameFee() })
+      } else {
+        const writePromise = writeContractAsync({
+          address: contractAddress,
+          abi: diceAbi,
+          functionName: 'rollDice',
+          args: [guess],
+          value: getGameFee(),
+          dataSuffix: DATA_SUFFIX,
+        })
+        txHash = isBaseApp ? await getTxHashBaseApp(writePromise) : await writePromise
+      }
       if (!txHash) {
         if (isLikelyBaseApp()) showXPErrorToast('Transaction sent. XP may not have been recorded – check your profile later.')
         setError(null)

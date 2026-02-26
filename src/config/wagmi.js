@@ -5,9 +5,17 @@ import { injected, metaMask } from 'wagmi/connectors'
 import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector'
 import { NETWORKS } from './networks'
 
-// Base Builder Code – ERC-8021 attribution (base.dev → Settings → Builder Code). Export for writeContract dataSuffix.
+// Base Builder Code – ERC-8021 attribution (base.dev → Settings → Builder Code).
+// Base app / Farcaster miniapp’te kullanıcılar çoğunlukla akıllı kontrat cüzdanı (Base Account vb.) kullanıyor.
+// - writeContract / writeContractAsync: her çağrıda dataSuffix: DATA_SUFFIX veriyoruz → tx data’ya suffix eklenir, cüzdan aynen gönderirse attribution olur.
+// - EIP-5792 sendCalls kullanılırsa (batch): capabilities: BUILDER_CODE_CAPABILITIES geçilmeli.
 // Schema 0: codesHex + codesLength(1) + schemaId(0) + ercMarker(16 bytes). Inline to avoid ox package resolution on Vercel.
 export const DATA_SUFFIX = '0x62635f6372386f6d7866660b0080218021802180218021802180218021'
+
+/** EIP-5792 sendCalls için capabilities – akıllı cüzdanlarda Builder Code attribution. sendCalls({ calls, capabilities: BUILDER_CODE_CAPABILITIES }). */
+export const BUILDER_CODE_CAPABILITIES = {
+  dataSuffix: { value: DATA_SUFFIX, optional: true },
+}
 
 // InkChain chain definition
 const inkChain = defineChain({
