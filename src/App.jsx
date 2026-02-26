@@ -242,7 +242,7 @@ function FarcasterAppContent() {
               src="/icon.png" 
               alt="BaseHub" 
               style={{
-                height: '120px',
+                height: '280px',
                 width: 'auto',
                 objectFit: 'contain',
                 marginBottom: '24px',
