@@ -11,6 +11,7 @@ import { rainbowkitConfig, shouldUseRainbowKit } from './config/rainbowkit'
 import { isLikelyBaseApp } from './utils/xpUtils'
 import FarcasterBottomNav from './components/FarcasterBottomNav'
 import HomeScrollManager from './components/HomeScrollManager'
+import ScrollToTop from './components/ScrollToTop'
 import ResponsiveHeader from './components/ResponsiveHeader'
 import WalletConnect from './components/WalletConnect'
 import WebBottomNav from './components/WebBottomNav'
@@ -387,6 +388,7 @@ function WebAppContent() {
         <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <GlobalErrorHandler />
           <HomeScrollManager />
+          <ScrollToTop />
           <div className={`App web-app ${isMobile ? 'farcaster-app' : ''}`}>
             <ResponsiveHeader />
             <main className="container" style={mainStyle}>
