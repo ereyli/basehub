@@ -63,8 +63,30 @@
   </style>
 </head>
 <body>
+  <script>
+    (function() {
+      try {
+        if (window.history.scrollRestoration !== undefined) window.history.scrollRestoration = 'manual';
+      } catch (e) {}
+    })();
+  </script>
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
+  <script>
+    (function() {
+      function top() {
+        try {
+          window.scrollTo(0, 0);
+          if (document.documentElement) document.documentElement.scrollTop = 0;
+          if (document.body) document.body.scrollTop = 0;
+        } catch (e) {}
+      }
+      top();
+      window.addEventListener('DOMContentLoaded', top);
+      window.addEventListener('load', function() { top(); setTimeout(top, 0); setTimeout(top, 100); });
+      window.addEventListener('pageshow', function(ev) { top(); if (ev.persisted) setTimeout(top, 50); });
+    })();
+  </script>
   
   <!-- Block Coinbase analytics errors -->
   <script>

@@ -2,14 +2,16 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 
-const HOME_SCROLL_KEY = 'homeScrollSection'
-
 const BackButton = ({ style = {} }) => {
   const navigate = useNavigate()
 
   const goHome = () => {
-    const scrollTo = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(HOME_SCROLL_KEY) : null
-    navigate('/', scrollTo ? { state: { scrollTo } } : {})
+    // Use browser back so popstate fires and scroll position is restored
+    if (window.history.length > 1) {
+      navigate(-1)
+    } else {
+      navigate('/')
+    }
   }
 
   return (
