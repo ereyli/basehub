@@ -492,6 +492,7 @@ const Home = () => {
 
   // Render a compact card for Farcaster mobile
   const renderCompactCard = (game, onClick = null, linkTo = null) => {
+    const titleColor = game.color?.startsWith?.('linear') ? '#3b82f6' : (game.color || '#e5e7eb')
     const iconWrapStyle = isCompactMode ? {
       flexShrink: 0,
       width: '36px', height: '36px',
@@ -514,7 +515,7 @@ const Home = () => {
             <div style={iconWrapStyle}>
               {game.icon}
             </div>
-            <h3 style={compactStyles.cardTitle}>
+            <h3 style={{ ...compactStyles.cardTitle, color: titleColor }}>
               {game.shortTitle || game.title.split(' ')[0]}
             </h3>
             <div style={compactStyles.xpBadge}>
@@ -528,7 +529,7 @@ const Home = () => {
                 {game.icon}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <h3 style={compactStyles.cardTitle}>
+                <h3 style={{ ...compactStyles.cardTitle, color: titleColor }}>
                   {game.title}
                 </h3>
                 <p style={compactStyles.cardDescription}>
@@ -895,7 +896,7 @@ const Home = () => {
                             <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#f59e0b22', border: '1px solid #f59e0b44', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <Rocket size={18} style={{ color: 'white' }} />
                             </div>
-                            <h3 style={compactStyles.cardTitle}>Pass</h3>
+                            <h3 style={{ ...compactStyles.cardTitle, color: '#f59e0b' }}>Pass</h3>
                             <div style={compactStyles.xpBadge}>3000 XP</div>
                           </>
                         ) : (
@@ -905,7 +906,7 @@ const Home = () => {
                                 <Rocket size={22} style={{ color: 'white' }} />
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <h3 style={compactStyles.cardTitle}>Early Access Pass</h3>
+                                <h3 style={{ ...compactStyles.cardTitle, color: '#f59e0b' }}>Early Access Pass</h3>
                                 <p style={compactStyles.cardDescription}>Mint your BaseHub Early Access Pass and unlock exclusive benefits</p>
                               </div>
                             </div>
@@ -927,7 +928,7 @@ const Home = () => {
                             <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#8b5cf622', border: '1px solid #8b5cf644', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <Sparkles size={18} style={{ color: 'white' }} />
                             </div>
-                            <h3 style={compactStyles.cardTitle}>Wheel</h3>
+                            <h3 style={{ ...compactStyles.cardTitle, color: '#8b5cf6' }}>Wheel</h3>
                             <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-50K</div>
                           </>
                         ) : (
@@ -937,7 +938,7 @@ const Home = () => {
                                 <Sparkles size={22} style={{ color: 'white' }} />
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <h3 style={compactStyles.cardTitle}>NFT Wheel of Fortune</h3>
+                                <h3 style={{ ...compactStyles.cardTitle, color: '#8b5cf6' }}>NFT Wheel of Fortune</h3>
                                 <p style={compactStyles.cardDescription}>Spin to win 2K-50K XP daily! (NFT holders only)</p>
                               </div>
                             </div>
@@ -998,7 +999,7 @@ const Home = () => {
                             <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#00d4ff22', border: '1px solid #00d4ff44', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <Rocket size={18} style={{ color: 'white' }} />
                             </div>
-                            <h3 style={compactStyles.cardTitle}>Launch</h3>
+                            <h3 style={{ ...compactStyles.cardTitle, color: '#00d4ff' }}>Launch</h3>
                             <div style={compactStyles.xpBadge}>100 XP</div>
                           </>
                         ) : (
@@ -1008,7 +1009,7 @@ const Home = () => {
                                 <Rocket size={22} style={{ color: 'white' }} />
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <h3 style={compactStyles.cardTitle}>Token Launchpad</h3>
+                                <h3 style={{ ...compactStyles.cardTitle, color: '#00d4ff' }}>Token Launchpad</h3>
                                 <p style={compactStyles.cardDescription}>Browse and trade launched tokens</p>
                               </div>
                             </div>
@@ -1029,7 +1030,7 @@ const Home = () => {
                             <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#8b5cf622', border: '1px solid #8b5cf644', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <Factory size={18} style={{ color: 'white' }} />
                             </div>
-                            <h3 style={compactStyles.cardTitle}>Create</h3>
+                            <h3 style={{ ...compactStyles.cardTitle, color: '#8b5cf6' }}>Create</h3>
                             <div style={compactStyles.xpBadge}>2000 XP</div>
                           </>
                         ) : (
@@ -1039,7 +1040,7 @@ const Home = () => {
                                 <Factory size={22} style={{ color: 'white' }} />
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <h3 style={compactStyles.cardTitle}>Create Token</h3>
+                                <h3 style={{ ...compactStyles.cardTitle, color: '#8b5cf6' }}>Create Token</h3>
                                 <p style={compactStyles.cardDescription}>Launch your own token (0.001 ETH)</p>
                               </div>
                             </div>
@@ -1133,7 +1134,7 @@ const Home = () => {
                               <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#db277722', border: '1px solid #db277744', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <Zap size={18} style={{ color: 'white' }} />
                               </div>
-                              <h3 style={compactStyles.cardTitle}>Fast Deploy</h3>
+                              <h3 style={{ ...compactStyles.cardTitle, color: '#db2777' }}>Fast Deploy</h3>
                               <div style={compactStyles.xpBadge}>850 XP each</div>
                             </>
                           ) : (
@@ -1143,7 +1144,7 @@ const Home = () => {
                                   <Zap size={22} style={{ color: 'white' }} />
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                  <h3 style={compactStyles.cardTitle}>Fast Deploy</h3>
+                                  <h3 style={{ ...compactStyles.cardTitle, color: '#db2777' }}>Fast Deploy</h3>
                                   <p style={compactStyles.cardDescription}>Deploy ERC20 + ERC721 + ERC1155 in one flow</p>
                                 </div>
                               </div>
@@ -1242,7 +1243,7 @@ const Home = () => {
                             <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#f59e0b22', border: '1px solid #f59e0b44', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <MessageSquare size={18} style={{ color: 'white' }} />
                             </div>
-                            <h3 style={compactStyles.cardTitle}>GM</h3>
+                            <h3 style={{ ...compactStyles.cardTitle, color: '#f59e0b' }}>GM</h3>
                             <div style={compactStyles.xpBadge}>150 XP</div>
                           </>
                         ) : (
@@ -1252,7 +1253,7 @@ const Home = () => {
                                 <MessageSquare size={22} style={{ color: 'white' }} />
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <h3 style={compactStyles.cardTitle}>GM</h3>
+                                <h3 style={{ ...compactStyles.cardTitle, color: '#f59e0b' }}>GM</h3>
                                 <p style={compactStyles.cardDescription}>
                                   {isGMGNLoading ? 'Confirm in wallet...' : 'Send a GM message and earn XP'}
                                 </p>
@@ -1301,7 +1302,7 @@ const Home = () => {
                             <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#8b5cf622', border: '1px solid #8b5cf644', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <MessageSquare size={18} style={{ color: 'white' }} />
                             </div>
-                            <h3 style={compactStyles.cardTitle}>GN</h3>
+                            <h3 style={{ ...compactStyles.cardTitle, color: '#8b5cf6' }}>GN</h3>
                             <div style={compactStyles.xpBadge}>150 XP</div>
                           </>
                         ) : (
@@ -1311,7 +1312,7 @@ const Home = () => {
                                 <MessageSquare size={22} style={{ color: 'white' }} />
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <h3 style={compactStyles.cardTitle}>GN</h3>
+                                <h3 style={{ ...compactStyles.cardTitle, color: '#8b5cf6' }}>GN</h3>
                                 <p style={compactStyles.cardDescription}>
                                   {isGMGNLoading ? 'Confirm in wallet...' : 'Send a GN message and earn XP'}
                                 </p>
