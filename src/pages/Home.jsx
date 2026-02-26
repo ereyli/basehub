@@ -176,7 +176,7 @@ const Home = () => {
       gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
       gap: '20px'
     },
-    // Card style — dark with colored tint
+    // Card style — dark with colored tint (renk çizgisi üstte)
     card: (color) => {
       const c = color.startsWith('linear') ? '#3b82f6' : color
       const base = {
@@ -187,11 +187,11 @@ const Home = () => {
         color: 'white',
         transition: 'all 0.25s ease',
         background: `linear-gradient(145deg, ${c}20 0%, ${c}10 30%, rgba(15,23,42,0.97) 70%, rgba(15,23,42,0.98) 100%)`,
-        borderLeft: `3px solid ${c}`,
+        borderTop: `3px solid ${c}`,
         boxShadow: `0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 ${c}15`,
         overflow: 'hidden',
       }
-      if (isCompactMode) return { ...base, padding: '10px 8px', borderRadius: '12px', minHeight: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderLeft: `2px solid ${c}` }
+      if (isCompactMode) return { ...base, padding: '10px 8px', borderRadius: '12px', minHeight: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderTop: `2px solid ${c}` }
       if (isWebMobile) return { ...base, padding: '14px 12px', borderRadius: '14px', minHeight: '100px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }
       return { ...base, padding: '24px', borderRadius: '18px' }
     },
