@@ -54,10 +54,10 @@ const Home = () => {
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
-  const isCompactMode = isInFarcaster && isMobile
+  // Mobil (hem tarayıcı hem miniapp) aynı compact layout ve kart görünümü
+  const isCompactMode = isMobile
   const isWebMobile = isWeb && isMobile
-  // Miniapp (Farcaster + Base app) ağlar bölümü hep aynı: flex wrap (5+2). Sadece web mobil tarayıcıda 2 sütun grid.
-  const networksUseGrid = isWebMobile && !isInFarcaster
+  const networksUseGrid = isWebMobile && !isMobile
   
   // Compact styles: Farcaster mobile (very compact) | Web mobile (2 columns, compact) | Desktop
   const compactStyles = {
@@ -651,9 +651,7 @@ const Home = () => {
       maxWidth: '100vw', 
       overflowX: 'hidden',
       boxSizing: 'border-box',
-      ...(isInFarcaster && typeof window !== 'undefined' && window.innerWidth <= 768 ? { 
-        padding: '12px 12px 80px 12px' 
-      } : {})
+      ...(isCompactMode ? { padding: '12px 12px 80px 12px' } : {})
     }}>
       <EmbedMeta 
         title="BaseHub - Web3 Tools & Interactions"

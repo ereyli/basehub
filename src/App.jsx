@@ -9,9 +9,9 @@ import { FarcasterProvider, useFarcaster } from './contexts/FarcasterContext'
 import { config } from './config/wagmi'
 import { rainbowkitConfig, shouldUseRainbowKit } from './config/rainbowkit'
 import { isLikelyBaseApp } from './utils/xpUtils'
-import FarcasterXPDisplay from './components/FarcasterXPDisplay'
 import FarcasterBottomNav from './components/FarcasterBottomNav'
 import ResponsiveHeader from './components/ResponsiveHeader'
+import WalletConnect from './components/WalletConnect'
 import WebBottomNav from './components/WebBottomNav'
 import Footer from './components/Footer'
 import { OpenInAppProvider } from './contexts/OpenInAppContext'
@@ -315,9 +315,9 @@ function FarcasterAppContent() {
           </div>
         )}
         
-        <FarcasterXPDisplay />
+        <ResponsiveHeader forceMobile customWallet={<WalletConnect />} />
         <OpenInAppProvider>
-        <main className="container farcaster-main" style={{ paddingBottom: '100px' }}>
+        <main className="container farcaster-main" style={{ paddingBottom: '100px', paddingTop: '60px' }}>
           <Suspense fallback={<SkeletonLoader />}>
             <Routes>
               <Route path="/" element={<Home />} />
@@ -362,8 +362,18 @@ function FarcasterAppContent() {
 
 // AppContent component for Web users only
 function WebAppContent() {
-  // Network interceptor - checks network on every render
   useNetworkInterceptor()
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  const mainStyle = isMobile
+    ? { paddingLeft: 0, paddingBottom: '100px', paddingTop: '60px' }
+    : { paddingLeft: '80px', paddingBottom: '40px' }
 
   return (
     <>
@@ -374,9 +384,9 @@ function WebAppContent() {
         <OpenInAppProvider>
         <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <GlobalErrorHandler />
-          <div className="App web-app">
+          <div className={`App web-app ${isMobile ? 'farcaster-app' : ''}`}>
             <ResponsiveHeader />
-            <main className="container" style={{ paddingLeft: '80px', paddingBottom: '40px' }}>
+            <main className="container" style={mainStyle}>
           <Suspense fallback={<SkeletonLoader />}>
             <Routes>
               <Route path="/" element={<Home />} />
@@ -411,7 +421,7 @@ function WebAppContent() {
           </Routes>
           </Suspense>
         </main>
-        <WebBottomNav />
+        {isMobile ? <FarcasterBottomNav /> : <WebBottomNav />}
         <Footer />
       </div>
     </Router>

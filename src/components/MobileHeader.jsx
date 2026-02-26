@@ -11,7 +11,7 @@ import { getXP, getNFTCount } from '../utils/xpUtils'
 import { useSupabase } from '../hooks/useSupabase'
 import { useOpenInApp } from '../contexts/OpenInAppContext'
 
-const MobileHeader = () => {
+const MobileHeader = ({ customWallet }) => {
   const { openModal: openOpenInAppModal } = useOpenInApp()
   const location = useLocation()
   const navigate = useNavigate()
@@ -147,11 +147,13 @@ const MobileHeader = () => {
           <Wallet size={18} />
           <span>Connect Wallet</span>
           <div className="mobile-menu-wallet-btn">
-            <ConnectButton 
-              accountStatus="address"
-              chainStatus="icon"
-              showBalance={false}
-            />
+            {customWallet ?? (
+              <ConnectButton 
+                accountStatus="address"
+                chainStatus="icon"
+                showBalance={false}
+              />
+            )}
           </div>
         </div>
 

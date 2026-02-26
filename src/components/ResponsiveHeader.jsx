@@ -2,23 +2,26 @@ import React from 'react'
 import WebHeader from './WebHeader'
 import MobileHeader from './MobileHeader'
 
-const ResponsiveHeader = () => {
-  const [isMobile, setIsMobile] = React.useState(false)
+const ResponsiveHeader = ({ forceMobile = false, customWallet }) => {
+  const [isMobile, setIsMobile] = React.useState(forceMobile || false)
 
   React.useEffect(() => {
+    if (forceMobile) {
+      setIsMobile(true)
+      return
+    }
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768)
     }
-    
-    // Initial check
     checkMobile()
-    
-    // Listen to resize
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
-  }, [])
+  }, [forceMobile])
 
-  return isMobile ? <MobileHeader /> : <WebHeader />
+  if (forceMobile || isMobile) {
+    return <MobileHeader customWallet={customWallet} />
+  }
+  return <WebHeader />
 }
 
 export default ResponsiveHeader
