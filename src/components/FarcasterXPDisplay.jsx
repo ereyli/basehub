@@ -170,7 +170,17 @@ const FarcasterXPDisplay = () => {
             <Home size={16} />
           </button>
         )}
-        <button className="disconnect-button" onClick={handleDisconnect} title="Disconnect Wallet">
+        <button
+          type="button"
+          className="disconnect-button"
+          title="Disconnect Wallet"
+          aria-label="Disconnect Wallet"
+          onClick={handleDisconnect}
+          onTouchEnd={(e) => {
+            e.preventDefault()
+            handleDisconnect()
+          }}
+        >
           <LogOut size={16} />
         </button>
         <div className="player-info">

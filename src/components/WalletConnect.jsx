@@ -33,10 +33,16 @@ function WalletConnect() {
             <span className="farcaster-badge">Farcaster</span>
           )}
         </div>
-        <button 
-          onClick={() => disconnect()}
+        <button
+          type="button"
           className="disconnect-btn"
           title="Disconnect Wallet"
+          aria-label="Disconnect Wallet"
+          onClick={() => disconnect()}
+          onTouchEnd={(e) => {
+            e.preventDefault()
+            disconnect()
+          }}
         >
           <LogOut size={16} />
         </button>

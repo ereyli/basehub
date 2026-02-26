@@ -8,6 +8,7 @@ import '@rainbow-me/rainbowkit/styles.css'
 import { FarcasterProvider, useFarcaster } from './contexts/FarcasterContext'
 import { config } from './config/wagmi'
 import { rainbowkitConfig, shouldUseRainbowKit } from './config/rainbowkit'
+import { isLikelyBaseApp } from './utils/xpUtils'
 import FarcasterXPDisplay from './components/FarcasterXPDisplay'
 import FarcasterBottomNav from './components/FarcasterBottomNav'
 import ResponsiveHeader from './components/ResponsiveHeader'
@@ -420,17 +421,17 @@ function WebAppContent() {
   )
 }
 
-// Miniapp layout = Farcaster (iframe/URL) OR Base app (mobile WebView). Both get same UI (FarcasterBottomNav).
+// Miniapp layout = sadece Farcaster (iframe/URL) veya Base app (WebView). Mobil tarayıcı (Chrome/Safari) web layout alır.
 function getUseMiniappLayout() {
   if (typeof window === 'undefined') return false
-  const isFarcasterSync = window.location !== window.parent.location ||
+  const isIframeOrFarcasterUrl =
+    window.location !== window.parent.location ||
     window.parent !== window ||
     window.location.href.includes('farcaster.xyz') ||
     window.location.href.includes('warpcast.com')
-  if (isFarcasterSync) return true
-  // Base app opens in mobile WebView (basehub.fun, no iframe) – treat mobile as miniapp so same UI as Farcaster
-  const isMobile = window.innerWidth <= 768 || ('ontouchstart' in window && window.innerWidth < 1024)
-  return isMobile
+  if (isIframeOrFarcasterUrl) return true
+  // Base app: basehub.fun WebView, iframe yok – UA ile tespit et (mobil tarayıcı bu koşula düşmez)
+  return isLikelyBaseApp()
 }
 
 // Main App component with providers

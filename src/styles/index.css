@@ -142,12 +142,18 @@ body {
   justify-content: center;
   width: 32px;
   height: 32px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 6px;
+  box-sizing: border-box;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   color: white;
   cursor: pointer;
   transition: all 0.3s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .disconnect-btn:hover {
@@ -2991,12 +2997,18 @@ textarea {
   justify-content: center;
   width: 36px;
   height: 36px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px;
+  box-sizing: border-box;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 8px;
   color: #ef4444;
   cursor: pointer;
   transition: all 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .disconnect-button:hover {

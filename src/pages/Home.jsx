@@ -405,11 +405,11 @@ const Home = () => {
     }
   }
 
-  // Helper: small inline logos used in category headers
+  // Helper: small inline logos used in category headers (mobilde daha küçük)
   const renderNetworkLogos = (networks) => {
     if (!networks || networks.length === 0) return null
     
-    const size = 20
+    const size = isCompactMode ? 14 : (isWebMobile ? 16 : 20)
     const baseStyle = {
       width: `${size}px`,
       height: `${size}px`,
