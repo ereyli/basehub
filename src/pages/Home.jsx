@@ -1130,45 +1130,43 @@ const Home = () => {
                   {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['deploy', 'deploy-erc721', 'deploy-erc1155']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
-                  {/* Fast Deploy card - same window as others: do not override padding/background so .game-card frame shows */}
-                  {shouldUseRainbowKit() && (
-                    <button
-                      type="button"
-                      onClick={openFastDeployModal}
-                      className="game-card"
-                      style={{ textDecoration: 'none', display: 'block', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                    >
-                      <div style={{ ...compactStyles.card('#db2777'), height: '100%' }}>
-                        <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #db277720 0%, #db27770c 35%, #db277704 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
-                        <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
-                          {isCompactMode ? (
-                            <>
-                              <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#db277722', border: '1px solid #db277744', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Zap size={18} style={{ color: 'white' }} />
+                  {/* Fast Deploy card - shown on web and miniapp (Farcaster) */}
+                  <button
+                    type="button"
+                    onClick={openFastDeployModal}
+                    className="game-card"
+                    style={{ textDecoration: 'none', display: 'block', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                  >
+                    <div style={{ ...compactStyles.card('#db2777'), height: '100%' }}>
+                      <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #db277720 0%, #db27770c 35%, #db277704 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
+                      <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
+                        {isCompactMode ? (
+                          <>
+                            <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#db277722', border: '1px solid #db277744', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Zap size={18} style={{ color: 'white' }} />
+                            </div>
+                            <h3 style={{ ...compactStyles.cardTitle, color: '#db2777' }}>Fast Deploy</h3>
+                            <div style={compactStyles.xpBadge}>850 XP each</div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                              <div style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '12px', background: '#db277722', border: '1px solid #db277744', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Zap size={22} style={{ color: 'white' }} />
                               </div>
-                              <h3 style={{ ...compactStyles.cardTitle, color: '#db2777' }}>Fast Deploy</h3>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <h3 style={{ ...compactStyles.cardTitle, color: '#db2777' }}>Fast Deploy</h3>
+                                <p style={compactStyles.cardDescription}>Deploy ERC20 + ERC721 + ERC1155 in one flow</p>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
                               <div style={compactStyles.xpBadge}>850 XP each</div>
-                            </>
-                          ) : (
-                            <>
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                                <div style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '12px', background: '#db277722', border: '1px solid #db277744', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                  <Zap size={22} style={{ color: 'white' }} />
-                                </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <h3 style={{ ...compactStyles.cardTitle, color: '#db2777' }}>Fast Deploy</h3>
-                                  <p style={compactStyles.cardDescription}>Deploy ERC20 + ERC721 + ERC1155 in one flow</p>
-                                </div>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                                <div style={compactStyles.xpBadge}>850 XP each</div>
-                              </div>
-                            </>
-                          )}
-                        </div>
+                            </div>
+                          </>
+                        )}
                       </div>
-                    </button>
-                  )}
+                    </div>
+                  </button>
                   {games.filter(g => ['deploy', 'deploy-nft', 'deploy-erc721', 'deploy-erc1155'].includes(g.id)).sort((a, b) => {
                     const order = ['deploy', 'deploy-nft', 'deploy-erc721', 'deploy-erc1155'];
                     return order.indexOf(a.id) - order.indexOf(b.id);
