@@ -1,5 +1,5 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { Twitter, ExternalLink, Smartphone } from 'lucide-react'
 import { useOpenInApp } from '../contexts/OpenInAppContext'
 
@@ -8,6 +8,16 @@ const FARCASTER_URL = 'https://farcaster.xyz/miniapps/C1SvS3LVAxSi/basehub'
 
 const Footer = () => {
   const { openModal: openOpenInAppModal } = useOpenInApp()
+  const location = useLocation()
+  const [homeScrollTo, setHomeScrollTo] = React.useState(null)
+  React.useEffect(() => {
+    if (typeof sessionStorage !== 'undefined' && location.pathname !== '/') {
+      setHomeScrollTo(sessionStorage.getItem('homeScrollSection'))
+    } else {
+      setHomeScrollTo(null)
+    }
+  }, [location.pathname])
+  const homeState = homeScrollTo ? { state: { scrollTo: homeScrollTo } } : {}
   // Check if we're in Farcaster environment (safe check without hook)
   const isInFarcaster = typeof window !== 'undefined' && 
     (window.location !== window.parent.location ||
@@ -34,7 +44,7 @@ const Footer = () => {
           <div className="footer-links">
             <div className="footer-link-group">
               <h4 className="footer-link-title">Platform</h4>
-              <Link to="/" className="footer-link">Home</Link>
+              <Link to="/" className="footer-link" {...homeState}>Home</Link>
               <Link to="/leaderboard" className="footer-link">Leaderboard</Link>
               <a 
                 href="https://x.com/BaseHubb" 

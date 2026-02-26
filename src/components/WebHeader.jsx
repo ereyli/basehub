@@ -29,6 +29,15 @@ const WebHeader = () => {
   const { supabase } = useSupabase()
   const { sendGMTransaction, sendGNTransaction } = useTransactions()
   const [isScrolled, setIsScrolled] = React.useState(false)
+  const [homeScrollTo, setHomeScrollTo] = React.useState(null)
+  React.useEffect(() => {
+    if (typeof sessionStorage !== 'undefined' && location.pathname !== '/') {
+      setHomeScrollTo(sessionStorage.getItem('homeScrollSection'))
+    } else {
+      setHomeScrollTo(null)
+    }
+  }, [location.pathname])
+  const homeState = homeScrollTo ? { state: { scrollTo: homeScrollTo } } : {}
   const [totalXP, setTotalXP] = React.useState(0)
   const [nftCount, setNftCount] = React.useState(0)
   const [multiplier, setMultiplier] = React.useState(1)
@@ -179,7 +188,7 @@ const WebHeader = () => {
     <header className={`web-header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="header-container">
         <div className="header-content">
-          <Link to="/" className="logo-section">
+          <Link to="/" className="logo-section" {...homeState}>
             <div className="header-logo-wrap">
               <img src="/icon.png" alt="BaseHub" className="header-logo-img" />
             </div>

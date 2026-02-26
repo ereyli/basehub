@@ -2120,7 +2120,7 @@ export default function SwapInterface() {
   }
 
   return (
-    <div style={styles.pageContainer}>
+    <div style={{ ...styles.pageContainer, ...(isMobile ? { minHeight: 'auto' } : {}) }}>
       {/* Header */}
       <header style={getStyle(styles.header, mobileOverrides.header)}>
         <div style={getStyle(styles.headerLeft, mobileOverrides.headerLeft)}>

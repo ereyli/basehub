@@ -10,6 +10,7 @@ import { config } from './config/wagmi'
 import { rainbowkitConfig, shouldUseRainbowKit } from './config/rainbowkit'
 import { isLikelyBaseApp } from './utils/xpUtils'
 import FarcasterBottomNav from './components/FarcasterBottomNav'
+import HomeScrollManager from './components/HomeScrollManager'
 import ResponsiveHeader from './components/ResponsiveHeader'
 import WalletConnect from './components/WalletConnect'
 import WebBottomNav from './components/WebBottomNav'
@@ -217,6 +218,7 @@ function FarcasterAppContent() {
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <GlobalErrorHandler />
+      <HomeScrollManager />
       <div className="App farcaster-app">
         {/* Loading overlay - show only, do not block Router */}
         {(!isInitialized || !isReady) && (
@@ -384,6 +386,7 @@ function WebAppContent() {
         <OpenInAppProvider>
         <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <GlobalErrorHandler />
+          <HomeScrollManager />
           <div className={`App web-app ${isMobile ? 'farcaster-app' : ''}`}>
             <ResponsiveHeader />
             <main className="container" style={mainStyle}>

@@ -2,13 +2,20 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 
+const HOME_SCROLL_KEY = 'homeScrollSection'
+
 const BackButton = ({ style = {} }) => {
   const navigate = useNavigate()
+
+  const goHome = () => {
+    const scrollTo = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(HOME_SCROLL_KEY) : null
+    navigate('/', scrollTo ? { state: { scrollTo } } : {})
+  }
 
   return (
     <button 
       className="back-button"
-      onClick={() => navigate('/')}
+      onClick={goHome}
       style={{
         background: 'rgba(255, 255, 255, 0.05)',
         border: '1px solid rgba(255, 255, 255, 0.08)',

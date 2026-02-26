@@ -50,12 +50,22 @@ const Header = () => {
 
   const isOnBaseNetwork = chainId === baseConfig.chainId
 
+  const [homeScrollTo, setHomeScrollTo] = useState(null)
+  useEffect(() => {
+    if (typeof sessionStorage !== 'undefined' && location.pathname !== '/') {
+      setHomeScrollTo(sessionStorage.getItem('homeScrollSection'))
+    } else {
+      setHomeScrollTo(null)
+    }
+  }, [location.pathname])
+  const homeState = homeScrollTo ? { state: { scrollTo: homeScrollTo } } : {}
+
   return (
     <header className={`modern-header ${isScrolled ? 'hidden' : ''}`}>
       <div className="header-container">
         <div className="header-content">
           {/* Logo Section */}
-          <Link to="/" className="logo-section">
+          <Link to="/" className="logo-section" {...homeState}>
             <div className="header-logo-wrap">
               <img src="/icon.png" alt="BaseHub" className="header-logo-img" />
             </div>
@@ -73,7 +83,7 @@ const Header = () => {
             </div>
 
             {location.pathname !== '/' && (
-              <Link to="/" className="nav-button">
+              <Link to="/" className="nav-button" {...homeState}>
                 <Home size={16} />
                 <span>Home</span>
               </Link>

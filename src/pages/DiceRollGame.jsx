@@ -5,6 +5,7 @@ import { useSupabase } from '../hooks/useSupabase'
 // Quest system is now handled in useTransactions hook
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
+import GamingShortcuts from '../components/GamingShortcuts'
 import ShareButton from '../components/ShareButton'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { Dice6, Send, Star, CheckCircle, ExternalLink, Coins, TrendingUp, TrendingDown, Play } from 'lucide-react'
@@ -172,6 +173,7 @@ const DiceRollGame = () => {
     return (
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 12px' }}>
         <BackButton />
+        <GamingShortcuts />
         <div style={{ textAlign: 'center', padding: '60px 20px', background: 'linear-gradient(180deg, rgba(16,185,129,0.08) 0%, transparent 100%)', borderRadius: 24, border: '1px solid rgba(16,185,129,0.15)' }}>
           <div style={{ fontSize: 72, marginBottom: 16, animation: 'shakeDice 2s ease-in-out infinite' }}>🎲</div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 8, color: '#34d399', letterSpacing: '-0.02em' }}>DICE ROLL</h2>
@@ -191,6 +193,7 @@ const DiceRollGame = () => {
         image="/image.svg"
       />
       <BackButton />
+      <GamingShortcuts />
 
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 20 }}>

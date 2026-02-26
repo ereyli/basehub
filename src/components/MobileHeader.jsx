@@ -22,6 +22,15 @@ const MobileHeader = ({ customWallet }) => {
   const [nftCount, setNftCount] = React.useState(0)
   const [multiplier, setMultiplier] = React.useState(1)
   const [menuOpen, setMenuOpen] = React.useState(false)
+  const [homeScrollTo, setHomeScrollTo] = React.useState(null)
+  React.useEffect(() => {
+    if (typeof sessionStorage !== 'undefined' && location.pathname !== '/') {
+      setHomeScrollTo(sessionStorage.getItem('homeScrollSection'))
+    } else {
+      setHomeScrollTo(null)
+    }
+  }, [location.pathname])
+  const homeState = homeScrollTo ? { state: { scrollTo: homeScrollTo } } : {}
 
   // Close menu when route changes
   React.useEffect(() => {
@@ -92,7 +101,7 @@ const MobileHeader = ({ customWallet }) => {
     <>
       <header className="mobile-header">
         {/* Left: Logo + Title */}
-        <Link to="/" className="mobile-header-brand">
+        <Link to="/" className="mobile-header-brand" {...homeState}>
           <img src="/icon.png" alt="BaseHub" className="mobile-header-logo" />
           <div className="mobile-header-title">
             <span className="mobile-header-name">BASEHUB</span>

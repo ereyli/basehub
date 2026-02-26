@@ -4,6 +4,7 @@ import { useTransactions } from '../hooks/useTransactions'
 import { useSupabase } from '../hooks/useSupabase'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
+import GamingShortcuts from '../components/GamingShortcuts'
 import ShareButton from '../components/ShareButton'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { NETWORKS, getContractAddressByNetwork } from '../config/networks'
@@ -201,6 +202,7 @@ const SlotGame = () => {
       <div style={containerStyle}>
         <div style={innerStyle}>
           <BackButton />
+          <GamingShortcuts />
           <div style={{ background: cardBg, border: cardBorder, borderRadius: 20, padding: 48, textAlign: 'center' }}>
             <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
               <Gift size={26} color="#f87171" />
@@ -222,6 +224,7 @@ const SlotGame = () => {
 
       <div style={{ ...innerStyle, zIndex: 1 }}>
         <BackButton />
+        <GamingShortcuts />
 
         {/* ── Header ── */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: isMobile ? 20 : 28, flexWrap: 'wrap' }}>

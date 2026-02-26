@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAccount, useChainId } from 'wagmi'
 import { useRainbowKitSwitchChain } from '../hooks/useRainbowKitSwitchChain'
 import { getLeaderboard } from '../utils/xpUtils'
@@ -18,9 +18,19 @@ import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, 
 const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Search, Shield, Trash2, Star, Layers, Package, Factory, Rocket, Image, Sparkles, ArrowLeftRight, Repeat, Zap, Users, LayoutGrid }
 
 const Home = () => {
+  const location = useLocation()
   const { isConnected } = useAccount()
   const chainId = useChainId()
   const { switchChain } = useRainbowKitSwitchChain()
+
+  // Scroll to section when returning from a subpage (e.g. Home button with scrollTo state)
+  useEffect(() => {
+    const scrollTo = location.state?.scrollTo
+    if (scrollTo && typeof document !== 'undefined') {
+      const el = document.getElementById(scrollTo)
+      if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
+    }
+  }, [location.state?.scrollTo])
   const { openModal: openFastDeployModal } = useFastDeployModal()
   
   // x402 Payment hook - uses x402-fetch (handles wallet UI automatically)
@@ -490,8 +500,8 @@ const Home = () => {
     }
   }
 
-  // Render a compact card for Farcaster mobile
-  const renderCompactCard = (game, onClick = null, linkTo = null) => {
+  // Render a compact card for Farcaster mobile. sectionId: when linking from Home, pass so we can scroll back to that section.
+  const renderCompactCard = (game, onClick = null, linkTo = null, sectionId = null) => {
     const titleColor = game.color?.startsWith?.('linear') ? '#3b82f6' : (game.color || '#e5e7eb')
     const iconWrapStyle = isCompactMode ? {
       flexShrink: 0,
@@ -575,12 +585,14 @@ const Home = () => {
     )
 
     if (linkTo) {
+      const linkState = sectionId ? { state: { fromHomeSection: sectionId } } : {}
       return (
         <Link
           key={game.id}
           to={linkTo}
           className="game-card"
           style={{ textDecoration: 'none', display: 'block' }}
+          {...linkState}
         >
           <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
             {glowOverlay}
@@ -607,8 +619,8 @@ const Home = () => {
     )
   }
 
-  // Render a category section
-  const renderCategory = (title, shortTitle, icon, iconColor, games, borderColor = 'rgba(59, 130, 246, 0.2)', networks = []) => {
+  // Render a category section. sectionId: optional id for scroll-into-view when returning from subpage.
+  const renderCategory = (title, shortTitle, icon, iconColor, games, borderColor = 'rgba(59, 130, 246, 0.2)', networks = [], sectionId = null) => {
     const categoryIconBoxStyle = {
       ...compactStyles.categoryIconBox,
       background: `rgba(${iconColor}, 0.15)`,
@@ -617,7 +629,7 @@ const Home = () => {
     }
 
     return (
-      <div style={{ ...compactStyles.categoryContainer, border: `1px solid ${borderColor}` }}>
+      <div id={sectionId || undefined} style={{ ...compactStyles.categoryContainer, border: `1px solid ${borderColor}` }}>
         <div style={compactStyles.categoryHeader}>
           <div style={categoryIconBoxStyle}>
             {icon}
@@ -863,7 +875,7 @@ const Home = () => {
           {true ? (
             <div style={compactStyles.mainLayoutGap}>
               {/* 1. Early Access NFT Category */}
-              <div style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(245, 158, 11, 0.12)` }}>
+              <div id="early-access" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(245, 158, 11, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b' }}>
                     <Rocket size={compactStyles.iconSize} />
@@ -887,7 +899,7 @@ const Home = () => {
                   {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['early-access', 'nft-wheel']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
-                  <Link to="/early-access" className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
+                  <Link to="/early-access" className="game-card" style={{ textDecoration: 'none', display: 'block' }} state={{ fromHomeSection: 'early-access' }}>
                     <div style={{ ...compactStyles.card('#f59e0b'), height: '100%' }}>
                       <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #f59e0b20 0%, #f59e0b0c 35%, #f59e0b04 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
                       <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
@@ -919,7 +931,7 @@ const Home = () => {
                       </div>
                     </div>
                   </Link>
-                  <Link to="/nft-wheel" className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
+                  <Link to="/nft-wheel" className="game-card" style={{ textDecoration: 'none', display: 'block' }} state={{ fromHomeSection: 'early-access' }}>
                     <div style={{ ...compactStyles.card('#8b5cf6'), height: '100%' }}>
                       <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #8b5cf620 0%, #8b5cf60c 35%, #8b5cf604 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
                       <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
@@ -955,7 +967,7 @@ const Home = () => {
               </div>
 
               {/* 2. DEX Aggregator Category */}
-              <div style={compactStyles.categoryContainer}>
+              <div id="dex" style={compactStyles.categoryContainer}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={compactStyles.categoryIconBox}>
                     <Repeat size={compactStyles.iconSize} />
@@ -967,13 +979,13 @@ const Home = () => {
                 </div>
                 <div style={compactStyles.cardGrid}>
                   {games.filter(g => g.id === 'swap').map((game) =>
-                    renderCompactCard(game, null, game.path)
+                    renderCompactCard(game, null, game.path, 'dex')
                   )}
                 </div>
               </div>
 
               {/* 3. PumpHub - Token Launchpad Category (same window style as NFT/PREDICTION) */}
-              <div style={{ 
+              <div id="pumphub" style={{ 
                 ...compactStyles.categoryContainer, 
                 border: `1px solid rgba(0, 212, 255, 0.12)`
               }}>
@@ -990,7 +1002,7 @@ const Home = () => {
                   </p>
                 )}
                 <div style={compactStyles.cardGrid}>
-                  <Link to="/pumphub" className="game-card" style={{ textDecoration: 'none', display: 'block', position: 'relative' }}>
+                  <Link to="/pumphub" className="game-card" style={{ textDecoration: 'none', display: 'block', position: 'relative' }} state={{ fromHomeSection: 'pumphub' }}>
                     <div style={{ ...compactStyles.card('#00d4ff'), height: '100%' }}>
                       <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #00d4ff20 0%, #00d4ff0c 35%, #00d4ff04 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
                       <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
@@ -1021,7 +1033,7 @@ const Home = () => {
                       </div>
                     </div>
                   </Link>
-                  <Link to="/pumphub?tab=create" className="game-card" style={{ textDecoration: 'none', display: 'block', position: 'relative' }}>
+                  <Link to="/pumphub?tab=create" className="game-card" style={{ textDecoration: 'none', display: 'block', position: 'relative' }} state={{ fromHomeSection: 'pumphub' }}>
                     <div style={{ ...compactStyles.card('#8b5cf6'), height: '100%' }}>
                       <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #8b5cf620 0%, #8b5cf60c 35%, #8b5cf604 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
                       <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
@@ -1064,7 +1076,7 @@ const Home = () => {
               </div>
 
               {/* NFT Category - moved up for visibility */}
-              <div style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(59, 130, 246, 0.12)` }}>
+              <div id="nft" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(59, 130, 246, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.3)', color: '#3b82f6' }}>
                     <Image size={compactStyles.iconSize} />
@@ -1074,13 +1086,13 @@ const Home = () => {
                 </div>
                 <div style={compactStyles.cardGrid}>
                   {games.filter(g => ['nft-launchpad', 'nft-launchpad-explore'].includes(g.id)).map((game) =>
-                    renderCompactCard(game, null, game.path)
+                    renderCompactCard(game, null, game.path, 'nft')
                   )}
                 </div>
               </div>
 
               {/* 5. Prediction Category (under NFT) */}
-              <div style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(20, 184, 166, 0.12)` }}>
+              <div id="prediction" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(20, 184, 166, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(20, 184, 166, 0.15)', border: '1px solid rgba(20, 184, 166, 0.3)', color: '#14b8a6' }}>
                     <Users size={compactStyles.iconSize} />
@@ -1103,13 +1115,13 @@ const Home = () => {
                 </div>
                 <div style={compactStyles.cardGrid}>
                   {games.filter(g => g.id === 'prediction-arena').map((game) =>
-                    renderCompactCard(game, null, game.path)
+                    renderCompactCard(game, null, game.path, 'prediction')
                   )}
                 </div>
               </div>
 
               {/* DEPLOY Category */}
-              <div style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(59, 130, 246, 0.12)` }}>
+              <div id="deploy" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(59, 130, 246, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.3)', color: '#3b82f6' }}>
                     <Rocket size={compactStyles.iconSize} />
@@ -1161,13 +1173,13 @@ const Home = () => {
                     const order = ['deploy', 'deploy-nft', 'deploy-erc721', 'deploy-erc1155'];
                     return order.indexOf(a.id) - order.indexOf(b.id);
                   }).map((game) =>
-                    renderCompactCard(game, null, game.path)
+                    renderCompactCard(game, null, game.path, 'deploy')
                   )}
                 </div>
               </div>
 
               {/* ANALYSIS Category */}
-              <div style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(139, 92, 246, 0.12)` }}>
+              <div id="analysis" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(139, 92, 246, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(139, 92, 246, 0.15)', border: '1px solid rgba(139, 92, 246, 0.3)', color: '#8b5cf6' }}>
                     <TrendingUp size={compactStyles.iconSize} />
@@ -1177,13 +1189,13 @@ const Home = () => {
                 </div>
                 <div style={compactStyles.cardGrid}>
                   {games.filter(g => ['wallet-analysis', 'contract-security', 'allowance-cleaner'].includes(g.id)).map((game) =>
-                    renderCompactCard(game, null, game.path)
+                    renderCompactCard(game, null, game.path, 'analysis')
                   )}
                 </div>
               </div>
 
               {/* SOCIAL Category */}
-              <div style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(245, 158, 11, 0.12)` }}>
+              <div id="social" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(245, 158, 11, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b' }}>
                     <Users size={compactStyles.iconSize} />
@@ -1193,13 +1205,13 @@ const Home = () => {
                 </div>
                 <div style={compactStyles.cardGrid}>
                   {games.filter(g => ['featured-profiles'].includes(g.id)).map((game) =>
-                    renderCompactCard(game, null, game.path)
+                    renderCompactCard(game, null, game.path, 'social')
                   )}
                 </div>
               </div>
 
               {/* GM & GN Category */}
-              <div style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(34, 197, 94, 0.12)` }}>
+              <div id="gm-gn" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(34, 197, 94, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)', color: '#22c55e' }}>
                     <MessageSquare size={compactStyles.iconSize} />
@@ -1340,7 +1352,7 @@ const Home = () => {
                 </div>
                 <div style={compactStyles.cardGrid}>
                   {games.filter(g => ['flip', 'dice', 'slot', 'lucky'].includes(g.id)).map((game) =>
-                    renderCompactCard(game, null, game.path)
+                    renderCompactCard(game, null, game.path, 'gaming')
                   )}
                 </div>
               </div>

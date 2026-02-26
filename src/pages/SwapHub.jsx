@@ -107,10 +107,10 @@ export default function SwapHub() {
 
   const styles = {
     container: {
-      minHeight: '100vh',
+      minHeight: isMobile ? 'auto' : '100vh',
       background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1e3a8a 100%)',
       paddingTop: isMobile ? '60px' : '0',
-      paddingBottom: isMobile ? '120px' : '20px'
+      paddingBottom: isMobile ? '100px' : '20px'
     },
     content: {
       maxWidth: '1400px',
@@ -140,7 +140,7 @@ export default function SwapHub() {
       display: 'grid',
       gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
       gap: isMobile ? '12px' : '24px',
-      marginBottom: '24px'
+      marginBottom: isMobile ? '0' : '24px'
     },
     swapCard: {
       backgroundColor: 'rgba(30, 41, 59, 0.6)',
@@ -157,7 +157,7 @@ export default function SwapHub() {
       backdropFilter: 'blur(10px)',
       display: 'flex',
       flexDirection: 'column',
-      minHeight: isMobile ? '350px' : 'auto'
+      minHeight: isMobile ? 'auto' : 'auto'
     },
     activityCard: {
       backgroundColor: 'rgba(30, 41, 59, 0.6)',
@@ -378,6 +378,14 @@ export default function SwapHub() {
                 )}
               </SwapErrorBoundary>
             </div>
+            {/* Mobilde XP Rewards Program (StatsPanel) swap penceresinin hemen altında */}
+            {isMobile && (
+              <div style={styles.statsCard}>
+                <SwapErrorBoundary>
+                  <StatsPanel isMobile={isMobile} />
+                </SwapErrorBoundary>
+              </div>
+            )}
             <div style={styles.activityCard}>
               <SwapErrorBoundary>
                 <SwapHubActivity isMobile={isMobile} />
@@ -385,11 +393,14 @@ export default function SwapHub() {
             </div>
           </div>
 
-          <div style={styles.statsCard}>
-            <SwapErrorBoundary>
-              <StatsPanel isMobile={isMobile} />
-            </SwapErrorBoundary>
-          </div>
+          {/* Desktop: StatsPanel sağ kolonda */}
+          {!isMobile && (
+            <div style={styles.statsCard}>
+              <SwapErrorBoundary>
+                <StatsPanel isMobile={isMobile} />
+              </SwapErrorBoundary>
+            </div>
+          )}
         </div>
       </div>
     </div>
