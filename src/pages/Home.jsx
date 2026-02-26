@@ -698,14 +698,19 @@ const Home = () => {
                 ...(NETWORKS.ARC_RESTNET ? [{ key: 'ARC', label: 'Arc Testnet', logo: '/arc-testnet-logo.jpg', chainId: NETWORKS.ARC_RESTNET.chainId }] : []),
                 ...(NETWORKS.ROBINHOOD_TESTNET ? [{ key: 'RH', label: 'Robinhood Testnet', logo: '/robinhood-testnet-logo.png', chainId: NETWORKS.ROBINHOOD_TESTNET.chainId }] : []),
               ].map((net) => {
-                const isActive = chainId === net.chainId
+                // Miniapp: sadece Base kullanılır, geçiş yok; Base seçili görünsün, diğerlerine tıklanınca tepki verme
+                const isActive = isInFarcaster
+                  ? net.chainId === NETWORKS.BASE.chainId
+                  : chainId === net.chainId
                 const logoSize = isCompactMode ? 24 : networksUseGrid ? 28 : 40
                 const showLabel = !isCompactMode
+                const isMiniappNoSwitch = isInFarcaster
                 return (
                   <button
                     key={net.key}
                     type="button"
                     onClick={async () => {
+                      if (isMiniappNoSwitch) return
                       try {
                         await switchChain({ chainId: net.chainId })
                       } catch (err) {
@@ -722,7 +727,7 @@ const Home = () => {
                       display: 'flex',
                       alignItems: 'center',
                       gap: isCompactMode ? '4px' : networksUseGrid ? '8px' : '10px',
-                      cursor: 'pointer',
+                      cursor: isMiniappNoSwitch ? 'default' : 'pointer',
                       boxShadow: isActive 
                         ? '0 4px 12px rgba(59,130,246,0.25)'
                         : '0 2px 8px rgba(15,23,42,0.6)',
