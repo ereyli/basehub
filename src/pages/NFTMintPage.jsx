@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useAccount, usePublicClient, useChainId } from 'wagmi'
+import { useAccount, usePublicClient, useChainId, useSwitchChain } from 'wagmi'
 import { formatEther } from 'viem'
-import { Package, ExternalLink, AlertCircle, CheckCircle, ArrowLeft, Minus, Plus, Copy, Zap, Users, Share2 } from 'lucide-react'
+import { Package, ExternalLink, AlertCircle, CheckCircle, ArrowLeft, Minus, Plus, Copy, Zap, Users, Share2, Wifi } from 'lucide-react'
 import NetworkGuard from '../components/NetworkGuard'
 import { useNFTMint } from '../hooks/useNFTMint'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { getFarcasterUniversalLink } from '../config/farcaster'
 import { supabase } from '../config/supabase'
-import { getAddressExplorerUrl, getCollectionMarketUrl, getTransactionExplorerUrl, NETWORKS } from '../config/networks'
+import { getAddressExplorerUrl, getCollectionMarketUrl, getTransactionExplorerUrl, getNetworkConfig, NETWORKS } from '../config/networks'
 import { NFT_LAUNCH_COLLECTION_ABI } from '../config/nftCollection'
 
 const SHARE_BASE_URL = 'https://basehub.fun'
@@ -37,6 +37,7 @@ export default function NFTMintPage() {
   const { slug } = useParams()
   const navigate = useNavigate()
   const chainId = useChainId()
+  const { switchChain } = useSwitchChain()
   const { address, isConnected } = useAccount()
 
   const [collection, setCollection] = useState(null)
@@ -189,10 +190,15 @@ export default function NFTMintPage() {
   const totalCostWei = mintPrice * BigInt(quantity)
   const totalCostEth = formatEther(totalCostWei)
   const mintPriceEth = formatEther(mintPrice)
+  const collectionChainId = collection?.chain_id != null ? Number(collection.chain_id) : null
+  const isWrongNetwork = collectionChainId != null && (chainId == null || Number(chainId) !== collectionChainId)
+  const collectionNetwork = collectionChainId != null ? getNetworkConfig(collectionChainId) : null
+  const collectionNetworkName = collectionNetwork?.chainName ?? 'this network'
+
   const minted = Number(totalSupply)
   const max = Number(maxSupply)
   const pct = max > 0 ? Math.min(100, Math.round((minted / max) * 100)) : 0
-  const isSoldOut = minted >= max
+  const isSoldOut = !isWrongNetwork && minted >= max
 
   if (loading) {
     return (
@@ -238,6 +244,56 @@ export default function NFTMintPage() {
         >
           <ArrowLeft size={16} /> Back to Collection
         </button>
+
+        {isWrongNetwork && (
+          <div
+            style={{
+              marginBottom: '24px',
+              padding: '16px 20px',
+              background: 'rgba(245, 158, 11, 0.12)',
+              border: '1px solid rgba(245, 158, 11, 0.35)',
+              borderRadius: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 200px' }}>
+              <Wifi size={24} style={{ color: '#f59e0b', flexShrink: 0 }} />
+              <div>
+                <div style={{ fontWeight: '600', color: '#fbbf24', marginBottom: '2px' }}>
+                  This collection is on {collectionNetworkName}
+                </div>
+                <div style={{ fontSize: '13px', color: '#94a3b8' }}>
+                  {isConnected
+                    ? `Switch your wallet to ${collectionNetworkName} to view supply and mint.`
+                    : `Connect your wallet and switch to ${collectionNetworkName} to mint.`}
+                </div>
+              </div>
+            </div>
+            {isConnected && (
+              <button
+                type="button"
+                onClick={() => switchChain({ chainId: collectionChainId })}
+                style={{
+                  padding: '10px 20px',
+                  background: 'rgba(245, 158, 11, 0.2)',
+                  border: '1px solid rgba(245, 158, 11, 0.4)',
+                  borderRadius: '10px',
+                  color: '#fbbf24',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Switch to {collectionNetworkName}
+              </button>
+            )}
+          </div>
+        )}
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'flex-start' }}>
           {/* Left: Image + Mint card */}
@@ -290,16 +346,20 @@ export default function NFTMintPage() {
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: '80px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
                     <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>Price</div>
-                    <div style={{ fontSize: '18px', fontWeight: '700', color: '#e5e7eb' }}>{isReadingChain ? '...' : (mintPrice === 0n ? 'Free' : `${mintPriceEth} ETH`)}</div>
+                    <div style={{ fontSize: '18px', fontWeight: '700', color: '#e5e7eb' }}>
+                      {isWrongNetwork ? '—' : isReadingChain ? '...' : (mintPrice === 0n ? 'Free' : `${mintPriceEth} ETH`)}
+                    </div>
                   </div>
                   <div style={{ flex: 1, minWidth: '80px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
                     <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>Minted so far</div>
-                    <div style={{ fontSize: '18px', fontWeight: '700', color: '#e5e7eb' }}>{isReadingChain ? '...' : `${minted}/${max}`}</div>
+                    <div style={{ fontSize: '18px', fontWeight: '700', color: '#e5e7eb' }}>
+                      {isWrongNetwork ? '—' : isReadingChain ? '...' : `${minted}/${max}`}
+                    </div>
                   </div>
                   <div style={{ flex: 1, minWidth: '80px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
                     <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>Status</div>
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: isSoldOut ? '#f87171' : saleActive ? '#22c55e' : '#f59e0b' }}>
-                      {isReadingChain ? '...' : isSoldOut ? 'Sold Out' : saleActive ? 'Live' : 'Paused'}
+                    <div style={{ fontSize: '14px', fontWeight: '600', color: isWrongNetwork ? '#f59e0b' : isSoldOut ? '#f87171' : saleActive ? '#22c55e' : '#f59e0b' }}>
+                      {isWrongNetwork ? `Switch to ${collectionNetworkName}` : isReadingChain ? '...' : isSoldOut ? 'Sold Out' : saleActive ? 'Live' : 'Paused'}
                     </div>
                   </div>
                 </div>
@@ -307,11 +367,11 @@ export default function NFTMintPage() {
                 <div style={{ marginBottom: '20px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>
                     <span>Progress</span>
-                    <span>{minted} / {max} minted so far · {pct}%</span>
+                    <span>{isWrongNetwork ? 'Switch network to view supply' : `${minted} / ${max} minted so far · ${pct}%`}</span>
                   </div>
                   <div style={{ height: '8px', background: 'rgba(55, 65, 81, 0.8)', borderRadius: '4px', overflow: 'hidden' }}>
                     <div style={{
-                      width: `${pct}%`, height: '100%',
+                      width: `${isWrongNetwork ? 0 : pct}%`, height: '100%',
                       background: isSoldOut ? '#f87171' : 'linear-gradient(90deg, #3b82f6, #60a5fa)',
                       borderRadius: '4px', transition: 'width 0.5s',
                     }} />
@@ -365,7 +425,28 @@ export default function NFTMintPage() {
                   </div>
                 )}
 
-                {!isSoldOut && saleActive && !isReadingChain && (
+                {isWrongNetwork && isConnected && (
+                  <div style={{ textAlign: 'center', padding: '16px' }}>
+                    <button
+                      type="button"
+                      onClick={() => switchChain({ chainId: collectionChainId })}
+                      style={{
+                        width: '100%', padding: '16px',
+                        background: 'rgba(245, 158, 11, 0.2)',
+                        border: '1px solid rgba(245, 158, 11, 0.4)',
+                        borderRadius: '14px',
+                        color: '#fbbf24',
+                        fontSize: '16px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Switch to {collectionNetworkName} to mint
+                    </button>
+                  </div>
+                )}
+
+                {!isWrongNetwork && !isSoldOut && saleActive && !isReadingChain && (
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '16px' }}>
                       <button
@@ -409,10 +490,10 @@ export default function NFTMintPage() {
                   </div>
                 )}
 
-                {!isReadingChain && isSoldOut && (
+                {!isWrongNetwork && !isReadingChain && isSoldOut && (
                   <div style={{ textAlign: 'center', padding: '16px', color: '#f87171', fontSize: '16px', fontWeight: '600' }}>Sold Out</div>
                 )}
-                {!isReadingChain && !saleActive && !isSoldOut && (
+                {!isWrongNetwork && !isReadingChain && !saleActive && !isSoldOut && (
                   <div style={{ textAlign: 'center', padding: '16px', color: '#f59e0b', fontSize: '16px', fontWeight: '600' }}>Sale is currently paused</div>
                 )}
 
