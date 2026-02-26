@@ -1036,8 +1036,8 @@ const PredictionArena = () => {
       type="button"
       onClick={() => setMarketView(id)}
       style={{
-        border: '1px solid #374151',
-        background: marketView === id ? 'rgba(59,130,246,0.2)' : '#111827',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        background: marketView === id ? 'rgba(59,130,246,0.2)' : 'rgba(30, 41, 59, 0.6)',
         color: marketView === id ? '#bfdbfe' : '#9ca3af',
         borderRadius: '8px',
         padding: '8px 12px',
@@ -1054,8 +1054,8 @@ const PredictionArena = () => {
       type="button"
       onClick={() => setMarketSort(id)}
       style={{
-        border: '1px solid #374151',
-        background: marketSort === id ? 'rgba(34,197,94,0.15)' : '#111827',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        background: marketSort === id ? 'rgba(34,197,94,0.15)' : 'rgba(30, 41, 59, 0.6)',
         color: marketSort === id ? '#bbf7d0' : '#9ca3af',
         borderRadius: '8px',
         padding: '7px 11px',
@@ -1285,10 +1285,10 @@ const PredictionArena = () => {
               onChange={(e) => setBetInputs((prev) => ({ ...prev, [market.id]: e.target.value }))}
               style={{
                 flex: 1,
-                background: '#111827',
-                border: '1px solid #374151',
-                color: '#f3f4f6',
-                borderRadius: '8px',
+                background: 'rgba(30, 41, 59, 0.6)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                color: '#e2e8f0',
+                borderRadius: '12px',
                 padding: '10px',
               }}
             />
@@ -1296,7 +1296,7 @@ const PredictionArena = () => {
               type="button"
               onClick={() => handleBet(market.id, true)}
               disabled={isBusy}
-              style={{ border: 'none', background: '#059669', color: 'white', borderRadius: '8px', padding: '0 14px', fontWeight: 700, cursor: 'pointer' }}
+              style={{ border: '1px solid rgba(16, 185, 129, 0.3)', background: 'rgba(5, 150, 105, 0.15)', color: '#34d399', borderRadius: '10px', padding: '0 14px', fontWeight: 700, cursor: 'pointer' }}
             >
               YES
             </button>
@@ -1304,7 +1304,7 @@ const PredictionArena = () => {
               type="button"
               onClick={() => handleBet(market.id, false)}
               disabled={isBusy}
-              style={{ border: 'none', background: '#dc2626', color: 'white', borderRadius: '8px', padding: '0 14px', fontWeight: 700, cursor: 'pointer' }}
+              style={{ border: '1px solid rgba(239, 68, 68, 0.3)', background: 'rgba(220, 38, 38, 0.15)', color: '#f87171', borderRadius: '10px', padding: '0 14px', fontWeight: 700, cursor: 'pointer' }}
             >
               NO
             </button>
@@ -1335,7 +1335,7 @@ const PredictionArena = () => {
               disabled={!canClaim}
               style={{
                 border: 'none',
-                background: canClaim ? '#7c3aed' : '#374151',
+                background: canClaim ? '#7c3aed' : 'rgba(255, 255, 255, 0.08)',
                 color: canClaim ? 'white' : '#cbd5e1',
                 borderRadius: '8px',
                 padding: '9px 12px',
@@ -1462,7 +1462,7 @@ const PredictionArena = () => {
                 onClick={() => setActiveTab('markets')}
                 style={{
                   border: '1px solid #334155',
-                  background: '#111827',
+                  background: 'rgba(30, 41, 59, 0.6)',
                   color: '#cbd5e1',
                   borderRadius: '8px',
                   padding: '7px 10px',
@@ -1483,10 +1483,10 @@ const PredictionArena = () => {
               maxLength={200}
               style={{
                 width: '100%',
-                background: '#111827',
-                border: '1px solid #374151',
-                color: '#f3f4f6',
-                borderRadius: '10px',
+                background: 'rgba(30, 41, 59, 0.6)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                color: '#e2e8f0',
+                borderRadius: '12px',
                 padding: '14px 12px',
                 marginBottom: '14px',
                 boxSizing: 'border-box',
@@ -1500,8 +1500,8 @@ const PredictionArena = () => {
                   onClick={() => setDurationSeconds(opt.value)}
                   type="button"
                   style={{
-                    border: '1px solid #374151',
-                    background: durationSeconds === opt.value ? '#2563eb' : '#111827',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: durationSeconds === opt.value ? '#2563eb' : 'rgba(30, 41, 59, 0.6)',
                     color: '#e5e7eb',
                     borderRadius: '8px',
                     padding: '8px 12px',
@@ -1556,7 +1556,7 @@ const PredictionArena = () => {
                 disabled={isBusy}
                 style={{
                   border: '1px solid #334155',
-                  background: '#111827',
+                  background: 'rgba(30, 41, 59, 0.6)',
                   color: '#cbd5e1',
                   borderRadius: '8px',
                   padding: '7px 10px',

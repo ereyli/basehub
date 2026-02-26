@@ -373,7 +373,7 @@ export default function NFTMintPage() {
                         disabled={quantity <= 1 || isMinting}
                         style={{
                           width: '40px', height: '40px', borderRadius: '10px',
-                          border: '1px solid #374151', background: 'rgba(30, 41, 59, 0.8)',
+                          border: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(30, 41, 59, 0.8)',
                           color: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center',
                           cursor: quantity <= 1 || isMinting ? 'not-allowed' : 'pointer',
                         }}
@@ -386,7 +386,7 @@ export default function NFTMintPage() {
                         disabled={quantity >= 20 || isMinting}
                         style={{
                           width: '40px', height: '40px', borderRadius: '10px',
-                          border: '1px solid #374151', background: 'rgba(30, 41, 59, 0.8)',
+                          border: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(30, 41, 59, 0.8)',
                           color: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center',
                           cursor: quantity >= 20 || isMinting ? 'not-allowed' : 'pointer',
                         }}
@@ -399,7 +399,7 @@ export default function NFTMintPage() {
                       disabled={!isConnected || isMinting}
                       style={{
                         width: '100%', padding: '16px',
-                        background: isConnected && !isMinting ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : '#374151',
+                        background: isConnected && !isMinting ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : 'rgba(255, 255, 255, 0.08)',
                         color: '#fff', border: 'none', borderRadius: '14px', fontSize: '16px', fontWeight: '700',
                         cursor: isConnected && !isMinting ? 'pointer' : 'not-allowed',
                       }}

@@ -303,21 +303,21 @@ export default function ContractSecurity() {
                   style={{
                     width: '100%',
                     padding: '16px 20px',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '16px',
-                    fontSize: '16px',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '14px',
+                    fontSize: '15px',
                     outline: 'none',
                     transition: 'all 0.3s',
-                    background: 'rgba(30, 41, 59, 0.95)',
-                    fontFamily: 'monospace',
-                    color: '#e5e7eb',
+                    background: 'rgba(30, 41, 59, 0.6)',
+                    fontFamily: "'SF Mono', Menlo, monospace",
+                    color: '#e2e8f0',
                   }}
                   onFocus={(e) => {
-                    e.target.style.borderColor = '#667eea'
-                    e.target.style.boxShadow = '0 0 0 4px rgba(102, 126, 234, 0.1)'
+                    e.target.style.borderColor = 'rgba(59, 130, 246, 0.4)'
+                    e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.08)'
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = '#e5e7eb'
+                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'
                     e.target.style.boxShadow = 'none'
                   }}
                   disabled={isLoading}

@@ -143,13 +143,14 @@ const DeployERC721 = () => {
           
           {isLoading && (
             <div style={{
-              background: 'rgba(30, 41, 59, 0.8)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              color: '#0369a1',
+              background: 'rgba(14, 165, 233, 0.08)',
+              border: '1px solid rgba(14, 165, 233, 0.2)',
+              borderLeft: '3px solid #0ea5e9',
+              color: '#38bdf8',
               padding: '12px 16px',
-              borderRadius: '8px',
+              borderRadius: '12px',
               marginTop: '16px',
-              fontSize: '14px',
+              fontSize: '13px',
               textAlign: 'center'
             }}>
               ⏳ Please confirm the transaction in your wallet. This may take a few moments...

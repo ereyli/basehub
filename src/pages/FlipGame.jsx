@@ -155,41 +155,50 @@ const FlipGame = () => {
 
   // Quest progress now handled by useQuestSystem hook
 
+  const busy = isLoading || isSpinning || isRevealing
+
   if (!isConnected) {
     return (
-      <div className="card" style={{ maxWidth: 560, margin: '0 auto' }}>
+      <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 12px' }}>
         <BackButton />
-        <div style={{ textAlign: 'center', padding: 48 }}>
-          <div className="game-icon" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', margin: '0 auto 16px' }}>
-            <Coins size={32} style={{ color: 'white' }} />
-          </div>
-          <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: 8, color: '#e5e7eb' }}>Connect wallet to play</h2>
-          <p style={{ color: '#94a3b8', fontSize: 15 }}>Connect your wallet to flip the coin and earn XP.</p>
+        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'linear-gradient(180deg, rgba(245,158,11,0.08) 0%, transparent 100%)', borderRadius: 24, border: '1px solid rgba(245,158,11,0.15)' }}>
+          <div style={{ fontSize: 72, marginBottom: 16, animation: 'floatCoin 3s ease-in-out infinite' }}>🪙</div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 8, color: '#fbbf24', letterSpacing: '-0.02em' }}>COIN FLIP</h2>
+          <p style={{ color: '#94a3b8', fontSize: 15, marginBottom: 0 }}>Connect your wallet to play</p>
         </div>
+        <style>{`@keyframes floatCoin { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-12px) rotate(5deg)} }`}</style>
       </div>
     )
   }
 
   return (
     <NetworkGuard showWarning={true}>
-      <div className="card" style={{ maxWidth: 560, margin: '0 auto' }}>
+      <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 12px' }}>
       <EmbedMeta 
         title="Coin Flip - BaseHub"
         description="Flip a coin and win XP! 50% chance to win 500 bonus XP. Play on BaseHub!"
-        buttonText="🪙 Play Coin Flip!"
+        buttonText="Play Coin Flip!"
         image="/image.svg"
       />
-      
       <BackButton />
       <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <div className="game-icon" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', margin: 0, flexShrink: 0 }}>
-          <img src="/crypto-logos/basahub logo/CoinFlip.png" alt="" loading="lazy" style={{ width: 40, height: 40, borderRadius: 12 }} />
+      {/* Header */}
+      <div style={{ textAlign: 'center', marginBottom: 20, position: 'relative' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '8px 20px', background: 'linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(217,119,6,0.1) 100%)', borderRadius: 50, border: '1px solid rgba(245,158,11,0.2)', marginBottom: 8 }}>
+          <span style={{ fontSize: 20 }}>🪙</span>
+          <span style={{ fontWeight: 800, fontSize: 13, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.1em' }}>COIN FLIP</span>
+          <span style={{ fontSize: 11, color: '#94a3b8', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: 20 }}>50/50</span>
         </div>
-        <div>
-          <h1 style={{ fontSize: 'clamp(1.35rem, 4vw, 1.6rem)', fontWeight: 700, margin: 0, color: '#e5e7eb', letterSpacing: '-0.02em' }}>Coin Flip</h1>
-          <p style={{ margin: '4px 0 0', color: '#94a3b8', fontSize: 14 }}>Heads or tails · Win XP</p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#94a3b8' }}>
+            <Star size={12} style={{ color: '#fbbf24' }} />
+            <span>150 XP</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#4ade80' }}>
+            <TrendingUp size={12} />
+            <span>+500 Win</span>
+          </div>
         </div>
       </div>
 
@@ -204,283 +213,155 @@ const FlipGame = () => {
         />
       )}
 
-      {/* XP Popup Animation */}
+      {/* XP Popup */}
       {xpPopup && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 10001,
-            pointerEvents: 'none',
-            animation: 'xpPopup 3s ease-out forwards'
-          }}
-        >
-          <div
-            style={{
-              background: xpPopup.isWin 
-                ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
-                : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-              color: 'white',
-              padding: '20px 40px',
-              borderRadius: '16px',
-              fontSize: '32px',
-              fontWeight: 'bold',
-              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px'
-            }}
-          >
-            <Star size={32} />
+        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 10001, pointerEvents: 'none', animation: 'xpFloat 3s ease-out forwards' }}>
+          <div style={{
+            background: xpPopup.isWin ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+            color: 'white', padding: '16px 32px', borderRadius: 16, fontSize: 28, fontWeight: 800,
+            boxShadow: xpPopup.isWin ? '0 8px 32px rgba(16,185,129,0.5)' : '0 8px 32px rgba(59,130,246,0.5)',
+            display: 'flex', alignItems: 'center', gap: 10, backdropFilter: 'blur(10px)'
+          }}>
+            <Star size={28} style={{ animation: 'spinStar 1s ease-out' }} />
             <span>+{xpPopup.amount} XP</span>
           </div>
         </div>
       )}
 
-      {/* Result */}
+      {/* Result Banner */}
       {showResult && lastTransaction && lastTransaction.result && (
-        <div style={{ 
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: 16,
-          background: lastTransaction.isWin ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(22, 163, 74, 0.1) 100%)' : 'linear-gradient(135deg, rgba(51, 65, 85, 0.3) 0%, rgba(30, 41, 59, 0.4) 100%)',
-          border: lastTransaction.isWin ? '1px solid rgba(34, 197, 94, 0.35)' : '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: 12, marginBottom: 20
+        <div style={{
+          textAlign: 'center', padding: '16px 20px', marginBottom: 16, borderRadius: 16,
+          background: lastTransaction.isWin
+            ? 'linear-gradient(135deg, rgba(34,197,94,0.15), rgba(16,185,129,0.08))'
+            : 'linear-gradient(135deg, rgba(100,116,139,0.12), rgba(51,65,85,0.1))',
+          border: `1px solid ${lastTransaction.isWin ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.08)'}`,
+          animation: 'resultPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
         }}>
-          {lastTransaction.isWin ? <TrendingUp size={24} style={{ color: '#4ade80' }} /> : <TrendingDown size={24} style={{ color: '#94a3b8' }} />}
-          <span style={{ fontWeight: 700, fontSize: 18, color: lastTransaction.isWin ? '#4ade80' : '#94a3b8' }}>
-            {lastTransaction.isWin ? 'You win!' : 'Try again'}
-          </span>
-          <span style={{ fontSize: 14, color: '#cbd5e1' }}>{lastTransaction.playerChoice} → {lastTransaction.result} · +{lastTransaction.xpEarned} XP</span>
+          <div style={{ fontSize: 28, marginBottom: 4 }}>{lastTransaction.isWin ? '🎉' : '😔'}</div>
+          <div style={{ fontWeight: 800, fontSize: 20, color: lastTransaction.isWin ? '#4ade80' : '#94a3b8', marginBottom: 4 }}>
+            {lastTransaction.isWin ? 'YOU WIN!' : 'Try Again'}
+          </div>
+          <div style={{ fontSize: 13, color: '#cbd5e1' }}>
+            {lastTransaction.playerChoice} → {lastTransaction.result} · <span style={{ color: '#fbbf24', fontWeight: 700 }}>+{lastTransaction.xpEarned} XP</span>
+          </div>
         </div>
       )}
 
       {lastTransaction?.txHash && (
-        <div style={{ marginBottom: 16, padding: 12, background: 'rgba(59, 130, 246, 0.08)', borderRadius: 10, border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-            <ExternalLink size={14} style={{ color: '#60a5fa' }} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8' }}>Tx</span>
-          </div>
-          <div style={{ fontFamily: 'monospace', fontSize: 11, color: '#cbd5e1', wordBreak: 'break-all' }}>
+        <div style={{ marginBottom: 16, padding: '8px 12px', background: 'rgba(59,130,246,0.06)', borderRadius: 10, border: '1px solid rgba(59,130,246,0.15)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <ExternalLink size={12} style={{ color: '#60a5fa', flexShrink: 0 }} />
+          <span style={{ fontFamily: 'monospace', fontSize: 10, color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {lastTransaction.txHash || lastTransaction.hash || lastTransaction.transactionHash}
-          </div>
+          </span>
         </div>
       )}
 
-      <div style={{ marginBottom: 24, padding: 20, background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.5) 100%)', borderRadius: 16, border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-        <h3 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 600, color: '#e5e7eb' }}>
-          Choose your side
-        </h3>
-        
-        <div style={{ 
-          display: 'flex', 
-          gap: '12px',
-          marginBottom: '24px'
-        }}>
-          <button
-            onClick={() => handleSideSelect('heads')}
-            className={`btn ${selectedSide === 'heads' ? 'btn-primary' : ''}`}
-            disabled={isSpinning || isRevealing}
-            style={{ 
-              flex: 1,
-              background: selectedSide === 'heads' 
-                ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' 
-                : 'rgba(30, 41, 59, 0.8)',
-              color: selectedSide === 'heads' ? 'white' : '#e5e7eb',
-              border: selectedSide === 'heads' ? 'none' : '1px solid rgba(255, 255, 255, 0.12)',
-              transition: 'all 0.3s ease',
-              transform: selectedSide === 'heads' ? 'scale(1.05)' : 'scale(1)',
-              boxShadow: selectedSide === 'heads' 
-                ? '0 4px 15px rgba(245, 158, 11, 0.4)' 
-                : 'none',
-              cursor: (isSpinning || isRevealing) ? 'not-allowed' : 'pointer',
-              opacity: (isSpinning || isRevealing) ? 0.6 : 1
-            }}
-            onMouseEnter={(e) => {
-              if (!isSpinning && !isRevealing && selectedSide !== 'heads') {
-                e.target.style.transform = 'scale(1.02)'
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (selectedSide !== 'heads') {
-                e.target.style.transform = 'scale(1)'
-              }
-            }}
-          >
-            🪙 Heads
-          </button>
-          <button
-            onClick={() => handleSideSelect('tails')}
-            className={`btn ${selectedSide === 'tails' ? 'btn-primary' : ''}`}
-            disabled={isSpinning || isRevealing}
-            style={{ 
-              flex: 1,
-              background: selectedSide === 'tails' 
-                ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' 
-                : 'rgba(30, 41, 59, 0.8)',
-              color: selectedSide === 'tails' ? 'white' : '#e5e7eb',
-              border: selectedSide === 'tails' ? 'none' : '1px solid rgba(255, 255, 255, 0.12)',
-              transition: 'all 0.3s ease',
-              transform: selectedSide === 'tails' ? 'scale(1.05)' : 'scale(1)',
-              boxShadow: selectedSide === 'tails' 
-                ? '0 4px 15px rgba(245, 158, 11, 0.4)' 
-                : 'none',
-              cursor: (isSpinning || isRevealing) ? 'not-allowed' : 'pointer',
-              opacity: (isSpinning || isRevealing) ? 0.6 : 1
-            }}
-            onMouseEnter={(e) => {
-              if (!isSpinning && !isRevealing && selectedSide !== 'tails') {
-                e.target.style.transform = 'scale(1.02)'
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (selectedSide !== 'tails') {
-                e.target.style.transform = 'scale(1)'
-              }
-            }}
-          >
-            🪙 Tails
-          </button>
+      {/* Side Selection Cards */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+          {['heads', 'tails'].map(side => {
+            const active = selectedSide === side
+            return (
+              <button
+                key={side}
+                onClick={() => handleSideSelect(side)}
+                disabled={busy}
+                style={{
+                  position: 'relative', overflow: 'hidden', padding: '24px 16px', borderRadius: 20, border: 'none', cursor: busy ? 'not-allowed' : 'pointer',
+                  background: active
+                    ? 'linear-gradient(135deg, rgba(245,158,11,0.25) 0%, rgba(217,119,6,0.15) 100%)'
+                    : 'rgba(30,41,59,0.6)',
+                  boxShadow: active ? '0 0 24px rgba(245,158,11,0.3), inset 0 0 20px rgba(245,158,11,0.05)' : '0 2px 8px rgba(0,0,0,0.2)',
+                  outline: active ? '2px solid rgba(245,158,11,0.5)' : '1px solid rgba(255,255,255,0.08)',
+                  transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  transform: active ? 'scale(1.03)' : 'scale(1)',
+                  opacity: busy ? 0.5 : 1
+                }}
+              >
+                <div style={{ fontSize: 40, marginBottom: 8, transition: 'transform 0.3s ease', transform: active ? 'scale(1.15) rotate(-5deg)' : 'scale(1)' }}>
+                  {side === 'heads' ? '🪙' : '⭐'}
+                </div>
+                <div style={{ fontWeight: 800, fontSize: 15, color: active ? '#fbbf24' : '#e5e7eb', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {side}
+                </div>
+                {active && <div style={{ position: 'absolute', top: 8, right: 8, width: 8, height: 8, borderRadius: '50%', background: '#fbbf24', boxShadow: '0 0 8px rgba(245,158,11,0.6)' }} />}
+              </button>
+            )
+          })}
         </div>
 
+        {/* Flip Button */}
         <button
           onClick={flipCoin}
-          disabled={isLoading || isSpinning || isRevealing}
-          className="btn btn-primary"
-          style={{ 
-            width: '100%',
-            background: (isLoading || isSpinning || isRevealing) 
-              ? 'rgba(100, 116, 139, 0.5)' 
-              : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+          disabled={busy}
+          style={{
+            width: '100%', padding: '18px 24px', borderRadius: 16, border: 'none', cursor: busy ? 'not-allowed' : 'pointer',
+            background: busy ? 'rgba(100,116,139,0.3)' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)',
+            color: 'white', fontWeight: 800, fontSize: 16, letterSpacing: '0.02em',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            boxShadow: busy ? 'none' : '0 4px 20px rgba(245,158,11,0.4), 0 0 40px rgba(245,158,11,0.1)',
             transition: 'all 0.3s ease',
-            transform: (isLoading || isSpinning || isRevealing) ? 'none' : 'scale(1)',
-            boxShadow: (isLoading || isSpinning || isRevealing) ? 'none' : '0 4px 14px rgba(59, 130, 246, 0.35)',
-            cursor: (isLoading || isSpinning || isRevealing) ? 'not-allowed' : 'pointer'
-          }}
-          onMouseEnter={(e) => {
-            if (!isLoading && !isSpinning && !isRevealing) {
-              e.target.style.transform = 'scale(1.02)'
-              e.target.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.4)'
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isLoading && !isSpinning && !isRevealing) {
-              e.target.style.transform = 'scale(1)'
-              e.target.style.boxShadow = '0 4px 14px rgba(59, 130, 246, 0.35)'
-            }
+            transform: busy ? 'none' : 'translateY(0)',
           }}
         >
-          {(isLoading || isSpinning || isRevealing) ? (
+          {busy ? (
             <>
               <div className="loading" />
-              {isSpinning ? 'Spinning Coin...' : isRevealing ? 'Revealing Result...' : 'Flipping Coin...'}
+              {isSpinning ? 'Spinning...' : isRevealing ? 'Revealing...' : 'Flipping...'}
             </>
           ) : (
             <>
-              <RotateCcw size={20} style={{ animation: 'pulse 2s ease-in-out infinite' }} />
-              Flip Coin for {selectedSide}
+              <RotateCcw size={20} style={{ animation: 'spinIcon 3s linear infinite' }} />
+              FLIP {selectedSide.toUpperCase()}
             </>
           )}
         </button>
 
         {error && (
-          <div style={{ marginTop: 12, padding: 12, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: 10, color: '#f87171', fontSize: 14 }}>
+          <div style={{ marginTop: 12, padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, color: '#f87171', fontSize: 13 }}>
             {error}
           </div>
         )}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
         <ShareButton title="Coin Flip - BaseHub" description="Flip a coin and win XP! Play on BaseHub!" gameType="flip" />
       </div>
 
-      <div style={{ padding: 16, background: 'rgba(15, 23, 42, 0.5)', borderRadius: 12, border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-        <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>How to play</h3>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 13, color: '#cbd5e1', lineHeight: 1.7 }}>
-          <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Star size={12} style={{ color: '#fbbf24', flexShrink: 0 }} /> Pick heads or tails and flip</li>
-          <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Play size={12} style={{ color: '#60a5fa', flexShrink: 0 }} /> 150 XP base, +500 XP if you win</li>
-          <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><TrendingUp size={12} style={{ color: '#34d399', flexShrink: 0 }} /> 50% chance to win</li>
-          <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><CheckCircle size={12} style={{ color: '#94a3b8', flexShrink: 0 }} /> Pay small fee in ETH per flip</li>
-          {address && <li style={{ marginTop: 6, fontSize: 11, color: '#64748b' }}>{address.slice(0, 6)}…{address.slice(-4)}</li>}
-        </ul>
+      {/* How to Play */}
+      <div style={{ padding: '14px 16px', background: 'rgba(15,23,42,0.4)', borderRadius: 14, border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>How to play</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {[
+            { icon: '🪙', text: 'Pick a side' },
+            { icon: '🎯', text: '50% chance' },
+            { icon: '⚡', text: '150 XP base' },
+            { icon: '🏆', text: '+500 XP win' },
+          ].map((item, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#94a3b8', padding: '6px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
+              <span style={{ fontSize: 14 }}>{item.icon}</span>
+              <span>{item.text}</span>
+            </div>
+          ))}
+        </div>
       </div>
       </div>
 
-      {/* CSS Animations */}
       <style>{`
-        @keyframes winReveal {
-          0% {
-            transform: scale(0.8);
-            opacity: 0;
-          }
-          50% {
-            transform: scale(1.1);
-          }
-          100% {
-            transform: scale(1);
-            opacity: 1;
-          }
+        @keyframes xpFloat {
+          0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+          15% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+          70% { transform: translate(-50%, -65%) scale(1); opacity: 1; }
+          100% { transform: translate(-50%, -85%) scale(0.8); opacity: 0; }
         }
-
-        @keyframes loseReveal {
-          0% {
-            transform: scale(0.8);
-            opacity: 0;
-          }
-          100% {
-            transform: scale(1);
-            opacity: 1;
-          }
+        @keyframes resultPop {
+          0% { transform: scale(0.8); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
         }
-
-        @keyframes bounce {
-          0%, 100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-10px);
-          }
-        }
-
-        @keyframes shake {
-          0%, 100% {
-            transform: translateX(0);
-          }
-          25% {
-            transform: translateX(-10px);
-          }
-          75% {
-            transform: translateX(10px);
-          }
-        }
-
-        @keyframes xpPopup {
-          0% {
-            transform: translate(-50%, -50%) scale(0.5);
-            opacity: 0;
-          }
-          20% {
-            transform: translate(-50%, -50%) scale(1.2);
-            opacity: 1;
-          }
-          80% {
-            transform: translate(-50%, -70%) scale(1);
-            opacity: 1;
-          }
-          100% {
-            transform: translate(-50%, -90%) scale(0.8);
-            opacity: 0;
-          }
-        }
-
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.7;
-          }
-        }
+        @keyframes spinIcon { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes spinStar { from { transform: rotate(0deg) scale(1); } to { transform: rotate(360deg) scale(1.2); } }
+        @keyframes floatCoin { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-12px) rotate(5deg)} }
       `}</style>
     </NetworkGuard>
   )

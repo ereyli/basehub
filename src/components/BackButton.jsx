@@ -10,33 +10,34 @@ const BackButton = ({ style = {} }) => {
       className="back-button"
       onClick={() => navigate('/')}
       style={{
-        background: 'rgba(255, 255, 255, 0.9)',
-        border: '1px solid rgba(0, 0, 0, 0.1)',
-        borderRadius: '8px',
-        padding: '8px 12px',
+        background: 'rgba(255, 255, 255, 0.05)',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        borderRadius: '10px',
+        padding: '8px 14px',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
         gap: '6px',
         marginBottom: '20px',
-        fontSize: '14px',
+        fontSize: '13px',
         fontWeight: '600',
-        color: '#374151',
+        color: '#94a3b8',
         transition: 'all 0.2s ease',
         position: 'relative',
         zIndex: 1000,
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+        boxShadow: 'none',
+        backdropFilter: 'blur(8px)',
         ...style
       }}
       onMouseEnter={(e) => {
-        e.target.style.background = 'rgba(255, 255, 255, 1)'
-        e.target.style.transform = 'translateY(-1px)'
-        e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)'
+        e.target.style.background = 'rgba(255, 255, 255, 0.1)'
+        e.target.style.borderColor = 'rgba(255, 255, 255, 0.15)'
+        e.target.style.color = '#e2e8f0'
       }}
       onMouseLeave={(e) => {
-        e.target.style.background = 'rgba(255, 255, 255, 0.9)'
-        e.target.style.transform = 'translateY(0)'
-        e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)'
+        e.target.style.background = 'rgba(255, 255, 255, 0.05)'
+        e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'
+        e.target.style.color = '#94a3b8'
       }}
     >
       <ArrowLeft size={16} />

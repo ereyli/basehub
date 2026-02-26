@@ -180,12 +180,13 @@ const TwitterShareButton = ({
             top: '100%',
             right: 0,
             marginTop: '8px',
-            background: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+            background: 'rgba(15, 23, 42, 0.95)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: '14px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
             padding: '12px',
             minWidth: '200px',
-            border: '1px solid rgba(0, 0, 0, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
             zIndex: 1000,
             animation: 'slideDown 0.2s ease-out'
           }}
@@ -203,11 +204,11 @@ const TwitterShareButton = ({
               alignItems: 'center',
               gap: '8px',
               fontSize: '14px',
-              color: '#374151',
+              color: '#94a3b8',
               transition: 'background 0.2s ease'
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(0, 0, 0, 0.05)'
+              e.target.style.background = 'rgba(255, 255, 255, 0.05)'
             }}
             onMouseLeave={(e) => {
               e.target.style.background = 'transparent'

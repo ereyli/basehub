@@ -727,7 +727,7 @@ export default function NFTLaunchpad() {
                           disabled={!aiPrompt.trim() || !isConnected || !isX402Connected || isGeneratingAi || isLoadingX402}
                           style={{
                             marginTop: '10px', padding: '10px 20px', borderRadius: '10px', fontWeight: '600', fontSize: '13px',
-                            background: (!aiPrompt.trim() || isGeneratingAi || isLoadingX402) ? '#374151' : 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
+                            background: (!aiPrompt.trim() || isGeneratingAi || isLoadingX402) ? 'rgba(71, 85, 105, 0.3)' : 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
                             color: '#fff', border: 'none',
                             cursor: (!aiPrompt.trim() || isGeneratingAi || isLoadingX402) ? 'not-allowed' : 'pointer',
                             display: 'flex', alignItems: 'center', gap: '6px',
@@ -942,8 +942,8 @@ export default function NFTLaunchpad() {
                   </p>
                   {!soldOutOnly && (
                     <button onClick={() => setActiveTab('create')} style={{
-                      marginTop: '16px', padding: '10px 20px', background: '#3b82f6', color: '#fff',
-                      border: 'none', borderRadius: '10px', fontWeight: '600', fontSize: '13px', cursor: 'pointer',
+                      marginTop: '16px', padding: '10px 20px', background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa',
+                      border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '12px', fontWeight: '600', fontSize: '13px', cursor: 'pointer',
                     }}>
                       Create Collection
                     </button>

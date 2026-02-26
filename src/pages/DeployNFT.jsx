@@ -127,7 +127,7 @@ const DeployNFT = () => {
                 maxLength="20"
                 required
               />
-              <small style={{ color: '#6b7280', fontSize: '12px' }}>
+              <small style={{ color: '#64748b', fontSize: '12px' }}>
                 Max 20 characters for Farcaster compatibility
               </small>
             </div>
@@ -144,7 +144,7 @@ const DeployNFT = () => {
                 maxLength="10"
                 required
               />
-              <small style={{ color: '#6b7280', fontSize: '12px' }}>
+              <small style={{ color: '#64748b', fontSize: '12px' }}>
                 Max 10 characters for Farcaster compatibility
               </small>
             </div>
@@ -166,7 +166,7 @@ const DeployNFT = () => {
                       <Upload size={24} />
                       <span>Upload Image</span>
                     </label>
-                    <p style={{ color: '#6b7280', fontSize: '12px', marginTop: '8px' }}>
+                    <p style={{ color: '#64748b', fontSize: '12px', marginTop: '8px' }}>
                       Max 5MB, JPG/PNG/GIF supported
                     </p>
                   </div>
@@ -227,13 +227,14 @@ const DeployNFT = () => {
             
             {isLoading && (
               <div style={{
-                background: '#f0f9ff',
-                border: '1px solid #0ea5e9',
-                color: '#0369a1',
+                background: 'rgba(14, 165, 233, 0.08)',
+                border: '1px solid rgba(14, 165, 233, 0.2)',
+                borderLeft: '3px solid #0ea5e9',
+                color: '#38bdf8',
                 padding: '12px 16px',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 marginTop: '16px',
-                fontSize: '14px',
+                fontSize: '13px',
                 textAlign: 'center'
               }}>
                 ⏳ Please confirm the transaction in your wallet. This may take a few moments...
@@ -269,7 +270,7 @@ const DeployNFT = () => {
               {deployResult.xpEarned && (
                 <div className="detail-item">
                   <strong>XP Earned:</strong>
-                  <div className="status-message" style={{ background: '#f0fdf4', border: '1px solid #86efac', color: '#16a34a' }}>
+                  <div className="status-message" style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', borderLeft: '3px solid #34d399', color: '#34d399' }}>
                     🎉 +{deployResult.xpEarned} XP earned!
                   </div>
                 </div>

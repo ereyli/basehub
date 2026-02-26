@@ -48,10 +48,12 @@ export default function ImagePreview({
               font-family: system-ui, -apple-system, sans-serif;
             }
             .container {
-              background: white;
-              border-radius: 16px;
+              background: rgba(15, 23, 42, 0.95);
+              backdrop-filter: blur(20px);
+              border-radius: 18px;
               padding: 20px;
-              box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+              box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+              border: 1px solid rgba(255, 255, 255, 0.06);
               max-width: 90vw;
               max-height: 90vh;
             }
@@ -64,17 +66,18 @@ export default function ImagePreview({
             .info {
               margin-top: 15px;
               padding: 15px;
-              background: #f8f9fa;
-              border-radius: 8px;
+              background: rgba(30, 41, 59, 0.6);
+              border-radius: 10px;
+              border: 1px solid rgba(255, 255, 255, 0.06);
             }
             .prompt {
               font-weight: 600;
-              color: #333;
+              color: #e2e8f0;
               margin-bottom: 8px;
             }
             .meta {
               font-size: 14px;
-              color: #666;
+              color: #64748b;
             }
           </style>
         </head>

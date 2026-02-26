@@ -1,375 +1,427 @@
-// Sound effects utility for coin flip game
-// Uses Web Audio API to generate sounds programmatically
+// Sound effects with Web Audio API — distinct character per game
+// Coin Flip: metallic/casino | Dice Roll: wooden table thud | Lucky Number: magical/mystical
 
 class SoundManager {
   constructor() {
     this.audioContext = null
     this.enabled = true
-    this.initAudioContext()
+    this._unlocked = false
+    this._setupUserGestureUnlock()
   }
 
-  initAudioContext() {
+  // AudioContext'i user gesture'a kadar oluşturmayı geciktir
+  // Mobil WebView (Farcaster/Warpcast) suspended policy'yi böyle atlatıyoruz
+  _getOrCreateContext() {
+    if (this.audioContext) return this.audioContext
     try {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)()
     } catch (e) {
       console.warn('Web Audio API not supported:', e)
       this.enabled = false
+      return null
     }
+    return this.audioContext
   }
 
-  // Ensure audio context is running (required for some browsers)
+  _setupUserGestureUnlock() {
+    if (typeof window === 'undefined') return
+    const unlock = () => {
+      const ctx = this._getOrCreateContext()
+      if (!ctx) return
+      if (ctx.state === 'suspended') {
+        ctx.resume().then(() => {
+          this._unlocked = true
+        }).catch(() => {})
+      } else {
+        this._unlocked = true
+      }
+      // Oluştur ve hemen kapat: sessiz buffer ile WebView'un audio path'ini aç
+      if (!this._unlocked) {
+        try {
+          const buf = ctx.createBuffer(1, 1, ctx.sampleRate)
+          const src = ctx.createBufferSource()
+          src.buffer = buf
+          src.connect(ctx.destination)
+          src.start(0)
+        } catch (_) {}
+      }
+    }
+    // İlk user gesture'da unlock et, sonra listener'ları kaldır
+    const events = ['touchstart', 'touchend', 'mousedown', 'click', 'keydown']
+    const handler = () => {
+      unlock()
+      events.forEach(e => document.removeEventListener(e, handler, true))
+    }
+    events.forEach(e => document.addEventListener(e, handler, { capture: true, passive: true }))
+  }
+
   ensureAudioContext() {
-    if (this.audioContext && this.audioContext.state === 'suspended') {
-      this.audioContext.resume()
+    const ctx = this._getOrCreateContext()
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(() => {})
     }
   }
 
-  // Generate coin spin sound (metallic spinning)
-  playCoinSpin() {
-    if (!this.enabled || !this.audioContext) return
-
-    this.ensureAudioContext()
-
-    const oscillator = this.audioContext.createOscillator()
-    const gainNode = this.audioContext.createGain()
-    
-    oscillator.connect(gainNode)
-    gainNode.connect(this.audioContext.destination)
-
-    // Metallic spinning sound - softer and more pleasant
-    oscillator.type = 'sine' // Changed from sawtooth to sine for softer sound
-    oscillator.frequency.setValueAtTime(200, this.audioContext.currentTime)
-    oscillator.frequency.exponentialRampToValueAtTime(160, this.audioContext.currentTime + 0.25)
-
-    gainNode.gain.setValueAtTime(0.05, this.audioContext.currentTime) // Reduced from 0.08
-    gainNode.gain.linearRampToValueAtTime(0.015, this.audioContext.currentTime + 0.25)
-
-    oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + 0.2)
+  _now() {
+    const ctx = this._getOrCreateContext()
+    return ctx ? ctx.currentTime : 0
   }
 
-  // Generate result reveal sound (ding)
-  playResultReveal() {
-    if (!this.enabled || !this.audioContext) return
-
+  _ready() {
+    if (!this.enabled) return false
+    const ctx = this._getOrCreateContext()
+    if (!ctx) return false
     this.ensureAudioContext()
-
-    const oscillator = this.audioContext.createOscillator()
-    const gainNode = this.audioContext.createGain()
-    
-    oscillator.connect(gainNode)
-    gainNode.connect(this.audioContext.destination)
-
-    // Pleasant ding sound - softer and more pleasant
-    oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(650, this.audioContext.currentTime)
-    oscillator.frequency.exponentialRampToValueAtTime(480, this.audioContext.currentTime + 0.5)
-
-    gainNode.gain.setValueAtTime(0.12, this.audioContext.currentTime) // Reduced from 0.15
-    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.5)
-
-    oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + 0.5)
+    return true
   }
 
-  // Generate win sound (victory fanfare)
-  playWinSound() {
-    if (!this.enabled || !this.audioContext) return
-
-    this.ensureAudioContext()
-
-    // Play multiple tones for fanfare
-    const tones = [523.25, 659.25, 783.99] // C, E, G major chord
-
-    tones.forEach((freq, index) => {
-      const oscillator = this.audioContext.createOscillator()
-      const gainNode = this.audioContext.createGain()
-      
-      oscillator.connect(gainNode)
-      gainNode.connect(this.audioContext.destination)
-
-      oscillator.type = 'sine'
-      oscillator.frequency.setValueAtTime(freq, this.audioContext.currentTime)
-
-      gainNode.gain.setValueAtTime(0.0001, this.audioContext.currentTime)
-      gainNode.gain.linearRampToValueAtTime(0.1, this.audioContext.currentTime + 0.15 + index * 0.15) // Reduced from 0.12
-      gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.8 + index * 0.15)
-
-      oscillator.start(this.audioContext.currentTime + index * 0.15)
-      oscillator.stop(this.audioContext.currentTime + 0.8 + index * 0.15)
-    })
+  _createNoise(duration) {
+    const ctx = this._getOrCreateContext()
+    const bufferSize = ctx.sampleRate * duration
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+    const data = buffer.getChannelData(0)
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1
+    const src = ctx.createBufferSource()
+    src.buffer = buffer
+    return src
   }
 
-  // Generate lose sound (soft sad tone)
-  playLoseSound() {
-    if (!this.enabled || !this.audioContext) return
+  // ======================== SHARED ========================
 
-    this.ensureAudioContext()
-
-    const oscillator = this.audioContext.createOscillator()
-    const gainNode = this.audioContext.createGain()
-    
-    oscillator.connect(gainNode)
-    gainNode.connect(this.audioContext.destination)
-
-    // Soft descending tone - even softer and more gentle
-    oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(360, this.audioContext.currentTime)
-    oscillator.frequency.exponentialRampToValueAtTime(270, this.audioContext.currentTime + 0.6)
-
-    gainNode.gain.setValueAtTime(0.06, this.audioContext.currentTime) // Reduced from 0.08
-    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.6)
-
-    oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + 0.5)
-  }
-
-  // Generate button click sound
   playClick() {
-    if (!this.enabled || !this.audioContext) return
+    if (!this._ready()) return
+    const t = this._now()
+    const ctx = this._getOrCreateContext()
 
-    this.ensureAudioContext()
-
-    const oscillator = this.audioContext.createOscillator()
-    const gainNode = this.audioContext.createGain()
-    
-    oscillator.connect(gainNode)
-    gainNode.connect(this.audioContext.destination)
-
-    oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(750, this.audioContext.currentTime) // Slightly lower pitch
-
-    gainNode.gain.setValueAtTime(0.04, this.audioContext.currentTime) // Reduced from 0.05
-    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.06) // Slightly longer
-
-    oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + 0.06)
+    const osc = ctx.createOscillator()
+    const g = ctx.createGain()
+    osc.connect(g); g.connect(ctx.destination)
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(880, t)
+    osc.frequency.exponentialRampToValueAtTime(660, t + 0.04)
+    g.gain.setValueAtTime(0.06, t)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.06)
+    osc.start(t); osc.stop(t + 0.06)
   }
 
-  // Loop coin spin sound
+  playWinSound() {
+    if (!this._ready()) return
+    const t = this._now()
+    const ctx = this._getOrCreateContext()
+
+    // Triumphant ascending arpeggio: C5-E5-G5-C6
+    const notes = [523, 659, 784, 1047]
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator()
+      const g = ctx.createGain()
+      osc.connect(g); g.connect(ctx.destination)
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(freq, t + i * 0.1)
+
+      const start = t + i * 0.1
+      g.gain.setValueAtTime(0.001, start)
+      g.gain.linearRampToValueAtTime(0.12, start + 0.05)
+      g.gain.exponentialRampToValueAtTime(0.001, start + 0.5)
+      osc.start(start); osc.stop(start + 0.5)
+    })
+
+    // Shimmer layer
+    const shimmer = ctx.createOscillator()
+    const sg = ctx.createGain()
+    shimmer.connect(sg); sg.connect(ctx.destination)
+    shimmer.type = 'sine'
+    shimmer.frequency.setValueAtTime(2093, t + 0.35)
+    shimmer.frequency.exponentialRampToValueAtTime(1568, t + 1.0)
+    sg.gain.setValueAtTime(0.001, t + 0.35)
+    sg.gain.linearRampToValueAtTime(0.06, t + 0.45)
+    sg.gain.exponentialRampToValueAtTime(0.001, t + 1.0)
+    shimmer.start(t + 0.35); shimmer.stop(t + 1.0)
+  }
+
+  playLoseSound() {
+    if (!this._ready()) return
+    const t = this._now()
+    const ctx = this._getOrCreateContext()
+
+    // Gentle descending two-note: "wah-wah"
+    const osc = ctx.createOscillator()
+    const g = ctx.createGain()
+    osc.connect(g); g.connect(ctx.destination)
+    osc.type = 'triangle'
+    osc.frequency.setValueAtTime(440, t)
+    osc.frequency.linearRampToValueAtTime(330, t + 0.2)
+    osc.frequency.linearRampToValueAtTime(260, t + 0.5)
+    g.gain.setValueAtTime(0.08, t)
+    g.gain.linearRampToValueAtTime(0.04, t + 0.25)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.6)
+    osc.start(t); osc.stop(t + 0.6)
+  }
+
+  // ======================== COIN FLIP — Casino/Metallic ========================
+
+  playCoinSpin() {
+    if (!this._ready()) return
+    const t = this._now()
+    const ctx = this._getOrCreateContext()
+
+    // Metallic ring: two detuned sine waves for shimmer
+    const osc1 = ctx.createOscillator()
+    const osc2 = ctx.createOscillator()
+    const g = ctx.createGain()
+    osc1.connect(g); osc2.connect(g); g.connect(ctx.destination)
+
+    osc1.type = 'sine'
+    osc2.type = 'sine'
+    const base = 1200 + Math.random() * 400
+    osc1.frequency.setValueAtTime(base, t)
+    osc2.frequency.setValueAtTime(base * 1.005, t) // slight detune
+    osc1.frequency.exponentialRampToValueAtTime(base * 0.7, t + 0.12)
+    osc2.frequency.exponentialRampToValueAtTime(base * 0.7 * 1.005, t + 0.12)
+
+    g.gain.setValueAtTime(0.04, t)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.12)
+    osc1.start(t); osc2.start(t)
+    osc1.stop(t + 0.12); osc2.stop(t + 0.12)
+  }
+
+  playResultReveal() {
+    if (!this._ready()) return
+    const t = this._now()
+    const ctx = this._getOrCreateContext()
+
+    // Casino "ding" — bright bell
+    const osc = ctx.createOscillator()
+    const g = ctx.createGain()
+    osc.connect(g); g.connect(ctx.destination)
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(1318, t) // E6
+    osc.frequency.exponentialRampToValueAtTime(880, t + 0.6)
+    g.gain.setValueAtTime(0.15, t)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.6)
+    osc.start(t); osc.stop(t + 0.6)
+
+    // Harmonic overtone
+    const osc2 = ctx.createOscillator()
+    const g2 = ctx.createGain()
+    osc2.connect(g2); g2.connect(ctx.destination)
+    osc2.type = 'sine'
+    osc2.frequency.setValueAtTime(2636, t) // E7
+    g2.gain.setValueAtTime(0.04, t)
+    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.35)
+    osc2.start(t); osc2.stop(t + 0.35)
+  }
+
   startCoinSpinLoop() {
-    if (!this.enabled || !this.audioContext) return null
-
-    this.ensureAudioContext()
-
+    if (!this._ready()) return null
+    let speed = 220
     const interval = setInterval(() => {
       this.playCoinSpin()
-    }, 300) // Play every 300ms for even smoother, more pleasant sound
-
+      if (speed > 120) speed -= 8
+    }, speed)
     return interval
   }
 
-  stopCoinSpinLoop(interval) {
-    if (interval) {
-      clearInterval(interval)
-    }
-  }
+  stopCoinSpinLoop(interval) { if (interval) clearInterval(interval) }
 
-  // ========== LUCKY NUMBER GAME SOUNDS ==========
+  // ======================== DICE ROLL — Wooden Table ========================
 
-  // Generate number spin sound (mystical/magical spinning)
-  playNumberSpin() {
-    if (!this.enabled || !this.audioContext) return
-
-    this.ensureAudioContext()
-
-    const oscillator = this.audioContext.createOscillator()
-    const gainNode = this.audioContext.createGain()
-    
-    oscillator.connect(gainNode)
-    gainNode.connect(this.audioContext.destination)
-
-    // Mystical spinning sound - softer and more pleasant
-    oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(320, this.audioContext.currentTime)
-    oscillator.frequency.exponentialRampToValueAtTime(260, this.audioContext.currentTime + 0.22)
-
-    gainNode.gain.setValueAtTime(0.05, this.audioContext.currentTime) // Reduced from 0.06
-    gainNode.gain.linearRampToValueAtTime(0.012, this.audioContext.currentTime + 0.22)
-
-    oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + 0.22)
-  }
-
-  // Generate number reveal sound (magical reveal)
-  playNumberReveal() {
-    if (!this.enabled || !this.audioContext) return
-
-    this.ensureAudioContext()
-
-    const oscillator = this.audioContext.createOscillator()
-    const gainNode = this.audioContext.createGain()
-    
-    oscillator.connect(gainNode)
-    gainNode.connect(this.audioContext.destination)
-
-    // Magical reveal sound - softer and more pleasant
-    oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(380, this.audioContext.currentTime)
-    oscillator.frequency.linearRampToValueAtTime(550, this.audioContext.currentTime + 0.25)
-    oscillator.frequency.exponentialRampToValueAtTime(420, this.audioContext.currentTime + 0.6)
-
-    gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime) // Reduced from 0.12
-    gainNode.gain.linearRampToValueAtTime(0.15, this.audioContext.currentTime + 0.25) // Reduced from 0.18
-    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.6)
-
-    oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + 0.5)
-  }
-
-  // Generate number select sound (soft click)
-  playNumberSelect() {
-    if (!this.enabled || !this.audioContext) return
-
-    this.ensureAudioContext()
-
-    const oscillator = this.audioContext.createOscillator()
-    const gainNode = this.audioContext.createGain()
-    
-    oscillator.connect(gainNode)
-    gainNode.connect(this.audioContext.destination)
-
-    // Soft, pleasant click for number selection
-    oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(580, this.audioContext.currentTime)
-    oscillator.frequency.exponentialRampToValueAtTime(480, this.audioContext.currentTime + 0.1)
-
-    gainNode.gain.setValueAtTime(0.035, this.audioContext.currentTime) // Reduced from 0.04
-    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.1)
-
-    oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + 0.08)
-  }
-
-  // Loop number spin sound
-  startNumberSpinLoop() {
-    if (!this.enabled || !this.audioContext) return null
-
-    this.ensureAudioContext()
-
-    const interval = setInterval(() => {
-      this.playNumberSpin()
-    }, 280) // Play every 280ms for smoother, more pleasant sound
-
-    return interval
-  }
-
-  stopNumberSpinLoop(interval) {
-    if (interval) {
-      clearInterval(interval)
-    }
-  }
-
-  // ========== DICE ROLL GAME SOUNDS ==========
-
-  // Generate dice roll sound (wooden/metal rolling)
   playDiceRoll() {
-    if (!this.enabled || !this.audioContext) return
+    if (!this._ready()) return
+    const t = this._now()
+    const ctx = this._getOrCreateContext()
 
-    this.ensureAudioContext()
+    // Wooden knock/thud via filtered noise burst
+    const noise = this._createNoise(0.08)
+    const filter = ctx.createBiquadFilter()
+    const g = ctx.createGain()
+    noise.connect(filter); filter.connect(g); g.connect(ctx.destination)
 
-    const oscillator = this.audioContext.createOscillator()
-    const gainNode = this.audioContext.createGain()
-    
-    oscillator.connect(gainNode)
-    gainNode.connect(this.audioContext.destination)
+    filter.type = 'bandpass'
+    filter.frequency.setValueAtTime(300 + Math.random() * 200, t)
+    filter.Q.setValueAtTime(2, t)
 
-    // Wooden/metal rolling sound - softer and more pleasant
-    oscillator.type = 'sine' // Changed from sawtooth to sine for much softer sound
-    oscillator.frequency.setValueAtTime(140, this.audioContext.currentTime)
-    oscillator.frequency.exponentialRampToValueAtTime(110, this.audioContext.currentTime + 0.2)
+    g.gain.setValueAtTime(0.12, t)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.08)
+    noise.start(t); noise.stop(t + 0.08)
 
-    gainNode.gain.setValueAtTime(0.06, this.audioContext.currentTime) // Reduced from 0.1
-    gainNode.gain.linearRampToValueAtTime(0.02, this.audioContext.currentTime + 0.2) // Reduced from 0.03
-
-    oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + 0.2)
+    // Subtle resonant tap
+    const osc = ctx.createOscillator()
+    const og = ctx.createGain()
+    osc.connect(og); og.connect(ctx.destination)
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(180 + Math.random() * 60, t)
+    osc.frequency.exponentialRampToValueAtTime(90, t + 0.06)
+    og.gain.setValueAtTime(0.06, t)
+    og.gain.exponentialRampToValueAtTime(0.001, t + 0.06)
+    osc.start(t); osc.stop(t + 0.06)
   }
 
-  // Generate dice reveal sound (impact/thud)
   playDiceReveal() {
-    if (!this.enabled || !this.audioContext) return
+    if (!this._ready()) return
+    const t = this._now()
+    const ctx = this._getOrCreateContext()
 
-    this.ensureAudioContext()
+    // Heavy landing thud
+    const noise = this._createNoise(0.2)
+    const filter = ctx.createBiquadFilter()
+    const g = ctx.createGain()
+    noise.connect(filter); filter.connect(g); g.connect(ctx.destination)
+    filter.type = 'lowpass'
+    filter.frequency.setValueAtTime(400, t)
+    filter.frequency.exponentialRampToValueAtTime(100, t + 0.2)
+    g.gain.setValueAtTime(0.15, t)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.2)
+    noise.start(t); noise.stop(t + 0.2)
 
-    // Create two oscillators for impact sound
-    const osc1 = this.audioContext.createOscillator()
-    const osc2 = this.audioContext.createOscillator()
-    const gain1 = this.audioContext.createGain()
-    const gain2 = this.audioContext.createGain()
-    
-    osc1.connect(gain1)
-    osc2.connect(gain2)
-    gain1.connect(this.audioContext.destination)
-    gain2.connect(this.audioContext.destination)
+    // Low impact tone
+    const osc = ctx.createOscillator()
+    const og = ctx.createGain()
+    osc.connect(og); og.connect(ctx.destination)
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(120, t)
+    osc.frequency.exponentialRampToValueAtTime(60, t + 0.25)
+    og.gain.setValueAtTime(0.1, t)
+    og.gain.exponentialRampToValueAtTime(0.001, t + 0.3)
+    osc.start(t); osc.stop(t + 0.3)
 
-    // Impact sound - softer and more pleasant
-    osc1.type = 'sine'
-    osc1.frequency.setValueAtTime(160, this.audioContext.currentTime)
-    osc1.frequency.exponentialRampToValueAtTime(110, this.audioContext.currentTime + 0.4)
-
-    osc2.type = 'sine'
-    osc2.frequency.setValueAtTime(210, this.audioContext.currentTime)
-    osc2.frequency.exponentialRampToValueAtTime(130, this.audioContext.currentTime + 0.4)
-
-    gain1.gain.setValueAtTime(0.09, this.audioContext.currentTime) // Reduced from 0.12
-    gain1.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.4)
-
-    gain2.gain.setValueAtTime(0.06, this.audioContext.currentTime) // Reduced from 0.08
-    gain2.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.4)
-
-    osc1.start(this.audioContext.currentTime)
-    osc2.start(this.audioContext.currentTime)
-    osc1.stop(this.audioContext.currentTime + 0.4)
-    osc2.stop(this.audioContext.currentTime + 0.4)
+    // Bounce — secondary smaller thud
+    setTimeout(() => {
+      if (!this._ready()) return
+      const ctx2 = this._getOrCreateContext()
+      if (!ctx2) return
+      const t2 = this._now()
+      const n2 = this._createNoise(0.06)
+      const f2 = ctx2.createBiquadFilter()
+      const g2 = ctx.createGain()
+      n2.connect(f2); f2.connect(g2); g2.connect(ctx2.destination)
+      f2.type = 'lowpass'; f2.frequency.setValueAtTime(250, t2)
+      g2.gain.setValueAtTime(0.06, t2)
+      g2.gain.exponentialRampToValueAtTime(0.001, t2 + 0.06)
+      n2.start(t2); n2.stop(t2 + 0.06)
+    }, 150)
   }
 
-  // Generate dice select sound (soft click)
   playDiceSelect() {
-    if (!this.enabled || !this.audioContext) return
+    if (!this._ready()) return
+    const t = this._now()
+    const ctx = this._getOrCreateContext()
 
-    this.ensureAudioContext()
-
-    const oscillator = this.audioContext.createOscillator()
-    const gainNode = this.audioContext.createGain()
-    
-    oscillator.connect(gainNode)
-    gainNode.connect(this.audioContext.destination)
-
-    // Soft, pleasant click for dice selection
-    oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(480, this.audioContext.currentTime)
-    oscillator.frequency.exponentialRampToValueAtTime(380, this.audioContext.currentTime + 0.1)
-
-    gainNode.gain.setValueAtTime(0.035, this.audioContext.currentTime) // Reduced from 0.04
-    gainNode.gain.linearRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.1)
-
-    oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + 0.08)
+    // Small wooden tap
+    const noise = this._createNoise(0.04)
+    const filter = ctx.createBiquadFilter()
+    const g = ctx.createGain()
+    noise.connect(filter); filter.connect(g); g.connect(ctx.destination)
+    filter.type = 'bandpass'
+    filter.frequency.setValueAtTime(600, t)
+    filter.Q.setValueAtTime(3, t)
+    g.gain.setValueAtTime(0.06, t)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.04)
+    noise.start(t); noise.stop(t + 0.04)
   }
 
-  // Loop dice roll sound
   startDiceRollLoop() {
-    if (!this.enabled || !this.audioContext) return null
-
-    this.ensureAudioContext()
-
+    if (!this._ready()) return null
     const interval = setInterval(() => {
       this.playDiceRoll()
-    }, 320) // Play every 320ms for much smoother, more pleasant sound
-
+    }, 180)
     return interval
   }
 
-  stopDiceRollLoop(interval) {
-    if (interval) {
-      clearInterval(interval)
-    }
+  stopDiceRollLoop(interval) { if (interval) clearInterval(interval) }
+
+  // ======================== LUCKY NUMBER — Magical/Mystical ========================
+
+  playNumberSpin() {
+    if (!this._ready()) return
+    const t = this._now()
+    const ctx = this._getOrCreateContext()
+
+    // Magical chime: ascending tone with vibrato
+    const osc = ctx.createOscillator()
+    const lfo = ctx.createOscillator()
+    const lfoGain = ctx.createGain()
+    const g = ctx.createGain()
+
+    lfo.connect(lfoGain); lfoGain.connect(osc.frequency)
+    osc.connect(g); g.connect(ctx.destination)
+
+    const base = 600 + Math.random() * 600
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(base, t)
+    osc.frequency.exponentialRampToValueAtTime(base * 0.8, t + 0.15)
+
+    lfo.type = 'sine'
+    lfo.frequency.setValueAtTime(12, t)
+    lfoGain.gain.setValueAtTime(15, t)
+
+    g.gain.setValueAtTime(0.05, t)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.15)
+
+    osc.start(t); lfo.start(t)
+    osc.stop(t + 0.15); lfo.stop(t + 0.15)
   }
+
+  playNumberReveal() {
+    if (!this._ready()) return
+    const t = this._now()
+    const ctx = this._getOrCreateContext()
+
+    // Magical reveal: rising sparkle arpeggio
+    const notes = [523, 784, 1047, 1568] // C5, G5, C6, G6
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator()
+      const g = ctx.createGain()
+      osc.connect(g); g.connect(ctx.destination)
+      osc.type = 'sine'
+
+      const start = t + i * 0.06
+      osc.frequency.setValueAtTime(freq, start)
+      g.gain.setValueAtTime(0.001, start)
+      g.gain.linearRampToValueAtTime(0.08, start + 0.03)
+      g.gain.exponentialRampToValueAtTime(0.001, start + 0.35)
+      osc.start(start); osc.stop(start + 0.35)
+    })
+
+    // Sparkle shimmer (high-frequency wash)
+    const shimmer = ctx.createOscillator()
+    const sg = ctx.createGain()
+    shimmer.connect(sg); sg.connect(ctx.destination)
+    shimmer.type = 'sine'
+    shimmer.frequency.setValueAtTime(3136, t + 0.2)
+    shimmer.frequency.exponentialRampToValueAtTime(2093, t + 0.8)
+    sg.gain.setValueAtTime(0.001, t + 0.2)
+    sg.gain.linearRampToValueAtTime(0.04, t + 0.3)
+    sg.gain.exponentialRampToValueAtTime(0.001, t + 0.8)
+    shimmer.start(t + 0.2); shimmer.stop(t + 0.8)
+  }
+
+  playNumberSelect() {
+    if (!this._ready()) return
+    const t = this._now()
+    const ctx = this._getOrCreateContext()
+
+    // Soft magical "ping" — two quick harmonics
+    const osc = ctx.createOscillator()
+    const g = ctx.createGain()
+    osc.connect(g); g.connect(ctx.destination)
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(1047, t) // C6
+    osc.frequency.exponentialRampToValueAtTime(784, t + 0.08)
+    g.gain.setValueAtTime(0.05, t)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.1)
+    osc.start(t); osc.stop(t + 0.1)
+  }
+
+  startNumberSpinLoop() {
+    if (!this._ready()) return null
+    const interval = setInterval(() => {
+      this.playNumberSpin()
+    }, 160)
+    return interval
+  }
+
+  stopNumberSpinLoop(interval) { if (interval) clearInterval(interval) }
 }
 
-// Singleton instance
 const soundManager = new SoundManager()
-
 export default soundManager
-

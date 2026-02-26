@@ -1043,45 +1043,44 @@ const DailyQuestSystem = () => {
 
   return (
     <div style={{
-      background: 'rgba(30, 41, 59, 0.95)',
-      borderRadius: '12px',
-      padding: '16px',
+      background: 'rgba(15, 23, 42, 0.8)',
+      borderRadius: '18px',
+      padding: '20px',
       margin: '16px 0',
-      border: '1px solid rgba(255, 255, 255, 0.1)'
+      border: '1px solid rgba(255, 255, 255, 0.06)',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
-      {/* Compact Header */}
+      <div style={{ position: 'absolute', top: '-20%', left: '50%', transform: 'translateX(-50%)', width: '50%', height: '40%', background: 'radial-gradient(ellipse, rgba(59,130,246,0.06) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(20px)' }} />
+
+      {/* Header */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: '12px'
+        marginBottom: '14px',
+        position: 'relative', zIndex: 1
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
-            width: '32px',
-            height: '32px',
-            background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white'
+            width: '36px', height: '36px',
+            background: 'rgba(59, 130, 246, 0.12)',
+            border: '1px solid rgba(59, 130, 246, 0.25)',
+            borderRadius: '10px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}>
-            <Calendar size={16} />
+            <Calendar size={17} style={{ color: '#60a5fa' }} />
           </div>
           <div>
             <h3 style={{
-              margin: '0',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              color: '#e5e7eb'
+              margin: '0', fontSize: '15px', fontWeight: '700',
+              color: '#f1f5f9', fontFamily: 'Poppins, sans-serif'
             }}>
               Daily Quests
             </h3>
             <p style={{
-              margin: '0',
-              fontSize: '12px',
-              color: '#9ca3af'
+              margin: '0', fontSize: '11px',
+              color: '#64748b', fontFamily: 'Poppins, sans-serif'
             }}>
               {timeUntilNextDay ? (
                 `Next day in: ${timeUntilNextDay}`
@@ -1092,66 +1091,70 @@ const DailyQuestSystem = () => {
           </div>
         </div>
         <div style={{
-          fontSize: '14px',
-          fontWeight: 'bold',
-          color: '#10b981'
+          background: 'rgba(16, 185, 129, 0.12)',
+          border: '1px solid rgba(16, 185, 129, 0.25)',
+          borderRadius: '20px',
+          padding: '4px 12px',
+          fontSize: '13px', fontWeight: '700',
+          color: '#34d399', fontFamily: 'Poppins, sans-serif'
         }}>
           {totalXP} XP
         </div>
       </div>
 
-      {/* Compact Progress Bar */}
+      {/* Progress Bar */}
       <div style={{
-        background: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: '6px',
-        height: '6px',
-        marginBottom: '12px',
-        overflow: 'hidden'
+        background: 'rgba(30, 41, 59, 0.6)',
+        borderRadius: '20px',
+        height: '5px',
+        marginBottom: '14px',
+        overflow: 'hidden',
+        position: 'relative', zIndex: 1
       }}>
         <div style={{
-          background: 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
+          background: 'linear-gradient(90deg, #10b981 0%, #34d399 100%)',
           height: '100%',
           width: `${(progress.completed / progress.total) * 100}%`,
-          transition: 'width 0.3s ease'
+          borderRadius: '20px',
+          transition: 'width 0.3s ease',
+          boxShadow: '0 0 8px rgba(16, 185, 129, 0.3)'
         }} />
       </div>
 
-      {/* Compact Quest Grid */}
+      {/* Quest Grid */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
         gap: '8px',
-        marginBottom: weeklyBonus ? '12px' : '0'
+        marginBottom: weeklyBonus ? '12px' : '0',
+        position: 'relative', zIndex: 1
       }}>
           {timeUntilNextDay ? (
             <div style={{
               gridColumn: '1 / -1',
-              background: 'rgba(30, 41, 59, 0.8)',
-              borderRadius: '8px',
-              padding: '20px',
+              background: 'rgba(30, 41, 59, 0.5)',
+              borderRadius: '14px',
+              padding: '24px',
               textAlign: 'center',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
+              border: '1px solid rgba(255, 255, 255, 0.06)'
             }}>
               <div style={{
-                fontSize: '16px',
-                fontWeight: 'bold',
-                color: '#e5e7eb',
-                marginBottom: '8px'
+                fontSize: '16px', fontWeight: '700',
+                color: '#f1f5f9', marginBottom: '8px',
+                fontFamily: 'Poppins, sans-serif'
               }}>
-                🎉 Day {currentDay} Completed!
+                Day {currentDay} Completed!
               </div>
               <div style={{
-                fontSize: '14px',
-                color: '#9ca3af',
-                marginBottom: '12px'
+                fontSize: '13px', color: '#64748b', marginBottom: '12px',
+                fontFamily: 'Poppins, sans-serif'
               }}>
                 All quests completed. Next day unlocks in:
               </div>
               <div style={{
-                fontSize: '24px',
-                fontWeight: 'bold',
-                color: '#3b82f6',
-                fontFamily: 'monospace'
+                fontSize: '24px', fontWeight: '700',
+                color: '#60a5fa', fontFamily: 'monospace',
+                textShadow: '0 0 12px rgba(96, 165, 250, 0.3)'
               }}>
                 {timeUntilNextDay}
               </div>
@@ -1168,65 +1171,56 @@ const DailyQuestSystem = () => {
               <div
                 key={`${quest.day}-${index}`}
                 style={{
-                  background: 'rgba(30, 41, 59, 0.8)',
-                  borderRadius: '8px',
-                  padding: '10px',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  background: isCompleted ? 'rgba(16, 185, 129, 0.06)' : 'rgba(30, 41, 59, 0.5)',
+                  borderRadius: '12px',
+                  padding: '10px 12px',
+                  border: isCompleted ? '1px solid rgba(16, 185, 129, 0.15)' : '1px solid rgba(255, 255, 255, 0.04)',
+                  borderLeft: isCompleted ? '2px solid #34d399' : '2px solid rgba(100, 116, 139, 0.3)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  opacity: isCompleted ? 0.6 : 1,
-                  minHeight: '48px'
+                  gap: '10px',
+                  opacity: isCompleted ? 0.65 : 1,
+                  minHeight: '48px',
+                  transition: 'all 0.2s ease'
                 }}
               >
                 <div style={{
-                  width: '28px',
-                  height: '28px',
+                  width: '30px', height: '30px',
                   background: quest.color,
-                  borderRadius: '6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  flexShrink: 0
+                  borderRadius: '8px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'white', flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
                 }}>
                   {quest.icon}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <h4 style={{
-                    margin: '0 0 2px 0',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    color: '#e5e7eb',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
+                    margin: '0 0 1px 0', fontSize: '12px', fontWeight: '600',
+                    color: '#e2e8f0', whiteSpace: 'nowrap',
+                    overflow: 'hidden', textOverflow: 'ellipsis',
+                    fontFamily: 'Poppins, sans-serif'
                   }}>
                     {quest.title}
                   </h4>
                   <p style={{
-                    margin: '0',
-                    fontSize: '10px',
-                    color: '#9ca3af'
+                    margin: '0', fontSize: '10px',
+                    color: '#64748b', fontFamily: 'Poppins, sans-serif'
                   }}>
                     {current}/{required}
                   </p>
                 </div>
                 <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  flexShrink: 0
+                  display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0
                 }}>
                   <div style={{
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    color: '#10b981'
+                    fontSize: '11px', fontWeight: '700',
+                    color: '#34d399', fontFamily: 'Poppins, sans-serif'
                   }}>
                     +{quest.xpReward}
                   </div>
                   {isCompleted && (
-                    <CheckCircle size={12} style={{ color: '#10b981' }} />
+                    <CheckCircle size={12} style={{ color: '#34d399' }} />
                   )}
                 </div>
               </div>
@@ -1237,16 +1231,16 @@ const DailyQuestSystem = () => {
       {/* Compact Weekly Bonus */}
       {weeklyBonus && (
         <div style={{
-          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-          borderRadius: '8px',
+          background: 'rgba(245, 158, 11, 0.10)',
+          border: '1px solid rgba(245, 158, 11, 0.20)',
+          borderRadius: '12px',
           padding: '12px',
           textAlign: 'center',
-          color: 'white',
           marginBottom: '12px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-            <Trophy size={16} />
-            <span style={{ fontSize: '14px', fontWeight: 'bold' }}>
+            <Trophy size={16} style={{ color: '#fbbf24' }} />
+            <span style={{ fontSize: '13px', fontWeight: '700', color: '#fbbf24', fontFamily: 'Poppins, sans-serif' }}>
               Week Complete! +10,000 XP
             </span>
           </div>

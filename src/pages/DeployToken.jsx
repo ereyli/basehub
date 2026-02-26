@@ -225,7 +225,7 @@ const DeployToken = () => {
               {deployResult.xpEarned && (
                 <div className="detail-item">
                   <strong>XP Earned:</strong>
-                  <div className="status-message" style={{ background: '#f0fdf4', border: '1px solid #86efac', color: '#16a34a' }}>
+                  <div className="status-message" style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', borderLeft: '3px solid #34d399', color: '#34d399' }}>
                     🎉 +{deployResult.xpEarned} XP earned!
                   </div>
                 </div>

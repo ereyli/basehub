@@ -13,9 +13,9 @@ import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { NETWORKS, getNetworkKey } from '../config/networks'
 import { getProductsForHome, getProductsForHomeByNetwork, getNetworksForProductIds } from '../config/products'
-import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat, Sparkles, RotateCcw, Gift } from 'lucide-react'
+import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat, Sparkles, RotateCcw, Gift, LayoutGrid } from 'lucide-react'
 
-const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Search, Shield, Trash2, Star, Layers, Package, Factory, Rocket, Image, Sparkles, ArrowLeftRight, Repeat, Zap }
+const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Search, Shield, Trash2, Star, Layers, Package, Factory, Rocket, Image, Sparkles, ArrowLeftRight, Repeat, Zap, Users, LayoutGrid }
 
 const Home = () => {
   const { isConnected } = useAccount()
@@ -61,25 +61,25 @@ const Home = () => {
   
   // Compact styles: Farcaster mobile (very compact) | Web mobile (2 columns, compact) | Desktop
   const compactStyles = {
-    // Category container
+    // Category container — clean dark surface
     categoryContainer: isCompactMode ? {
-      background: 'rgba(30, 41, 59, 0.95)',
-      borderRadius: '12px',
-      padding: '10px',
-      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
-      border: '1px solid rgba(59, 130, 246, 0.2)'
-    } : isWebMobile ? {
-      background: 'rgba(30, 41, 59, 0.95)',
+      background: 'rgba(15, 23, 42, 0.8)',
       borderRadius: '14px',
       padding: '12px',
-      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.12)',
-      border: '1px solid rgba(255, 255, 255, 0.08)'
+      boxShadow: '0 2px 12px rgba(0, 0, 0, 0.2)',
+      border: '1px solid rgba(255, 255, 255, 0.06)'
+    } : isWebMobile ? {
+      background: 'rgba(15, 23, 42, 0.8)',
+      borderRadius: '16px',
+      padding: '14px',
+      boxShadow: '0 2px 12px rgba(0, 0, 0, 0.2)',
+      border: '1px solid rgba(255, 255, 255, 0.06)'
     } : {
-      background: 'rgba(30, 41, 59, 0.95)',
-      borderRadius: '20px',
+      background: 'rgba(15, 23, 42, 0.8)',
+      borderRadius: '22px',
       padding: '32px',
-      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-      border: '2px solid rgba(59, 130, 246, 0.2)'
+      boxShadow: '0 4px 24px rgba(0, 0, 0, 0.15)',
+      border: '1px solid rgba(255, 255, 255, 0.06)'
     },
     // Category header
     categoryHeader: isCompactMode ? {
@@ -166,46 +166,24 @@ const Home = () => {
       gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
       gap: '20px'
     },
-    // Card style
-    card: (color) => isCompactMode ? {
-      textDecoration: 'none',
-      border: 'none',
-      cursor: 'pointer',
-      position: 'relative',
-      background: color,
-      color: 'white',
-      padding: '8px',
-      borderRadius: '10px',
-      transition: 'all 0.2s ease',
-      minHeight: '70px',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center'
-    } : isWebMobile ? {
-      textDecoration: 'none',
-      border: 'none',
-      cursor: 'pointer',
-      position: 'relative',
-      background: color,
-      color: 'white',
-      padding: '12px',
-      borderRadius: '12px',
-      transition: 'all 0.2s ease',
-      minHeight: '88px',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center'
-    } : {
-      textDecoration: 'none',
-      border: 'none',
-      cursor: 'pointer',
-      position: 'relative',
-      background: color,
-      color: 'white',
-      padding: '24px',
-      borderRadius: '16px',
-      transition: 'all 0.3s ease'
+    // Card style — dark with colored tint
+    card: (color) => {
+      const c = color.startsWith('linear') ? '#3b82f6' : color
+      const base = {
+        textDecoration: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        position: 'relative',
+        color: 'white',
+        transition: 'all 0.25s ease',
+        background: `linear-gradient(145deg, ${c}20 0%, ${c}10 30%, rgba(15,23,42,0.97) 70%, rgba(15,23,42,0.98) 100%)`,
+        borderLeft: `3px solid ${c}`,
+        boxShadow: `0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 ${c}15`,
+        overflow: 'hidden',
+      }
+      if (isCompactMode) return { ...base, padding: '10px 8px', borderRadius: '12px', minHeight: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderLeft: `2px solid ${c}` }
+      if (isWebMobile) return { ...base, padding: '14px 12px', borderRadius: '14px', minHeight: '100px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }
+      return { ...base, padding: '24px', borderRadius: '18px' }
     },
     // Card inner container
     cardInner: isCompactMode ? {
@@ -275,36 +253,39 @@ const Home = () => {
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap'
     },
-    // XP Badge
+    // XP Badge — pill style with subtle glow
     xpBadge: isCompactMode ? {
-      background: 'rgba(30, 41, 59, 0.95)',
-      borderRadius: '6px',
-      padding: '2px 6px',
-      fontSize: '8px',
-      fontWeight: '600',
-      color: '#10b981',
+      background: 'rgba(16, 185, 129, 0.12)',
+      border: '1px solid rgba(16, 185, 129, 0.25)',
+      borderRadius: '20px',
+      padding: '2px 8px',
+      fontSize: '9px',
+      fontWeight: '700',
+      color: '#34d399',
       whiteSpace: 'nowrap',
-      lineHeight: '1.2',
+      lineHeight: '1.3',
       fontFamily: 'Poppins, sans-serif'
     } : isWebMobile ? {
-      background: 'rgba(30, 41, 59, 0.9)',
-      borderRadius: '6px',
-      padding: '3px 6px',
+      background: 'rgba(16, 185, 129, 0.12)',
+      border: '1px solid rgba(16, 185, 129, 0.25)',
+      borderRadius: '20px',
+      padding: '3px 10px',
       fontSize: '10px',
-      fontWeight: '600',
-      color: '#10b981',
+      fontWeight: '700',
+      color: '#34d399',
       whiteSpace: 'nowrap',
-      lineHeight: '1.2',
+      lineHeight: '1.3',
       fontFamily: 'Poppins, sans-serif'
     } : {
-      background: 'rgba(30, 41, 59, 0.95)',
-      borderRadius: '12px',
-      padding: '4px 10px',
+      background: 'rgba(16, 185, 129, 0.12)',
+      border: '1px solid rgba(16, 185, 129, 0.25)',
+      borderRadius: '20px',
+      padding: '4px 12px',
       fontSize: '12px',
-      fontWeight: '600',
-      color: '#10b981',
+      fontWeight: '700',
+      color: '#34d399',
       whiteSpace: 'nowrap',
-      lineHeight: '1.2',
+      lineHeight: '1.3',
       fontFamily: 'Poppins, sans-serif'
     },
     // Main layout gap
@@ -395,13 +376,13 @@ const Home = () => {
   const getRankIcon = (rank) => {
     switch (rank) {
       case 1:
-        return <Trophy size={20} style={{ color: '#f59e0b' }} />
+        return <Trophy size={18} style={{ color: '#fbbf24' }} />
       case 2:
-        return <Medal size={20} style={{ color: '#9ca3af' }} />
+        return <Medal size={18} style={{ color: '#cbd5e1' }} />
       case 3:
-        return <Award size={20} style={{ color: '#d97706' }} />
+        return <Award size={18} style={{ color: '#f59e0b' }} />
       default:
-        return <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#6b7280' }}>#{rank}</span>
+        return <span style={{ fontSize: '13px', fontWeight: '700', color: '#64748b', fontFamily: 'Poppins, sans-serif' }}>#{rank}</span>
     }
   }
 
@@ -483,15 +464,16 @@ const Home = () => {
   const renderMultiChainText = () => {
     return (
       <span style={{
-        fontSize: '12px',
-        fontWeight: '600',
-        color: 'rgba(255, 255, 255, 0.9)',
-        background: 'rgba(139, 92, 246, 0.2)',
-        padding: '4px 10px',
-        borderRadius: '8px',
-        border: '1px solid rgba(139, 92, 246, 0.3)',
+        fontSize: '10px',
+        fontWeight: '700',
+        color: '#a78bfa',
+        background: 'rgba(139, 92, 246, 0.10)',
+        padding: '3px 10px',
+        borderRadius: '20px',
+        border: '1px solid rgba(139, 92, 246, 0.25)',
         whiteSpace: 'nowrap',
-        fontFamily: 'Poppins, sans-serif'
+        fontFamily: 'Poppins, sans-serif',
+        letterSpacing: '0.3px'
       }}>
         Multi-chain
       </span>
@@ -510,11 +492,26 @@ const Home = () => {
 
   // Render a compact card for Farcaster mobile
   const renderCompactCard = (game, onClick = null, linkTo = null) => {
+    const iconWrapStyle = isCompactMode ? {
+      flexShrink: 0,
+      width: '36px', height: '36px',
+      borderRadius: '10px',
+      background: `${game.color}22`,
+      border: `1px solid ${game.color}44`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center'
+    } : {
+      flexShrink: 0,
+      width: '44px', height: '44px',
+      borderRadius: '12px',
+      background: `${game.color}22`,
+      border: `1px solid ${game.color}44`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center'
+    }
     const cardContent = (
       <div style={compactStyles.cardInner}>
         {isCompactMode ? (
           <>
-            <div style={{ flexShrink: 0 }}>
+            <div style={iconWrapStyle}>
               {game.icon}
             </div>
             <h3 style={compactStyles.cardTitle}>
@@ -527,7 +524,7 @@ const Home = () => {
         ) : (
           <>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-              <div style={{ flexShrink: 0 }}>
+              <div style={iconWrapStyle}>
                 {game.icon}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -545,14 +542,15 @@ const Home = () => {
               </div>
               {game.bonusXP && (
                 <div style={{
-                  background: 'rgba(255, 215, 0, 0.95)',
-                  borderRadius: '12px',
-                  padding: '4px 10px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  color: '#92400e',
+                  background: 'rgba(251, 191, 36, 0.15)',
+                  border: '1px solid rgba(251, 191, 36, 0.3)',
+                  borderRadius: '20px',
+                  padding: '4px 12px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  color: '#fbbf24',
                   whiteSpace: 'nowrap',
-                  lineHeight: '1.2',
+                  lineHeight: '1.3',
                   fontFamily: 'Poppins, sans-serif'
                 }}>
                   {game.bonusXP}
@@ -564,6 +562,17 @@ const Home = () => {
       </div>
     )
 
+    const glowOverlay = (
+      <div style={{
+        position: 'absolute',
+        top: '-20%', right: '-20%',
+        width: '70%', height: '70%',
+        background: `radial-gradient(ellipse, ${game.color}20 0%, ${game.color}0c 35%, ${game.color}04 60%, transparent 85%)`,
+        pointerEvents: 'none',
+        filter: 'blur(8px)'
+      }} />
+    )
+
     if (linkTo) {
       return (
         <Link
@@ -573,7 +582,8 @@ const Home = () => {
           style={{ textDecoration: 'none', display: 'block' }}
         >
           <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
-            {cardContent}
+            {glowOverlay}
+            <div style={{ position: 'relative', zIndex: 1 }}>{cardContent}</div>
           </div>
         </Link>
       )
@@ -590,7 +600,8 @@ const Home = () => {
           cursor: onClick ? 'pointer' : 'default'
         }}
       >
-        {cardContent}
+        {glowOverlay}
+        <div style={{ position: 'relative', zIndex: 1 }}>{cardContent}</div>
       </button>
     )
   }
@@ -605,7 +616,7 @@ const Home = () => {
     }
 
     return (
-      <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid ${borderColor}` }}>
+      <div style={{ ...compactStyles.categoryContainer, border: `1px solid ${borderColor}` }}>
         <div style={compactStyles.categoryHeader}>
           <div style={categoryIconBoxStyle}>
             {icon}
@@ -805,19 +816,22 @@ const Home = () => {
             
             {!isConnected && (
               <div style={{
-                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                border: '1px solid #f59e0b',
-                borderRadius: isCompactMode ? '8px' : '12px',
-                padding: isCompactMode ? '8px 10px' : '16px',
+                background: 'rgba(245, 158, 11, 0.08)',
+                border: '1px solid rgba(245, 158, 11, 0.2)',
+                borderLeft: '3px solid #fbbf24',
+                borderRadius: isCompactMode ? '10px' : '14px',
+                padding: isCompactMode ? '10px 12px' : '16px',
                 marginBottom: isCompactMode ? '8px' : '24px'
               }}>
                 <p style={{ 
-                  color: '#92400e', 
+                  color: '#fbbf24', 
                   margin: 0, 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: '6px',
-                  fontSize: isCompactMode ? '11px' : '14px'
+                  gap: '8px',
+                  fontSize: isCompactMode ? '11px' : '13px',
+                  fontWeight: '600',
+                  fontFamily: 'Poppins, sans-serif'
                 }}>
                   <Zap size={isCompactMode ? 12 : 16} /> {isCompactMode ? 'Connect wallet to earn XP' : 'Connect your wallet to start playing and earning XP'}
                 </p>
@@ -848,7 +862,7 @@ const Home = () => {
           {true ? (
             <div style={compactStyles.mainLayoutGap}>
               {/* 1. Early Access NFT Category */}
-              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(245, 158, 11, 0.2)` }}>
+              <div style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(245, 158, 11, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b' }}>
                     <Rocket size={compactStyles.iconSize} />
@@ -857,14 +871,15 @@ const Home = () => {
                     {isCompactMode ? 'NFT PASS' : 'EARLY ACCESS NFT'}
                   </h2>
                   <span style={{
-                    padding: '4px 10px',
-                    background: 'rgba(59, 130, 246, 0.2)',
-                    border: '1px solid rgba(59, 130, 246, 0.5)',
-                    borderRadius: '6px',
-                    color: '#3b82f6',
-                    fontSize: '11px',
+                    padding: '3px 10px',
+                    background: 'rgba(59, 130, 246, 0.10)',
+                    border: '1px solid rgba(59, 130, 246, 0.25)',
+                    borderRadius: '20px',
+                    color: '#60a5fa',
+                    fontSize: '10px',
                     fontWeight: '700',
-                    letterSpacing: '0.5px'
+                    letterSpacing: '0.5px',
+                    fontFamily: 'Poppins, sans-serif'
                   }}>
                     BETA
                   </span>
@@ -873,26 +888,22 @@ const Home = () => {
                 <div style={compactStyles.cardGrid}>
                   <Link to="/early-access" className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
                     <div style={{ ...compactStyles.card('#f59e0b'), height: '100%' }}>
-                      <div style={compactStyles.cardInner}>
+                      <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #f59e0b20 0%, #f59e0b0c 35%, #f59e0b04 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
+                      <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
                         {isCompactMode ? (
                           <>
-                            <Rocket size={24} style={{ color: 'white' }} />
+                            <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#f59e0b22', border: '1px solid #f59e0b44', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Rocket size={18} style={{ color: 'white' }} />
+                            </div>
                             <h3 style={compactStyles.cardTitle}>Pass</h3>
                             <div style={compactStyles.xpBadge}>3000 XP</div>
-                          </>
-                        ) : isWebMobile ? (
-                          <>
-                            <Rocket size={28} style={{ color: 'white', flexShrink: 0 }} />
-                            <h3 style={compactStyles.cardTitle}>Early Access Pass</h3>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
-                              <div style={compactStyles.xpBadge}>3000 XP</div>
-                              <span style={{ background: 'rgba(255,215,0,0.9)', borderRadius: '6px', padding: '2px 6px', fontSize: '10px', fontWeight: '600', color: '#92400e' }}>0.001 ETH</span>
-                            </div>
                           </>
                         ) : (
                           <>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                              <Rocket size={40} style={{ color: 'white', flexShrink: 0 }} />
+                              <div style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '12px', background: '#f59e0b22', border: '1px solid #f59e0b44', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Rocket size={22} style={{ color: 'white' }} />
+                              </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <h3 style={compactStyles.cardTitle}>Early Access Pass</h3>
                                 <p style={compactStyles.cardDescription}>Mint your BaseHub Early Access Pass and unlock exclusive benefits</p>
@@ -900,7 +911,7 @@ const Home = () => {
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
                               <div style={compactStyles.xpBadge}>3000 XP</div>
-                              <div style={{ background: 'rgba(255, 215, 0, 0.95)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#92400e' }}>0.001 ETH</div>
+                              <div style={{ background: 'rgba(251, 191, 36, 0.15)', border: '1px solid rgba(251, 191, 36, 0.3)', borderRadius: '20px', padding: '4px 12px', fontSize: '11px', fontWeight: '700', color: '#fbbf24' }}>0.001 ETH</div>
                             </div>
                           </>
                         )}
@@ -908,24 +919,23 @@ const Home = () => {
                     </div>
                   </Link>
                   <Link to="/nft-wheel" className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
-                    <div style={{ ...compactStyles.card('linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'), height: '100%' }}>
-                      <div style={compactStyles.cardInner}>
+                    <div style={{ ...compactStyles.card('#8b5cf6'), height: '100%' }}>
+                      <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #8b5cf620 0%, #8b5cf60c 35%, #8b5cf604 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
+                      <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
                         {isCompactMode ? (
                           <>
-                            <Sparkles size={24} style={{ color: 'white' }} />
+                            <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#8b5cf622', border: '1px solid #8b5cf644', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Sparkles size={18} style={{ color: 'white' }} />
+                            </div>
                             <h3 style={compactStyles.cardTitle}>Wheel</h3>
                             <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-50K</div>
-                          </>
-                        ) : isWebMobile ? (
-                          <>
-                            <Sparkles size={28} style={{ color: 'white', flexShrink: 0 }} />
-                            <h3 style={compactStyles.cardTitle}>NFT Wheel</h3>
-                            <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-50K XP</div>
                           </>
                         ) : (
                           <>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                              <Sparkles size={40} style={{ color: 'white', flexShrink: 0 }} />
+                              <div style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '12px', background: '#8b5cf622', border: '1px solid #8b5cf644', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Sparkles size={22} style={{ color: 'white' }} />
+                              </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <h3 style={compactStyles.cardTitle}>NFT Wheel of Fortune</h3>
                                 <p style={compactStyles.cardDescription}>Spin to win 2K-50K XP daily! (NFT holders only)</p>
@@ -933,7 +943,7 @@ const Home = () => {
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
                               <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-50K XP</div>
-                              <div style={{ background: 'rgba(251, 191, 36, 0.2)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#fbbf24', border: '1px solid rgba(251, 191, 36, 0.3)' }}>🎰 MEGA JACKPOT</div>
+                              <div style={{ background: 'rgba(251, 191, 36, 0.15)', border: '1px solid rgba(251, 191, 36, 0.3)', borderRadius: '20px', padding: '4px 12px', fontSize: '11px', fontWeight: '700', color: '#fbbf24' }}>MEGA JACKPOT</div>
                             </div>
                           </>
                         )}
@@ -955,88 +965,16 @@ const Home = () => {
                   {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['swap']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
-                  {games.filter(g => g.id === 'swap').map((game) => (
-                    <Link
-                      key={game.id}
-                      to={game.path}
-                      className="game-card"
-                      style={{ 
-                        textDecoration: 'none',
-                        position: 'relative',
-                        display: 'block'
-                      }}
-                    >
-                      <div style={{
-                        ...compactStyles.card(game.color),
-                        height: '100%'
-                      }}>
-                        <div style={compactStyles.cardInner}>
-                          {isCompactMode ? (
-                            <>
-                              <div style={{ flexShrink: 0 }}>
-                                {game.icon}
-                              </div>
-                              <h3 style={compactStyles.cardTitle}>
-                                Swap
-                              </h3>
-                              <div style={compactStyles.xpBadge}>
-                                {game.xpReward}
-                              </div>
-                            </>
-                          ) : isWebMobile ? (
-                            <>
-                              <div style={{ flexShrink: 0 }}>{game.icon}</div>
-                              <h3 style={compactStyles.cardTitle}>{game.title}</h3>
-                              <div style={compactStyles.xpBadge}>{game.xpReward}</div>
-                            </>
-                          ) : (
-                            <>
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                                <div style={{ flexShrink: 0 }}>
-                                  {game.icon}
-                                </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <h3 style={compactStyles.cardTitle}>
-                                    {game.title}
-                                  </h3>
-                                  <p style={compactStyles.cardDescription}>
-                                    {game.description}
-                                  </p>
-                                </div>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                                <div style={compactStyles.xpBadge}>
-                                  {game.xpReward}
-                                </div>
-                                {game.bonusXP && (
-                                  <div style={{
-                                    background: 'rgba(255, 215, 0, 0.95)',
-                                    borderRadius: '12px',
-                                    padding: '4px 10px',
-                                    fontSize: '12px',
-                                    fontWeight: '600',
-                                    color: '#92400e',
-                                    whiteSpace: 'nowrap',
-                                    lineHeight: '1.2',
-                                    fontFamily: 'Poppins, sans-serif'
-                                  }}>
-                                    {game.bonusXP}
-                                  </div>
-                                )}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+                  {games.filter(g => g.id === 'swap').map((game) =>
+                    renderCompactCard(game, null, game.path)
+                  )}
                 </div>
               </div>
 
               {/* 3. PumpHub - Token Launchpad Category (same window style as NFT/PREDICTION) */}
               <div style={{ 
                 ...compactStyles.categoryContainer, 
-                border: `${isCompactMode ? '1px' : '2px'} solid rgba(0, 212, 255, 0.2)`
+                border: `1px solid rgba(0, 212, 255, 0.12)`
               }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(0, 212, 255, 0.15)', border: '1px solid rgba(0, 212, 255, 0.3)', color: '#00d4ff' }}>
@@ -1052,18 +990,23 @@ const Home = () => {
                 )}
                 <div style={compactStyles.cardGrid}>
                   <Link to="/pumphub" className="game-card" style={{ textDecoration: 'none', display: 'block', position: 'relative' }}>
-                    <div style={{ ...compactStyles.card('linear-gradient(135deg, #00d4ff, #0052ff)'), height: '100%' }}>
-                      <div style={compactStyles.cardInner}>
+                    <div style={{ ...compactStyles.card('#00d4ff'), height: '100%' }}>
+                      <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #00d4ff20 0%, #00d4ff0c 35%, #00d4ff04 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
+                      <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
                         {isCompactMode ? (
                           <>
-                            <Rocket size={24} style={{ color: 'white' }} />
+                            <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#00d4ff22', border: '1px solid #00d4ff44', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Rocket size={18} style={{ color: 'white' }} />
+                            </div>
                             <h3 style={compactStyles.cardTitle}>Launch</h3>
                             <div style={compactStyles.xpBadge}>100 XP</div>
                           </>
                         ) : (
                           <>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                              <Rocket size={40} style={{ color: 'white' }} />
+                              <div style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '12px', background: '#00d4ff22', border: '1px solid #00d4ff44', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Rocket size={22} style={{ color: 'white' }} />
+                              </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <h3 style={compactStyles.cardTitle}>Token Launchpad</h3>
                                 <p style={compactStyles.cardDescription}>Browse and trade launched tokens</p>
@@ -1078,18 +1021,23 @@ const Home = () => {
                     </div>
                   </Link>
                   <Link to="/pumphub?tab=create" className="game-card" style={{ textDecoration: 'none', display: 'block', position: 'relative' }}>
-                    <div style={{ ...compactStyles.card('linear-gradient(135deg, #8b5cf6, #6366f1)'), height: '100%' }}>
-                      <div style={compactStyles.cardInner}>
+                    <div style={{ ...compactStyles.card('#8b5cf6'), height: '100%' }}>
+                      <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #8b5cf620 0%, #8b5cf60c 35%, #8b5cf604 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
+                      <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
                         {isCompactMode ? (
                           <>
-                            <Factory size={24} style={{ color: 'white' }} />
+                            <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#8b5cf622', border: '1px solid #8b5cf644', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Factory size={18} style={{ color: 'white' }} />
+                            </div>
                             <h3 style={compactStyles.cardTitle}>Create</h3>
                             <div style={compactStyles.xpBadge}>2000 XP</div>
                           </>
                         ) : (
                           <>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                              <Factory size={40} style={{ color: 'white' }} />
+                              <div style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '12px', background: '#8b5cf622', border: '1px solid #8b5cf644', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Factory size={22} style={{ color: 'white' }} />
+                              </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <h3 style={compactStyles.cardTitle}>Create Token</h3>
                                 <p style={compactStyles.cardDescription}>Launch your own token (0.001 ETH)</p>
@@ -1105,9 +1053,9 @@ const Home = () => {
                   </Link>
                 </div>
                 {!isCompactMode && (
-                  <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(0, 0, 0, 0.2)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <TrendingUp size={20} style={{ color: '#00d4ff' }} />
-                    <span style={{ color: '#9ca3af', fontSize: '13px', fontFamily: 'Poppins, sans-serif' }}>
+                  <div style={{ marginTop: '16px', padding: '12px 16px', background: 'rgba(0, 212, 255, 0.06)', border: '1px solid rgba(0, 212, 255, 0.12)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <TrendingUp size={16} style={{ color: '#22d3ee', flexShrink: 0 }} />
+                    <span style={{ color: '#64748b', fontSize: '12px', fontFamily: 'Poppins, sans-serif' }}>
                       Bonding curve • LP locked forever • 0.001 ETH to create • 5 ETH graduation to Uniswap
                     </span>
                   </div>
@@ -1115,7 +1063,7 @@ const Home = () => {
               </div>
 
               {/* NFT Category - moved up for visibility */}
-              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(59, 130, 246, 0.2)` }}>
+              <div style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(59, 130, 246, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.3)', color: '#3b82f6' }}>
                     <Image size={compactStyles.iconSize} />
@@ -1124,100 +1072,43 @@ const Home = () => {
                   {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['nft-launchpad', 'nft-launchpad-explore']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
-                  {games.filter(g => ['nft-launchpad', 'nft-launchpad-explore'].includes(g.id)).map((game) => (
-                    <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
-                      <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
-                        <div style={compactStyles.cardInner}>
-                          {isCompactMode ? (
-                            <>
-                              <div style={{ flexShrink: 0 }}>{game.icon}</div>
-                              <h3 style={compactStyles.cardTitle}>{game.title}</h3>
-                              <div style={compactStyles.xpBadge}>{game.xpReward}</div>
-                            </>
-                          ) : (
-                            <>
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                                <div style={{ flexShrink: 0 }}>{game.icon}</div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <h3 style={compactStyles.cardTitle}>{game.title}</h3>
-                                  <p style={compactStyles.cardDescription}>{game.description}</p>
-                                  {game.holderDiscount && (
-                                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', margin: '4px 0 0', fontWeight: 500 }}>{game.holderDiscount}</p>
-                                  )}
-                                </div>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                                <div style={compactStyles.xpBadge}>{game.xpReward}</div>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+                  {games.filter(g => ['nft-launchpad', 'nft-launchpad-explore'].includes(g.id)).map((game) =>
+                    renderCompactCard(game, null, game.path)
+                  )}
                 </div>
               </div>
 
               {/* 5. Prediction Category (under NFT) */}
-              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(20, 184, 166, 0.25)` }}>
+              <div style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(20, 184, 166, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(20, 184, 166, 0.15)', border: '1px solid rgba(20, 184, 166, 0.3)', color: '#14b8a6' }}>
                     <Users size={compactStyles.iconSize} />
                   </div>
                   <h2 style={compactStyles.categoryTitle}>PREDICTION</h2>
                   <span style={{
-                    padding: '4px 10px',
-                    background: 'rgba(245, 158, 11, 0.2)',
-                    border: '1px solid rgba(245, 158, 11, 0.5)',
-                    borderRadius: '6px',
-                    color: '#f59e0b',
-                    fontSize: '11px',
+                    padding: '3px 10px',
+                    background: 'rgba(245, 158, 11, 0.10)',
+                    border: '1px solid rgba(245, 158, 11, 0.25)',
+                    borderRadius: '20px',
+                    color: '#fbbf24',
+                    fontSize: '10px',
                     fontWeight: '700',
-                    letterSpacing: '0.5px'
+                    letterSpacing: '0.5px',
+                    fontFamily: 'Poppins, sans-serif'
                   }}>
                     BETA
                   </span>
                   {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['prediction-arena']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
-                  {games.filter(g => g.id === 'prediction-arena').map((game) => (
-                    <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
-                      <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
-                        <div style={compactStyles.cardInner}>
-                          {isCompactMode ? (
-                            <>
-                              <div style={{ flexShrink: 0 }}>{game.icon}</div>
-                              <h3 style={compactStyles.cardTitle}>Prediction</h3>
-                              <div style={compactStyles.xpBadge}>{game.xpReward}</div>
-                            </>
-                          ) : (
-                            <>
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                                <div style={{ flexShrink: 0 }}>{game.icon}</div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <h3 style={compactStyles.cardTitle}>{game.title}</h3>
-                                  <p style={compactStyles.cardDescription}>{game.description}</p>
-                                </div>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                                <div style={compactStyles.xpBadge}>{game.xpReward}</div>
-                                {game.bonusXP && (
-                                  <div style={{ background: 'rgba(255, 215, 0, 0.95)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#92400e' }}>
-                                    {game.bonusXP}
-                                  </div>
-                                )}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+                  {games.filter(g => g.id === 'prediction-arena').map((game) =>
+                    renderCompactCard(game, null, game.path)
+                  )}
                 </div>
               </div>
 
               {/* DEPLOY Category */}
-              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(59, 130, 246, 0.2)` }}>
+              <div style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(59, 130, 246, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.3)', color: '#3b82f6' }}>
                     <Rocket size={compactStyles.iconSize} />
@@ -1235,37 +1126,32 @@ const Home = () => {
                       style={{ textDecoration: 'none', display: 'block', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}
                     >
                       <div style={{ ...compactStyles.card('#db2777'), height: '100%' }}>
-                        <div style={compactStyles.cardInner}>
-                          {(() => {
-                            const iconWindowStyle = { width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }
-                            const iconSizeCompact = compactStyles.iconSize === 14 ? 24 : compactStyles.iconSize === 18 ? 28 : 32
-                            return isCompactMode ? (
-                              <>
-                                <div style={iconWindowStyle}><Zap size={iconSizeCompact} style={{ color: 'white' }} /></div>
-                                <h3 style={compactStyles.cardTitle}>Fast Deploy</h3>
-                                <div style={compactStyles.xpBadge}>850 XP each</div>
-                              </>
-                            ) : isWebMobile ? (
-                              <>
-                                <div style={{ ...iconWindowStyle, width: '36px', height: '36px', borderRadius: '10px' }}><Zap size={22} style={{ color: 'white' }} /></div>
-                                <h3 style={compactStyles.cardTitle}>Fast Deploy</h3>
-                                <div style={compactStyles.xpBadge}>850 XP each</div>
-                              </>
-                            ) : (
-                              <>
-                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                                  <div style={iconWindowStyle}><Zap size={24} style={{ color: 'white' }} /></div>
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <h3 style={compactStyles.cardTitle}>Fast Deploy</h3>
-                                    <p style={compactStyles.cardDescription}>Deploy ERC20 + ERC721 + ERC1155 in one flow</p>
-                                  </div>
+                        <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #db277720 0%, #db27770c 35%, #db277704 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
+                        <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
+                          {isCompactMode ? (
+                            <>
+                              <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#db277722', border: '1px solid #db277744', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Zap size={18} style={{ color: 'white' }} />
+                              </div>
+                              <h3 style={compactStyles.cardTitle}>Fast Deploy</h3>
+                              <div style={compactStyles.xpBadge}>850 XP each</div>
+                            </>
+                          ) : (
+                            <>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                                <div style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '12px', background: '#db277722', border: '1px solid #db277744', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <Zap size={22} style={{ color: 'white' }} />
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                                  <div style={compactStyles.xpBadge}>850 XP each</div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <h3 style={compactStyles.cardTitle}>Fast Deploy</h3>
+                                  <p style={compactStyles.cardDescription}>Deploy ERC20 + ERC721 + ERC1155 in one flow</p>
                                 </div>
-                              </>
-                            )
-                          })()}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                                <div style={compactStyles.xpBadge}>850 XP each</div>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
                     </button>
@@ -1273,39 +1159,14 @@ const Home = () => {
                   {games.filter(g => ['deploy', 'deploy-nft', 'deploy-erc721', 'deploy-erc1155'].includes(g.id)).sort((a, b) => {
                     const order = ['deploy', 'deploy-nft', 'deploy-erc721', 'deploy-erc1155'];
                     return order.indexOf(a.id) - order.indexOf(b.id);
-                  }).map((game) => (
-                    <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
-                      <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
-                        <div style={compactStyles.cardInner}>
-                          {isCompactMode ? (
-                            <>
-                              <div style={{ flexShrink: 0 }}>{game.icon}</div>
-                              <h3 style={compactStyles.cardTitle}>{game.title.replace('Deploy ', '')}</h3>
-                              <div style={compactStyles.xpBadge}>{game.xpReward}</div>
-                            </>
-                          ) : (
-                            <>
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                                <div style={{ flexShrink: 0 }}>{game.icon}</div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <h3 style={compactStyles.cardTitle}>{game.title}</h3>
-                                  <p style={compactStyles.cardDescription}>{game.description}</p>
-                                </div>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                                <div style={compactStyles.xpBadge}>{game.xpReward}</div>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+                  }).map((game) =>
+                    renderCompactCard(game, null, game.path)
+                  )}
                 </div>
               </div>
 
               {/* ANALYSIS Category */}
-              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(139, 92, 246, 0.2)` }}>
+              <div style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(139, 92, 246, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(139, 92, 246, 0.15)', border: '1px solid rgba(139, 92, 246, 0.3)', color: '#8b5cf6' }}>
                     <TrendingUp size={compactStyles.iconSize} />
@@ -1314,44 +1175,14 @@ const Home = () => {
                   {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['wallet-analysis', 'contract-security', 'allowance-cleaner']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
-                  {games.filter(g => ['wallet-analysis', 'contract-security', 'allowance-cleaner'].includes(g.id)).map((game) => (
-                    <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
-                      <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
-                        <div style={compactStyles.cardInner}>
-                          {isCompactMode ? (
-                            <>
-                              <div style={{ flexShrink: 0 }}>{game.icon}</div>
-                              <h3 style={compactStyles.cardTitle}>{game.title.split(' ')[0]}</h3>
-                              <div style={compactStyles.xpBadge}>{game.xpReward}</div>
-                            </>
-                          ) : (
-                            <>
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                                <div style={{ flexShrink: 0 }}>{game.icon}</div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <h3 style={compactStyles.cardTitle}>{game.title}</h3>
-                                  <p style={compactStyles.cardDescription}>{game.description}</p>
-                                </div>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                                <div style={compactStyles.xpBadge}>{game.xpReward}</div>
-                                {game.bonusXP && (
-                                  <div style={{ background: 'rgba(255, 215, 0, 0.95)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#92400e' }}>
-                                    {game.bonusXP}
-                                  </div>
-                                )}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+                  {games.filter(g => ['wallet-analysis', 'contract-security', 'allowance-cleaner'].includes(g.id)).map((game) =>
+                    renderCompactCard(game, null, game.path)
+                  )}
                 </div>
               </div>
 
               {/* SOCIAL Category */}
-              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(245, 158, 11, 0.2)` }}>
+              <div style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(245, 158, 11, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b' }}>
                     <Users size={compactStyles.iconSize} />
@@ -1360,44 +1191,14 @@ const Home = () => {
                   {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['featured-profiles']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
-                  {games.filter(g => ['featured-profiles'].includes(g.id)).map((game) => (
-                    <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
-                      <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
-                        <div style={compactStyles.cardInner}>
-                          {isCompactMode ? (
-                            <>
-                              <div style={{ flexShrink: 0 }}>{game.icon}</div>
-                              <h3 style={compactStyles.cardTitle}>Profiles</h3>
-                              <div style={compactStyles.xpBadge}>{game.xpReward}</div>
-                            </>
-                          ) : (
-                            <>
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                                <div style={{ flexShrink: 0 }}>{game.icon}</div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <h3 style={compactStyles.cardTitle}>{game.title}</h3>
-                                  <p style={compactStyles.cardDescription}>{game.description}</p>
-                                </div>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                                <div style={compactStyles.xpBadge}>{game.xpReward}</div>
-                                {game.bonusXP && (
-                                  <div style={{ background: 'rgba(255, 215, 0, 0.95)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#92400e' }}>
-                                    {game.bonusXP}
-                                  </div>
-                                )}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+                  {games.filter(g => ['featured-profiles'].includes(g.id)).map((game) =>
+                    renderCompactCard(game, null, game.path)
+                  )}
                 </div>
               </div>
 
               {/* GM & GN Category */}
-              <div style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(34, 197, 94, 0.2)` }}>
+              <div style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(34, 197, 94, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)', color: '#22c55e' }}>
                     <MessageSquare size={compactStyles.iconSize} />
@@ -1434,17 +1235,22 @@ const Home = () => {
                     }}
                   >
                     <div style={{ ...compactStyles.card('#f59e0b'), height: '100%' }}>
-                      <div style={compactStyles.cardInner}>
+                      <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #f59e0b20 0%, #f59e0b0c 35%, #f59e0b04 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
+                      <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
                         {isCompactMode ? (
                           <>
-                            <MessageSquare size={24} style={{ color: 'white' }} />
+                            <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#f59e0b22', border: '1px solid #f59e0b44', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <MessageSquare size={18} style={{ color: 'white' }} />
+                            </div>
                             <h3 style={compactStyles.cardTitle}>GM</h3>
                             <div style={compactStyles.xpBadge}>150 XP</div>
                           </>
                         ) : (
                           <>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                              <MessageSquare size={40} style={{ color: 'white', flexShrink: 0 }} />
+                              <div style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '12px', background: '#f59e0b22', border: '1px solid #f59e0b44', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <MessageSquare size={22} style={{ color: 'white' }} />
+                              </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <h3 style={compactStyles.cardTitle}>GM</h3>
                                 <p style={compactStyles.cardDescription}>
@@ -1488,17 +1294,22 @@ const Home = () => {
                     }}
                   >
                     <div style={{ ...compactStyles.card('#8b5cf6'), height: '100%' }}>
-                      <div style={compactStyles.cardInner}>
+                      <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #8b5cf620 0%, #8b5cf60c 35%, #8b5cf604 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
+                      <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
                         {isCompactMode ? (
                           <>
-                            <MessageSquare size={24} style={{ color: 'white' }} />
+                            <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#8b5cf622', border: '1px solid #8b5cf644', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <MessageSquare size={18} style={{ color: 'white' }} />
+                            </div>
                             <h3 style={compactStyles.cardTitle}>GN</h3>
                             <div style={compactStyles.xpBadge}>150 XP</div>
                           </>
                         ) : (
                           <>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                              <MessageSquare size={40} style={{ color: 'white', flexShrink: 0 }} />
+                              <div style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '12px', background: '#8b5cf622', border: '1px solid #8b5cf644', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <MessageSquare size={22} style={{ color: 'white' }} />
+                              </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <h3 style={compactStyles.cardTitle}>GN</h3>
                                 <p style={compactStyles.cardDescription}>
@@ -1518,7 +1329,7 @@ const Home = () => {
               </div>
 
               {/* GAMING Category - en altta */}
-              <div id="gaming" style={{ ...compactStyles.categoryContainer, border: `${isCompactMode ? '1px' : '2px'} solid rgba(245, 158, 11, 0.2)` }}>
+              <div id="gaming" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(245, 158, 11, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b' }}>
                     <Gamepad2 size={compactStyles.iconSize} />
@@ -1527,39 +1338,9 @@ const Home = () => {
                   {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['flip', 'dice', 'slot', 'lucky']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
-                  {games.filter(g => ['flip', 'dice', 'slot', 'lucky'].includes(g.id)).map((game) => (
-                    <Link key={game.id} to={game.path} className="game-card" style={{ textDecoration: 'none', display: 'block' }}>
-                      <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
-                        <div style={compactStyles.cardInner}>
-                          {isCompactMode ? (
-                            <>
-                              <div style={{ flexShrink: 0 }}>{game.icon}</div>
-                              <h3 style={compactStyles.cardTitle}>{game.title.split(' ')[0]}</h3>
-                              <div style={compactStyles.xpBadge}>{game.xpReward}</div>
-                            </>
-                          ) : (
-                            <>
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                                <div style={{ flexShrink: 0 }}>{game.icon}</div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <h3 style={compactStyles.cardTitle}>{game.title}</h3>
-                                  <p style={compactStyles.cardDescription}>{game.description}</p>
-                                </div>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                                <div style={compactStyles.xpBadge}>{game.xpReward}</div>
-                                {game.bonusXP && (
-                                  <div style={{ background: 'rgba(255, 215, 0, 0.95)', borderRadius: '12px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', color: '#92400e' }}>
-                                    {game.bonusXP}
-                                  </div>
-                                )}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+                  {games.filter(g => ['flip', 'dice', 'slot', 'lucky'].includes(g.id)).map((game) =>
+                    renderCompactCard(game, null, game.path)
+                  )}
                 </div>
               </div>
             </div>
@@ -1702,84 +1483,77 @@ const Home = () => {
                   className="game-card"
                   style={{ textDecoration: 'none', position: 'relative' }}
                 >
+                  <div style={{ position: 'absolute', top: '-40%', right: '-40%', width: '80%', height: '80%', background: `radial-gradient(ellipse, ${game.color}20 0%, ${game.color}0c 35%, ${game.color}04 60%, transparent 85%)`, filter: 'blur(8px)', pointerEvents: 'none' }} />
                   <div 
                     className="game-icon"
-                    style={{ background: game.color }}
+                    style={{ background: `${game.color}22`, border: `1px solid ${game.color}44` }}
                   >
                     {game.icon}
                   </div>
                   
-                  {/* XP Reward Badge */}
                   {game.xpReward && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '12px',
-                    right: '12px',
-                      background: 'rgba(209, 250, 229, 0.95)',
-                    backdropFilter: 'blur(10px)',
-                    borderRadius: '20px',
-                    padding: '4px 8px',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    color: '#059669',
-                    border: '1px solid rgba(5, 150, 105, 0.2)',
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                  }}>
-                    {game.xpReward}
-                  </div>
+                    <div style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      background: 'rgba(16, 185, 129, 0.12)',
+                      border: '1px solid rgba(16, 185, 129, 0.25)',
+                      borderRadius: '20px',
+                      padding: '4px 10px',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      color: '#34d399',
+                    }}>
+                      {game.xpReward}
+                    </div>
                   )}
 
-                  {/* Payment Amount Badge */}
                   {game.bonusXP && (
                     <div style={{
                       position: 'absolute',
                       top: '12px',
                       left: '12px',
-                      background: 'rgba(255, 215, 0, 0.95)',
-                      backdropFilter: 'blur(10px)',
+                      background: 'rgba(251, 191, 36, 0.15)',
+                      border: '1px solid rgba(251, 191, 36, 0.3)',
                       borderRadius: '20px',
-                      padding: '4px 8px',
+                      padding: '4px 10px',
                       fontSize: '11px',
-                      fontWeight: 'bold',
-                      color: '#92400e',
-                      border: '1px solid rgba(146, 64, 14, 0.2)',
-                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                      fontWeight: '700',
+                      color: '#fbbf24',
                     }}>
                       {game.bonusXP}
                     </div>
                   )}
 
-                  {/* x402 Protocol Badge (for x402 payments) */}
                   {game.isX402 && (
                     <div style={{
                       position: 'absolute',
                       top: game.xpReward ? '40px' : '12px',
                       right: '12px',
-                      background: 'rgba(102, 126, 234, 0.95)',
-                      backdropFilter: 'blur(10px)',
-                      borderRadius: '20px',
-                      padding: '4px 8px',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      color: 'white',
+                      background: 'rgba(102, 126, 234, 0.15)',
                       border: '1px solid rgba(102, 126, 234, 0.3)',
-                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                      borderRadius: '20px',
+                      padding: '4px 10px',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      color: '#a5b4fc',
                     }}>
                       x402
                     </div>
                   )}
 
                   <h3 style={{ 
-                    fontSize: '20px', 
-                    fontWeight: 'bold', 
-                    marginBottom: '8px',
-                    color: '#e5e7eb'
+                    fontSize: '18px', 
+                    fontWeight: '700', 
+                    marginBottom: '6px',
+                    color: '#f1f5f9',
+                    fontFamily: 'Poppins, sans-serif'
                   }}>
                     {game.title}
                   </h3>
                   <p style={{ 
-                    color: '#6b7280',
-                    fontSize: '14px',
+                    color: '#94a3b8',
+                    fontSize: '13px',
                     lineHeight: '1.5'
                   }}>
                     {game.description}
@@ -1801,144 +1575,122 @@ const Home = () => {
       {/* Leaderboard Section */}
       {true && (
         <div id="leaderboard" style={{ marginTop: '32px' }}>
-          <div className="card">
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.8)',
+            borderRadius: '22px',
+            padding: isCompactMode ? '16px' : '32px',
+            border: '1px solid rgba(245, 158, 11, 0.1)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{ position: 'absolute', top: '-30%', left: '50%', transform: 'translateX(-50%)', width: '60%', height: '50%', background: 'radial-gradient(ellipse, rgba(245,158,11,0.08) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(20px)' }} />
+
+            <div style={{ textAlign: 'center', marginBottom: '28px', position: 'relative', zIndex: 1 }}>
               <div style={{ 
-                marginBottom: '12px',
-                display: 'flex',
-                justifyContent: 'center'
+                width: '56px', height: '56px', borderRadius: '16px',
+                background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 16px'
               }}>
-                <Trophy size={32} style={{ color: '#f59e0b' }} />
+                <Trophy size={28} style={{ color: '#fbbf24' }} />
               </div>
               <h2 style={{ 
-                fontSize: '24px', 
-                fontWeight: 'bold', 
-                marginBottom: '8px',
-                color: '#e5e7eb'
+                fontSize: '22px', fontWeight: '700', marginBottom: '6px',
+                color: '#f1f5f9', fontFamily: 'Poppins, sans-serif'
               }}>
-                Top Players by XP
+                Top Players
               </h2>
-              <p style={{ 
-                color: '#6b7280',
-                fontSize: '14px'
-              }}>
-                See who's leading the BaseHub leaderboard
+              <p style={{ color: '#64748b', fontSize: '13px', fontFamily: 'Poppins, sans-serif' }}>
+                BaseHub XP Leaderboard
               </p>
             </div>
 
-            <div style={{ marginBottom: '16px' }}>
-              {leaderboard.length > 0 ? leaderboard.slice(0, visiblePlayersCount).map((player, index) => (
-                <div
-                  key={player.wallet_address}
-                  className="leaderboard-item"
-                  style={{
-                    background: index < 3 ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.5)',
-                    border: index < 3 ? '1px solid rgba(255, 215, 0, 0.3)' : '1px solid rgba(0, 0, 0, 0.1)'
-                  }}
-                >
-                  <div className="rank-icon" style={{ 
-                    background: index < 3 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(107, 114, 128, 0.15)',
-                    border: index < 3 ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(107, 114, 128, 0.3)'
-                  }}>
-                    {getRankIcon(index + 1)}
-                  </div>
-
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '6px',
-                      marginBottom: '2px'
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', position: 'relative', zIndex: 1 }}>
+              {leaderboard.length > 0 ? leaderboard.slice(0, visiblePlayersCount).map((player, index) => {
+                const rankColors = [
+                  { bg: 'rgba(245, 158, 11, 0.10)', border: 'rgba(245, 158, 11, 0.20)', accent: '#fbbf24', label: 'rgba(245, 158, 11, 0.15)', labelBorder: 'rgba(245, 158, 11, 0.35)' },
+                  { bg: 'rgba(148, 163, 184, 0.08)', border: 'rgba(148, 163, 184, 0.18)', accent: '#cbd5e1', label: 'rgba(148, 163, 184, 0.12)', labelBorder: 'rgba(148, 163, 184, 0.30)' },
+                  { bg: 'rgba(217, 119, 6, 0.08)', border: 'rgba(217, 119, 6, 0.18)', accent: '#f59e0b', label: 'rgba(217, 119, 6, 0.12)', labelBorder: 'rgba(217, 119, 6, 0.30)' }
+                ]
+                const rc = index < 3 ? rankColors[index] : null
+                return (
+                  <div
+                    key={player.wallet_address}
+                    className="leaderboard-item"
+                    style={{
+                      background: rc ? `linear-gradient(135deg, ${rc.bg} 0%, rgba(15,23,42,0.6) 100%)` : 'rgba(30, 41, 59, 0.5)',
+                      border: rc ? `1px solid ${rc.border}` : '1px solid rgba(255,255,255,0.04)',
+                      borderLeft: rc ? `3px solid ${rc.accent}` : '3px solid rgba(100,116,139,0.3)',
+                    }}
+                  >
+                    <div className="rank-icon" style={{ 
+                      background: rc ? rc.label : 'rgba(51, 65, 85, 0.6)',
+                      border: rc ? `1px solid ${rc.labelBorder}` : '1px solid rgba(71, 85, 105, 0.4)'
                     }}>
-                      <span style={{ 
-                        fontWeight: 'bold', 
-                        fontSize: '14px',
-                        color: '#e5e7eb'
-                      }}>
-                        {formatAddress(player.wallet_address)}
-                      </span>
-                      {player.hasNft && (
-                        <img
-                          src="/BaseHubNFT.png"
-                          alt="BaseHub NFT"
-                          title="Early Access Pass holder"
-                          style={{
-                            width: '14px',
-                            height: '14px',
-                            borderRadius: '50%',
-                            objectFit: 'cover',
-                            border: '1px solid rgba(251, 191, 36, 0.5)',
-                            flexShrink: 0
-                          }}
-                        />
-                      )}
-                      {index < 3 && (
-                        <span style={{
-                          background: index === 0 ? 'rgba(245, 158, 11, 0.2)' : 
-                                     index === 1 ? 'rgba(192, 192, 192, 0.2)' :
-                                     'rgba(205, 127, 50, 0.2)',
-                          color: index === 0 ? '#f59e0b' : index === 1 ? '#c0c0c0' : '#cd7f32',
-                          border: index === 0 ? '1px solid rgba(245, 158, 11, 0.4)' : 
-                                  index === 1 ? '1px solid rgba(192, 192, 192, 0.4)' :
-                                  '1px solid rgba(205, 127, 50, 0.4)',
-                          padding: '2px 5px',
-                          borderRadius: '6px',
-                          fontSize: '9px',
-                          fontWeight: '600',
-                          flexShrink: 0
-                        }}>
-                          TOP {index + 1}
+                      {getRankIcon(index + 1)}
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                        <span style={{ fontWeight: '600', fontSize: '14px', color: '#e2e8f0', fontFamily: 'Poppins, sans-serif' }}>
+                          {formatAddress(player.wallet_address)}
                         </span>
-                      )}
+                        {player.hasNft && (
+                          <img
+                            src="/BaseHubNFT.png"
+                            alt="BaseHub NFT"
+                            title="Early Access Pass holder"
+                            style={{
+                              width: '16px', height: '16px', borderRadius: '50%', objectFit: 'cover',
+                              border: '1px solid rgba(251, 191, 36, 0.4)', flexShrink: 0
+                            }}
+                          />
+                        )}
+                        {index < 3 && (
+                          <span style={{
+                            background: rc.label,
+                            color: rc.accent,
+                            border: `1px solid ${rc.labelBorder}`,
+                            padding: '2px 8px', borderRadius: '20px',
+                            fontSize: '9px', fontWeight: '700', flexShrink: 0,
+                            letterSpacing: '0.5px', fontFamily: 'Poppins, sans-serif'
+                          }}>
+                            TOP {index + 1}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px', fontSize: '11px', color: '#64748b', fontFamily: 'Poppins, sans-serif' }}>
+                        <span style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.15)', padding: '1px 6px', borderRadius: '10px', color: '#60a5fa' }}>
+                          Lv.{player.level}
+                        </span>
+                        <span>{Number(player.total_xp).toLocaleString()} XP</span>
+                      </div>
                     </div>
-                    
-                    <div style={{ 
-                      display: 'flex', 
-                      gap: '12px',
-                      fontSize: '12px',
-                      color: '#6b7280'
-                    }}>
-                      <span>Level {player.level}</span>
-                      <span>{player.total_xp} XP</span>
-                    </div>
-                  </div>
 
-                  <div style={{ 
-                    textAlign: 'right',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    flexShrink: 0,
-                    minWidth: '64px'
-                  }}>
-                    <Star size={14} style={{ color: '#f59e0b' }} />
-                    <span style={{ 
-                      fontWeight: 'bold',
-                      color: '#f59e0b',
-                      fontSize: '14px'
+                    <div style={{ 
+                      textAlign: 'right', display: 'flex', alignItems: 'center', gap: '5px',
+                      flexShrink: 0, minWidth: '70px'
                     }}>
-                      {player.total_xp}
-                    </span>
+                      <Star size={13} style={{ color: rc ? rc.accent : '#94a3b8' }} />
+                      <span style={{ 
+                        fontWeight: '700', fontFamily: 'Poppins, sans-serif',
+                        color: rc ? rc.accent : '#94a3b8',
+                        fontSize: '14px'
+                      }}>
+                        {Number(player.total_xp).toLocaleString()}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              )) : (
-                <div style={{
-                  textAlign: 'center',
-                  padding: '40px 20px',
-                  color: '#6b7280'
-                }}>
-                  <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
-                    <Trophy size={48} style={{ color: '#6b7280', opacity: 0.5 }} />
+                )
+              }) : (
+                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(100,116,139,0.1)', border: '1px solid rgba(100,116,139,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                    <Trophy size={28} style={{ color: '#475569' }} />
                   </div>
-                  <h3 style={{ 
-                    fontSize: '18px', 
-                    fontWeight: 'bold', 
-                    marginBottom: '8px',
-                    color: '#9ca3af'
-                  }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '6px', color: '#94a3b8', fontFamily: 'Poppins, sans-serif' }}>
                     No Players Yet
                   </h3>
-                  <p style={{ fontSize: '14px', margin: 0 }}>
+                  <p style={{ fontSize: '13px', margin: 0, color: '#64748b' }}>
                     Be the first to play and earn XP!
                   </p>
                 </div>
@@ -1949,28 +1701,21 @@ const Home = () => {
               <button
                 onClick={() => setVisiblePlayersCount(prev => Math.min(prev + 5, leaderboard.length))}
                 style={{ 
-                  width: '100%',
-                textAlign: 'center',
-                padding: '12px',
-                background: 'rgba(59, 130, 246, 0.1)',
-                borderRadius: '8px',
-                  border: '1px solid rgba(59, 130, 246, 0.2)',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  color: '#3b82f6',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  margin: 0
+                  width: '100%', textAlign: 'center', padding: '12px',
+                  background: 'rgba(59, 130, 246, 0.08)',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(59, 130, 246, 0.15)',
+                  cursor: 'pointer', transition: 'all 0.25s ease',
+                  color: '#60a5fa', fontSize: '13px', fontWeight: '600',
+                  margin: 0, fontFamily: 'Poppins, sans-serif'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(59, 130, 246, 0.2)'
-                  e.target.style.transform = 'translateY(-2px)'
-                  e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)'
+                  e.target.style.background = 'rgba(59, 130, 246, 0.15)'
+                  e.target.style.borderColor = 'rgba(59, 130, 246, 0.3)'
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.background = 'rgba(59, 130, 246, 0.1)'
-                  e.target.style.transform = 'translateY(0)'
-                  e.target.style.boxShadow = 'none'
+                  e.target.style.background = 'rgba(59, 130, 246, 0.08)'
+                  e.target.style.borderColor = 'rgba(59, 130, 246, 0.15)'
                 }}
               >
                 Show {Math.min(5, leaderboard.length - visiblePlayersCount)} more players...
@@ -1981,21 +1726,22 @@ const Home = () => {
       )}
 
       {/* Social Links Section */}
-      <div className="card" style={{ marginTop: '24px' }}>
+      <div style={{
+        marginTop: '24px',
+        background: 'rgba(15, 23, 42, 0.8)',
+        borderRadius: '22px',
+        padding: isCompactMode ? '16px' : '28px',
+        border: '1px solid rgba(255, 255, 255, 0.06)'
+      }}>
         <div style={{ textAlign: 'center' }}>
           <h3 style={{ 
-            fontSize: '20px', 
-            fontWeight: 'bold', 
-            marginBottom: '16px',
-            color: '#e5e7eb'
+            fontSize: '18px', fontWeight: '700', marginBottom: '16px',
+            color: '#f1f5f9', fontFamily: 'Poppins, sans-serif'
           }}>
-            🌐 Connect With Us
+            Connect With Us
           </h3>
           <div style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            gap: '16px',
-            flexWrap: 'wrap'
+            display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap'
           }}>
             <a 
               href="https://x.com/BaseHubb" 
@@ -2035,13 +1781,14 @@ const Home = () => {
           right: '20px',
           width: '320px',
           maxWidth: 'calc(100vw - 40px)',
-          background: '#f59e0b',
-          borderRadius: '16px',
+          background: 'linear-gradient(145deg, rgba(245,158,11,0.15) 0%, rgba(15,23,42,0.97) 50%)',
+          borderRadius: '18px',
           padding: '20px',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
           zIndex: 1000,
           animation: 'slideInUp 0.3s ease-out',
-          border: '2px solid rgba(255, 255, 255, 0.2)'
+          border: '1px solid rgba(245, 158, 11, 0.2)',
+          backdropFilter: 'blur(20px)'
         }}>
           <button
             onClick={() => {
@@ -2074,20 +1821,21 @@ const Home = () => {
             <div style={{
               width: '48px',
               height: '48px',
-              borderRadius: '12px',
-              background: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '14px',
+              background: 'rgba(245, 158, 11, 0.15)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0
             }}>
-              <Sparkles size={24} style={{ color: '#fff' }} />
+              <Sparkles size={24} style={{ color: '#fbbf24' }} />
             </div>
             <div style={{ flex: 1 }}>
               <h3 style={{
-                fontSize: '20px',
-                fontWeight: '600',
-                color: '#fff',
+                fontSize: '18px',
+                fontWeight: '700',
+                color: '#f1f5f9',
                 margin: '0 0 4px 0',
                 lineHeight: '1.2',
                 fontFamily: 'Poppins, sans-serif'
@@ -2095,8 +1843,8 @@ const Home = () => {
                 Early Access NFT
               </h3>
               <p style={{
-                fontSize: '14px',
-                color: 'rgba(255, 255, 255, 0.95)',
+                fontSize: '13px',
+                color: '#94a3b8',
                 margin: 0,
                 lineHeight: '1.4',
                 fontFamily: 'Poppins, sans-serif',
@@ -2118,9 +1866,9 @@ const Home = () => {
               alignItems: 'center',
               gap: '6px',
               fontSize: '12px',
-              color: '#fff'
+              color: '#cbd5e1'
             }}>
-              <Zap size={14} />
+              <Zap size={14} style={{ color: '#fbbf24' }} />
               <span>2x XP multiplier on ALL activities</span>
             </div>
             <div style={{
@@ -2128,9 +1876,9 @@ const Home = () => {
               alignItems: 'center',
               gap: '6px',
               fontSize: '12px',
-              color: '#fff'
+              color: '#cbd5e1'
             }}>
-              <Star size={14} />
+              <Star size={14} style={{ color: '#fbbf24' }} />
               <span>Priority access to airdrops</span>
             </div>
             <div style={{
@@ -2138,9 +1886,9 @@ const Home = () => {
               alignItems: 'center',
               gap: '6px',
               fontSize: '12px',
-              color: '#fff'
+              color: '#cbd5e1'
             }}>
-              <Rocket size={14} />
+              <Rocket size={14} style={{ color: '#fbbf24' }} />
               <span>Exclusive quests & rewards</span>
             </div>
           </div>
@@ -2155,25 +1903,24 @@ const Home = () => {
               display: 'block',
               width: '100%',
               padding: '12px',
-              background: 'rgba(255, 255, 255, 0.95)',
-              color: '#f59e0b',
+              background: 'rgba(245, 158, 11, 0.15)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              color: '#fbbf24',
               textAlign: 'center',
-              borderRadius: '8px',
-              fontWeight: 'bold',
+              borderRadius: '12px',
+              fontWeight: '700',
               fontSize: '14px',
               textDecoration: 'none',
               transition: 'all 0.2s',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+              fontFamily: 'Poppins, sans-serif'
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = '#fff'
-              e.target.style.transform = 'translateY(-2px)'
-              e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)'
+              e.target.style.background = 'rgba(245, 158, 11, 0.25)'
+              e.target.style.borderColor = 'rgba(245, 158, 11, 0.5)'
             }}
             onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(255, 255, 255, 0.95)'
-              e.target.style.transform = 'translateY(0)'
-              e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)'
+              e.target.style.background = 'rgba(245, 158, 11, 0.15)'
+              e.target.style.borderColor = 'rgba(245, 158, 11, 0.3)'
             }}
           >
             Mint Now →
@@ -2236,66 +1983,62 @@ const styles = `
 
   .game-card {
     position: relative;
-    background: rgba(30, 41, 59, 0.95);
     backdrop-filter: blur(20px);
-    border-radius: 20px;
+    border-radius: 18px;
     padding: 24px;
     text-align: center;
-    transition: all 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    transition: all 0.25s ease;
+    border: 1px solid rgba(255, 255, 255, 0.06);
     overflow: hidden;
   }
 
   .game-card:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px);
+    filter: brightness(1.1);
+    border-color: rgba(255,255,255,0.12);
   }
 
 
   .game-icon {
-    width: 80px;
-    height: 80px;
-    border-radius: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 20px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    transition: all 0.3s ease;
+    margin: 0 auto 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: transform 0.25s ease;
   }
 
   .game-card:hover .game-icon {
-    transform: scale(1.1) rotate(5deg);
+    transform: scale(1.08);
   }
 
   .leaderboard-item {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 16px;
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 12px;
-    margin-bottom: 12px;
-    transition: all 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    transition: all 0.2s ease;
   }
 
   .leaderboard-item:hover {
-    background: rgba(255, 255, 255, 0.95);
-    transform: translateX(5px);
+    filter: brightness(1.15);
+    transform: translateX(3px);
   }
 
   .rank-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    color: white;
     font-size: 14px;
+    flex-shrink: 0;
   }
 
   .loading {
@@ -2327,49 +2070,50 @@ const styles = `
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 16px 20px;
-    border-radius: 12px;
+    padding: 14px 18px;
+    border-radius: 14px;
     text-decoration: none;
-    transition: all 0.3s ease;
-    border: 1px solid transparent;
-    min-width: 200px;
+    transition: all 0.2s ease;
+    min-width: 180px;
   }
 
   .social-link-card.twitter {
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    border-color: rgba(0, 0, 0, 0.2);
+    background: rgba(30, 41, 59, 0.6);
+    color: #e2e8f0;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-left: 3px solid #e2e8f0;
   }
 
   .social-link-card.twitter:hover {
-    background: rgba(0, 0, 0, 1);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    background: rgba(30, 41, 59, 0.9);
+    filter: brightness(1.15);
   }
 
   .social-link-card.website {
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
-    border-color: rgba(59, 130, 246, 0.2);
+    background: rgba(59, 130, 246, 0.08);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.12);
+    border-left: 3px solid #60a5fa;
   }
 
   .social-link-card.website:hover {
-    background: rgba(59, 130, 246, 0.2);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+    background: rgba(59, 130, 246, 0.15);
+    filter: brightness(1.15);
   }
 
   .social-title {
     display: block;
-    font-weight: bold;
-    font-size: 14px;
+    font-weight: 600;
+    font-size: 13px;
     margin-bottom: 2px;
+    font-family: Poppins, sans-serif;
   }
 
   .social-subtitle {
     display: block;
-    font-size: 12px;
-    opacity: 0.8;
+    font-size: 11px;
+    opacity: 0.6;
+    font-family: Poppins, sans-serif;
   }
 
   @media (max-width: 768px) {
@@ -2467,36 +2211,31 @@ const styles = `
        ======================================== */
     
     .farcaster-app .game-card {
-      padding: 8px !important;
-      border-radius: 10px !important;
+      padding: 0 !important;
+      border-radius: 12px !important;
       min-height: auto !important;
     }
 
-    /* Card inner container */
     .farcaster-app .game-card > div {
-      min-height: 60px !important;
+      min-height: 70px !important;
       gap: 4px !important;
       flex-direction: column !important;
       align-items: center !important;
       justify-content: center !important;
     }
 
-    /* Card content row - stack vertically */
     .farcaster-app .game-card > div > div:first-child {
       flex-direction: column !important;
       align-items: center !important;
       gap: 4px !important;
     }
 
-    /* Icon container - compact for Farcaster mobile */
     .farcaster-app .game-card img,
     .farcaster-app .game-card svg {
-      width: 22px !important;
-      height: 22px !important;
-      border-radius: 6px !important;
+      width: 18px !important;
+      height: 18px !important;
     }
 
-    /* Card title - compact */
     .farcaster-app .game-card h3 {
       font-size: 10px !important;
       margin: 0 !important;
@@ -2508,27 +2247,13 @@ const styles = `
       max-width: 100% !important;
     }
 
-    /* Hide description on mobile */
     .farcaster-app .game-card p {
       display: none !important;
     }
 
-    /* XP Badge - compact */
-    .farcaster-app .game-card [style*="background: 'rgba(30, 41, 59"],
     .farcaster-app .game-card > div > div:last-child {
       margin-top: 2px !important;
       justify-content: center !important;
-    }
-
-    .farcaster-app .game-card [style*="padding: '4px 10px'"] {
-      padding: 2px 6px !important;
-      font-size: 8px !important;
-      border-radius: 6px !important;
-    }
-
-    /* Hide bonus XP badge on mobile to save space */
-    .farcaster-app .game-card > div > div:last-child > div:nth-child(2) {
-      display: none !important;
     }
 
     /* ========================================
@@ -2555,8 +2280,14 @@ const styles = `
        ======================================== */
     
     .farcaster-app .leaderboard-item {
-      padding: 8px;
-      margin-bottom: 6px;
+      padding: 10px 12px;
+      gap: 10px;
+    }
+
+    .farcaster-app .rank-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
     }
 
     /* ========================================

@@ -410,8 +410,8 @@ export default function AINFTLaunchpad() {
                       minHeight: '100px',
                       resize: 'vertical',
                       fontFamily: 'inherit',
-                      color: '#111827',
-                      backgroundColor: '#ffffff'
+                      color: '#e2e8f0',
+                      backgroundColor: 'rgba(30, 41, 59, 0.6)'
                     }}
                     maxLength="500"
                     disabled={isGenerating || !isConnected}
@@ -683,11 +683,11 @@ export default function AINFTLaunchpad() {
               {generatedImage && (
                 <div style={{ marginTop: '32px' }}>
                   <div style={{
-                    background: 'white',
+                    background: 'rgba(15, 23, 42, 0.8)',
                     borderRadius: '16px',
                     padding: '24px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                    border: '2px solid #e5e7eb'
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                    border: '1px solid rgba(255, 255, 255, 0.06)'
                   }}>
                     <div style={{
                       display: 'flex',
@@ -698,7 +698,7 @@ export default function AINFTLaunchpad() {
                       <h3 style={{
                         fontSize: '18px',
                         fontWeight: 'bold',
-                        color: '#1e293b',
+                        color: '#f1f5f9',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
@@ -846,7 +846,7 @@ export default function AINFTLaunchpad() {
                             margin: 0, 
                             fontSize: '14px',
                             fontWeight: '500',
-                            color: '#374151'
+                            color: '#94a3b8'
                           }}>
                             Use Custom Metadata (Optional)
                           </label>
@@ -854,9 +854,9 @@ export default function AINFTLaunchpad() {
                         
                         {useCustomMetadata && (
                           <div style={{
-                            background: 'rgba(30, 41, 59, 0.8)',
-                            border: '1px solid #e2e8f0',
-                            borderRadius: '8px',
+                            background: 'rgba(30, 41, 59, 0.6)',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            borderRadius: '12px',
                             padding: '16px',
                             marginTop: '8px'
                           }}>
@@ -955,15 +955,15 @@ export default function AINFTLaunchpad() {
                       {/* Pricing Tiers - compact, always readable */}
                       <div style={{
                         marginTop: '20px',
-                        background: '#f8fafc',
-                        borderRadius: '12px',
+                        background: 'rgba(30, 41, 59, 0.5)',
+                        borderRadius: '14px',
                         padding: '16px',
-                        border: '1px solid #e2e8f0'
+                        border: '1px solid rgba(255, 255, 255, 0.06)'
                       }}>
                         <h4 style={{
                           fontSize: '13px',
                           fontWeight: '600',
-                          color: '#334155',
+                          color: '#94a3b8',
                           marginBottom: '10px',
                           textAlign: 'center'
                         }}>
@@ -984,16 +984,16 @@ export default function AINFTLaunchpad() {
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                                 padding: '10px 12px',
-                                background: tier.active ? 'rgba(59, 130, 246, 0.15)' : '#ffffff',
-                                border: tier.active ? '1px solid rgba(59, 130, 246, 0.5)' : '1px solid #e2e8f0',
-                                borderRadius: '8px',
+                                background: tier.active ? 'rgba(59, 130, 246, 0.12)' : 'rgba(30, 41, 59, 0.4)',
+                                border: tier.active ? '1px solid rgba(59, 130, 246, 0.4)' : '1px solid rgba(255, 255, 255, 0.06)',
+                                borderRadius: '10px',
                                 fontSize: '13px'
                               }}
                             >
-                              <span style={{ color: '#1e293b', fontWeight: tier.active ? '600' : '500' }}>
+                              <span style={{ color: '#cbd5e1', fontWeight: tier.active ? '600' : '500' }}>
                                 {tier.range} NFTs
                               </span>
-                              <span style={{ color: '#0f172a', fontWeight: '600' }}>
+                              <span style={{ color: '#e2e8f0', fontWeight: '600' }}>
                                 {tier.price}
                               </span>
                             </div>
@@ -1005,7 +1005,7 @@ export default function AINFTLaunchpad() {
                       <div style={{
                         marginTop: '20px',
                         paddingTop: '16px',
-                        borderTop: '1px solid #e2e8f0',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.06)',
                         display: 'flex',
                         flexWrap: 'wrap',
                         justifyContent: 'center',
@@ -1027,13 +1027,13 @@ export default function AINFTLaunchpad() {
                             alignItems: 'center',
                             gap: '6px',
                             padding: '8px 14px',
-                            background: '#f1f5f9',
-                            color: '#475569',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            color: '#94a3b8',
                             textDecoration: 'none',
-                            borderRadius: '8px',
+                            borderRadius: '10px',
                             fontSize: '13px',
                             fontWeight: '500',
-                            border: '1px solid #e2e8f0'
+                            border: '1px solid rgba(255, 255, 255, 0.1)'
                           }}
                         >
                           <ExternalLink size={14} />
