@@ -40,8 +40,8 @@ const Coin3D = ({
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        margin: '60px 0',
-        minHeight: '280px',
+        margin: size <= 110 ? '24px 0' : '60px 0',
+        minHeight: size <= 110 ? '160px' : '280px',
         position: 'relative'
       }}
     >

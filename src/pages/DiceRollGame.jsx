@@ -31,6 +31,13 @@ const DiceRollGame = () => {
       isInFarcaster = false
     }
   }
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 640)
+  useEffect(() => {
+    const r = () => setIsMobile(window.innerWidth <= 640)
+    window.addEventListener('resize', r)
+    return () => window.removeEventListener('resize', r)
+  }, [])
+
   const [selectedNumber, setSelectedNumber] = useState(1)
   const [lastPlayed, setLastPlayed] = useState(null)
   const [totalXP, setTotalXP] = useState(0)
@@ -185,7 +192,7 @@ const DiceRollGame = () => {
   }
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 12px' }}>
+    <div style={{ maxWidth: isMobile ? 360 : 480, margin: '0 auto', padding: isMobile ? '0 8px' : '0 12px' }}>
       <EmbedMeta 
         title="Dice Roll - BaseHub"
         description="Roll two dice and win XP! 1/36 chance to win 1500 bonus XP. Play on BaseHub!"
@@ -217,7 +224,7 @@ const DiceRollGame = () => {
       <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
 
       {(isRolling || isRevealing || showResult) && (
-        <Dice3D isRolling={isRolling} isRevealing={isRevealing} dice1={gameResult?.dice1} dice2={gameResult?.dice2} onRollComplete={handleRollComplete} />
+        <Dice3D isRolling={isRolling} isRevealing={isRevealing} dice1={gameResult?.dice1} dice2={gameResult?.dice2} onRollComplete={handleRollComplete} compact={isMobile} />
       )}
 
       {/* XP Popup */}
@@ -225,10 +232,10 @@ const DiceRollGame = () => {
         <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 10001, pointerEvents: 'none', animation: 'xpFloat 3s ease-out forwards' }}>
           <div style={{
             background: xpPopup.isWin ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #f59e0b, #d97706)',
-            color: 'white', padding: '16px 32px', borderRadius: 16, fontSize: 28, fontWeight: 800,
+            color: 'white', padding: isMobile ? '10px 20px' : '16px 32px', borderRadius: 16, fontSize: isMobile ? 20 : 28, fontWeight: 800,
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: 10
           }}>
-            <Star size={28} />
+            <Star size={isMobile ? 20 : 28} />
             <span>+{xpPopup.amount} XP</span>
           </div>
         </div>
@@ -237,16 +244,16 @@ const DiceRollGame = () => {
       {/* Result Banner */}
       {showResult && gameResult && (
         <div style={{
-          textAlign: 'center', padding: '16px 20px', marginBottom: 16, borderRadius: 16,
+          textAlign: 'center', padding: isMobile ? '10px 14px' : '16px 20px', marginBottom: isMobile ? 10 : 16, borderRadius: isMobile ? 12 : 16,
           background: gameResult.won ? 'linear-gradient(135deg, rgba(34,197,94,0.15), rgba(16,185,129,0.08))' : 'linear-gradient(135deg, rgba(100,116,139,0.12), rgba(51,65,85,0.1))',
           border: `1px solid ${gameResult.won ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.08)'}`,
           animation: 'resultPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
         }}>
-          <div style={{ fontSize: 28, marginBottom: 4 }}>{gameResult.won ? '🎉' : '🎲'}</div>
-          <div style={{ fontWeight: 800, fontSize: 20, color: gameResult.won ? '#4ade80' : '#94a3b8', marginBottom: 4 }}>
+          <div style={{ fontSize: isMobile ? 22 : 28, marginBottom: 4 }}>{gameResult.won ? '🎉' : '🎲'}</div>
+          <div style={{ fontWeight: 800, fontSize: isMobile ? 16 : 20, color: gameResult.won ? '#4ade80' : '#94a3b8', marginBottom: 4 }}>
             {gameResult.won ? 'JACKPOT!' : 'Try Again'}
           </div>
-          <div style={{ fontSize: 13, color: '#cbd5e1' }}>
+          <div style={{ fontSize: isMobile ? 11 : 13, color: '#cbd5e1' }}>
             {diceFaces[gameResult.dice1-1]} + {diceFaces[gameResult.dice2-1]} = {gameResult.diceTotal} · You picked {gameResult.selectedNumber} · <span style={{ color: '#fbbf24', fontWeight: 700 }}>+{lastTransaction?.xpEarned || 150} XP</span>
           </div>
         </div>
@@ -273,7 +280,7 @@ const DiceRollGame = () => {
                 onClick={() => handleNumberSelect(number)}
                 disabled={busy}
                 style={{
-                  position: 'relative', padding: '18px 8px', borderRadius: 16, border: 'none', cursor: busy ? 'not-allowed' : 'pointer',
+                  position: 'relative', padding: isMobile ? '12px 6px' : '18px 8px', borderRadius: isMobile ? 12 : 16, border: 'none', cursor: busy ? 'not-allowed' : 'pointer',
                   background: active ? 'linear-gradient(135deg, rgba(16,185,129,0.25), rgba(5,150,105,0.15))' : 'rgba(30,41,59,0.6)',
                   boxShadow: active ? '0 0 20px rgba(16,185,129,0.3), inset 0 0 16px rgba(16,185,129,0.05)' : '0 2px 6px rgba(0,0,0,0.2)',
                   outline: active ? '2px solid rgba(16,185,129,0.5)' : '1px solid rgba(255,255,255,0.08)',
@@ -282,8 +289,8 @@ const DiceRollGame = () => {
                   opacity: busy ? 0.5 : 1
                 }}
               >
-                <div style={{ fontSize: 32, marginBottom: 2 }}>{diceFaces[number-1]}</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: active ? '#34d399' : '#e5e7eb' }}>{number}</div>
+                <div style={{ fontSize: isMobile ? 22 : 32, marginBottom: 2 }}>{diceFaces[number-1]}</div>
+                <div style={{ fontSize: isMobile ? 13 : 16, fontWeight: 800, color: active ? '#34d399' : '#e5e7eb' }}>{number}</div>
               </button>
             )
           })}
@@ -293,9 +300,9 @@ const DiceRollGame = () => {
           onClick={playDiceRoll}
           disabled={busy}
           style={{
-            width: '100%', padding: '18px 24px', borderRadius: 16, border: 'none', cursor: busy ? 'not-allowed' : 'pointer',
+            width: '100%', padding: isMobile ? '14px 18px' : '18px 24px', borderRadius: isMobile ? 12 : 16, border: 'none', cursor: busy ? 'not-allowed' : 'pointer',
             background: busy ? 'rgba(100,116,139,0.3)' : 'linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%)',
-            color: 'white', fontWeight: 800, fontSize: 16, letterSpacing: '0.02em',
+            color: 'white', fontWeight: 800, fontSize: isMobile ? 14 : 16, letterSpacing: '0.02em',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
             boxShadow: busy ? 'none' : '0 4px 20px rgba(16,185,129,0.4), 0 0 40px rgba(16,185,129,0.1)',
             transition: 'all 0.3s ease'

@@ -28,30 +28,26 @@ class SoundManager {
     const unlock = () => {
       const ctx = this._getOrCreateContext()
       if (!ctx) return
+      // iOS WebView: always play a silent buffer during user gesture to warm up the audio path
+      try {
+        const buf = ctx.createBuffer(1, 1, ctx.sampleRate)
+        const src = ctx.createBufferSource()
+        src.buffer = buf
+        src.connect(ctx.destination)
+        src.start(0)
+      } catch (_) {}
       if (ctx.state === 'suspended') {
         ctx.resume().then(() => {
           this._unlocked = true
+          events.forEach(e => document.removeEventListener(e, handler, true))
         }).catch(() => {})
       } else {
         this._unlocked = true
-      }
-      // Oluştur ve hemen kapat: sessiz buffer ile WebView'un audio path'ini aç
-      if (!this._unlocked) {
-        try {
-          const buf = ctx.createBuffer(1, 1, ctx.sampleRate)
-          const src = ctx.createBufferSource()
-          src.buffer = buf
-          src.connect(ctx.destination)
-          src.start(0)
-        } catch (_) {}
+        events.forEach(e => document.removeEventListener(e, handler, true))
       }
     }
-    // İlk user gesture'da unlock et, sonra listener'ları kaldır
     const events = ['touchstart', 'touchend', 'mousedown', 'click', 'keydown']
-    const handler = () => {
-      unlock()
-      events.forEach(e => document.removeEventListener(e, handler, true))
-    }
+    const handler = () => unlock()
     events.forEach(e => document.addEventListener(e, handler, { capture: true, passive: true }))
   }
 
@@ -71,8 +67,11 @@ class SoundManager {
     if (!this.enabled) return false
     const ctx = this._getOrCreateContext()
     if (!ctx) return false
-    this.ensureAudioContext()
-    return true
+    // iOS Farcaster WebView: always try to resume — iOS may re-suspend between gestures
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {})
+    }
+    return ctx.state !== 'suspended' || this._unlocked
   }
 
   _createNoise(duration) {

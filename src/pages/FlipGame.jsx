@@ -32,6 +32,13 @@ const FlipGame = () => {
       isInFarcaster = false
     }
   }
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 640)
+  useEffect(() => {
+    const r = () => setIsMobile(window.innerWidth <= 640)
+    window.addEventListener('resize', r)
+    return () => window.removeEventListener('resize', r)
+  }, [])
+
   const [selectedSide, setSelectedSide] = useState('heads')
   const [result, setResult] = useState(null)
   const [lastTransaction, setLastTransaction] = useState(null)
@@ -175,7 +182,7 @@ const FlipGame = () => {
 
   return (
     <NetworkGuard showWarning={true}>
-      <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 12px' }}>
+      <div style={{ maxWidth: isMobile ? 360 : 480, margin: '0 auto', padding: isMobile ? '0 8px' : '0 12px' }}>
       <EmbedMeta 
         title="Coin Flip - BaseHub"
         description="Flip a coin and win XP! 50% chance to win 500 bonus XP. Play on BaseHub!"
@@ -211,7 +218,7 @@ const FlipGame = () => {
           isSpinning={isSpinning}
           isRevealing={isRevealing}
           result={result}
-          size={160}
+          size={isMobile ? 100 : 160}
           onSpinComplete={handleSpinComplete}
         />
       )}
@@ -221,7 +228,7 @@ const FlipGame = () => {
         <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 10001, pointerEvents: 'none', animation: 'xpFloat 3s ease-out forwards' }}>
           <div style={{
             background: xpPopup.isWin ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-            color: 'white', padding: '16px 32px', borderRadius: 16, fontSize: 28, fontWeight: 800,
+            color: 'white', padding: isMobile ? '10px 20px' : '16px 32px', borderRadius: 16, fontSize: isMobile ? 20 : 28, fontWeight: 800,
             boxShadow: xpPopup.isWin ? '0 8px 32px rgba(16,185,129,0.5)' : '0 8px 32px rgba(59,130,246,0.5)',
             display: 'flex', alignItems: 'center', gap: 10, backdropFilter: 'blur(10px)'
           }}>
@@ -234,18 +241,18 @@ const FlipGame = () => {
       {/* Result Banner */}
       {showResult && lastTransaction && lastTransaction.result && (
         <div style={{
-          textAlign: 'center', padding: '16px 20px', marginBottom: 16, borderRadius: 16,
+          textAlign: 'center', padding: isMobile ? '10px 14px' : '16px 20px', marginBottom: isMobile ? 10 : 16, borderRadius: isMobile ? 12 : 16,
           background: lastTransaction.isWin
             ? 'linear-gradient(135deg, rgba(34,197,94,0.15), rgba(16,185,129,0.08))'
             : 'linear-gradient(135deg, rgba(100,116,139,0.12), rgba(51,65,85,0.1))',
           border: `1px solid ${lastTransaction.isWin ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.08)'}`,
           animation: 'resultPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
         }}>
-          <div style={{ fontSize: 28, marginBottom: 4 }}>{lastTransaction.isWin ? '🎉' : '😔'}</div>
-          <div style={{ fontWeight: 800, fontSize: 20, color: lastTransaction.isWin ? '#4ade80' : '#94a3b8', marginBottom: 4 }}>
+          <div style={{ fontSize: isMobile ? 22 : 28, marginBottom: 4 }}>{lastTransaction.isWin ? '🎉' : '😔'}</div>
+          <div style={{ fontWeight: 800, fontSize: isMobile ? 16 : 20, color: lastTransaction.isWin ? '#4ade80' : '#94a3b8', marginBottom: 4 }}>
             {lastTransaction.isWin ? 'YOU WIN!' : 'Try Again'}
           </div>
-          <div style={{ fontSize: 13, color: '#cbd5e1' }}>
+          <div style={{ fontSize: isMobile ? 11 : 13, color: '#cbd5e1' }}>
             {lastTransaction.playerChoice} → {lastTransaction.result} · <span style={{ color: '#fbbf24', fontWeight: 700 }}>+{lastTransaction.xpEarned} XP</span>
           </div>
         </div>
@@ -271,7 +278,7 @@ const FlipGame = () => {
                 onClick={() => handleSideSelect(side)}
                 disabled={busy}
                 style={{
-                  position: 'relative', overflow: 'hidden', padding: '24px 16px', borderRadius: 20, border: 'none', cursor: busy ? 'not-allowed' : 'pointer',
+                  position: 'relative', overflow: 'hidden', padding: isMobile ? '16px 10px' : '24px 16px', borderRadius: isMobile ? 14 : 20, border: 'none', cursor: busy ? 'not-allowed' : 'pointer',
                   background: active
                     ? 'linear-gradient(135deg, rgba(245,158,11,0.25) 0%, rgba(217,119,6,0.15) 100%)'
                     : 'rgba(30,41,59,0.6)',
@@ -282,10 +289,10 @@ const FlipGame = () => {
                   opacity: busy ? 0.5 : 1
                 }}
               >
-                <div style={{ fontSize: 40, marginBottom: 8, transition: 'transform 0.3s ease', transform: active ? 'scale(1.15) rotate(-5deg)' : 'scale(1)' }}>
+                <div style={{ fontSize: isMobile ? 28 : 40, marginBottom: isMobile ? 4 : 8, transition: 'transform 0.3s ease', transform: active ? 'scale(1.15) rotate(-5deg)' : 'scale(1)' }}>
                   {side === 'heads' ? '🪙' : '⭐'}
                 </div>
-                <div style={{ fontWeight: 800, fontSize: 15, color: active ? '#fbbf24' : '#e5e7eb', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <div style={{ fontWeight: 800, fontSize: isMobile ? 13 : 15, color: active ? '#fbbf24' : '#e5e7eb', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   {side}
                 </div>
                 {active && <div style={{ position: 'absolute', top: 8, right: 8, width: 8, height: 8, borderRadius: '50%', background: '#fbbf24', boxShadow: '0 0 8px rgba(245,158,11,0.6)' }} />}
@@ -299,9 +306,9 @@ const FlipGame = () => {
           onClick={flipCoin}
           disabled={busy}
           style={{
-            width: '100%', padding: '18px 24px', borderRadius: 16, border: 'none', cursor: busy ? 'not-allowed' : 'pointer',
+            width: '100%', padding: isMobile ? '14px 18px' : '18px 24px', borderRadius: isMobile ? 12 : 16, border: 'none', cursor: busy ? 'not-allowed' : 'pointer',
             background: busy ? 'rgba(100,116,139,0.3)' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)',
-            color: 'white', fontWeight: 800, fontSize: 16, letterSpacing: '0.02em',
+            color: 'white', fontWeight: 800, fontSize: isMobile ? 14 : 16, letterSpacing: '0.02em',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
             boxShadow: busy ? 'none' : '0 4px 20px rgba(245,158,11,0.4), 0 0 40px rgba(245,158,11,0.1)',
             transition: 'all 0.3s ease',

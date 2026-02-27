@@ -34,6 +34,13 @@ const LuckyNumberGame = () => {
       isInFarcaster = false
     }
   }
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 640)
+  useEffect(() => {
+    const r = () => setIsMobile(window.innerWidth <= 640)
+    window.addEventListener('resize', r)
+    return () => window.removeEventListener('resize', r)
+  }, [])
+
   const [selectedNumber, setSelectedNumber] = useState(1)
   const [lastPlayed, setLastPlayed] = useState(null)
   const [totalXP, setTotalXP] = useState(0)
@@ -186,7 +193,7 @@ const LuckyNumberGame = () => {
 
   return (
     <NetworkGuard showWarning={true}>
-      <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 12px' }}>
+      <div style={{ maxWidth: isMobile ? 360 : 480, margin: '0 auto', padding: isMobile ? '0 8px' : '0 12px' }}>
       <EmbedMeta 
         title="Lucky Number - BaseHub"
         description="Pick a number 1-10 and win XP! 10% chance to win 1000 bonus XP. Play on BaseHub!"
@@ -218,7 +225,7 @@ const LuckyNumberGame = () => {
       <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
 
       {(isSpinning || isRevealing || showResult) && (
-        <NumberWheel isSpinning={isSpinning} isRevealing={isRevealing} winningNumber={gameResult?.winningNumber} selectedNumber={gameResult?.selectedNumber || selectedNumber} onSpinComplete={handleSpinComplete} />
+        <NumberWheel isSpinning={isSpinning} isRevealing={isRevealing} winningNumber={gameResult?.winningNumber} selectedNumber={gameResult?.selectedNumber || selectedNumber} onSpinComplete={handleSpinComplete} compact={isMobile} />
       )}
 
       {/* XP Popup */}
@@ -226,10 +233,10 @@ const LuckyNumberGame = () => {
         <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 10001, pointerEvents: 'none', animation: 'xpFloat 3s ease-out forwards' }}>
           <div style={{
             background: xpPopup.isWin ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-            color: 'white', padding: '16px 32px', borderRadius: 16, fontSize: 28, fontWeight: 800,
+            color: 'white', padding: isMobile ? '10px 20px' : '16px 32px', borderRadius: 16, fontSize: isMobile ? 20 : 28, fontWeight: 800,
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: 10
           }}>
-            <Star size={28} />
+            <Star size={isMobile ? 20 : 28} />
             <span>+{xpPopup.amount} XP</span>
           </div>
         </div>
@@ -238,16 +245,16 @@ const LuckyNumberGame = () => {
       {/* Result Banner */}
       {showResult && gameResult && (
         <div style={{
-          textAlign: 'center', padding: '16px 20px', marginBottom: 16, borderRadius: 16,
+          textAlign: 'center', padding: isMobile ? '10px 14px' : '16px 20px', marginBottom: isMobile ? 10 : 16, borderRadius: isMobile ? 12 : 16,
           background: gameResult.won ? 'linear-gradient(135deg, rgba(34,197,94,0.15), rgba(16,185,129,0.08))' : 'linear-gradient(135deg, rgba(100,116,139,0.12), rgba(51,65,85,0.1))',
           border: `1px solid ${gameResult.won ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.08)'}`,
           animation: 'resultPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
         }}>
-          <div style={{ fontSize: 28, marginBottom: 4 }}>{gameResult.won ? '🎉' : '🍀'}</div>
-          <div style={{ fontWeight: 800, fontSize: 20, color: gameResult.won ? '#4ade80' : '#94a3b8', marginBottom: 4 }}>
+          <div style={{ fontSize: isMobile ? 22 : 28, marginBottom: 4 }}>{gameResult.won ? '🎉' : '🍀'}</div>
+          <div style={{ fontWeight: 800, fontSize: isMobile ? 16 : 20, color: gameResult.won ? '#4ade80' : '#94a3b8', marginBottom: 4 }}>
             {gameResult.won ? 'LUCKY WIN!' : 'Try Again'}
           </div>
-          <div style={{ fontSize: 13, color: '#cbd5e1' }}>
+          <div style={{ fontSize: isMobile ? 11 : 13, color: '#cbd5e1' }}>
             You picked <span style={{ fontWeight: 700, color: '#a78bfa' }}>{gameResult.selectedNumber}</span>, result was <span style={{ fontWeight: 700, color: gameResult.won ? '#4ade80' : '#f59e0b' }}>{gameResult.winningNumber}</span> · <span style={{ color: '#fbbf24', fontWeight: 700 }}>+{lastTransaction?.xpEarned || 150} XP</span>
           </div>
         </div>
@@ -274,7 +281,7 @@ const LuckyNumberGame = () => {
                 onClick={() => handleNumberSelect(number)}
                 disabled={busy}
                 style={{
-                  position: 'relative', padding: '14px 4px', borderRadius: 14, border: 'none', cursor: busy ? 'not-allowed' : 'pointer',
+                  position: 'relative', padding: isMobile ? '10px 4px' : '14px 4px', borderRadius: isMobile ? 10 : 14, border: 'none', cursor: busy ? 'not-allowed' : 'pointer',
                   background: active ? 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(124,58,237,0.2))' : 'rgba(30,41,59,0.6)',
                   boxShadow: active ? '0 0 20px rgba(139,92,246,0.35), inset 0 0 12px rgba(139,92,246,0.08)' : '0 2px 6px rgba(0,0,0,0.2)',
                   outline: active ? '2px solid rgba(139,92,246,0.6)' : '1px solid rgba(255,255,255,0.08)',
@@ -283,7 +290,7 @@ const LuckyNumberGame = () => {
                   opacity: busy ? 0.5 : 1
                 }}
               >
-                <div style={{ fontSize: 22, fontWeight: 900, color: active ? '#c4b5fd' : '#e5e7eb', lineHeight: 1 }}>{number}</div>
+                <div style={{ fontSize: isMobile ? 17 : 22, fontWeight: 900, color: active ? '#c4b5fd' : '#e5e7eb', lineHeight: 1 }}>{number}</div>
                 {active && <div style={{ position: 'absolute', bottom: -2, left: '50%', transform: 'translateX(-50%)', width: 6, height: 6, borderRadius: '50%', background: '#a78bfa', boxShadow: '0 0 8px rgba(139,92,246,0.6)' }} />}
               </button>
             )
@@ -294,9 +301,9 @@ const LuckyNumberGame = () => {
           onClick={playLuckyNumber}
           disabled={busy}
           style={{
-            width: '100%', padding: '18px 24px', borderRadius: 16, border: 'none', cursor: busy ? 'not-allowed' : 'pointer',
+            width: '100%', padding: isMobile ? '14px 18px' : '18px 24px', borderRadius: isMobile ? 12 : 16, border: 'none', cursor: busy ? 'not-allowed' : 'pointer',
             background: busy ? 'rgba(100,116,139,0.3)' : 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%)',
-            color: 'white', fontWeight: 800, fontSize: 16, letterSpacing: '0.02em',
+            color: 'white', fontWeight: 800, fontSize: isMobile ? 14 : 16, letterSpacing: '0.02em',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
             boxShadow: busy ? 'none' : '0 4px 20px rgba(139,92,246,0.4), 0 0 40px rgba(139,92,246,0.1)',
             transition: 'all 0.3s ease'

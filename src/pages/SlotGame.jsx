@@ -10,6 +10,7 @@ import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { NETWORKS, getContractAddressByNetwork } from '../config/networks'
 import { formatEther } from 'viem'
 import { Coins, Play, Star, CheckCircle, ExternalLink, TrendingUp, Zap, Gift, RotateCw } from 'lucide-react'
+import soundManager from '../utils/soundEffects'
 
 const SLOT_GAME_ABI = [
   {
@@ -86,35 +87,38 @@ const SlotGame = () => {
   
   const playSound = (soundType) => {
     try {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)()
-      const oscillator = audioContext.createOscillator()
-      const gainNode = audioContext.createGain()
+      soundManager.ensureAudioContext()
+      const ctx = soundManager._getOrCreateContext()
+      if (!ctx) return
+      const oscillator = ctx.createOscillator()
+      const gainNode = ctx.createGain()
       oscillator.connect(gainNode)
-      gainNode.connect(audioContext.destination)
+      gainNode.connect(ctx.destination)
+      const t = ctx.currentTime
       switch(soundType) {
         case 'spin':
-          oscillator.frequency.setValueAtTime(800, audioContext.currentTime)
-          oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.3)
-          gainNode.gain.setValueAtTime(0.1, audioContext.currentTime)
-          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3)
-          oscillator.start(); oscillator.stop(audioContext.currentTime + 0.3)
+          oscillator.frequency.setValueAtTime(800, t)
+          oscillator.frequency.exponentialRampToValueAtTime(200, t + 0.3)
+          gainNode.gain.setValueAtTime(0.1, t)
+          gainNode.gain.exponentialRampToValueAtTime(0.01, t + 0.3)
+          oscillator.start(); oscillator.stop(t + 0.3)
           break
         case 'win':
-          oscillator.frequency.setValueAtTime(523, audioContext.currentTime)
-          oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.1)
-          oscillator.frequency.setValueAtTime(784, audioContext.currentTime + 0.2)
-          gainNode.gain.setValueAtTime(0.2, audioContext.currentTime)
-          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5)
-          oscillator.start(); oscillator.stop(audioContext.currentTime + 0.5)
+          oscillator.frequency.setValueAtTime(523, t)
+          oscillator.frequency.setValueAtTime(659, t + 0.1)
+          oscillator.frequency.setValueAtTime(784, t + 0.2)
+          gainNode.gain.setValueAtTime(0.2, t)
+          gainNode.gain.exponentialRampToValueAtTime(0.01, t + 0.5)
+          oscillator.start(); oscillator.stop(t + 0.5)
           break
         case 'jackpot':
-          oscillator.frequency.setValueAtTime(523, audioContext.currentTime)
-          oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.1)
-          oscillator.frequency.setValueAtTime(784, audioContext.currentTime + 0.2)
-          oscillator.frequency.setValueAtTime(1047, audioContext.currentTime + 0.3)
-          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
-          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8)
-          oscillator.start(); oscillator.stop(audioContext.currentTime + 0.8)
+          oscillator.frequency.setValueAtTime(523, t)
+          oscillator.frequency.setValueAtTime(659, t + 0.1)
+          oscillator.frequency.setValueAtTime(784, t + 0.2)
+          oscillator.frequency.setValueAtTime(1047, t + 0.3)
+          gainNode.gain.setValueAtTime(0.3, t)
+          gainNode.gain.exponentialRampToValueAtTime(0.01, t + 0.8)
+          oscillator.start(); oscillator.stop(t + 0.8)
           break
       }
     } catch (error) { /* audio unsupported */ }

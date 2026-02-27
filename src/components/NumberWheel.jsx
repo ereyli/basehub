@@ -5,7 +5,8 @@ const NumberWheel = ({
   isRevealing, 
   winningNumber, 
   selectedNumber,
-  onSpinComplete 
+  onSpinComplete,
+  compact = false
 }) => {
   const [displayNumbers, setDisplayNumbers] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -63,8 +64,8 @@ const NumberWheel = ({
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        margin: '60px 0',
-        minHeight: '280px',
+        margin: compact ? '24px 0' : '60px 0',
+        minHeight: compact ? '160px' : '280px',
         position: 'relative',
         perspective: '1200px'
       }}
@@ -88,8 +89,8 @@ const NumberWheel = ({
       {/* Main number display */}
       <div
         style={{
-          width: '200px',
-          height: '200px',
+          width: compact ? '130px' : '200px',
+          height: compact ? '130px' : '200px',
           borderRadius: '50%',
           background: `
             radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 50%),
@@ -98,7 +99,7 @@ const NumberWheel = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '120px',
+          fontSize: compact ? '72px' : '120px',
           fontWeight: 'bold',
           color: 'white',
           textShadow: '4px 4px 12px rgba(0, 0, 0, 0.6)',

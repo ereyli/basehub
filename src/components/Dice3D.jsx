@@ -5,7 +5,8 @@ const Dice3D = ({
   isRevealing, 
   dice1, 
   dice2,
-  onRollComplete 
+  onRollComplete,
+  compact = false
 }) => {
   const [displayDice1, setDisplayDice1] = useState(1)
   const [displayDice2, setDisplayDice2] = useState(1)
@@ -51,9 +52,9 @@ const Dice3D = ({
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        gap: '40px',
-        margin: '60px 0',
-        minHeight: '280px',
+        gap: compact ? '20px' : '40px',
+        margin: compact ? '24px 0' : '60px 0',
+        minHeight: compact ? '160px' : '280px',
         position: 'relative',
         perspective: '1200px'
       }}
@@ -77,8 +78,8 @@ const Dice3D = ({
       {/* Dice 1 */}
       <div
         style={{
-          width: '140px',
-          height: '140px',
+          width: compact ? '90px' : '140px',
+          height: compact ? '90px' : '140px',
           position: 'relative',
           transformStyle: 'preserve-3d',
           animation: isRolling 
@@ -96,7 +97,7 @@ const Dice3D = ({
           style={{
             width: '100%',
             height: '100%',
-            borderRadius: '20px',
+            borderRadius: compact ? '14px' : '20px',
             background: `
               radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 50%),
               linear-gradient(135deg, #fbbf24 0%, #f59e0b 30%, #d97706 70%, #b45309 100%)
@@ -104,7 +105,7 @@ const Dice3D = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '80px',
+            fontSize: compact ? '50px' : '80px',
             fontWeight: 'bold',
             color: 'white',
             textShadow: '3px 3px 10px rgba(0, 0, 0, 0.6)',
@@ -127,7 +128,7 @@ const Dice3D = ({
       {(isRevealing || (!isRolling && dice1 && dice2)) && (
         <div
           style={{
-            fontSize: '48px',
+            fontSize: compact ? '28px' : '48px',
             fontWeight: 'bold',
             color: '#e5e7eb',
             animation: isRevealing ? 'fadeIn 0.5s ease-out 0.5s both' : 'none',
@@ -141,8 +142,8 @@ const Dice3D = ({
       {/* Dice 2 */}
       <div
         style={{
-          width: '140px',
-          height: '140px',
+          width: compact ? '90px' : '140px',
+          height: compact ? '90px' : '140px',
           position: 'relative',
           transformStyle: 'preserve-3d',
           animation: isRolling 
@@ -160,7 +161,7 @@ const Dice3D = ({
           style={{
             width: '100%',
             height: '100%',
-            borderRadius: '20px',
+            borderRadius: compact ? '14px' : '20px',
             background: `
               radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 50%),
               linear-gradient(135deg, #fbbf24 0%, #f59e0b 30%, #d97706 70%, #b45309 100%)
@@ -168,7 +169,7 @@ const Dice3D = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '80px',
+            fontSize: compact ? '50px' : '80px',
             fontWeight: 'bold',
             color: 'white',
             textShadow: '3px 3px 10px rgba(0, 0, 0, 0.6)',
@@ -192,10 +193,10 @@ const Dice3D = ({
         <div
           style={{
             position: 'absolute',
-            bottom: '-60px',
+            bottom: compact ? '-40px' : '-60px',
             left: '50%',
             transform: 'translateX(-50%)',
-            fontSize: '32px',
+            fontSize: compact ? '22px' : '32px',
             fontWeight: 'bold',
             color: '#f59e0b',
             background: 'rgba(30, 41, 59, 0.9)',
