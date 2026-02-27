@@ -15,7 +15,7 @@ export function setMiniappDetectionFromSDK (isMiniapp, isBaseApp) {
 }
 
 // Base/Coinbase in-app browser: receipt wait often hangs; use RPC path (hash-only) like SwapHub
-// Export for useTransactions: Base app'da writeContractAsync bazen resolve etmiyor, hash hook'tan alınır
+// Export for useTransactions: writeContractAsync sometimes never resolves in Base app, hash is obtained from hook
 export function isLikelyBaseApp () {
   if (_sdkSaysBaseApp === true) return true
   if (typeof navigator === 'undefined' || !navigator.userAgent) return false
@@ -31,8 +31,8 @@ function isLikelyFarcaster () {
   return href.includes('farcaster.xyz') || href.includes('warpcast.com')
 }
 
-// Miniapp = iframe içinde veya Farcaster/Base ortamı (domain değil bağlam; tek domain basehub.fun)
-// SDK says miniapp (sdk.isInMiniApp()) => Base app mobil WebView da böyle tespit edilir
+// Miniapp = inside iframe or Farcaster/Base environment (context-based, not domain; single domain basehub.fun)
+// SDK says miniapp (sdk.isInMiniApp()) => Base app mobile WebView is also detected this way
 export function isMiniappDomain () {
   if (typeof window === 'undefined') return false
   if (_sdkSaysMiniapp === true) return true
@@ -40,7 +40,7 @@ export function isMiniappDomain () {
   return isLikelyFarcaster() || isLikelyBaseApp()
 }
 
-// Farcaster/Base app: receipt beklenmez, hash alındığında hemen XP verilir (web'e dokunulmaz)
+// Farcaster/Base app: no receipt wait, XP awarded immediately when hash is received (web flow untouched)
 export function shouldAwardXPOnHashOnly () {
   return isMiniappDomain() || isLikelyBaseApp() || isLikelyFarcaster()
 }
@@ -114,7 +114,7 @@ const showXPToast = (multiplier, nftCount, finalXP, baseXP) => {
   })
 }
 
-// Mobilde konsol yok; Base/Farcaster'da XP veya tx hatası kullanıcıya toast ile gösterilir
+// No console on mobile; XP or tx errors shown to user via toast in Base/Farcaster
 export function showXPErrorToast (message, durationMs = 5500) {
   if (typeof document === 'undefined') return
   const id = 'xp-error-toast'
@@ -199,9 +199,9 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
     return
   }
 
-  // Test ağlarında XP kazanımı kapalı (sadece mainnet'lerde XP verilir)
+  // XP earning disabled on testnets (XP only awarded on mainnets)
   if (chainId != null && isTestnetChainId(chainId)) {
-    console.log('⏭️ XP atlanıyor (test ağı):', { chainId, gameType })
+    console.log('⏭️ XP skipped (testnet):', { chainId, gameType })
     return
   }
 
@@ -258,7 +258,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
   }
 
   try {
-    // Web: receipt doğrulaması (award-xp-verified EF). Miniapp + MegaETH: doğrudan award_xp RPC (MegaETH'de EF receipt bulamıyor).
+    // Web: receipt verification (award-xp-verified EF). Miniapp + MegaETH: direct award_xp RPC (EF cannot find receipt on MegaETH).
     const isMiniapp = isMiniappDomain() || isLikelyBaseApp() || isLikelyFarcaster()
     const isMegaETH = chainId != null && Number(chainId) === NETWORKS.MEGAETH?.chainId
     const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke && !isMiniapp && !isMegaETH
@@ -315,7 +315,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
       throw lastErr
     }
 
-    // tx_hash yoksa (NFT Wheel vb.) veya miniapp (EF kullanılmıyor): direkt award_xp RPC
+    // No tx_hash (NFT Wheel etc.) or miniapp (EF not used): direct award_xp RPC
     const source = !isMiniapp ? 'web' : (isLikelyBaseApp() ? 'base_app' : 'farcaster')
     const { data, error } = await supabase.rpc('award_xp', {
       p_wallet_address: walletAddress,
@@ -668,7 +668,9 @@ export const SWAP_VOLUME_TIERS = [
 ]
 export const SWAP_VOLUME_BAR_MAX_USD = 1_000_000
 
-// Record swap via Edge Function (on-chain verification) - Supabase corsHeaders ile CORS düzeltildi (v8)
+// Record swap via Edge Function (on-chain verification) - web + miniapp (SwapHub)
+// Both web and miniapp go through the same edge function for onchain tx verification.
+// The `source` param routes XP to the correct table (transactions vs miniapp_transactions).
 export const recordSwapTransaction = async (walletAddress, swapAmountUSD, transactionHash) => {
   if (!walletAddress) {
     console.log('❌ Missing walletAddress for swap record')
@@ -688,13 +690,16 @@ export const recordSwapTransaction = async (walletAddress, swapAmountUSD, transa
       return { xpFromPer100: 0, xpFromMilestones: 0 }
     }
 
-    console.log('📝 Recording swap volume (SwapHub via Edge Function):', { wallet: normalized.slice(0, 10) + '...', amountUSD: amount, txHash: transactionHash.slice(0, 10) + '...' })
+    const isMiniapp = isMiniappDomain() || isLikelyBaseApp() || isLikelyFarcaster()
+    const source = !isMiniapp ? 'web' : (isLikelyBaseApp() ? 'base_app' : 'farcaster')
+    console.log('📝 Recording swap volume (SwapHub via Edge Function):', { wallet: normalized.slice(0, 10) + '...', amountUSD: amount, txHash: transactionHash.slice(0, 10) + '...', source })
 
     const { data, error } = await supabase.functions.invoke('record-swap', {
       body: {
         wallet_address: normalized,
         swap_amount_usd: amount,
-        tx_hash: transactionHash
+        tx_hash: transactionHash,
+        source
       }
     })
 
