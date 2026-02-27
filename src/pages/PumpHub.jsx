@@ -1782,6 +1782,7 @@ const PumpHub = () => {
           token.description = bestDesc || token.description
           fullTokens.push(token)
 
+          const onChainCreatedAt = core[5] ? Number(core[5]) : 0
           upsertRows.push({
             token_address: addr.toLowerCase(),
             creator: (core[0] || sbRow?.creator || '').toLowerCase(),
@@ -1798,10 +1799,12 @@ const PumpHub = () => {
             total_volume: formatEther(stats[2] || 0n),
             holder_count: Number(stats[3] || 0),
             updated_at: new Date().toISOString(),
+            ...(onChainCreatedAt > 0 ? { created_at: new Date(onChainCreatedAt * 1000).toISOString() } : {}),
           })
         }
 
         if (!cancelled && fullTokens.length > 0) {
+          fullTokens.sort((a, b) => parseInt(b.createdAt || 0) - parseInt(a.createdAt || 0))
           setTokens(fullTokens)
           setTokensListKey(k => k + 1)
         }
