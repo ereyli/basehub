@@ -8,9 +8,11 @@ export const BASE_CONFIG = {
     decimals: 18,
   },
   rpcUrls: [
+    'https://base.drpc.org',
+    'https://base-rpc.publicnode.com',
     'https://mainnet.base.org',
-    'https://base-mainnet.g.alchemy.com/v2/demo',
     'https://base-mainnet.public.blastapi.io',
+    'https://base.meowrpc.com',
   ],
   blockExplorerUrls: ['https://basescan.org'],
   iconUrls: ['https://base.org/favicon.ico'],

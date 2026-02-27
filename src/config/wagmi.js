@@ -131,7 +131,7 @@ export const config = createConfig({
   dataSuffix: DATA_SUFFIX,
   transports: {
     [base.id]: fallback(
-      NETWORKS.BASE.rpcUrls.map((url) => viemHttp(url, { retryCount: 2, retryDelay: 1200 }))
+      NETWORKS.BASE.rpcUrls.map((url) => viemHttp(url, { timeout: 20000, retryCount: 3, retryDelay: 1500 }))
     ),
     [inkChain.id]: fallback(
       NETWORKS.INKCHAIN.rpcUrls.map((url) => viemHttp(url, { timeout: 30000, retryCount: 2, retryDelay: 1000 }))

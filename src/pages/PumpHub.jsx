@@ -1724,18 +1724,32 @@ const PumpHub = () => {
         let mcResults
         try {
           mcResults = await publicClient.multicall({ contracts: multicallContracts, allowFailure: true })
-        } catch (mcErr) {
-          console.error('Multicall failed, trying chunks:', mcErr)
-          mcResults = []
-          for (let i = 0; i < multicallContracts.length; i += 15) {
-            const chunk = multicallContracts.slice(i, i + 15)
-            try {
-              const res = await publicClient.multicall({ contracts: chunk, allowFailure: true })
-              mcResults.push(...res)
-            } catch {
-              mcResults.push(...chunk.map(() => ({ status: 'failure' })))
+        } catch (mcErr1) {
+          console.warn('Multicall failed, retrying in 1s:', mcErr1.message?.slice(0, 80))
+          await new Promise(r => setTimeout(r, 1000))
+          try {
+            mcResults = await publicClient.multicall({ contracts: multicallContracts, allowFailure: true })
+          } catch (mcErr2) {
+            console.error('Multicall failed after retries, falling back to chunks:', mcErr2)
+            mcResults = []
+            const chunkSize = 9
+            for (let i = 0; i < multicallContracts.length; i += chunkSize) {
+              const chunk = multicallContracts.slice(i, i + chunkSize)
+              for (let retry = 0; retry < 2; retry++) {
+                try {
+                  const res = await publicClient.multicall({ contracts: chunk, allowFailure: true })
+                  mcResults.push(...res)
+                  break
+                } catch {
+                  if (retry === 1) {
+                    mcResults.push(...chunk.map(() => ({ status: 'failure' })))
+                  } else {
+                    await new Promise(r => setTimeout(r, 1000))
+                  }
+                }
+              }
+              if (i + chunkSize < multicallContracts.length) await new Promise(r => setTimeout(r, 300))
             }
-            if (i + 15 < multicallContracts.length) await new Promise(r => setTimeout(r, 400))
           }
         }
 
@@ -1760,6 +1774,9 @@ const PumpHub = () => {
                 realETH: sbRow.real_eth || '0', graduated: sbRow.graduated || false,
                 buys: String(sbRow.total_buys || 0), sells: String(sbRow.total_sells || 0),
                 volume: sbRow.total_volume || '0', holders: String(sbRow.holder_count || 0),
+                createdAt: sbRow.created_at
+                  ? String(Math.floor(new Date(sbRow.created_at).getTime() / 1000))
+                  : '0',
                 _fromSupabase: true,
               })
             }
