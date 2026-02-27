@@ -1597,7 +1597,7 @@ const PumpHub = () => {
     holders: stats[3]?.toString() || '0',
   }), [])
 
-  // Fetch tokens: hybrid Supabase-first, then background RPC sync
+  // Fetch tokens: Supabase-first (instant UI), then background RPC refresh
   useEffect(() => {
     let cancelled = false
 
@@ -1605,9 +1605,52 @@ const PumpHub = () => {
       if (!publicClient) return
 
       try {
-        // Step 1: Get on-chain token count (only treat as "0 tokens" when call succeeds and returns 0; retry on failure)
+        // Step 1: Try Supabase first for instant display while RPC loads in background
+        let sbMap = {}
+        let sbTokensList = []
+        if (supabase?.from) {
+          try {
+            const { data: sbRows } = await supabase
+              .from('pumphub_tokens')
+              .select('*')
+              .order('created_at', { ascending: false })
+              .limit(100)
+            if (sbRows?.length > 0) {
+              sbRows.forEach(r => { sbMap[r.token_address] = r })
+              sbTokensList = sbRows.filter(r => r.name && r.name !== 'Unknown').map(row => ({
+                address: row.token_address,
+                name: row.name,
+                symbol: row.symbol || '???',
+                description: row.description || '',
+                image: row.image_uri || '',
+                creator: row.creator || '',
+                virtualETH: row.virtual_eth || '1',
+                realETH: row.real_eth || '0',
+                createdAt: row.created_at
+                  ? String(Math.floor(new Date(row.created_at).getTime() / 1000))
+                  : '0',
+                graduated: row.graduated || false,
+                buys: String(row.total_buys || 0),
+                sells: String(row.total_sells || 0),
+                volume: row.total_volume || '0',
+                holders: String(row.holder_count || 0),
+                _fromSupabase: true,
+              }))
+              // Show Supabase data immediately so user sees tokens fast
+              if (!cancelled && sbTokensList.length > 0) {
+                setTokens(sbTokensList)
+                setLoadingTokens(false)
+                setTokensListKey(k => k + 1)
+              }
+            }
+          } catch (e) {
+            console.error('Supabase fetch failed:', e)
+          }
+        }
+
+        // Step 2: Get on-chain token count (retry on failure)
         let onChainCount = null
-        for (let attempt = 0; attempt < 2; attempt++) {
+        for (let attempt = 0; attempt < 3; attempt++) {
           try {
             const countRaw = await publicClient.readContract({
               address: PUMPHUB_FACTORY_ADDRESS,
@@ -1618,28 +1661,23 @@ const PumpHub = () => {
             break
           } catch (e) {
             console.warn('getAllTokensCount attempt', attempt + 1, 'failed:', e)
-            if (attempt === 1) {
-              if (!cancelled) setLoadingTokens(false)
-              return
-            }
-            await new Promise(r => setTimeout(r, 400))
+            if (attempt < 2) await new Promise(r => setTimeout(r, 500 * (attempt + 1)))
           }
         }
 
-        if (onChainCount === null) {
-          if (!cancelled) setLoadingTokens(false)
-          return
-        }
-        if (onChainCount === 0) {
-          if (!cancelled) {
+        if (cancelled) return
+        if (onChainCount === null || onChainCount === 0) {
+          // RPC failed or truly 0 tokens — keep Supabase data if we have it
+          if (sbTokensList.length === 0) {
             setTokens([])
-            setLoadingTokens(false)
           }
+          setLoadingTokens(false)
           return
         }
 
+        // Step 3: Get token addresses
         let tokenAddresses = []
-        for (let attempt = 0; attempt < 2; attempt++) {
+        for (let attempt = 0; attempt < 3; attempt++) {
           try {
             tokenAddresses = await publicClient.readContract({
               address: PUMPHUB_FACTORY_ADDRESS,
@@ -1650,67 +1688,30 @@ const PumpHub = () => {
             if (tokenAddresses?.length > 0) break
           } catch (e) {
             console.warn('getTokens RPC attempt', attempt + 1, 'failed:', e)
-            if (attempt === 1) {
-              if (!cancelled) setLoadingTokens(false)
-              return
-            }
-            await new Promise(r => setTimeout(r, 500))
+            if (attempt < 2) await new Promise(r => setTimeout(r, 600 * (attempt + 1)))
           }
         }
 
+        if (cancelled) return
         if (!tokenAddresses?.length) {
-          if (!cancelled) {
-            setTokens([])
-            setLoadingTokens(false)
-          }
+          // RPC failed — keep Supabase data visible
+          setLoadingTokens(false)
           return
         }
 
-        // Step 2: Load whatever we have in Supabase (fast, single query)
-        let sbMap = {}
-        if (supabase?.from) {
+        // Update sbMap with addresses we now know about
+        const lowerAddrs = tokenAddresses.map(a => a.toLowerCase())
+        if (supabase?.from && Object.keys(sbMap).length === 0) {
           try {
-            const lowerAddrs = tokenAddresses.map(a => a.toLowerCase())
             const { data: sbRows } = await supabase
               .from('pumphub_tokens')
               .select('*')
               .in('token_address', lowerAddrs)
-            if (sbRows) {
-              sbRows.forEach(r => { sbMap[r.token_address] = r })
-            }
-          } catch (e) {
-            console.error('Supabase fetch failed:', e)
-          }
+            if (sbRows) sbRows.forEach(r => { sbMap[r.token_address] = r })
+          } catch (_) {}
         }
 
-        // Step 3: Build Supabase snapshot for merge/fallback (do not show list yet – wait for full data so images load on refresh)
-        const sbTokens = tokenAddresses.map(addr => {
-          const row = sbMap[addr.toLowerCase()]
-          if (row && row.name && row.name !== 'Unknown') {
-            return {
-              address: addr,
-              name: row.name,
-              symbol: row.symbol || '???',
-              description: row.description || '',
-              image: row.image_uri || '',
-              creator: row.creator || '',
-              virtualETH: row.virtual_eth || '1',
-              realETH: row.real_eth || '0',
-              createdAt: row.created_at
-                ? String(Math.floor(new Date(row.created_at).getTime() / 1000))
-                : '0',
-              graduated: row.graduated || false,
-              buys: String(row.total_buys || 0),
-              sells: String(row.total_sells || 0),
-              volume: row.total_volume || '0',
-              holders: String(row.holder_count || 0),
-              _fromSupabase: true,
-            }
-          }
-          return { address: addr, name: 'Loading...', symbol: '...', _fromSupabase: false }
-        })
-
-        // Step 4: RPC multicall (we only set tokens + loading=false after this, so list always has image URLs)
+        // Step 4: RPC multicall for fresh data
         const multicallContracts = []
         tokenAddresses.forEach(addr => {
           multicallContracts.push(
@@ -1738,7 +1739,9 @@ const PumpHub = () => {
           }
         }
 
-        // Parse results and merge with Supabase images
+        if (cancelled) return
+
+        // Step 5: Parse results and merge with Supabase images
         const fullTokens = []
         const upsertRows = []
         for (let i = 0; i < tokenAddresses.length; i++) {
@@ -1748,8 +1751,18 @@ const PumpHub = () => {
           const statsR = mcResults[i * 3 + 2]
 
           if (metaR?.status === 'failure' || coreR?.status === 'failure' || statsR?.status === 'failure') {
-            const existing = sbTokens.find(t => t.address === addr)
-            if (existing && existing._fromSupabase) fullTokens.push(existing)
+            const sbRow = sbMap[addr.toLowerCase()]
+            if (sbRow && sbRow.name && sbRow.name !== 'Unknown') {
+              fullTokens.push({
+                address: addr, name: sbRow.name, symbol: sbRow.symbol || '???',
+                description: sbRow.description || '', image: sbRow.image_uri || '',
+                creator: sbRow.creator || '', virtualETH: sbRow.virtual_eth || '1',
+                realETH: sbRow.real_eth || '0', graduated: sbRow.graduated || false,
+                buys: String(sbRow.total_buys || 0), sells: String(sbRow.total_sells || 0),
+                volume: sbRow.total_volume || '0', holders: String(sbRow.holder_count || 0),
+                _fromSupabase: true,
+              })
+            }
             continue
           }
 
@@ -1757,10 +1770,7 @@ const PumpHub = () => {
           const core = coreR.result
           const stats = statsR.result
           const sbRow = sbMap[addr.toLowerCase()]
-          const onChainImage = meta[3] || ''
-          const supabaseImage = sbRow?.image_uri || ''
-          // Prefer Supabase values for fields that might be richer, fall back to on-chain
-          const bestImage = supabaseImage || onChainImage
+          const bestImage = sbRow?.image_uri || meta[3] || ''
           const bestName = (sbRow?.name && sbRow.name !== 'Unknown') ? sbRow.name : (meta[0] || '')
           const bestSymbol = (sbRow?.symbol && sbRow.symbol !== '???') ? sbRow.symbol : (meta[1] || '')
           const bestDesc = sbRow?.description || meta[2] || ''
@@ -1772,7 +1782,6 @@ const PumpHub = () => {
           token.description = bestDesc || token.description
           fullTokens.push(token)
 
-          // Prepare Supabase upsert -- never overwrite non-empty fields with empty
           upsertRows.push({
             token_address: addr.toLowerCase(),
             creator: (core[0] || sbRow?.creator || '').toLowerCase(),
@@ -1792,19 +1801,16 @@ const PumpHub = () => {
           })
         }
 
-        if (!cancelled) {
-          const nextTokens = fullTokens.length > 0 ? fullTokens : sbTokens
-          setTokens(nextTokens)
+        if (!cancelled && fullTokens.length > 0) {
+          setTokens(fullTokens)
           setTokensListKey(k => k + 1)
         }
 
-        // Step 5: Upsert all token data back to Supabase (background, best-effort)
+        // Step 6: Upsert all token data back to Supabase (background, best-effort)
         if (supabase?.from && upsertRows.length > 0) {
-          try {
-            await supabase.from('pumphub_tokens').upsert(upsertRows, { onConflict: 'token_address' })
-          } catch (e) {
+          supabase.from('pumphub_tokens').upsert(upsertRows, { onConflict: 'token_address' }).catch(e => {
             console.error('Supabase sync upsert failed:', e)
-          }
+          })
         }
       } catch (err) {
         console.error('Error fetching tokens:', err)
