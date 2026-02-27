@@ -1,11 +1,11 @@
 // Multi-network configuration
-// Mainnet + Testnet. Testnet ağları ekledikçe CONTRACT_ADDRESSES'a da ekleyin.
-// product.networks içinde kullanılan key'ler: 'base', 'ink', 'soneium', 'katana' (+ testnet key'leri)
+// Mainnet + Testnet. When adding testnet networks, also add them to CONTRACT_ADDRESSES.
+// Keys used in product.networks: 'base', 'ink', 'soneium', 'katana' (+ testnet keys)
 
 export const NETWORKS = {
   BASE: {
     chainId: 8453,
-    networkKey: 'base', // product.networks ile eşleşir
+    networkKey: 'base', // matches product.networks
     chainName: 'Base',
     isTestnet: false,
     nativeCurrency: {
@@ -16,8 +16,7 @@ export const NETWORKS = {
     rpcUrls: [
       'https://base.drpc.org',
       'https://base-rpc.publicnode.com',
-      'https://mainnet.base.org',
-      'https://base-mainnet.public.blastapi.io',
+      'https://1rpc.io/base',
       'https://base.meowrpc.com',
     ],
     blockExplorerUrls: ['https://basescan.org'],
@@ -93,7 +92,7 @@ export const NETWORKS = {
     iconUrls: [],
     isFarcasterSupported: false,
   },
-  // Arc Testnet - para birimi USDC, cüzdanda yoksa otomatik "Ağ ekle" onayı açılır
+  // Arc Testnet - currency is USDC, auto "Add Network" prompt if not in wallet
   ARC_RESTNET: {
     chainId: 5042002, // 0x4cef52
     networkKey: 'arc-restnet',
@@ -206,29 +205,29 @@ export const getNetworkConfig = (chainId) => {
   return Object.values(NETWORKS).find(net => net.chainId === chainId) || NETWORKS.BASE
 }
 
-// NETWORKS objesindeki key (BASE, INKCHAIN, BASE_SEPOLIA vb.) - CONTRACT_ADDRESSES ile eşleşir
+// Key in NETWORKS object (BASE, INKCHAIN, BASE_SEPOLIA etc.) - matches CONTRACT_ADDRESSES
 export const getNetworkConfigKey = (chainId) => {
   const entry = Object.entries(NETWORKS).find(([, net]) => net.chainId === chainId)
   return entry ? entry[0] : 'BASE'
 }
 
-// product.networks ile kullanılan key: 'base', 'ink', 'base-sepolia' vb.
+// Key used with product.networks: 'base', 'ink', 'base-sepolia' etc.
 export const getNetworkKey = (chainId) => {
   const net = getNetworkConfig(chainId)
   return net?.networkKey ?? 'base'
 }
 
-// Sadece mainnet ağları (NetworkSelector Mainnet grubu)
+// Mainnet networks only (NetworkSelector Mainnet group)
 export const getMainnetNetworks = () => {
   return Object.values(NETWORKS).filter(net => net && net.isTestnet === false)
 }
 
-// Sadece testnet ağları (NetworkSelector Testnet grubu). Şu an boş; ekledikçe dolacak.
+// Testnet networks only (NetworkSelector Testnet group). Currently empty; will grow as networks are added.
 export const getTestnetNetworks = () => {
   return Object.values(NETWORKS).filter(net => net && net.isTestnet === true)
 }
 
-// Verilen chainId testnet mi? (XP testnet'lerde kazanılmaz.)
+// Is the given chainId a testnet? (XP is not earned on testnets.)
 export const isTestnetChainId = (chainId) => {
   if (chainId == null) return false
   return getTestnetNetworks().some(net => net.chainId === Number(chainId))

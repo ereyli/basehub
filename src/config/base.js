@@ -10,8 +10,7 @@ export const BASE_CONFIG = {
   rpcUrls: [
     'https://base.drpc.org',
     'https://base-rpc.publicnode.com',
-    'https://mainnet.base.org',
-    'https://base-mainnet.public.blastapi.io',
+    'https://1rpc.io/base',
     'https://base.meowrpc.com',
   ],
   blockExplorerUrls: ['https://basescan.org'],

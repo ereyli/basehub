@@ -62,7 +62,7 @@ export function getProductById(id) {
   return PRODUCTS.find(p => p.id === id)
 }
 
-/** Kategoride hangi ağlar destekleniyorsa onların listesi (ürünlerin networks birleşimi). Sıra tutarlı olsun diye sabit sırada döner. */
+/** List of networks supported in the category (union of product networks). Returns in a fixed order for consistency. */
 const NETWORK_ORDER = ['base', 'ink', 'soneium', 'megaeth', 'katana', 'arc-restnet', 'robinhood-testnet']
 export function getNetworksForProductIds(productIds) {
   const set = new Set()
@@ -93,9 +93,9 @@ export function getProductsForHome() {
 }
 
 /**
- * Seçili ağa göre ürünleri filtreler.
- * Testnet seçildiğinde sadece o testnet için deploy edilmiş kontratı olan kartlar döner.
- * chainId yoksa (cüzdan bağlı değil) tüm ürünler döner.
+ * Filters products by the selected network.
+ * When a testnet is selected, only cards with a deployed contract on that testnet are shown.
+ * If chainId is missing (wallet not connected), all products are returned.
  */
 export function getProductsForHomeByNetwork(chainId, getNetworkKey) {
   if (chainId == null || !getNetworkKey) return PRODUCTS

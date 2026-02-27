@@ -6,13 +6,13 @@ import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector'
 import { NETWORKS } from './networks'
 
 // Base Builder Code – ERC-8021 attribution (base.dev → Settings → Builder Code).
-// Base app / Farcaster miniapp’te kullanıcılar çoğunlukla akıllı kontrat cüzdanı (Base Account vb.) kullanıyor.
-// - writeContract / writeContractAsync: her çağrıda dataSuffix: DATA_SUFFIX veriyoruz → tx data’ya suffix eklenir, cüzdan aynen gönderirse attribution olur.
-// - EIP-5792 sendCalls kullanılırsa (batch): capabilities: BUILDER_CODE_CAPABILITIES geçilmeli.
+// Base app / Farcaster miniapp users mostly use smart contract wallets (Base Account etc.).
+// - writeContract / writeContractAsync: dataSuffix: DATA_SUFFIX is passed on every call → suffix appended to tx data for attribution.
+// - EIP-5792 sendCalls (batch): capabilities: BUILDER_CODE_CAPABILITIES must be passed.
 // Schema 0: codesHex + codesLength(1) + schemaId(0) + ercMarker(16 bytes). Inline to avoid ox package resolution on Vercel.
 export const DATA_SUFFIX = '0x62635f6372386f6d7866660b0080218021802180218021802180218021'
 
-/** EIP-5792 sendCalls için capabilities – akıllı cüzdanlarda Builder Code attribution. sendCalls({ calls, capabilities: BUILDER_CODE_CAPABILITIES }). */
+/** EIP-5792 sendCalls capabilities – Builder Code attribution for smart wallets. sendCalls({ calls, capabilities: BUILDER_CODE_CAPABILITIES }). */
 export const BUILDER_CODE_CAPABILITIES = {
   dataSuffix: { value: DATA_SUFFIX, optional: true },
 }
@@ -131,7 +131,8 @@ export const config = createConfig({
   dataSuffix: DATA_SUFFIX,
   transports: {
     [base.id]: fallback(
-      NETWORKS.BASE.rpcUrls.map((url) => viemHttp(url, { timeout: 20000, retryCount: 3, retryDelay: 1500 }))
+      NETWORKS.BASE.rpcUrls.map((url) => viemHttp(url, { timeout: 12000, retryCount: 1, retryDelay: 1000 })),
+      { rank: false, retryCount: 2, retryDelay: 1000 }
     ),
     [inkChain.id]: fallback(
       NETWORKS.INKCHAIN.rpcUrls.map((url) => viemHttp(url, { timeout: 30000, retryCount: 2, retryDelay: 1000 }))

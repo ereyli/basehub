@@ -9,8 +9,8 @@ class SoundManager {
     this._setupUserGestureUnlock()
   }
 
-  // AudioContext'i user gesture'a kadar oluşturmayı geciktir
-  // Mobil WebView (Farcaster/Warpcast) suspended policy'yi böyle atlatıyoruz
+  // Defer AudioContext creation until user gesture
+  // This bypasses suspended policy on mobile WebView (Farcaster/Warpcast)
   _getOrCreateContext() {
     if (this.audioContext) return this.audioContext
     try {

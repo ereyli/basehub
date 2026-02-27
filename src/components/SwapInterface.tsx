@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useBalance, usePublicClient, useChainId } from 'wagmi';
-import { parseUnits, formatUnits, maxUint256 } from 'viem';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useBalance, useChainId } from 'wagmi';
+import { parseUnits, formatUnits, maxUint256, createPublicClient, http, fallback } from 'viem';
 import { base } from 'wagmi/chains';
 import { DEFAULT_TOKENS, POPULAR_TOKENS, MEME_TOKENS, FEE_TIERS, searchTokens, getAllTokens, saveCustomToken, removeCustomToken, getTokenByAddress, BASE_CHAIN_ID, type AppToken } from '../config/tokens';
 import { Token } from '@uniswap/sdk-core';
@@ -262,7 +263,8 @@ function CustomTokenItemWithRemove({
   const { data: balance } = useBalance({
     address: userAddress,
     token: token.isNative ? undefined : (token.address as `0x${string}`),
-    chainId: base.id
+    chainId: base.id,
+    query: { staleTime: 30_000 }
   });
 
   const balanceFormatted = balance 
@@ -363,10 +365,11 @@ function TokenListItem({ token, onClick, isDisabled, ethPrice, tokenLogos }: Tok
   const { data: balance } = useBalance({
     address: address,
     token: token.isNative ? undefined : (token.address as `0x${string}`),
-    chainId: base.id
+    chainId: base.id,
+    query: { staleTime: 30_000 }
   });
 
-  const balanceFormatted = balance 
+  const balanceFormatted = balance
     ? parseFloat(formatUnits(balance.value, balance.decimals))
     : 0;
   
@@ -714,12 +717,21 @@ const WETH_ABI = [
 ];
 
 export default function SwapInterface() {
+  const queryClient = useQueryClient();
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { updateQuestProgress } = useQuestSystem();
   const { writeContractAsync, data: hash, isPending, error: writeError } = useWriteContract();
   const { isLoading: isConfirming, isSuccess, error: txError } = useWaitForTransactionReceipt({ hash });
-  const publicClient = usePublicClient();
+  const swapClient = React.useMemo(() => createPublicClient({
+    chain: base,
+    transport: fallback([
+      http('https://base-mainnet.g.alchemy.com/v2/EXk1VtDVCaeNBRAWsi7WA', { timeout: 10_000, retryCount: 2, retryDelay: 800 }),
+      http('https://base.drpc.org', { timeout: 12_000, retryCount: 1, retryDelay: 1000 }),
+      http('https://base-rpc.publicnode.com', { timeout: 12_000, retryCount: 1, retryDelay: 1000 }),
+      http('https://1rpc.io/base', { timeout: 12_000, retryCount: 1, retryDelay: 1000 }),
+    ], { rank: false, retryCount: 2, retryDelay: 1000 }),
+  }), []);
   
   // SwapHub only works on Base network
   const isOnBase = chainId === NETWORKS.BASE.chainId;
@@ -738,6 +750,17 @@ export default function SwapInterface() {
   const [transactionStep, setTransactionStep] = useState<'idle' | 'approving' | 'approved' | 'swapping' | 'success'>('idle');
   const quoteRequestIdRef = useRef(0);
   const pendingSwapVolumeRef = useRef<{ swapAmountUSD: number } | null>(null);
+  const QUOTE_CACHE_MS = 15_000;
+  const quoteCacheRef = useRef<{
+    key: string;
+    amountOut: string;
+    bestProtocol: SwapProtocol;
+    bestV3Fee: number;
+    priceImpact: string;
+    v3Available: boolean;
+    v2Available: boolean;
+    timestamp: number;
+  } | null>(null);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -775,84 +798,7 @@ export default function SwapInterface() {
   const swapToRecordRef = useRef<{ hash: string; amount: number } | null>(null);
   const recordSentForHashRef = useRef<string | null>(null);
   const [xpSuccessToast, setXpSuccessToast] = useState<{ xp: number; message: string } | null>(null);
-  useEffect(() => {
-    if (!isSuccess || !address || !hash) return;
-    // Only record for swap txs (not approval); transactionStep excluded from deps to avoid cancelling the delay
-    if (transactionStep !== 'swapping' && transactionStep !== 'success') {
-      return; // approval tx or wrong step - skip
-    }
-
-    const scheduleRecord = (amount: number) => {
-      if (amount <= 0) return;
-      console.log('🎉 Swap confirmed! Recording volume:', { swapAmountUSD: amount, hash: hash.slice(0, 10) + '...' });
-      const handleRecord = (retry = false) => {
-        recordSentForHashRef.current = hash;
-        const doRecord = () => recordSwapTransaction(address, amount, hash);
-        const call = retry ? doRecord() : new Promise<{ xpFromPer100?: number; xpFromMilestones?: number }>((resolve, reject) => {
-          console.log('⏳ Waiting 2s for receipt indexing before Edge Function call...');
-          setTimeout(() => doRecord().then(resolve).catch(reject), 2000);
-        });
-        call
-      .then((awarded: { xpFromPer100?: number; xpFromMilestones?: number } | void) => {
-        const from100 = awarded?.xpFromPer100 ?? 0;
-        const fromMilestones = awarded?.xpFromMilestones ?? 0;
-        console.log('✅ Swap volume recorded');
-        updateQuestProgress?.('swapsCompleted', 1);
-        if (typeof window !== 'undefined') {
-          setTimeout(() => window.dispatchEvent(new CustomEvent('basehub-swap-recorded')), 400);
-          setTimeout(() => window.dispatchEvent(new CustomEvent('basehub-swap-recorded')), 2500);
-          setTimeout(() => window.dispatchEvent(new CustomEvent('basehub-swap-recorded')), 5000);
-        }
-        const total = from100 + fromMilestones;
-        if (total > 0) {
-          const msg = from100 > 0 && fromMilestones > 0
-            ? `$100 threshold + milestone bonus!`
-            : from100 > 0
-              ? `$100 volume threshold reached!`
-              : `Milestone bonus earned!`;
-          setXpSuccessToast({ xp: total, message: msg });
-        }
-      })
-      .catch(err => {
-        console.error('❌ Error recording swap volume:', err);
-        const canRetry = err?.retryable !== false && !retry;
-        if (canRetry) {
-          console.log('🔄 Retrying in 4s (receipt may not be indexed yet)...');
-          setTimeout(() => handleRecord(true), 4000);
-        } else if (retry) {
-          lastRecordedHashRef.current = null;
-        }
-      });
-    };
-      // 2s delay for receipt indexing; Edge Function v8: Supabase corsHeaders (x-client-info, apikey) eklendi
-      handleRecord(false);
-      return () => {};
-    };
-
-    // Strict Mode: second run has lastRecordedHashRef === hash. Skip if we already sent (handleRecord fires immediately).
-    if (lastRecordedHashRef.current === hash) {
-      if (recordSentForHashRef.current === hash) return; // already sent in first run
-      const stored = swapToRecordRef.current;
-      if (stored?.hash === hash && stored.amount > 0) {
-        return scheduleRecord(stored.amount);
-      }
-      return;
-    }
-
-    const pending = pendingSwapVolumeRef.current;
-    const swapAmountUSD = pending?.swapAmountUSD ?? 0;
-    if (swapAmountUSD <= 0) {
-      console.warn('⚠️ Swap record skipped: swapAmountUSD <= 0', { pending, swapAmountUSD });
-      return;
-    }
-
-    lastRecordedHashRef.current = hash;
-    pendingSwapVolumeRef.current = null;
-    swapToRecordRef.current = { hash, amount: swapAmountUSD };
-
-    return scheduleRecord(swapAmountUSD);
-    // Note: transactionStep intentionally excluded from deps to avoid cancelling the timeout when step changes.
-  }, [isSuccess, address, hash, updateQuestProgress]);
+  // XP recording is now handled inline in handleSwap after swapClient confirms the receipt.
   useEffect(() => {
     if (!xpSuccessToast) return;
     const t = setTimeout(() => setXpSuccessToast(null), 4000);
@@ -883,12 +829,13 @@ export default function SwapInterface() {
   const [v2Available, setV2Available] = useState(false);
   const [v3Available, setV3Available] = useState(false);
   const [noLiquidityError, setNoLiquidityError] = useState(false);
+  const [quoteRetryTrigger, setQuoteRetryTrigger] = useState(0);
   const [dontShowWarning, setDontShowWarning] = useState(false);
   const [needsApproval, setNeedsApproval] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [approvalSuccess, setApprovalSuccess] = useState(false);
   const [showMemeTokens, setShowMemeTokens] = useState(true); // Default to open
-
+  const [isConfirmingPrice, setIsConfirmingPrice] = useState(false);
 
   // Get balance for tokenIn (native ETH or ERC20 token)
   const { data: displayBalance, refetch: refetchBalanceIn } = useBalance({
@@ -1018,7 +965,7 @@ export default function SwapInterface() {
 
   // Fetch custom token info from contract address (preview only, don't save yet)
   const fetchCustomToken = async (contractAddress: string) => {
-    if (!publicClient) return;
+    if (!swapClient) return;
     
     // Validate address format
     if (!/^0x[a-fA-F0-9]{40}$/.test(contractAddress)) {
@@ -1043,17 +990,17 @@ export default function SwapInterface() {
     try {
       // Fetch token info from contract
       const [name, symbol, decimals] = await Promise.all([
-        publicClient.readContract({
+        swapClient.readContract({
           address: contractAddress as `0x${string}`,
           abi: ERC20_ABI,
           functionName: 'name'
         }),
-        publicClient.readContract({
+        swapClient.readContract({
           address: contractAddress as `0x${string}`,
           abi: ERC20_ABI,
           functionName: 'symbol'
         }),
-        publicClient.readContract({
+        swapClient.readContract({
           address: contractAddress as `0x${string}`,
           abi: ERC20_ABI,
           functionName: 'decimals'
@@ -1185,31 +1132,247 @@ export default function SwapInterface() {
   const isWrap = tokenIn.isNative && tokenOut.address.toLowerCase() === WETH_ADDRESS.toLowerCase(); // ETH→WETH
   const isUnwrap = tokenIn.address.toLowerCase() === WETH_ADDRESS.toLowerCase() && tokenOut.isNative; // WETH→ETH
 
-  // Helper function for retry logic with exponential backoff
+  // Helper function for retry logic with exponential backoff (429-aware)
   const retryWithBackoff = async <T,>(
     fn: () => Promise<T>,
     maxRetries: number = 2,
-    delay: number = 300
+    delay: number = 400
   ): Promise<T | null> => {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         return await fn();
-      } catch (error) {
+      } catch (error: any) {
         if (attempt === maxRetries) {
           console.warn(`⚠️ Failed after ${maxRetries + 1} attempts:`, error);
           return null;
         }
-        // Wait before retry with exponential backoff
-        await new Promise(resolve => setTimeout(resolve, delay * (attempt + 1)));
-        console.log(`🔄 Retry attempt ${attempt + 1}/${maxRetries}...`);
+        const msg = (error?.message || error?.details || '').toLowerCase();
+        const is429 = msg.includes('429') || msg.includes('rate limit') || msg.includes('too many request');
+        const wait = is429 ? Math.min(3000 * (attempt + 1), 8000) : delay * (attempt + 1);
+        if (is429) console.log(`⏳ Rate limited (429), waiting ${wait}ms before retry...`);
+        else console.log(`🔄 Retry attempt ${attempt + 1}/${maxRetries}...`);
+        await new Promise(resolve => setTimeout(resolve, wait));
       }
     }
     return null;
   };
 
-  // Fetch quote from both Uniswap V3 and V2, use best available
+  // Return type that distinguishes "no pool" from "RPC error" so callers don't confuse them
+  type QuoteResult<T> = { data: T; rpcError: false } | { data: null; rpcError: true };
+
+  const isTransientRpcError = (err: any): boolean => {
+    const msg = (err?.message || err?.shortMessage || err?.details || '').toLowerCase();
+    return msg.includes('429') || msg.includes('rate limit') || msg.includes('too many request')
+      || msg.includes('timeout') || msg.includes('timed out') || msg.includes('econnreset')
+      || msg.includes('econnrefused') || msg.includes('network') || msg.includes('fetch')
+      || msg.includes('503') || msg.includes('502') || msg.includes('500')
+      || msg.includes('403') || msg.includes('401') || msg.includes('forbidden') || msg.includes('unauthorized')
+      || msg.includes('request failed') || msg.includes('http request');
+  };
+
+  // Multicall-based V3 quotes: all fee tiers in a single RPC call instead of 3 separate ones
+  // Uses simulateContract individually per fee tier when multicall returns all-failures (Quoter V2 is nonpayable)
+  const multicallV3Quotes = async (
+    client: typeof swapClient,
+    tokenInAddr: string,
+    tokenOutAddr: string,
+    amountInWei: bigint,
+    feeTiers: number[],
+    attempt: number = 0
+  ): Promise<QuoteResult<{ quote: bigint; fee: number }>> => {
+    const MAX_RETRIES = 2;
+    try {
+      // First try multicall (1 RPC call for all fee tiers)
+      const results = await client.multicall({
+        contracts: feeTiers.map((fee) => ({
+          address: QUOTER_V2_ADDRESS as `0x${string}`,
+          abi: QUOTER_ABI,
+          functionName: 'quoteExactInputSingle',
+          args: [{ tokenIn: tokenInAddr as `0x${string}`, tokenOut: tokenOutAddr as `0x${string}`, amountIn: amountInWei, fee, sqrtPriceLimitX96: BigInt(0) }]
+        })),
+        allowFailure: true
+      });
+
+      let best: bigint | null = null;
+      let bestFee = FEE_TIERS.LOW;
+      let allFailed = true;
+      for (let i = 0; i < results.length; i++) {
+        const r = results[i];
+        if (r.status === 'success') {
+          allFailed = false;
+          if (r.result) {
+            const q = (r.result as any[])[0] as bigint;
+            if (q > 0n && (!best || q > best)) { best = q; bestFee = feeTiers[i]; }
+          }
+        }
+      }
+
+      if (best) return { data: { quote: best, fee: bestFee }, rpcError: false };
+
+      // All sub-calls reverted in multicall — Quoter V2 uses revert-based quoting,
+      // Multicall3 staticcall may not propagate the return correctly on all RPC nodes.
+      // Fall back to individual simulateContract calls (parallel, still 1 call each).
+      if (allFailed && attempt === 0) {
+        console.log('⚠️ V3 multicall: all sub-calls failed, falling back to individual simulateContract...');
+        const individualResults = await Promise.allSettled(
+          feeTiers.map((fee) =>
+            client.simulateContract({
+              address: QUOTER_V2_ADDRESS as `0x${string}`,
+              abi: QUOTER_ABI,
+              functionName: 'quoteExactInputSingle',
+              args: [{ tokenIn: tokenInAddr as `0x${string}`, tokenOut: tokenOutAddr as `0x${string}`, amountIn: amountInWei, fee, sqrtPriceLimitX96: BigInt(0) }]
+            }).then(({ result }) => ({ quote: result[0] as bigint, fee }))
+          )
+        );
+        for (const r of individualResults) {
+          if (r.status === 'fulfilled' && r.value.quote > 0n && (!best || r.value.quote > best)) {
+            best = r.value.quote;
+            bestFee = r.value.fee;
+          }
+        }
+        // Check if all individual calls also failed with RPC errors
+        const allIndividualFailed = individualResults.every(r => r.status === 'rejected');
+        if (best) return { data: { quote: best, fee: bestFee }, rpcError: false };
+        if (allIndividualFailed) {
+          const firstErr = (individualResults[0] as PromiseRejectedResult)?.reason;
+          if (isTransientRpcError(firstErr) && attempt < MAX_RETRIES) {
+            const wait = 2000 * (attempt + 1);
+            console.log(`⏳ V3 individual calls RPC error, retry in ${wait}ms...`);
+            await new Promise(r => setTimeout(r, wait));
+            return multicallV3Quotes(client, tokenInAddr, tokenOutAddr, amountInWei, feeTiers, attempt + 1);
+          }
+          return { data: null, rpcError: true };
+        }
+        return { data: null, rpcError: false };
+      }
+
+      return { data: null, rpcError: false };
+    } catch (err: any) {
+      if (isTransientRpcError(err) && attempt < MAX_RETRIES) {
+        const wait = (err?.message || '').toLowerCase().includes('429') ? 3000 * (attempt + 1) : 1500 * (attempt + 1);
+        console.log(`⏳ V3 multicall RPC error, retry ${attempt + 1}/${MAX_RETRIES} in ${wait}ms...`);
+        await new Promise(r => setTimeout(r, wait));
+        return multicallV3Quotes(client, tokenInAddr, tokenOutAddr, amountInWei, feeTiers, attempt + 1);
+      }
+      console.warn('⚠️ V3 multicall failed:', err?.shortMessage || err?.message);
+      return { data: null, rpcError: true };
+    }
+  };
+
+  // Multicall-based V2 quote: getPair then getAmountsOut
+  const multicallV2Quote = async (
+    client: typeof swapClient,
+    tokenInAddr: string,
+    tokenOutAddr: string,
+    amountInWei: bigint,
+    attempt: number = 0
+  ): Promise<QuoteResult<bigint>> => {
+    const MAX_RETRIES = 2;
+    try {
+      const [pairResult] = await client.multicall({
+        contracts: [{
+          address: UNISWAP_V2_FACTORY as `0x${string}`,
+          abi: V2_FACTORY_ABI,
+          functionName: 'getPair',
+          args: [tokenInAddr as `0x${string}`, tokenOutAddr as `0x${string}`]
+        }],
+        allowFailure: true
+      });
+
+      // getPair failed at multicall level — could be RPC issue; try direct readContract
+      if (pairResult.status !== 'success') {
+        try {
+          const pairAddr = await client.readContract({
+            address: UNISWAP_V2_FACTORY as `0x${string}`,
+            abi: V2_FACTORY_ABI,
+            functionName: 'getPair',
+            args: [tokenInAddr as `0x${string}`, tokenOutAddr as `0x${string}`]
+          });
+          if (!pairAddr || pairAddr === '0x0000000000000000000000000000000000000000') return { data: null, rpcError: false };
+          const amounts = await client.readContract({
+            address: UNISWAP_V2_ROUTER as `0x${string}`,
+            abi: V2_ROUTER_ABI,
+            functionName: 'getAmountsOut',
+            args: [amountInWei, [tokenInAddr as `0x${string}`, tokenOutAddr as `0x${string}`]]
+          });
+          return amounts ? { data: (amounts as bigint[])[1], rpcError: false } : { data: null, rpcError: false };
+        } catch (directErr: any) {
+          if (isTransientRpcError(directErr) && attempt < MAX_RETRIES) {
+            const wait = 2000 * (attempt + 1);
+            console.log(`⏳ V2 direct RPC error, retry in ${wait}ms...`);
+            await new Promise(r => setTimeout(r, wait));
+            return multicallV2Quote(client, tokenInAddr, tokenOutAddr, amountInWei, attempt + 1);
+          }
+          return { data: null, rpcError: isTransientRpcError(directErr) };
+        }
+      }
+
+      if (!pairResult.result || pairResult.result === '0x0000000000000000000000000000000000000000') {
+        return { data: null, rpcError: false };
+      }
+
+      const [amountsResult] = await client.multicall({
+        contracts: [{
+          address: UNISWAP_V2_ROUTER as `0x${string}`,
+          abi: V2_ROUTER_ABI,
+          functionName: 'getAmountsOut',
+          args: [amountInWei, [tokenInAddr as `0x${string}`, tokenOutAddr as `0x${string}`]]
+        }],
+        allowFailure: true
+      });
+      if (amountsResult.status === 'success' && amountsResult.result) {
+        return { data: (amountsResult.result as bigint[])[1], rpcError: false };
+      }
+      return { data: null, rpcError: false };
+    } catch (err: any) {
+      if (isTransientRpcError(err) && attempt < MAX_RETRIES) {
+        const wait = (err?.message || '').toLowerCase().includes('429') ? 3000 * (attempt + 1) : 1500 * (attempt + 1);
+        console.log(`⏳ V2 multicall RPC error, retry ${attempt + 1}/${MAX_RETRIES} in ${wait}ms...`);
+        await new Promise(r => setTimeout(r, wait));
+        return multicallV2Quote(client, tokenInAddr, tokenOutAddr, amountInWei, attempt + 1);
+      }
+      return { data: null, rpcError: true };
+    }
+  };
+
+  // Fetch fresh quote (no cache) for swap execution - used when user clicks swap
+  const getFreshQuote = async (
+    amountInWei: bigint,
+    tokenInAddr: string,
+    tokenOutAddr: string,
+    tokenOutDecimals: number
+  ): Promise<{ formatted: string; bestProtocol: SwapProtocol; bestFeeTier: number } | null> => {
+    if (!swapClient) return null;
+    const feeTiersToTry = [FEE_TIERS.LOWEST, FEE_TIERS.LOW, FEE_TIERS.MEDIUM];
+
+    const [v3Res, v2Res] = await Promise.all([
+      multicallV3Quotes(swapClient, tokenInAddr, tokenOutAddr, amountInWei, feeTiersToTry),
+      multicallV2Quote(swapClient, tokenInAddr, tokenOutAddr, amountInWei)
+    ]);
+    const v3Quote = v3Res.data?.quote ?? null;
+    const bestV3Fee = v3Res.data?.fee ?? FEE_TIERS.LOW;
+    const v2Quote = v2Res.data ?? null;
+    let bestQuote: bigint = BigInt(0);
+    let bestProtocol: SwapProtocol = 'v3';
+    if (v3Quote !== null && v2Quote !== null) {
+      if (v2Quote > v3Quote) { bestQuote = v2Quote; bestProtocol = 'v2'; }
+      else { bestQuote = v3Quote; bestProtocol = 'v3'; }
+    } else if (v3Quote !== null) { bestQuote = v3Quote; bestProtocol = 'v3'; }
+    else if (v2Quote !== null) { bestQuote = v2Quote; bestProtocol = 'v2'; }
+    else return null;
+
+    const feeBps = protocolFeeBps ? Number(protocolFeeBps) : 0;
+    const feeMultiplier = BigInt(10000) - BigInt(feeBps);
+    const userReceivesWei = (bestQuote * feeMultiplier) / BigInt(10000);
+    const formatted = formatUnits(userReceivesWei, tokenOutDecimals);
+    return { formatted, bestProtocol, bestFeeTier: bestProtocol === 'v3' ? bestV3Fee : FEE_TIERS.LOW };
+  };
+
+  // Fetch quote from both Uniswap V3 and V2 in parallel, use best available
   useEffect(() => {
-    const fetchQuote = async () => {
+    const MAX_RPC_AUTO_RETRIES = 2;
+
+    const fetchQuote = async (rpcRetry: number = 0) => {
       if (!amountIn || parseFloat(amountIn) <= 0) {
         setAmountOut('0');
         setPriceImpact('0');
@@ -1230,168 +1393,85 @@ export default function SwapInterface() {
         return;
       }
 
-      if (!publicClient) {
-        console.log('⚠️ publicClient is undefined');
+      if (!swapClient) {
+        console.log('⚠️ swapClient is undefined');
         return;
       }
 
-      const currentRequestId = ++quoteRequestIdRef.current;
-      setIsLoadingQuote(true);
-      setNoLiquidityError(false);
-      console.log('🔄 Fetching quotes from Uniswap V3 and V2...');
-      console.log('   Input:', amountIn, tokenIn.symbol);
-      console.log('   Output token:', tokenOut.symbol);
-      
       const amountInWei = parseUnits(amountIn, tokenIn.decimals);
       const tokenInAddr = tokenIn.isNative ? WETH_ADDRESS : tokenIn.address;
       const tokenOutAddr = tokenOut.isNative ? WETH_ADDRESS : tokenOut.address;
-      
-      let v3Quote: bigint | null = null;
-      let v2Quote: bigint | null = null;
-      let bestProtocol: SwapProtocol = 'v3';
+      const cacheKey = `${tokenInAddr.toLowerCase()}-${tokenOutAddr.toLowerCase()}-${amountIn}`;
+
+      // Quote cache: skip RPC if same request was done recently
+      if (rpcRetry === 0 && quoteCacheRef.current && quoteCacheRef.current.key === cacheKey && (Date.now() - quoteCacheRef.current.timestamp) < QUOTE_CACHE_MS) {
+        const c = quoteCacheRef.current;
+        setAmountOut(c.amountOut);
+        setPriceImpact(c.priceImpact);
+        setSelectedProtocol(c.bestProtocol);
+        setSelectedFeeTier(c.bestV3Fee);
+        setV3Available(c.v3Available);
+        setV2Available(c.v2Available);
+        setNoLiquidityError(false);
+        setIsLoadingQuote(false);
+        return;
+      }
+
+      const currentRequestId = rpcRetry === 0 ? ++quoteRequestIdRef.current : quoteRequestIdRef.current;
+      setIsLoadingQuote(true);
+      setNoLiquidityError(false);
+      if (rpcRetry === 0) {
+        console.log('🔄 Fetching quotes from Uniswap V3 and V2 (multicall)...');
+        console.log('   Input:', amountIn, tokenIn.symbol, '→', tokenOut.symbol);
+      } else {
+        console.log(`🔄 Auto-retry ${rpcRetry}/${MAX_RPC_AUTO_RETRIES} for quote...`);
+      }
+
+      const feeTiersToTry = [FEE_TIERS.LOWEST, FEE_TIERS.LOW, FEE_TIERS.MEDIUM];
+
+      // V3 + V2 via multicall (batched RPC): 1 call for all V3 fee tiers, 1-2 calls for V2
+      const [v3Res, v2Res] = await Promise.all([
+        multicallV3Quotes(swapClient, tokenInAddr, tokenOutAddr, amountInWei, feeTiersToTry),
+        multicallV2Quote(swapClient, tokenInAddr, tokenOutAddr, amountInWei)
+      ]);
+
+      if (currentRequestId !== quoteRequestIdRef.current) return;
+
+      const v3Quote = v3Res.data?.quote ?? null;
+      const bestV3Fee = v3Res.data?.fee ?? selectedFeeTier;
+      const v2Quote = v2Res.data ?? null;
+
+      if (v3Quote) console.log('✅ V3 Quote:', formatUnits(v3Quote, tokenOut.decimals), tokenOut.symbol, `(${bestV3Fee / 10000}% fee)`);
+      if (v2Quote) console.log('✅ V2 Quote:', formatUnits(v2Quote, tokenOut.decimals), tokenOut.symbol);
+
+      // Both returned null - distinguish real "no pool" from transient RPC failure
+      if (v3Quote === null && v2Quote === null) {
+        const anyRpcError = v3Res.rpcError || v2Res.rpcError;
+        if (anyRpcError && rpcRetry < MAX_RPC_AUTO_RETRIES) {
+          const wait = 2000 * (rpcRetry + 1);
+          console.log(`⚠️ Both quotes failed due to RPC errors — auto-retry in ${wait}ms (${rpcRetry + 1}/${MAX_RPC_AUTO_RETRIES})...`);
+          setTimeout(() => {
+            if (quoteRequestIdRef.current === currentRequestId) {
+              fetchQuote(rpcRetry + 1);
+            }
+          }, wait);
+          return;
+        }
+        console.log('❌ No liquidity in V3 or V2');
+        setAmountOut('0');
+        setPriceImpact('0');
+        setNoLiquidityError(true);
+        setIsLoadingQuote(false);
+        return;
+      }
+
+      setV3Available(!!v3Quote);
+      setV2Available(!!v2Quote);
+      if (v3Quote) setSelectedFeeTier(bestV3Fee);
+
       let bestQuote: bigint = BigInt(0);
-      
-      // Try V3 quote with retry and all fee tiers
-      try {
-        console.log('🔷 Trying Uniswap V3...');
-        
-        // Try all fee tiers, not just selectedFeeTier
-        const feeTiersToTry = [FEE_TIERS.LOW, FEE_TIERS.MEDIUM, FEE_TIERS.HIGH];
-        let bestV3Quote: bigint | null = null;
-        let bestV3Fee = selectedFeeTier;
-        
-        for (const feeTier of feeTiersToTry) {
-          const quote = await retryWithBackoff(async () => {
-            const { result } = await publicClient.simulateContract({
-              address: QUOTER_V2_ADDRESS as `0x${string}`,
-              abi: QUOTER_ABI,
-              functionName: 'quoteExactInputSingle',
-              args: [{
-                tokenIn: tokenInAddr as `0x${string}`,
-                tokenOut: tokenOutAddr as `0x${string}`,
-                amountIn: amountInWei,
-                fee: feeTier,
-                sqrtPriceLimitX96: BigInt(0)
-              }]
-            });
-            return result[0] as bigint;
-          });
-          
-          if (quote && (!bestV3Quote || quote > bestV3Quote)) {
-            bestV3Quote = quote;
-            bestV3Fee = feeTier;
-          }
-        }
-        
-        if (bestV3Quote) {
-          v3Quote = bestV3Quote;
-          console.log('✅ V3 Quote:', formatUnits(v3Quote, tokenOut.decimals), tokenOut.symbol, `(${bestV3Fee/10000}% fee)`);
-          setV3Available(true);
-          setSelectedFeeTier(bestV3Fee);
-        } else {
-          console.log('❌ V3 pool not found across all fee tiers');
-          setV3Available(false);
-        }
-      } catch (error) {
-        console.log('❌ V3 pool not found or error:', error);
-        setV3Available(false);
-      }
+      let bestProtocol: SwapProtocol = 'v3';
 
-      // Try V2 quote (V2 doesn't have fee tiers, just one pool per pair)
-      // Also try multi-hop routes via USDC for better liquidity
-      try {
-        console.log('🔶 Checking Uniswap V2...');
-        
-        // First check if V2 pair exists (direct route) with retry
-        const pairAddress = await retryWithBackoff(async () => {
-          return await publicClient.readContract({
-            address: UNISWAP_V2_FACTORY as `0x${string}`,
-            abi: V2_FACTORY_ABI,
-            functionName: 'getPair',
-            args: [tokenInAddr as `0x${string}`, tokenOutAddr as `0x${string}`]
-          });
-        });
-
-        if (pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000') {
-          // Get V2 quote (direct route) with retry
-          const amounts = await retryWithBackoff(async () => {
-            return await publicClient.readContract({
-              address: UNISWAP_V2_ROUTER as `0x${string}`,
-              abi: V2_ROUTER_ABI,
-              functionName: 'getAmountsOut',
-              args: [amountInWei, [tokenInAddr as `0x${string}`, tokenOutAddr as `0x${string}`]]
-            });
-          });
-          
-          if (amounts) {
-            v2Quote = (amounts as bigint[])[1];
-            console.log('✅ V2 Quote (direct):', formatUnits(v2Quote, tokenOut.decimals), tokenOut.symbol);
-            setV2Available(true);
-          }
-        } else {
-          console.log('❌ V2 direct pair does not exist');
-        }
-        
-        // Try multi-hop route via USDC ONLY if direct route doesn't exist
-        // NOTE: Aggregator only supports direct routes, so multi-hop is only for quote comparison
-        // CRITICAL: For ETH/USDC swaps, NEVER use multi-hop - always use direct route
-        const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
-        
-        // Check if this is ETH/USDC swap (both directions)
-        const isETHUSDC_V2 = (
-          (tokenIn.symbol === 'ETH' || tokenIn.symbol === 'WETH' || tokenIn.isNative) &&
-          (tokenOut.symbol === 'USDC' || tokenOut.symbol === 'USDT')
-        ) || (
-          (tokenIn.symbol === 'USDC' || tokenIn.symbol === 'USDT') &&
-          (tokenOut.symbol === 'ETH' || tokenOut.symbol === 'WETH' || tokenOut.isNative)
-        );
-        
-        // Check if this is stablecoin-to-stablecoin swap
-        const isStablecoinToStablecoin_V2 = (
-          (tokenIn.symbol === 'USDC' || tokenIn.symbol === 'USDT' || tokenIn.symbol === 'DAI') &&
-          (tokenOut.symbol === 'USDC' || tokenOut.symbol === 'USDT' || tokenOut.symbol === 'DAI')
-        );
-        
-        // NEVER try multi-hop for ETH/USDC or stablecoin swaps
-        // Only try multi-hop if direct route doesn't exist AND it's not ETH/USDC/stablecoin swap
-        if (v2Quote === null && 
-            !isETHUSDC_V2 && 
-            !isStablecoinToStablecoin_V2 &&
-            tokenInAddr.toLowerCase() !== USDC_ADDRESS.toLowerCase() && 
-            tokenOutAddr.toLowerCase() !== USDC_ADDRESS.toLowerCase()) {
-          try {
-            console.log('🔄 Trying V2 multi-hop via USDC (direct route not available)...');
-            const multiHopAmounts = await publicClient.readContract({
-              address: UNISWAP_V2_ROUTER as `0x${string}`,
-              abi: V2_ROUTER_ABI,
-              functionName: 'getAmountsOut',
-              args: [amountInWei, [
-                tokenInAddr as `0x${string}`, 
-                USDC_ADDRESS as `0x${string}`,
-                tokenOutAddr as `0x${string}`
-              ]]
-            });
-            
-            const multiHopQuote = (multiHopAmounts as bigint[])[2];
-            console.log('✅ V2 Quote (via USDC):', formatUnits(multiHopQuote, tokenOut.decimals), tokenOut.symbol);
-            console.log('⚠️ Note: Aggregator only supports direct routes, multi-hop quote shown for reference only');
-            // Don't use multi-hop quote - aggregator can't execute it
-            // Keep v2Quote as null so V3 will be used instead
-            setV2Available(false);
-          } catch (error) {
-            console.log('❌ V2 multi-hop route not available');
-          }
-        }
-        
-        if (v2Quote === null) {
-          setV2Available(false);
-        }
-      } catch (error) {
-        console.log('❌ V2 pool not found or error');
-        setV2Available(false);
-      }
-
-      // Determine best quote
       if (v3Quote !== null && v2Quote !== null) {
         if (v2Quote > v3Quote) {
           bestQuote = v2Quote;
@@ -1406,72 +1486,60 @@ export default function SwapInterface() {
         bestQuote = v3Quote;
         bestProtocol = 'v3';
         console.log('🏆 Using V3 (only available)');
-      } else if (v2Quote !== null) {
-        bestQuote = v2Quote;
+      } else {
+        bestQuote = v2Quote!;
         bestProtocol = 'v2';
         console.log('🏆 Using V2 (only available)');
-      } else {
-        console.log('❌ No liquidity in V3 or V2');
-        if (currentRequestId !== quoteRequestIdRef.current) return;
-        setAmountOut('0');
-        setPriceImpact('0');
-        setNoLiquidityError(true);
-        setIsLoadingQuote(false);
-        return;
       }
 
       setSelectedProtocol(bestProtocol);
-      
-      // Apply protocol fee to the output (output-fee model)
-      // Fee is deducted from the output amount
-      // Use BigInt arithmetic to avoid precision loss
+
       const feeBps = protocolFeeBps ? Number(protocolFeeBps) : 0;
       const feeBpsBigInt = BigInt(feeBps);
-      const feeMultiplier = BigInt(10000) - feeBpsBigInt; // e.g., 10000 - 100 = 9900
+      const feeMultiplier = BigInt(10000) - feeBpsBigInt;
       const userReceivesWei = (bestQuote * feeMultiplier) / BigInt(10000);
       const feeAmountWei = bestQuote - userReceivesWei;
-      
+
       const formatted = formatUnits(userReceivesWei, tokenOut.decimals);
       const feeFormatted = formatUnits(feeAmountWei, tokenOut.decimals);
       console.log('💵 Raw output:', formatUnits(bestQuote, tokenOut.decimals), tokenOut.symbol);
       console.log('💰 Protocol fee:', feeFormatted, tokenOut.symbol, `(${feeBps / 100}% = ${feeBps} bps)`);
       console.log('✨ User receives:', formatted, tokenOut.symbol, `via ${bestProtocol.toUpperCase()}`);
-      
-      // Calculate price impact based on USD value difference
-      // Price impact = (Expected USD - Actual USD) / Expected USD * 100
+
       const inputUsdStr = calculateUsdValue(amountIn, tokenIn, formatted, tokenOut, ethPriceUsd);
       const outputUsdStr = calculateUsdValue(formatted, tokenOut, amountIn, tokenIn, ethPriceUsd);
-      
-      // Extract numeric values from USD strings (e.g., "$25.37" -> 25.37)
       const inputUsd = inputUsdStr && inputUsdStr !== '-' ? parseFloat(inputUsdStr.replace('$', '').replace(',', '')) : 0;
       const outputUsd = outputUsdStr && outputUsdStr !== '-' ? parseFloat(outputUsdStr.replace('$', '').replace(',', '')) : 0;
-      
+
       let calculatedImpact = 0;
       if (inputUsd > 0 && outputUsd > 0) {
-        // Price impact = (input USD - output USD) / input USD * 100
         calculatedImpact = Math.abs((inputUsd - outputUsd) / inputUsd * 100);
-        
-        // For very small differences (< 0.01%), show 0.01% to indicate minimal impact
-        if (calculatedImpact < 0.01) {
-          calculatedImpact = 0.01;
-        }
+        if (calculatedImpact < 0.01) calculatedImpact = 0.01;
       } else {
-        // If we can't calculate USD values, estimate based on protocol
-        // V3 typically has lower price impact for normal trades
         calculatedImpact = bestProtocol === 'v3' ? 0.1 : 0.5;
       }
-      
-      setPriceImpact(calculatedImpact.toFixed(2));
-      
+      const priceImpactStr = calculatedImpact.toFixed(2);
+      setPriceImpact(priceImpactStr);
+
       if (currentRequestId !== quoteRequestIdRef.current) return;
-      // Store the full precision value in amountOut for accurate calculations
       setAmountOut(formatted);
       setIsLoadingQuote(false);
+
+      quoteCacheRef.current = {
+        key: cacheKey,
+        amountOut: formatted,
+        bestProtocol,
+        bestV3Fee,
+        priceImpact: priceImpactStr,
+        v3Available: !!v3Quote,
+        v2Available: !!v2Quote,
+        timestamp: Date.now()
+      };
     };
 
-    const timer = setTimeout(fetchQuote, 280);
+    const timer = setTimeout(fetchQuote, 400);
     return () => clearTimeout(timer);
-  }, [amountIn, tokenIn, tokenOut, selectedFeeTier, publicClient]);
+  }, [amountIn, tokenIn, tokenOut, selectedFeeTier, swapClient, quoteRetryTrigger]);
 
   // Reset swap state when tokens change
   const resetSwapState = () => {
@@ -1674,9 +1742,24 @@ export default function SwapInterface() {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     try {
+      // Fresh quote before swap so we don't use stale price
+      setIsConfirmingPrice(true);
+      const quoteTokenInAddr = tokenIn.isNative ? WETH_ADDRESS : tokenIn.address;
+      const quoteTokenOutAddr = tokenOut.isNative ? WETH_ADDRESS : tokenOut.address;
+      const freshQuote = await getFreshQuote(amountInWei, quoteTokenInAddr, quoteTokenOutAddr, tokenOut.decimals);
+      setIsConfirmingPrice(false);
+      if (!freshQuote) {
+        setErrorMessage('Could not get current price. Try again.');
+        setTransactionStep('idle');
+        return;
+      }
+      const amountOutNormalizedForSwap = freshQuote.formatted;
+      const swapProtocol = freshQuote.bestProtocol;
+      const swapFeeTier = freshQuote.bestFeeTier;
+
       let amountOutWei: bigint;
       try {
-        amountOutWei = parseUnits(amountOutNormalized, tokenOut.decimals);
+        amountOutWei = parseUnits(amountOutNormalizedForSwap, tokenOut.decimals);
         // Check if output amount is too small
         if (amountOutWei === BigInt(0)) {
           setErrorMessage('Output amount is too small');
@@ -1715,7 +1798,7 @@ export default function SwapInterface() {
       console.log('   finalMinAmountOut:', finalMinAmountOut.toString());
       console.log('   finalMinAmountOut (formatted):', formatUnits(finalMinAmountOut, tokenOut.decimals));
       
-      const deadline = BigInt(Math.floor(Date.now() / 1000) + 1200); // 20 minutes
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + 300); // 5 minutes
 
       // Native ETH uses address(0) in our aggregator
       const inputIsNativeETH = tokenIn.isNative === true;
@@ -1727,7 +1810,7 @@ export default function SwapInterface() {
 
       console.log('📋 Aggregator V2 Swap Parameters:');
       console.log('   Aggregator Contract:', SWAP_AGGREGATOR);
-      console.log('   Protocol:', selectedProtocol.toUpperCase());
+      console.log('   Protocol:', swapProtocol.toUpperCase());
       console.log('   User Address:', address);
       console.log('   Token In:', tokenIn.symbol, inputIsNativeETH ? '(Native ETH → 0x0)' : `→ ${tokenInAddr}`);
       console.log('   Token Out:', tokenOut.symbol, outputIsNativeETH ? '(Native ETH → 0x0)' : `→ ${tokenOutAddr}`);
@@ -1737,8 +1820,8 @@ export default function SwapInterface() {
       console.log('   Protocol Fee:', protocolFeeBps ? `${Number(protocolFeeBps) / 100}%` : 'Loading...');
       console.log('   Input is Native ETH:', inputIsNativeETH);
       console.log('   Output is Native ETH:', outputIsNativeETH);
-      if (selectedProtocol === 'v3') {
-        console.log('   Fee Tier:', selectedFeeTier, `(${selectedFeeTier / 10000}%)`);
+      if (swapProtocol === 'v3') {
+        console.log('   Fee Tier:', swapFeeTier, `(${swapFeeTier / 10000}%)`);
       }
 
       // ═══════════════════════════════════════════════════════════════
@@ -1747,7 +1830,10 @@ export default function SwapInterface() {
       
       let txConfig: any;
 
-      if (selectedProtocol === 'v2') {
+      const GAS_FALLBACK = BigInt(500000);
+      const GAS_BUFFER_BPS = 120n; // 20% buffer = 120/100
+
+      if (swapProtocol === 'v2') {
         // V2 Swap via Aggregator
         console.log('🔶 Using Aggregator swapV2');
         txConfig = {
@@ -1762,7 +1848,7 @@ export default function SwapInterface() {
             deadline        // deadline
           ],
           chainId: base.id,
-          gas: BigInt(450000)
+          gas: GAS_FALLBACK
         };
       } else {
         // V3 Swap via Aggregator (now has deadline for MEV protection)
@@ -1774,13 +1860,13 @@ export default function SwapInterface() {
           args: [
             tokenInAddr,      // tokenIn (address(0) for ETH)
             tokenOutAddr,     // tokenOut (address(0) for ETH)
-            selectedFeeTier,  // poolFee
+            swapFeeTier,      // poolFee (from fresh quote)
             amountInWei,      // amountIn
             finalMinAmountOut,     // amountOutMinimum
-            deadline          // deadline (20 minutes)
+            deadline          // deadline (5 minutes)
           ],
           chainId: base.id,
-          gas: BigInt(450000)
+          gas: GAS_FALLBACK
         };
       }
 
@@ -1788,6 +1874,35 @@ export default function SwapInterface() {
       if (inputIsNativeETH) {
         txConfig.value = amountInWei;
         console.log('💰 Adding msg.value for native ETH:', amountInWei.toString());
+      }
+
+      // Dynamic gas estimation + 20% buffer
+      // If estimation reverts the swap would also revert on-chain, so warn user
+      if (swapClient && address) {
+        try {
+          const estimated = await swapClient.estimateContractGas({
+            address: txConfig.address,
+            abi: txConfig.abi,
+            functionName: txConfig.functionName,
+            args: txConfig.args,
+            value: txConfig.value,
+            account: address as `0x${string}`
+          });
+          const withBuffer = (estimated * GAS_BUFFER_BPS) / 100n;
+          txConfig.gas = withBuffer > GAS_FALLBACK ? withBuffer : GAS_FALLBACK;
+          console.log('⛽ Gas estimated:', estimated.toString(), '+20% →', txConfig.gas.toString());
+        } catch (gasErr: any) {
+          const msg = (gasErr?.message || gasErr?.shortMessage || '').toLowerCase();
+          const isSlippageRelated = msg.includes('too little received') || msg.includes('amount') || msg.includes('minimum') || msg.includes('stf') || msg.includes('invariant');
+          if (isSlippageRelated && slippage < 5) {
+            setErrorMessage(`Swap will fail: price moved beyond ${slippage}% slippage. Try increasing slippage to 3-5% for this token.`);
+          } else {
+            setErrorMessage('Swap simulation failed. The transaction would revert on-chain. Try increasing slippage or reducing amount.');
+          }
+          console.error('⛽ Gas estimation reverted - swap would fail:', gasErr?.shortMessage || gasErr?.message);
+          setTransactionStep('idle');
+          return;
+        }
       }
 
       console.log('📤 Sending swap via Aggregator V2...');
@@ -1805,7 +1920,7 @@ export default function SwapInterface() {
         } else if (tokenIn.symbol === 'USDC' || tokenIn.symbol === 'USDT' || tokenIn.symbol === 'USDbC' || tokenIn.symbol === 'DAI') {
           swapAmountUSD = amountInNum;
         } else if (tokenOut.symbol === 'USDC' || tokenOut.symbol === 'USDT' || tokenOut.symbol === 'USDbC') {
-          swapAmountUSD = parseFloat(amountOutNormalized) || amountInNum * ethPriceUsd;
+          swapAmountUSD = parseFloat(amountOutNormalizedForSwap) || amountInNum * ethPriceUsd;
         } else {
           swapAmountUSD = amountInNum * ethPriceUsd;
         }
@@ -1816,7 +1931,7 @@ export default function SwapInterface() {
       pendingSwapVolumeRef.current = { swapAmountUSD };
 
       // Use writeContractAsync (same as GM/GN) so ERC-8021 dataSuffix is applied correctly
-      await writeContractAsync({
+      const txHash = await writeContractAsync({
         address: txConfig.address,
         abi: txConfig.abi,
         functionName: txConfig.functionName,
@@ -1827,7 +1942,59 @@ export default function SwapInterface() {
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
       });
       
-      console.log('✅ Aggregator swap request sent to wallet!');
+      console.log('✅ Swap tx sent:', txHash?.slice(0, 12) + '...');
+
+      if (txHash && swapClient) {
+        try {
+          const receipt = await swapClient.waitForTransactionReceipt({ hash: txHash, confirmations: 1, timeout: 60_000 });
+          console.log('✅ Swap confirmed via Alchemy! Block:', receipt.blockNumber);
+          
+          void queryClient.invalidateQueries({ queryKey: ['balance'] });
+          refetchBalanceIn();
+          refetchBalanceOut();
+          setTransactionStep('success');
+
+          const t2 = setTimeout(() => { refetchBalanceIn(); refetchBalanceOut(); }, 2000);
+          const t5 = setTimeout(() => { refetchBalanceIn(); refetchBalanceOut(); }, 5000);
+
+          const swapAmountUSD = pendingSwapVolumeRef.current?.swapAmountUSD ?? 0;
+          if (swapAmountUSD > 0 && address) {
+            pendingSwapVolumeRef.current = null;
+            lastRecordedHashRef.current = txHash;
+            recordSentForHashRef.current = txHash;
+            swapToRecordRef.current = { hash: txHash, amount: swapAmountUSD };
+            console.log('🎉 Recording swap volume:', { swapAmountUSD, hash: txHash.slice(0, 12) + '...' });
+            setTimeout(() => {
+              recordSwapTransaction(address, swapAmountUSD, txHash)
+                .then((awarded) => {
+                  const from100 = awarded?.xpFromPer100 ?? 0;
+                  const fromMilestones = awarded?.xpFromMilestones ?? 0;
+                  console.log('✅ Swap volume recorded to Supabase');
+                  updateQuestProgress?.('swapsCompleted', 1);
+                  if (typeof window !== 'undefined') {
+                    setTimeout(() => window.dispatchEvent(new CustomEvent('basehub-swap-recorded')), 400);
+                    setTimeout(() => window.dispatchEvent(new CustomEvent('basehub-swap-recorded')), 2500);
+                  }
+                  const total = from100 + fromMilestones;
+                  if (total > 0) {
+                    const msg = from100 > 0 && fromMilestones > 0
+                      ? `$100 threshold + milestone bonus!`
+                      : from100 > 0 ? `$100 volume threshold reached!` : `Milestone bonus earned!`;
+                    setXpSuccessToast({ xp: total, message: msg });
+                  }
+                })
+                .catch(err => {
+                  console.error('❌ Error recording swap volume:', err);
+                  setTimeout(() => {
+                    recordSwapTransaction(address, swapAmountUSD, txHash).catch(() => {});
+                  }, 4000);
+                });
+            }, 1500);
+          }
+        } catch (receiptErr) {
+          console.warn('⚠️ Receipt wait timed out, wagmi hook will handle:', receiptErr);
+        }
+      }
 
     } catch (error: any) {
       console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -1844,14 +2011,18 @@ export default function SwapInterface() {
 
       // IMPORTANT: Reset transaction step on error
       setTransactionStep('idle');
+      setIsConfirmingPrice(false);
 
-      if (error.code === 4001) {
+      const errMsg = (error.shortMessage || error.message || '').toLowerCase();
+      if (error.code === 4001 || errMsg.includes('user rejected') || errMsg.includes('rejected') || errMsg.includes('denied')) {
         setErrorMessage('Transaction rejected');
-      } else if (error.message?.includes('insufficient funds')) {
+      } else if (errMsg.includes('insufficient funds') || errMsg.includes('insufficient balance')) {
         setErrorMessage('Insufficient balance');
-      } else if (error.message?.includes('nonce')) {
+      } else if (errMsg.includes('too little received') || errMsg.includes('stf') || errMsg.includes('invariant') || errMsg.includes('output amount')) {
+        setErrorMessage(`Swap reverted: price moved beyond ${slippage}% slippage. Increase slippage to 3-5% for volatile tokens.`);
+      } else if (errMsg.includes('nonce')) {
         setErrorMessage('Nonce error - Please try again');
-      } else if (error.message?.includes('network')) {
+      } else if (errMsg.includes('network') || errMsg.includes('timeout')) {
         setErrorMessage('Network error - Check RPC connection');
       } else {
         setErrorMessage(`Transaction failed: ${error.shortMessage || error.message || 'Unknown error'}`);
@@ -1859,51 +2030,23 @@ export default function SwapInterface() {
     }
   };
 
-  // Handle transaction success - differentiate between approval and swap
+  // Handle approval tx success only — swap success is handled inline in handleSwap via swapClient
   useEffect(() => {
-    if (isSuccess && hash && !isConfirming) {
+    if (isSuccess && hash && !isConfirming && transactionStep === 'approving') {
       refetchAllowance();
       setErrorMessage(null);
+      console.log('✅ Approval confirmed! Ready for swap...');
+      setTransactionStep('approved');
+      setApprovalSuccess(true);
+      setNeedsApproval(false);
       
-      if (transactionStep === 'approving') {
-        // Approval was successful - show approval success and trigger swap
-        console.log('✅ Approval confirmed! Ready for swap...');
-        setTransactionStep('approved');
-        setApprovalSuccess(true);
-        setNeedsApproval(false);
-        
-        // Auto-trigger swap after 1.5 seconds
-        const swapTimer = setTimeout(() => {
-          setApprovalSuccess(false);
-          setTransactionStep('swapping');
-          // Will be triggered by user clicking swap button in the UI
-        }, 1500);
-        return () => clearTimeout(swapTimer);
-      } else if (transactionStep === 'swapping') {
-        // Swap was successful – refresh wallet balances so UI updates without page reload
-        console.log('✅ Swap confirmed! Refreshing balances...');
-        refetchBalanceIn();
-        refetchBalanceOut();
-        setTransactionStep('success');
-        // Delayed refetch in case RPC had cached balance (block propagation)
-        const balanceRefreshTimer = setTimeout(() => {
-          refetchBalanceIn();
-          refetchBalanceOut();
-        }, 1500);
-        
-        // Clear after 3 seconds
-        const timer = setTimeout(() => {
-          setAmountIn('');
-          setAmountOut('0');
-          setTransactionStep('idle');
-        }, 3000);
-        return () => {
-          clearTimeout(timer);
-          clearTimeout(balanceRefreshTimer);
-        };
-      }
+      const swapTimer = setTimeout(() => {
+        setApprovalSuccess(false);
+        setTransactionStep('swapping');
+      }, 1500);
+      return () => clearTimeout(swapTimer);
     }
-  }, [isSuccess, hash, isConfirming, transactionStep, refetchAllowance, refetchBalanceIn, refetchBalanceOut]);
+  }, [isSuccess, hash, isConfirming, transactionStep, refetchAllowance]);
 
   // IMPORTANT: Reset swapping state when transaction completes (success or failure)
   useEffect(() => {
@@ -2338,18 +2481,20 @@ export default function SwapInterface() {
         {/* Swap Button */}
         <button
           onClick={
-            transactionStep === 'approved' 
-              ? handleSwap 
+            transactionStep === 'approved'
+              ? handleSwap
               : (needsApproval && !tokenIn.isNative && !isWrapOperation ? handleApprove : handleSwap)
           }
-          disabled={!amountIn || parseFloat(amountOut) === 0 || isPending || isConfirming || noLiquidityError || transactionStep === 'success'}
+          disabled={!amountIn || parseFloat(amountOut) === 0 || isPending || isConfirming || isConfirmingPrice || noLiquidityError || transactionStep === 'success'}
           style={{
             ...getStyle(styles.swapButton, mobileOverrides.swapButton),
-            opacity: (!amountIn || parseFloat(amountOut) === 0 || isPending || isConfirming || noLiquidityError) ? 0.5 : 1,
-            cursor: (!amountIn || parseFloat(amountOut) === 0 || isPending || isConfirming || noLiquidityError) ? 'not-allowed' : 'pointer'
+            opacity: (!amountIn || parseFloat(amountOut) === 0 || isPending || isConfirming || isConfirmingPrice || noLiquidityError) ? 0.5 : 1,
+            cursor: (!amountIn || parseFloat(amountOut) === 0 || isPending || isConfirming || isConfirmingPrice || noLiquidityError) ? 'not-allowed' : 'pointer'
           }}
         >
-          {isPending 
+          {isConfirmingPrice
+            ? 'Confirming price...'
+            : isPending
             ? (transactionStep === 'approving' ? 'Approving...' : 'Swapping...')
             : isConfirming
             ? (transactionStep === 'approving' ? 'Confirming approval...' : isWrapOperation ? (isWrap ? 'Wrapping...' : 'Unwrapping...') : 'Confirming swap...')
@@ -2365,8 +2510,19 @@ export default function SwapInterface() {
 
         {/* No Liquidity Warning */}
         {noLiquidityError && (
-          <div style={styles.noLiquidityWarning}>
-            ⚠️ No liquidity pool found for this pair
+          <div style={{ ...styles.noLiquidityWarning, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+            <span>⚠️ No liquidity pool found for this pair</span>
+            <button
+              onClick={() => {
+                setNoLiquidityError(false);
+                setQuoteRetryTrigger(t => t + 1);
+              }}
+              style={{ padding: '4px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.1)', color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 500, transition: 'background 0.15s', whiteSpace: 'nowrap' as const }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.18)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
+            >
+              Retry
+            </button>
           </div>
         )}
 
