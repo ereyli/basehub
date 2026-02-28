@@ -7,7 +7,9 @@ import { useX402Payment } from '../hooks/useX402Payment'
 import { useTransactions } from '../hooks/useTransactions'
 import EmbedMeta from '../components/EmbedMeta'
 import TwitterShareButton from '../components/TwitterShareButton'
+import ShareButton from '../components/ShareButton'
 import DailyQuestSystem from '../components/DailyQuestSystem'
+import { getFarcasterUniversalLink } from '../config/farcaster'
 import { useFastDeployModal } from '../contexts/FastDeployContext'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
@@ -584,6 +586,28 @@ const Home = () => {
       }} />
     )
 
+    const castButtonBlock = isInFarcaster && (game.castShareText || game.description) && (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        onMouseDown={(e) => e.stopPropagation()}
+        style={{
+          position: 'absolute',
+          top: isCompactMode ? '6px' : '8px',
+          right: isCompactMode ? '6px' : '8px',
+          zIndex: 2,
+        }}
+      >
+        <ShareButton
+          title={game.title}
+          description={game.castShareText || game.description}
+          customUrl={getFarcasterUniversalLink(linkTo || game.path || '/')}
+          style={{ padding: isCompactMode ? '4px 8px' : '6px 10px', fontSize: isCompactMode ? '11px' : '12px', minWidth: 'auto' }}
+        />
+      </div>
+    )
+
     if (linkTo) {
       const linkState = sectionId ? { state: { fromHomeSection: sectionId } } : {}
       return (
@@ -591,12 +615,15 @@ const Home = () => {
           key={game.id}
           to={linkTo}
           className="game-card"
-          style={{ textDecoration: 'none', display: 'block' }}
+          style={{ textDecoration: 'none', display: 'block', position: 'relative' }}
           {...linkState}
         >
           <div style={{ ...compactStyles.card(game.color), height: '100%' }}>
             {glowOverlay}
-            <div style={{ position: 'relative', zIndex: 1 }}>{cardContent}</div>
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              {cardContent}
+              {castButtonBlock}
+            </div>
           </div>
         </Link>
       )
@@ -610,11 +637,15 @@ const Home = () => {
         style={{ 
           ...compactStyles.card(game.color),
           border: 'none',
-          cursor: onClick ? 'pointer' : 'default'
+          cursor: onClick ? 'pointer' : 'default',
+          position: 'relative'
         }}
       >
         {glowOverlay}
-        <div style={{ position: 'relative', zIndex: 1 }}>{cardContent}</div>
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          {cardContent}
+          {castButtonBlock}
+        </div>
       </button>
     )
   }
@@ -657,6 +688,7 @@ const Home = () => {
         id: p.id,
         title: p.title,
         description: p.description,
+        castShareText: p.castShareText || p.description,
         icon,
         path: p.path,
         color: p.color,
@@ -1482,6 +1514,21 @@ const Home = () => {
                         Connect wallet to pay
                       </p>
                     )}
+
+                    {isInFarcaster && game.castShareText && (
+                      <div
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        style={{ position: 'absolute', bottom: '12px', right: '12px', zIndex: 2 }}
+                      >
+                        <ShareButton
+                          title={game.title}
+                          description={game.castShareText}
+                          customUrl={getFarcasterUniversalLink('/')}
+                          style={{ padding: '6px 12px', fontSize: '12px', minWidth: 'auto' }}
+                        />
+                      </div>
+                    )}
                   </button>
                 )
               }
@@ -1569,6 +1616,21 @@ const Home = () => {
                   }}>
                     {game.description}
                   </p>
+
+                  {isInFarcaster && (game.castShareText || game.description) && (
+                    <div
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      style={{ position: 'absolute', bottom: '12px', right: '12px', zIndex: 2 }}
+                    >
+                      <ShareButton
+                        title={game.title}
+                        description={game.castShareText || game.description}
+                        customUrl={getFarcasterUniversalLink(game.path || '/')}
+                        style={{ padding: '6px 12px', fontSize: '12px', minWidth: 'auto' }}
+                      />
+                    </div>
+                  )}
                 </Link>
               )
             })}
