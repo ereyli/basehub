@@ -16,7 +16,6 @@ import ResponsiveHeader from './components/ResponsiveHeader'
 import WalletConnect from './components/WalletConnect'
 import WebBottomNav from './components/WebBottomNav'
 import Footer from './components/Footer'
-import AssistantLauncher from './components/AssistantLauncher'
 import { OpenInAppProvider } from './contexts/OpenInAppContext'
 import SkeletonLoader from './components/SkeletonLoader'
 import { useNetworkInterceptor } from './hooks/useNetworkInterceptor'
@@ -356,7 +355,6 @@ function FarcasterAppContent() {
             </Routes>
           </Suspense>
         </main>
-        <AssistantLauncher />
         <FarcasterBottomNav />
         <Footer />
         </OpenInAppProvider>
@@ -428,7 +426,6 @@ function WebAppContent() {
           </Routes>
           </Suspense>
         </main>
-        <AssistantLauncher />
         {isMobile ? <FarcasterBottomNav /> : <WebBottomNav />}
         <Footer />
       </div>
