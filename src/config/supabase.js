@@ -47,6 +47,9 @@ export const GAME_TYPES = {
 
 // Create mock Supabase client for development
 const createMockSupabase = () => ({
+  auth: {
+    getSession: async () => ({ data: { session: null }, error: null }),
+  },
   from: () => ({
     select: () => ({ data: [], error: null }),
     insert: () => ({ data: null, error: null }),

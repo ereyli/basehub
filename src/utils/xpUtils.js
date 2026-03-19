@@ -40,8 +40,10 @@ export function isMiniappDomain () {
   return isLikelyFarcaster() || isLikelyBaseApp()
 }
 
-// Farcaster/Base app: no receipt wait, XP awarded immediately when hash is received (web flow untouched)
-export function shouldAwardXPOnHashOnly () {
+// Farcaster/Base app: usually hash-only flow.
+// Tempo is forced to receipt-confirmed XP to avoid awarding on approve/pre-tx steps.
+export function shouldAwardXPOnHashOnly (chainId = null) {
+  if (chainId != null && Number(chainId) === NETWORKS.TEMPO?.chainId) return false
   return isMiniappDomain() || isLikelyBaseApp() || isLikelyFarcaster()
 }
 
@@ -258,10 +260,13 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
   }
 
   try {
-    // Web: receipt verification (award-xp-verified EF). Miniapp + MegaETH: direct award_xp RPC (EF cannot find receipt on MegaETH).
+    // Web: receipt verification (award-xp-verified EF).
+    // Miniapp + MegaETH + Tempo: direct award_xp RPC
+    // (verified EF can miss receipts on these networks/environments).
     const isMiniapp = isMiniappDomain() || isLikelyBaseApp() || isLikelyFarcaster()
     const isMegaETH = chainId != null && Number(chainId) === NETWORKS.MEGAETH?.chainId
-    const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke && !isMiniapp && !isMegaETH
+    const isTempo = chainId != null && Number(chainId) === NETWORKS.TEMPO?.chainId
+    const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke && !isMiniapp && !isMegaETH && !isTempo
     if (useVerified) {
       const source = 'web'
       const invokeVerified = async () => {

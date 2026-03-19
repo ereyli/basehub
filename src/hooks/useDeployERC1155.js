@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAccount, useWalletClient, useChainId } from 'wagmi'
+import { useAccount, useWalletClient, useChainId, usePublicClient, useWriteContract } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { parseEther, encodeAbiParameters, parseAbiParameters } from 'viem'
 import { config, DATA_SUFFIX } from '../config/wagmi'
@@ -437,11 +437,14 @@ const ERC1155_ABI = [
 export const useDeployERC1155 = () => {
   const { address } = useAccount()
   const { data: walletClient } = useWalletClient()
+  const { writeContractAsync } = useWriteContract()
   const chainId = useChainId()
+  const publicClient = usePublicClient({ chainId })
   const { isCorrectNetwork, networkName, baseNetworkName, switchToBaseNetwork } = useNetworkCheck()
   const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
+  const isTempoChain = chainId === NETWORKS.TEMPO.chainId
   
   // Get Farcaster context for SDK access
   const farcasterContext = useFarcaster()
@@ -453,6 +456,36 @@ export const useDeployERC1155 = () => {
       // Don't auto-switch - let user choose network via RainbowKit
       throw new Error(`❌ SUPPORTED NETWORK REQUIRED!\n\nYou are currently on ${networkName}.\nBaseHub works on Base or InkChain networks.\n\nPlease switch to a supported network using RainbowKit's network selector.`)
     }
+  }
+
+  const ensureTempoDeployerAllowance = async (deployerAddress) => {
+    if (!isTempoChain) return
+    if (!publicClient || !address) throw new Error('Wallet/public client not ready')
+    const deployerAbi = [
+      { name: 'feeToken', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+      { name: 'FEE_USD6', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    ]
+    const erc20Abi = [
+      { name: 'allowance', type: 'function', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], outputs: [{ type: 'uint256' }] },
+      { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ type: 'bool' }] },
+    ]
+    const feeToken = await publicClient.readContract({ address: deployerAddress, abi: deployerAbi, functionName: 'feeToken' })
+    if (String(feeToken || '').toLowerCase() === '0x0000000000000000000000000000000000000000') {
+      throw new Error('TempoBaseHubDeployer fee token is not set. Call setFeeToken(pathUSD TIP20 address).')
+    }
+    const feeAmount = await publicClient.readContract({ address: deployerAddress, abi: deployerAbi, functionName: 'FEE_USD6' }).catch(() => 550_000n)
+    const allowance = await publicClient.readContract({ address: feeToken, abi: erc20Abi, functionName: 'allowance', args: [address, deployerAddress] })
+    const required = BigInt(feeAmount || 550_000n)
+    if (BigInt(allowance || 0n) >= required) return
+    const approveHash = await writeContractAsync({
+      address: feeToken,
+      abi: erc20Abi,
+      functionName: 'approve',
+      args: [deployerAddress, required],
+      chainId,
+      dataSuffix: DATA_SUFFIX,
+    })
+    await waitForTransactionReceipt(config, { hash: approveHash, chainId, confirmations: 1, pollingInterval: 2000 })
   }
 
   const deployERC1155 = async (name, symbol, uri) => {
@@ -485,12 +518,13 @@ export const useDeployERC1155 = () => {
       if (deployerAddress) {
         console.log('📦 Deploying ERC1155 via BaseHubDeployer (single tx)...')
         if (!walletClient) throw new Error('Wallet not available. Please connect your wallet.')
+        await ensureTempoDeployerAllowance(deployerAddress)
         const deployData = encodeDeployerCall('deployERC1155', initCode)
         const deployDataWithSuffix = `${deployData}${DATA_SUFFIX.startsWith('0x') ? DATA_SUFFIX.slice(2) : DATA_SUFFIX}`
         deployTxHash = await walletClient.sendTransaction({
           to: deployerAddress,
           data: deployDataWithSuffix,
-          value: parseEther(DEPLOYER_FEE_ETH),
+          ...(isTempoChain ? {} : { value: parseEther(DEPLOYER_FEE_ETH) }),
           chainId,
           gas: 3000000n,
         })

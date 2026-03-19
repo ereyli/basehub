@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAccount, useWalletClient, useChainId, useReadContract, usePublicClient } from 'wagmi'
+import { useAccount, useWalletClient, useChainId, useReadContract, usePublicClient, useWriteContract } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { config, DATA_SUFFIX } from '../config/wagmi'
 import { parseEther, encodeAbiParameters, parseAbiParameters, toEventHash } from 'viem'
@@ -34,6 +34,7 @@ function generateSlug(name) {
 export function useNFTLaunchpad() {
   const { address } = useAccount()
   const { data: walletClient } = useWalletClient()
+  const { writeContractAsync } = useWriteContract()
   const chainId = useChainId()
   const publicClient = usePublicClient({ chainId })
   const { isCorrectNetwork, networkName } = useNetworkCheck()
@@ -57,6 +58,7 @@ export function useNFTLaunchpad() {
   const [contractAddress, setContractAddress] = useState(null)
   const [deployTxHash, setDeployTxHash] = useState(null)
   const [slug, setSlug] = useState(null)
+  const isTempoChain = chainId === NETWORKS.TEMPO.chainId
 
   const validateNetwork = async () => {
     if (!isCorrectNetwork) {
@@ -64,6 +66,62 @@ export function useNFTLaunchpad() {
         `Please switch to Base, InkChain, Soneium or MegaETH. You are currently on ${networkName}. Use the network selector.`
       )
     }
+  }
+
+  const ensureTempoLaunchpadAllowance = async (deployerAddress) => {
+    if (!isTempoChain) return
+    if (!publicClient || !address) throw new Error('Wallet/public client not ready')
+
+    const deployerAbi = [
+      { name: 'feeToken', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+      { name: 'FEE_NFT_COLLECTION_USD6', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    ]
+    const erc20Abi = [
+      { name: 'allowance', type: 'function', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], outputs: [{ type: 'uint256' }] },
+      { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ type: 'bool' }] },
+    ]
+
+    const feeToken = await publicClient.readContract({
+      address: deployerAddress,
+      abi: deployerAbi,
+      functionName: 'feeToken',
+    })
+
+    if (String(feeToken || '').toLowerCase() === '0x0000000000000000000000000000000000000000') {
+      throw new Error('Tempo NFT deployer fee token is not set. Call setFeeToken(pathUSD TIP20 address).')
+    }
+
+    const feeAmount = await publicClient.readContract({
+      address: deployerAddress,
+      abi: deployerAbi,
+      functionName: 'FEE_NFT_COLLECTION_USD6',
+    }).catch(() => 4_400_000n)
+
+    const allowance = await publicClient.readContract({
+      address: feeToken,
+      abi: erc20Abi,
+      functionName: 'allowance',
+      args: [address, deployerAddress],
+    })
+
+    const required = BigInt(feeAmount || 4_400_000n)
+    if (BigInt(allowance || 0n) >= required) return
+
+    const approveHash = await writeContractAsync({
+      address: feeToken,
+      abi: erc20Abi,
+      functionName: 'approve',
+      args: [deployerAddress, required],
+      chainId,
+      dataSuffix: DATA_SUFFIX,
+    })
+
+    await waitForTransactionReceipt(config, {
+      hash: approveHash,
+      chainId,
+      confirmations: 1,
+      pollingInterval: 2000,
+    })
   }
 
   /**
@@ -150,6 +208,9 @@ export function useNFTLaunchpad() {
       const deployerAddress = getContractAddressByNetwork('BASEHUB_NFT_COLLECTION_DEPLOYER', chainId)
       if (!deployerAddress) throw new Error('NFT Launchpad deployer not configured for this network.')
       if (!walletClient) throw new Error('Wallet not available.')
+      if (isTempoChain) {
+        await ensureTempoLaunchpadAllowance(deployerAddress)
+      }
 
       // Fee at tx time: read Early Access balance on Base only (Early Access Pass is Base-only)
       let feeEthForTx = DEPLOYER_FEE_NFT_COLLECTION_ETH
@@ -175,7 +236,7 @@ export function useNFTLaunchpad() {
       const txHash = await walletClient.sendTransaction({
         to: deployerAddress,
         data: dataToSend,
-        value: parseEther(feeEthForTx),
+        ...(isTempoChain ? {} : { value: parseEther(feeEthForTx) }),
         chainId,
         gas: 5000000n,
       })

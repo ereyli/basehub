@@ -107,6 +107,13 @@ export const useTransactions = () => {
     ])
   }
   const [error, setError] = useState(null)
+  const isTempoChain = chainId === NETWORKS.TEMPO?.chainId
+  const TEMPO_GAME_FEE_FALLBACK_USD6 = 44_000n
+
+  const ERC20_ABI = [
+    { name: 'allowance', type: 'function', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], outputs: [{ type: 'uint256' }] },
+    { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ type: 'bool' }] },
+  ]
 
   // Network validation and auto-switch function
   const validateAndSwitchNetwork = async () => {
@@ -144,6 +151,78 @@ export const useTransactions = () => {
   const getGameFee = () => {
     return parseEther('0.00002')
   }
+
+  const readTempoFeeConfig = useCallback(async (contractAddress, feeField = 'GAME_FEE_USD6') => {
+    if (!publicClient || !contractAddress) {
+      return { feeToken: null, feeAmount: TEMPO_GAME_FEE_FALLBACK_USD6 }
+    }
+
+    const cfgAbi = [
+      { name: 'feeToken', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+      { name: 'GAME_FEE_USD6', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+      { name: 'CREDIT_PRICE_USD6', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    ]
+
+    let feeToken = null
+    let feeAmount = TEMPO_GAME_FEE_FALLBACK_USD6
+    try {
+      feeToken = await publicClient.readContract({
+        address: contractAddress,
+        abi: cfgAbi,
+        functionName: 'feeToken',
+      })
+    } catch (_) {}
+
+    try {
+      feeAmount = await publicClient.readContract({
+        address: contractAddress,
+        abi: cfgAbi,
+        functionName: feeField,
+      })
+    } catch (_) {}
+
+    return {
+      feeToken: feeToken || null,
+      feeAmount: BigInt(feeAmount || TEMPO_GAME_FEE_FALLBACK_USD6),
+    }
+  }, [publicClient])
+
+  const ensureTempoAllowance = useCallback(async (feeTokenAddress, spender, amount) => {
+    if (!isTempoChain) return
+    if (!feeTokenAddress) throw new Error('Tempo fee token not found on contract')
+    if (!publicClient || !address) throw new Error('Wallet/public client not ready')
+
+    const normalizedFeeToken = String(feeTokenAddress || '').toLowerCase()
+    if (normalizedFeeToken === '0x0000000000000000000000000000000000000000') {
+      throw new Error('Tempo fee token is not set on contract. Call setFeeToken(tokenAddress) on your deployed Tempo contract, then try again.')
+    }
+
+    const feeTokenCode = await publicClient.getBytecode({ address: feeTokenAddress }).catch(() => null)
+    if (!feeTokenCode || feeTokenCode === '0x') {
+      throw new Error(
+        `Tempo fee token address is invalid (${feeTokenAddress}). Set a valid TIP20 token contract via setFeeToken(tokenAddress).`
+      )
+    }
+
+    const allowance = await publicClient.readContract({
+      address: feeTokenAddress,
+      abi: ERC20_ABI,
+      functionName: 'allowance',
+      args: [address, spender],
+    })
+
+    if (BigInt(allowance || 0n) >= amount) return
+
+    const approveHash = await writeContractAsync({
+      address: feeTokenAddress,
+      abi: ERC20_ABI,
+      functionName: 'approve',
+      args: [spender, amount],
+      dataSuffix: DATA_SUFFIX,
+    })
+
+    await waitForTxReceipt(approveHash, 120000)
+  }, [isTempoChain, publicClient, address, writeContractAsync])
 
   // SlotGame ABI for reading CREDIT_PRICE and simulating purchaseCredits
   const SLOT_GAME_ABI = [
@@ -187,21 +266,31 @@ export const useTransactions = () => {
         address 
       })
       const contractAddress = getContractAddressForCurrentNetwork('GM_GAME')
-      const gmAbi = [{ name: 'sendGM', type: 'function', stateMutability: 'payable', inputs: [{ name: 'message', type: 'string' }] }]
+      const gmAbi = [{ name: 'sendGM', type: 'function', stateMutability: isTempoChain ? 'nonpayable' : 'payable', inputs: [{ name: 'message', type: 'string' }] }]
       const isBaseApp = isLikelyBaseApp()
       const useSendCalls = shouldUseSendCallsForBaseApp(isBaseApp, chainId)
       console.log('📡 Contract address for GM_GAME:', contractAddress)
       console.log('📡 Sending GM transaction to blockchain...' + (useSendCalls ? ' (Base app sendCalls + Builder Code)' : ''))
+      if (isTempoChain) {
+        const { feeToken, feeAmount } = await readTempoFeeConfig(contractAddress, 'GAME_FEE_USD6')
+        await ensureTempoAllowance(feeToken, contractAddress, feeAmount)
+      }
       let txHash
       if (useSendCalls) {
-        txHash = await sendContractCallBaseApp({ address: contractAddress, abi: gmAbi, functionName: 'sendGM', args: [message], value: getGameFee() })
+        txHash = await sendContractCallBaseApp({
+          address: contractAddress,
+          abi: gmAbi,
+          functionName: 'sendGM',
+          args: [message],
+          ...(isTempoChain ? {} : { value: getGameFee() }),
+        })
       } else {
         const writePromise = writeContractAsync({
           address: contractAddress,
           abi: gmAbi,
           functionName: 'sendGM',
           args: [message],
-          value: getGameFee(),
+          ...(isTempoChain ? {} : { value: getGameFee() }),
           dataSuffix: DATA_SUFFIX,
         })
         txHash = isBaseApp ? await getTxHashBaseApp(writePromise) : await writePromise
@@ -215,7 +304,7 @@ export const useTransactions = () => {
         return { txHash: null, xpEarned: 0 }
       }
       console.log('✅ GM transaction sent! Hash:', txHash)
-      if (shouldAwardXPOnHashOnly()) {
+      if (shouldAwardXPOnHashOnly(chainId)) {
         try { await addXP(address, 150, 'GM_GAME', chainId, false, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
         try { await updateQuestProgress('gmUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
         try {
@@ -270,7 +359,7 @@ export const useTransactions = () => {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, isCorrectNetwork, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp])
+  }, [address, chainId, currentNetworkConfig, isCorrectNetwork, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp, isTempoChain, ensureTempoAllowance, readTempoFeeConfig])
 
   const sendGNTransaction = useCallback(async (message = 'GN!') => {
     if (!address) {
@@ -286,20 +375,30 @@ export const useTransactions = () => {
 
     try {
       const contractAddress = getContractAddressForCurrentNetwork('GN_GAME')
-      const gnAbi = [{ name: 'sendGN', type: 'function', stateMutability: 'payable', inputs: [{ name: 'message', type: 'string' }] }]
+      const gnAbi = [{ name: 'sendGN', type: 'function', stateMutability: isTempoChain ? 'nonpayable' : 'payable', inputs: [{ name: 'message', type: 'string' }] }]
       const isBaseApp = isLikelyBaseApp()
       const useSendCalls = shouldUseSendCallsForBaseApp(isBaseApp, chainId)
       console.log('📡 Sending GN transaction to blockchain...' + (useSendCalls ? ' (Base app sendCalls + Builder Code)' : ''))
+      if (isTempoChain) {
+        const { feeToken, feeAmount } = await readTempoFeeConfig(contractAddress, 'GAME_FEE_USD6')
+        await ensureTempoAllowance(feeToken, contractAddress, feeAmount)
+      }
       let txHash
       if (useSendCalls) {
-        txHash = await sendContractCallBaseApp({ address: contractAddress, abi: gnAbi, functionName: 'sendGN', args: [message], value: getGameFee() })
+        txHash = await sendContractCallBaseApp({
+          address: contractAddress,
+          abi: gnAbi,
+          functionName: 'sendGN',
+          args: [message],
+          ...(isTempoChain ? {} : { value: getGameFee() }),
+        })
       } else {
         const writePromise = writeContractAsync({
           address: contractAddress,
           abi: gnAbi,
           functionName: 'sendGN',
           args: [message],
-          value: getGameFee(),
+          ...(isTempoChain ? {} : { value: getGameFee() }),
           dataSuffix: DATA_SUFFIX,
         })
         txHash = isBaseApp ? await getTxHashBaseApp(writePromise) : await writePromise
@@ -310,7 +409,7 @@ export const useTransactions = () => {
         return { txHash: null, xpEarned: 0 }
       }
       console.log('✅ GN transaction sent! Hash:', txHash)
-      if (shouldAwardXPOnHashOnly()) {
+      if (shouldAwardXPOnHashOnly(chainId)) {
         try { await addXP(address, 150, 'GN_GAME', chainId, false, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
         try { await updateQuestProgress('gnUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
         try {
@@ -363,7 +462,7 @@ export const useTransactions = () => {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp])
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp, isTempoChain, ensureTempoAllowance, readTempoFeeConfig])
 
   const sendFlipTransaction = useCallback(async (selectedSide) => {
     if (!address) {
@@ -381,20 +480,30 @@ export const useTransactions = () => {
 
       const contractAddress = getContractAddressForCurrentNetwork('FLIP_GAME')
       const choice = selectedSide === 'heads' ? 0 : 1
-      const flipAbi = [{ name: 'playFlip', type: 'function', stateMutability: 'payable', inputs: [{ name: 'choice', type: 'uint8' }] }]
+      const flipAbi = [{ name: 'playFlip', type: 'function', stateMutability: isTempoChain ? 'nonpayable' : 'payable', inputs: [{ name: 'choice', type: 'uint8' }] }]
       const isBaseApp = isLikelyBaseApp()
       const useSendCalls = shouldUseSendCallsForBaseApp(isBaseApp, chainId)
       console.log('📡 Sending Flip transaction to blockchain...' + (useSendCalls ? ' (Base app sendCalls + Builder Code)' : ''))
+      if (isTempoChain) {
+        const { feeToken, feeAmount } = await readTempoFeeConfig(contractAddress, 'GAME_FEE_USD6')
+        await ensureTempoAllowance(feeToken, contractAddress, feeAmount)
+      }
       let txHash
       if (useSendCalls) {
-        txHash = await sendContractCallBaseApp({ address: contractAddress, abi: flipAbi, functionName: 'playFlip', args: [choice], value: getGameFee() })
+        txHash = await sendContractCallBaseApp({
+          address: contractAddress,
+          abi: flipAbi,
+          functionName: 'playFlip',
+          args: [choice],
+          ...(isTempoChain ? {} : { value: getGameFee() }),
+        })
       } else {
         const writePromise = writeContractAsync({
           address: contractAddress,
           abi: flipAbi,
           functionName: 'playFlip',
           args: [choice],
-          value: getGameFee(),
+          ...(isTempoChain ? {} : { value: getGameFee() }),
           dataSuffix: DATA_SUFFIX,
         })
         txHash = isBaseApp ? await getTxHashBaseApp(writePromise) : await writePromise
@@ -409,7 +518,7 @@ export const useTransactions = () => {
       const playerWon = (selectedSide === 'heads' && actualResult === 'heads') || 
                        (selectedSide === 'tails' && actualResult === 'tails')
       console.log('🎲 Flip result:', { selectedSide, actualResult, playerWon })
-      if (shouldAwardXPOnHashOnly()) {
+      if (shouldAwardXPOnHashOnly(chainId)) {
         try { await addBonusXP(address, 'flip', playerWon, chainId, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
         try { await updateQuestProgress('coinFlipUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
         try {
@@ -461,7 +570,7 @@ export const useTransactions = () => {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp])
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp, isTempoChain, ensureTempoAllowance, readTempoFeeConfig])
 
 
   const sendLuckyNumberTransaction = useCallback(async (guess) => {
@@ -479,20 +588,30 @@ export const useTransactions = () => {
     try {
 
       const contractAddress = getContractAddressForCurrentNetwork('LUCKY_NUMBER')
-      const luckyAbi = [{ name: 'guessLuckyNumber', type: 'function', stateMutability: 'payable', inputs: [{ name: 'guess', type: 'uint256' }] }]
+      const luckyAbi = [{ name: 'guessLuckyNumber', type: 'function', stateMutability: isTempoChain ? 'nonpayable' : 'payable', inputs: [{ name: 'guess', type: 'uint256' }] }]
       const isBaseApp = isLikelyBaseApp()
       const useSendCalls = shouldUseSendCallsForBaseApp(isBaseApp, chainId)
       console.log('📡 Sending Lucky Number transaction to blockchain...' + (useSendCalls ? ' (Base app sendCalls + Builder Code)' : ''))
+      if (isTempoChain) {
+        const { feeToken, feeAmount } = await readTempoFeeConfig(contractAddress, 'GAME_FEE_USD6')
+        await ensureTempoAllowance(feeToken, contractAddress, feeAmount)
+      }
       let txHash
       if (useSendCalls) {
-        txHash = await sendContractCallBaseApp({ address: contractAddress, abi: luckyAbi, functionName: 'guessLuckyNumber', args: [guess], value: getGameFee() })
+        txHash = await sendContractCallBaseApp({
+          address: contractAddress,
+          abi: luckyAbi,
+          functionName: 'guessLuckyNumber',
+          args: [guess],
+          ...(isTempoChain ? {} : { value: getGameFee() }),
+        })
       } else {
         const writePromise = writeContractAsync({
           address: contractAddress,
           abi: luckyAbi,
           functionName: 'guessLuckyNumber',
           args: [guess],
-          value: getGameFee(),
+          ...(isTempoChain ? {} : { value: getGameFee() }),
           dataSuffix: DATA_SUFFIX,
         })
         txHash = isBaseApp ? await getTxHashBaseApp(writePromise) : await writePromise
@@ -506,7 +625,7 @@ export const useTransactions = () => {
       const winningNumber = Math.floor(Math.random() * 10) + 1
       const playerWon = guess === winningNumber
       console.log('🎲 Lucky Number result:', { guess, winningNumber, playerWon })
-      if (shouldAwardXPOnHashOnly()) {
+      if (shouldAwardXPOnHashOnly(chainId)) {
         try { await addBonusXP(address, 'luckynumber', playerWon, chainId, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
         try { await updateQuestProgress('luckyNumberUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
         try {
@@ -558,7 +677,7 @@ export const useTransactions = () => {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp])
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp, isTempoChain, ensureTempoAllowance, readTempoFeeConfig])
 
   const sendDiceRollTransaction = useCallback(async (guess) => {
     if (!address) {
@@ -575,20 +694,30 @@ export const useTransactions = () => {
     try {
 
       const contractAddress = getContractAddressForCurrentNetwork('DICE_ROLL')
-      const diceAbi = [{ name: 'rollDice', type: 'function', stateMutability: 'payable', inputs: [{ name: 'guess', type: 'uint256' }] }]
+      const diceAbi = [{ name: 'rollDice', type: 'function', stateMutability: isTempoChain ? 'nonpayable' : 'payable', inputs: [{ name: 'guess', type: 'uint256' }] }]
       const isBaseApp = isLikelyBaseApp()
       const useSendCalls = shouldUseSendCallsForBaseApp(isBaseApp, chainId)
       console.log('📡 Sending Dice Roll transaction to blockchain...' + (useSendCalls ? ' (Base app sendCalls + Builder Code)' : ''))
+      if (isTempoChain) {
+        const { feeToken, feeAmount } = await readTempoFeeConfig(contractAddress, 'GAME_FEE_USD6')
+        await ensureTempoAllowance(feeToken, contractAddress, feeAmount)
+      }
       let txHash
       if (useSendCalls) {
-        txHash = await sendContractCallBaseApp({ address: contractAddress, abi: diceAbi, functionName: 'rollDice', args: [guess], value: getGameFee() })
+        txHash = await sendContractCallBaseApp({
+          address: contractAddress,
+          abi: diceAbi,
+          functionName: 'rollDice',
+          args: [guess],
+          ...(isTempoChain ? {} : { value: getGameFee() }),
+        })
       } else {
         const writePromise = writeContractAsync({
           address: contractAddress,
           abi: diceAbi,
           functionName: 'rollDice',
           args: [guess],
-          value: getGameFee(),
+          ...(isTempoChain ? {} : { value: getGameFee() }),
           dataSuffix: DATA_SUFFIX,
         })
         txHash = isBaseApp ? await getTxHashBaseApp(writePromise) : await writePromise
@@ -604,7 +733,7 @@ export const useTransactions = () => {
       const diceTotal = dice1 + dice2
       const playerWon = guess === diceTotal
       console.log('🎲 Dice Roll result:', { guess, dice1, dice2, diceTotal, playerWon })
-      if (shouldAwardXPOnHashOnly()) {
+      if (shouldAwardXPOnHashOnly(chainId)) {
         try { await addBonusXP(address, 'diceroll', playerWon, chainId, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
         try { await updateQuestProgress('diceRollUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
         try {
@@ -669,7 +798,7 @@ export const useTransactions = () => {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp])
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getGameFee, getTxHashBaseApp, isTempoChain, ensureTempoAllowance, readTempoFeeConfig])
 
   const sendSlotTransaction = useCallback(async (action, params = {}) => {
     if (!address) {
@@ -695,8 +824,14 @@ export const useTransactions = () => {
         // 1) Read CREDIT_PRICE from contract so UI always matches deployed contract
         const amount = Number(params.amount) || 10
         const amountBn = BigInt(amount)
-        const creditPrice = await getSlotCreditPrice(contractAddress)
+        const creditPrice = isTempoChain
+          ? (await readTempoFeeConfig(contractAddress, 'CREDIT_PRICE_USD6')).feeAmount
+          : await getSlotCreditPrice(contractAddress)
         const totalCost = amountBn * creditPrice
+        if (isTempoChain) {
+          const { feeToken } = await readTempoFeeConfig(contractAddress, 'CREDIT_PRICE_USD6')
+          await ensureTempoAllowance(feeToken, contractAddress, totalCost)
+        }
 
         // 2) Simulate to avoid sending a tx that will revert (e.g. "Payment transfer failed" if owner rejects ETH)
         if (publicClient) {
@@ -707,7 +842,7 @@ export const useTransactions = () => {
               abi: SLOT_GAME_ABI,
               functionName: 'purchaseCredits',
               args: [amountBn],
-              value: totalCost
+              ...(isTempoChain ? {} : { value: totalCost })
             })
           } catch (simErr) {
             const msg = (simErr?.message || simErr?.shortMessage || String(simErr)).toLowerCase()
@@ -727,7 +862,7 @@ export const useTransactions = () => {
           abi: SLOT_GAME_ABI,
           functionName: 'purchaseCredits',
           args: [amountBn],
-          value: totalCost,
+          ...(isTempoChain ? {} : { value: totalCost }),
           gas: gasLimit,
           dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
         })
@@ -804,7 +939,7 @@ export const useTransactions = () => {
           console.log('🎰 Max count:', maxCount, 'Bonus XP:', bonusXp)
           
           xpEarned = 150 + bonusXp // Base XP + bonus
-          if (shouldAwardXPOnHashOnly()) {
+          if (shouldAwardXPOnHashOnly(chainId)) {
             try { await addXP(address, xpEarned, 'SLOT_GAME', chainId, false, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
             try { await updateQuestProgress('slotUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
             try {
@@ -847,7 +982,7 @@ export const useTransactions = () => {
           return { txHash, symbols, won, xpEarned }
       } else {
         // Credits purchase
-        if (shouldAwardXPOnHashOnly()) {
+        if (shouldAwardXPOnHashOnly(chainId)) {
           try { await addXP(address, 10, 'SLOT_GAME_CREDITS', chainId, false, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
           try { await updateQuestProgress('transactions', 1) } catch (_) {}
           try {
@@ -923,11 +1058,17 @@ export const useTransactions = () => {
       let throwMsg = err.message
       if (action === 'purchaseCredits') {
         if (errorMsg.includes('insufficient eth') || errorMsg.includes('insufficient eth for credits')) {
-          throwMsg = 'Insufficient ETH sent. Each credit costs 0.00002 ETH. Send at least (amount × 0.00002) ETH.'
+          throwMsg = isTempoChain
+            ? 'Insufficient fee token allowance/balance for Tempo credit purchase.'
+            : 'Insufficient ETH sent. Each credit costs 0.00002 ETH. Send at least (amount × 0.00002) ETH.'
         } else if (errorMsg.includes('payment transfer failed')) {
-          throwMsg = 'Credit purchase failed: payment to contract owner failed. Try again or contact support.'
+          throwMsg = isTempoChain
+            ? 'Credit purchase failed: fee token transfer failed. Check token balance and allowance.'
+            : 'Credit purchase failed: payment to contract owner failed. Try again or contact support.'
         } else if (errorMsg.includes('revert') || errorMsg.includes('execution reverted')) {
-          throwMsg = throwMsg || 'Transaction reverted on-chain. Ensure you have enough ETH (0.00002 per credit) and are on the correct network.'
+          throwMsg = throwMsg || (isTempoChain
+            ? 'Transaction reverted on Tempo. Ensure you have enough fee token balance/allowance and are on Tempo.'
+            : 'Transaction reverted on-chain. Ensure you have enough ETH (0.00002 per credit) and are on the correct network.')
         }
       }
 
@@ -940,7 +1081,7 @@ export const useTransactions = () => {
       isTransactionPendingRef.current = false
       setIsLoading(false)
     }
-  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getSlotCreditPrice, publicClient])
+  }, [address, chainId, currentNetworkConfig, writeContractAsync, updateQuestProgress, validateAndSwitchNetwork, getContractAddressForCurrentNetwork, getSlotCreditPrice, publicClient, isTempoChain, ensureTempoAllowance, readTempoFeeConfig])
 
   const sendCustomTransaction = useCallback(async (contractAddressParam, functionData, value = '0') => {
     if (!address) {

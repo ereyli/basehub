@@ -437,6 +437,13 @@ const Home = () => {
             style={baseStyle} 
           />
         )}
+        {networks.includes('tempo') && (
+          <img
+            src={NETWORKS.TEMPO?.iconUrls?.[0] || '/Tempo logo.jpg'}
+            alt="Tempo"
+            style={{ ...baseStyle, objectFit: 'contain', background: '#000' }}
+          />
+        )}
         {networks.includes('megaeth') && (
           <img 
             src="/megaeth-logo.jpg" 
@@ -503,6 +510,9 @@ const Home = () => {
   // Render a compact card for Farcaster mobile. sectionId: when linking from Home, pass so we can scroll back to that section.
   const renderCompactCard = (game, onClick = null, linkTo = null, sectionId = null) => {
     const titleColor = game.color?.startsWith?.('linear') ? '#3b82f6' : (game.color || '#e5e7eb')
+    const isUnsupported = game.isSupported === false
+    const isBaseOnly = Array.isArray(game.networks) && game.networks.length === 1 && game.networks.includes('base')
+    const canSwitchToBase = Array.isArray(game.networks) && game.networks.includes('base') && chainId !== NETWORKS.BASE.chainId
     const iconWrapStyle = isCompactMode ? {
       flexShrink: 0,
       width: '36px', height: '36px',
@@ -584,8 +594,103 @@ const Home = () => {
       }} />
     )
 
+    const unsupportedOverlay = isUnsupported ? (
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 5,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: isCompactMode ? '8px' : '12px',
+          background: 'rgba(2, 6, 23, 0.45)',
+          backdropFilter: 'blur(3px)',
+          WebkitBackdropFilter: 'blur(3px)',
+          borderRadius: isCompactMode ? '12px' : isWebMobile ? '14px' : '18px',
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            maxWidth: isCompactMode ? '130px' : '220px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: isCompactMode ? '6px' : '8px',
+          }}
+        >
+          <div
+            style={{
+              fontSize: isCompactMode ? '9px' : '11px',
+              fontWeight: 700,
+              color: '#cbd5e1',
+              background: 'rgba(15, 23, 42, 0.85)',
+              border: '1px solid rgba(148, 163, 184, 0.35)',
+              borderRadius: '999px',
+              padding: isCompactMode ? '3px 8px' : '4px 10px',
+              lineHeight: 1.2,
+              textAlign: 'center',
+            }}
+          >
+            {isBaseOnly ? 'Available on Base only' : 'Not available on this network'}
+          </div>
+          {canSwitchToBase && (
+            <button
+              type="button"
+              onClick={async (e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                try {
+                  await switchChain({ chainId: NETWORKS.BASE.chainId })
+                } catch (err) {
+                  console.error('Switch to Base failed:', err)
+                }
+              }}
+              style={{
+                border: '1px solid rgba(96, 165, 250, 0.55)',
+                background: 'rgba(30, 64, 175, 0.55)',
+                color: '#dbeafe',
+                borderRadius: '10px',
+                padding: isCompactMode ? '4px 8px' : '6px 10px',
+                fontSize: isCompactMode ? '9px' : '11px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                lineHeight: 1.1,
+              }}
+            >
+              Switch to Base
+            </button>
+          )}
+        </div>
+      </div>
+    ) : null
+
     if (linkTo) {
       const linkState = sectionId ? { state: { fromHomeSection: sectionId } } : {}
+      if (isUnsupported) {
+        return (
+          <div
+            key={game.id}
+            className="game-card"
+            style={{ textDecoration: 'none', display: 'block' }}
+          >
+            <div
+              style={{
+                ...compactStyles.card(game.color),
+                height: '100%',
+                filter: 'grayscale(0.35) saturate(0.75)',
+                opacity: 0.75,
+                cursor: 'not-allowed',
+              }}
+            >
+              {glowOverlay}
+              <div style={{ position: 'relative', zIndex: 1 }}>{cardContent}</div>
+              {unsupportedOverlay}
+            </div>
+          </div>
+        )
+      }
       return (
         <Link
           key={game.id}
@@ -605,16 +710,21 @@ const Home = () => {
     return (
       <button
         key={game.id}
-        onClick={onClick}
+        onClick={isUnsupported ? undefined : onClick}
         className="game-card"
         style={{ 
           ...compactStyles.card(game.color),
           border: 'none',
-          cursor: onClick ? 'pointer' : 'default'
+          cursor: isUnsupported ? 'not-allowed' : (onClick ? 'pointer' : 'default'),
+          ...(isUnsupported ? {
+            filter: 'grayscale(0.35) saturate(0.75)',
+            opacity: 0.75,
+          } : {}),
         }}
       >
         {glowOverlay}
         <div style={{ position: 'relative', zIndex: 1 }}>{cardContent}</div>
+        {unsupportedOverlay}
       </button>
     )
   }
@@ -646,13 +756,74 @@ const Home = () => {
     )
   }
 
+  const isPumphubSupported = chainId === NETWORKS.BASE.chainId
+  const pumphubOverlay = !isPumphubSupported ? (
+    <div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        zIndex: 6,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: isCompactMode ? '8px' : '12px',
+        background: 'rgba(2, 6, 23, 0.45)',
+        backdropFilter: 'blur(3px)',
+        WebkitBackdropFilter: 'blur(3px)',
+        borderRadius: isCompactMode ? '12px' : isWebMobile ? '14px' : '18px',
+      }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: isCompactMode ? '6px' : '8px' }}>
+        <div style={{
+          fontSize: isCompactMode ? '9px' : '11px',
+          fontWeight: 700,
+          color: '#cbd5e1',
+          background: 'rgba(15, 23, 42, 0.85)',
+          border: '1px solid rgba(148, 163, 184, 0.35)',
+          borderRadius: '999px',
+          padding: isCompactMode ? '3px 8px' : '4px 10px',
+          lineHeight: 1.2,
+        }}>
+          Available on Base only
+        </div>
+        <button
+          type="button"
+          onClick={async (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            try {
+              await switchChain({ chainId: NETWORKS.BASE.chainId })
+            } catch (err) {
+              console.error('Switch to Base failed:', err)
+            }
+          }}
+          style={{
+            border: '1px solid rgba(96, 165, 250, 0.55)',
+            background: 'rgba(30, 64, 175, 0.55)',
+            color: '#dbeafe',
+            borderRadius: '10px',
+            padding: isCompactMode ? '4px 8px' : '6px 10px',
+            fontSize: isCompactMode ? '9px' : '11px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            lineHeight: 1.1,
+          }}
+        >
+          Switch to Base
+        </button>
+      </div>
+    </div>
+  ) : null
+
   const games = React.useMemo(() => {
     const iconStyle = { width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }
-    const products = getProductsForHomeByNetwork(chainId, getNetworkKey)
+    const currentNetworkKey = chainId != null ? getNetworkKey(chainId) : null
+    const products = getProductsForHome()
     return products.map(p => {
       const icon = p.iconImage
         ? <img src={p.iconImage} alt={p.title} loading="lazy" style={iconStyle} />
         : (() => { const Icon = LUCIDE_ICONS[p.icon]; return Icon ? <Icon size={40} style={{ color: 'white' }} /> : null })()
+      const isSupported = !currentNetworkKey || (Array.isArray(p.networks) && p.networks.includes(currentNetworkKey))
       return {
         id: p.id,
         title: p.title,
@@ -667,6 +838,7 @@ const Home = () => {
         isNFTGated: p.isNFTGated ?? false,
         isX402: p.isX402 ?? false,
         isPayment: p.isPayment ?? false,
+        isSupported: p.category === 'analysis' ? true : isSupported,
       }
     })
   }, [chainId])
@@ -718,6 +890,7 @@ const Home = () => {
                 { key: 'BASE',  label: 'Base',     logo: '/base-logo.jpg',   chainId: NETWORKS.BASE.chainId },
                 { key: 'INK',   label: 'InkChain', logo: '/ink-logo.jpg',    chainId: NETWORKS.INKCHAIN.chainId },
                 { key: 'SONE',  label: 'Soneium',  logo: '/soneium-logo.jpg', chainId: NETWORKS.SONEIUM.chainId },
+                { key: 'TEMPO', label: 'Tempo',    logo: NETWORKS.TEMPO?.iconUrls?.[0] || '/Tempo logo.jpg', chainId: NETWORKS.TEMPO.chainId },
                 { key: 'KAT',   label: 'Katana',   logo: '/katana-logo.jpg', chainId: NETWORKS.KATANA.chainId },
                 { key: 'MEGA',  label: 'MegaETH',  logo: '/megaeth-logo.jpg', chainId: NETWORKS.MEGAETH.chainId },
                 ...(NETWORKS.ARC_RESTNET ? [{ key: 'ARC', label: 'Arc Testnet', logo: '/arc-testnet-logo.jpg', chainId: NETWORKS.ARC_RESTNET.chainId }] : []),
@@ -1003,8 +1176,14 @@ const Home = () => {
                   </p>
                 )}
                 <div style={compactStyles.cardGrid}>
-                  <Link to="/pumphub" className="game-card" style={{ textDecoration: 'none', display: 'block', position: 'relative' }} state={{ fromHomeSection: 'pumphub' }}>
-                    <div style={{ ...compactStyles.card('#00d4ff'), height: '100%' }}>
+                  <Link
+                    to="/pumphub"
+                    className="game-card"
+                    style={{ textDecoration: 'none', display: 'block', position: 'relative' }}
+                    state={{ fromHomeSection: 'pumphub' }}
+                    onClick={(e) => { if (!isPumphubSupported) e.preventDefault() }}
+                  >
+                    <div style={{ ...compactStyles.card('#00d4ff'), height: '100%', ...(isPumphubSupported ? {} : { filter: 'grayscale(0.35) saturate(0.75)', opacity: 0.75 }) }}>
                       <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #00d4ff20 0%, #00d4ff0c 35%, #00d4ff04 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
                       <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
                         {isCompactMode ? (
@@ -1032,10 +1211,17 @@ const Home = () => {
                           </>
                         )}
                       </div>
+                      {pumphubOverlay}
                     </div>
                   </Link>
-                  <Link to="/pumphub?tab=create" className="game-card" style={{ textDecoration: 'none', display: 'block', position: 'relative' }} state={{ fromHomeSection: 'pumphub' }}>
-                    <div style={{ ...compactStyles.card('#8b5cf6'), height: '100%' }}>
+                  <Link
+                    to="/pumphub?tab=create"
+                    className="game-card"
+                    style={{ textDecoration: 'none', display: 'block', position: 'relative' }}
+                    state={{ fromHomeSection: 'pumphub' }}
+                    onClick={(e) => { if (!isPumphubSupported) e.preventDefault() }}
+                  >
+                    <div style={{ ...compactStyles.card('#8b5cf6'), height: '100%', ...(isPumphubSupported ? {} : { filter: 'grayscale(0.35) saturate(0.75)', opacity: 0.75 }) }}>
                       <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #8b5cf620 0%, #8b5cf60c 35%, #8b5cf604 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
                       <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
                         {isCompactMode ? (
@@ -1063,6 +1249,7 @@ const Home = () => {
                           </>
                         )}
                       </div>
+                      {pumphubOverlay}
                     </div>
                   </Link>
                 </div>

@@ -1,6 +1,13 @@
-// Pinata IPFS – browser uses /api/pinata-upload proxy (no client keys). Server env: PINATA_API_KEY, PINATA_SECRET_KEY or PINATA_JWT
-
-const PROXY_URL = typeof window !== 'undefined' ? `${window.location.origin}/api/pinata-upload` : ''
+// Pinata IPFS – browser uses /api/pinata-upload proxy (no client keys). Server env: PINATA_JWT
+// In local dev, frontend runs on localhost and API route may live on Vercel URL.
+const PROXY_URL = (() => {
+  if (typeof window === 'undefined') return ''
+  const envApiBase = (import.meta.env?.VITE_API_URL || '').trim().replace(/\/$/, '')
+  const currentBase = window.location.origin.replace(/\/$/, '')
+  const isLocalhost = /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname)
+  const base = (isLocalhost && envApiBase) ? envApiBase : currentBase
+  return `${base}/api/pinata-upload`
+})()
 
 const MAX_IMAGE_DIM = 1024
 const JPEG_QUALITY = 0.82

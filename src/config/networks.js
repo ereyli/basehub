@@ -1,6 +1,8 @@
+import tempoLogo from '../../Tempo logo.jpg'
+
 // Multi-network configuration
 // Mainnet + Testnet. When adding testnet networks, also add them to CONTRACT_ADDRESSES.
-// Keys used in product.networks: 'base', 'ink', 'soneium', 'katana' (+ testnet keys)
+// Keys used in product.networks: 'base', 'ink', 'soneium', 'katana', 'tempo' (+ testnet keys)
 
 export const NETWORKS = {
   BASE: {
@@ -92,6 +94,21 @@ export const NETWORKS = {
     iconUrls: [],
     isFarcasterSupported: false,
   },
+  TEMPO: {
+    chainId: 4217,
+    networkKey: 'tempo',
+    chainName: 'Tempo Mainnet',
+    isTestnet: false,
+    nativeCurrency: {
+      name: 'USD',
+      symbol: 'USD',
+      decimals: 18,
+    },
+    rpcUrls: ['https://rpc.tempo.xyz'],
+    blockExplorerUrls: ['https://explore.tempo.xyz'],
+    iconUrls: [tempoLogo],
+    isFarcasterSupported: false,
+  },
   // Arc Testnet - currency is USDC, auto "Add Network" prompt if not in wallet
   ARC_RESTNET: {
     chainId: 5042002, // 0x4cef52
@@ -179,6 +196,16 @@ export const CONTRACT_ADDRESSES = {
     SLOT_GAME: '0xB2b2c587E51175a2aE4713d8Ea68A934a8527a4b',
     BASEHUB_DEPLOYER: '0xff48b92CbCFc1679Aa16a1D8a712A5d489220D0B',
     BASEHUB_NFT_COLLECTION_DEPLOYER: '0xCaA2a1FB271AE0a04415654e62FB26BDd1AdAC64',
+  },
+  TEMPO: {
+    BASEHUB_DEPLOYER: '0x240eF5297a89e1354A83B4e58f8F0d19FB6051ed',
+    BASEHUB_NFT_COLLECTION_DEPLOYER: '0x0854F20209f06bc6FaB3Dd9047784B4E08bE9e9b',
+    DICE_ROLL: '0xc4a94DabeDb0Db43354874c67814c226391452B8',
+    FLIP_GAME: '0x3Ce4AbC8c6921Cd84C76848200D35BA70609aB69',
+    GM_GAME: '0x90Bb363ba2441fb4a9A0B49d1D5e8E7AB413c9d6',
+    GN_GAME: '0x62eEA88cbaD6146Ce75D30D692eAD0de799e98C3',
+    LUCKY_NUMBER: '0x71a625487DC88fa1Be54EC8BD96E240aCdAF8Fb0',
+    SLOT_GAME: '0x9E54449DD4c042279aA454710481Cf33E15d8cb7',
   },
   ARC_RESTNET: {
     DICE_ROLL: '0x5E86e9Cd50E7F64b692b90FaE1487d2F6ED1AbA9',

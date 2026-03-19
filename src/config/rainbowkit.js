@@ -83,6 +83,26 @@ const megaeth = defineChain({
   iconBackground: '#3b82f6',
 })
 
+// Tempo Mainnet for RainbowKit
+const tempo = defineChain({
+  id: NETWORKS.TEMPO.chainId,
+  name: NETWORKS.TEMPO.chainName,
+  nativeCurrency: NETWORKS.TEMPO.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.TEMPO.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Tempo Explorer',
+      url: NETWORKS.TEMPO.blockExplorerUrls[0],
+    },
+  },
+  iconUrl: NETWORKS.TEMPO.iconUrls?.[0] || '/Tempo logo.jpg',
+  iconBackground: '#ffffff',
+})
+
 // Arc Testnet for RainbowKit
 const arcRestnet = defineChain({
   id: NETWORKS.ARC_RESTNET.chainId,
@@ -127,7 +147,7 @@ const robinhoodTestnet = defineChain({
 export const rainbowkitConfig = getDefaultConfig({
   appName: 'BaseHub',
   projectId: '21fef48091f12692cad574a6f7753643', // Temporary project ID - replace with your own
-  chains: [base, inkChain, soneium, katana, megaeth, arcRestnet, robinhoodTestnet],
+  chains: [base, inkChain, soneium, katana, megaeth, tempo, arcRestnet, robinhoodTestnet],
   ssr: false, // Client-side rendering
 })
 

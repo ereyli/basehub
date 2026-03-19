@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAccount, useWriteContract, useWalletClient, useChainId } from 'wagmi'
+import { useAccount, useWriteContract, useWalletClient, useChainId, usePublicClient } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { parseEther, encodeAbiParameters, parseAbiParameters } from 'viem'
 import { config, DATA_SUFFIX } from '../config/wagmi'
@@ -351,10 +351,12 @@ export const useDeployToken = () => {
   const { data: walletClient } = useWalletClient()
   const { writeContractAsync } = useWriteContract()
   const chainId = useChainId()
+  const publicClient = usePublicClient({ chainId })
   const { isCorrectNetwork, networkName, baseNetworkName, switchToBaseNetwork } = useNetworkCheck()
   const { updateQuestProgress } = useQuestSystem()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
+  const isTempoChain = chainId === NETWORKS.TEMPO.chainId
   
   // Get Farcaster context for SDK access
   const farcasterContext = useFarcaster()
@@ -366,6 +368,62 @@ export const useDeployToken = () => {
       // Don't auto-switch - let user choose network via RainbowKit
       throw new Error(`❌ SUPPORTED NETWORK REQUIRED!\n\nYou are currently on ${networkName}.\nBaseHub works on Base or InkChain networks.\n\nPlease switch to a supported network using RainbowKit's network selector.`)
     }
+  }
+
+  const ensureTempoDeployerAllowance = async (deployerAddress) => {
+    if (!isTempoChain) return
+    if (!publicClient || !address) throw new Error('Wallet/public client not ready')
+
+    const tempoDeployerAbi = [
+      { name: 'feeToken', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+      { name: 'FEE_USD6', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    ]
+    const erc20Abi = [
+      { name: 'allowance', type: 'function', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], outputs: [{ type: 'uint256' }] },
+      { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ type: 'bool' }] },
+    ]
+
+    const feeToken = await publicClient.readContract({
+      address: deployerAddress,
+      abi: tempoDeployerAbi,
+      functionName: 'feeToken',
+    })
+
+    if (String(feeToken || '').toLowerCase() === '0x0000000000000000000000000000000000000000') {
+      throw new Error('TempoBaseHubDeployer fee token is not set. Call setFeeToken(pathUSD TIP20 address).')
+    }
+
+    const feeAmount = await publicClient.readContract({
+      address: deployerAddress,
+      abi: tempoDeployerAbi,
+      functionName: 'FEE_USD6',
+    }).catch(() => 550_000n)
+
+    const allowance = await publicClient.readContract({
+      address: feeToken,
+      abi: erc20Abi,
+      functionName: 'allowance',
+      args: [address, deployerAddress],
+    })
+
+    const required = BigInt(feeAmount || 550_000n)
+    if (BigInt(allowance || 0n) >= required) return
+
+    const approveHash = await writeContractAsync({
+      address: feeToken,
+      abi: erc20Abi,
+      functionName: 'approve',
+      args: [deployerAddress, required],
+      chainId,
+      dataSuffix: DATA_SUFFIX,
+    })
+
+    await waitForTransactionReceipt(config, {
+      hash: approveHash,
+      chainId,
+      confirmations: 1,
+      pollingInterval: 2000,
+    })
   }
 
   const deployToken = async (name, symbol, initialSupply, decimals = 18) => {
@@ -394,11 +452,14 @@ export const useDeployToken = () => {
       let deployTxHash
       let contractAddress = null
       let feeTxHash = null
-      let feeLabel = DEPLOYER_FEE_ETH + ' ETH'
+      let feeLabel = isTempoChain ? '0.55 USD (TIP20)' : (DEPLOYER_FEE_ETH + ' ETH')
 
       const deployerAddress = getContractAddressByNetwork('BASEHUB_DEPLOYER', chainId)
 
       if (deployerAddress) {
+        if (isTempoChain) {
+          await ensureTempoDeployerAllowance(deployerAddress)
+        }
         // Single-tx via BaseHubDeployer (Base)
         console.log('📦 Deploying via BaseHubDeployer (single tx)...')
         if (!walletClient) throw new Error('Wallet not available. Please connect your wallet.')
@@ -407,7 +468,7 @@ export const useDeployToken = () => {
           abi: BASEHUB_DEPLOYER_ABI,
           functionName: 'deployERC20',
           args: [initCode],
-          value: parseEther(DEPLOYER_FEE_ETH),
+          ...(isTempoChain ? {} : { value: parseEther(DEPLOYER_FEE_ETH) }),
           chainId,
           dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
         })

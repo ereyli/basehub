@@ -89,6 +89,24 @@ const megaeth = defineChain({
   },
 })
 
+// Tempo mainnet
+const tempo = defineChain({
+  id: NETWORKS.TEMPO.chainId,
+  name: NETWORKS.TEMPO.chainName,
+  nativeCurrency: NETWORKS.TEMPO.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.TEMPO.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Tempo Explorer',
+      url: NETWORKS.TEMPO.blockExplorerUrls[0],
+    },
+  },
+})
+
 // Arc Testnet - USDC as native/gas
 const arcRestnet = defineChain({
   id: NETWORKS.ARC_RESTNET.chainId,
@@ -127,7 +145,7 @@ const robinhoodTestnet = defineChain({
 
 // Wagmi config with multiple wallet support
 export const config = createConfig({
-  chains: [base, inkChain, soneium, katana, megaeth, arcRestnet, robinhoodTestnet],
+  chains: [base, inkChain, soneium, katana, megaeth, tempo, arcRestnet, robinhoodTestnet],
   dataSuffix: DATA_SUFFIX,
   transports: {
     [base.id]: fallback(
@@ -146,6 +164,11 @@ export const config = createConfig({
       retryDelay: 1000,
     }),
     [megaeth.id]: http(NETWORKS.MEGAETH.rpcUrls[0], {
+      timeout: 30000,
+      retryCount: 3,
+      retryDelay: 1000,
+    }),
+    [tempo.id]: http(NETWORKS.TEMPO.rpcUrls[0], {
       timeout: 30000,
       retryCount: 3,
       retryDelay: 1000,
