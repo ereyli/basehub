@@ -153,25 +153,40 @@ const timeAgo = (timestamp) => {
 // IPFS gateway helpers
 // gateway.pinata.cloud is slow/rate-limited; use faster alternatives
 const FAST_GATEWAYS = [
-  'https://cloudflare-ipfs.com/ipfs/',
   'https://ipfs.io/ipfs/',
   'https://dweb.link/ipfs/',
+  'https://gateway.pinata.cloud/ipfs/',
+  'https://nftstorage.link/ipfs/',
 ]
 
-const extractIPFSCid = (url) => {
-  if (!url) return null
-  // Handle gateway.pinata.cloud/ipfs/Qm... or any /ipfs/Qm... URL
-  const match = url.match(/\/ipfs\/(Qm[a-zA-Z0-9]{44,}|bafy[a-zA-Z0-9]+)/)
-  if (match) return match[1]
-  // Handle ipfs://Qm...
-  const ipfsMatch = url.match(/^ipfs:\/\/(Qm[a-zA-Z0-9]{44,}|bafy[a-zA-Z0-9]+)/)
-  if (ipfsMatch) return ipfsMatch[1]
+const extractIPFSParts = (url) => {
+  if (!url || typeof url !== 'string') return null
+  const raw = url.trim()
+
+  // Handle ipfs://<cid>/path OR ipfs://ipfs/<cid>/path
+  const ipfsProto = raw.match(/^ipfs:\/\/(?:ipfs\/)?(Qm[a-zA-Z0-9]{44,}|bafy[a-zA-Z0-9]+)(\/.*)?$/i)
+  if (ipfsProto) {
+    return { cid: ipfsProto[1], path: ipfsProto[2] || '' }
+  }
+
+  // Handle https://.../ipfs/<cid>/path
+  const gatewayUrl = raw.match(/\/ipfs\/(Qm[a-zA-Z0-9]{44,}|bafy[a-zA-Z0-9]+)(\/.*)?$/i)
+  if (gatewayUrl) {
+    return { cid: gatewayUrl[1], path: gatewayUrl[2] || '' }
+  }
+
+  // Handle bare CID or CID/path
+  const bareCid = raw.match(/^(Qm[a-zA-Z0-9]{44,}|bafy[a-zA-Z0-9]+)(\/.*)?$/i)
+  if (bareCid) {
+    return { cid: bareCid[1], path: bareCid[2] || '' }
+  }
+
   return null
 }
 
 const toFastGateway = (url, gatewayIndex = 0) => {
-  const cid = extractIPFSCid(url)
-  if (cid) return FAST_GATEWAYS[gatewayIndex % FAST_GATEWAYS.length] + cid
+  const ipfs = extractIPFSParts(url)
+  if (ipfs?.cid) return FAST_GATEWAYS[gatewayIndex % FAST_GATEWAYS.length] + ipfs.cid + (ipfs.path || '')
   return url
 }
 
@@ -203,11 +218,11 @@ const TokenImage = ({ src, alt, size = 64, borderRadius = '14px' }) => {
   }, [currentSrc, status])
 
   const handleError = () => {
-    const cid = extractIPFSCid(src)
+    const ipfs = extractIPFSParts(src)
     const nextIdx = gatewayIdx + 1
-    if (cid && nextIdx < FAST_GATEWAYS.length) {
+    if (ipfs?.cid && nextIdx < FAST_GATEWAYS.length) {
       setGatewayIdx(nextIdx)
-      setCurrentSrc(FAST_GATEWAYS[nextIdx] + cid)
+      setCurrentSrc(FAST_GATEWAYS[nextIdx] + ipfs.cid + (ipfs.path || ''))
       setStatus('loading')
     } else {
       setStatus('error')
@@ -1338,7 +1353,7 @@ const TokenCreationSuccessModal = ({ token, onClose, onViewToken }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
             {token.image ? (
               <img 
-                src={token.image} 
+                src={toFastGateway(token.image, 0)} 
                 alt={token.name}
                 style={{ width: '48px', height: '48px', borderRadius: '12px', objectFit: 'cover' }}
               />
@@ -1505,6 +1520,7 @@ const PumpHub = () => {
     }, { replace: true })
   }, [setSearchParams])
   const [tokens, setTokens] = useState([])
+  const [totalTokensOnChain, setTotalTokensOnChain] = useState(null)
   const [loadingTokens, setLoadingTokens] = useState(true)
   const [tokensListKey, setTokensListKey] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
@@ -1573,11 +1589,11 @@ const PumpHub = () => {
   // Platform stats derived from token list
   const platformStats = useMemo(() => {
     if (!tokens || tokens.length === 0) return null
-    const totalTokens = tokens.length
+    const totalTokens = totalTokensOnChain ?? tokens.length
     const graduated = tokens.filter(t => t.graduated).length
     const totalVolumeETH = tokens.reduce((sum, t) => sum + parseFloat(t.volume || 0), 0)
     return { totalTokens, graduated, totalVolumeETH }
-  }, [tokens])
+  }, [tokens, totalTokensOnChain])
 
   // Helper: parse multicall results into token objects
   const parseOnChainToken = useCallback((addr, meta, core, stats) => ({
@@ -1602,8 +1618,6 @@ const PumpHub = () => {
     let cancelled = false
 
     const fetchTokens = async () => {
-      if (!publicClient) return
-
       try {
         // Step 1: Try Supabase first for instant display while RPC loads in background
         let sbMap = {}
@@ -1614,9 +1628,9 @@ const PumpHub = () => {
               .from('pumphub_tokens')
               .select('*')
               .order('created_at', { ascending: false })
-              .limit(100)
+              .limit(500)
             if (sbRows?.length > 0) {
-              sbRows.forEach(r => { sbMap[r.token_address] = r })
+              sbRows.forEach(r => { sbMap[(r.token_address || '').toLowerCase()] = r })
               sbTokensList = sbRows.filter(r => r.name && r.name !== 'Unknown').map(row => ({
                 address: row.token_address,
                 name: row.name,
@@ -1648,6 +1662,15 @@ const PumpHub = () => {
           }
         }
 
+        // If RPC client is unavailable, still show Supabase data and stop loading.
+        if (!publicClient) {
+          if (!cancelled) {
+            if (sbTokensList.length === 0) setTokens([])
+            setLoadingTokens(false)
+          }
+          return
+        }
+
         // Step 2: Get on-chain token count (retry on failure)
         let onChainCount = null
         for (let attempt = 0; attempt < 3; attempt++) {
@@ -1658,6 +1681,7 @@ const PumpHub = () => {
               functionName: 'getAllTokensCount',
             })
             onChainCount = Number(countRaw)
+            if (!cancelled) setTotalTokensOnChain(onChainCount)
             break
           } catch (e) {
             console.warn('getAllTokensCount attempt', attempt + 1, 'failed:', e)
@@ -1675,22 +1699,41 @@ const PumpHub = () => {
           return
         }
 
-        // Step 3: Get token addresses
-        let tokenAddresses = []
-        for (let attempt = 0; attempt < 3; attempt++) {
-          try {
-            tokenAddresses = await publicClient.readContract({
-              address: PUMPHUB_FACTORY_ADDRESS,
-              abi: PUMPHUB_FACTORY_ABI,
-              functionName: 'getTokens',
-              args: [0n, BigInt(Math.min(onChainCount, 100))]
-            })
-            if (tokenAddresses?.length > 0) break
-          } catch (e) {
-            console.warn('getTokens RPC attempt', attempt + 1, 'failed:', e)
-            if (attempt < 2) await new Promise(r => setTimeout(r, 600 * (attempt + 1)))
-          }
+        // If Supabase already has the full set, avoid heavy on-chain metadata refresh.
+        const sbCount = Object.keys(sbMap).length
+        if (sbCount >= onChainCount && sbTokensList.length > 0) {
+          if (!cancelled) setLoadingTokens(false)
+          return
         }
+
+        // Step 3: Get all token addresses in batches (avoids 100-token cap)
+        let tokenAddresses = []
+        const batchSize = 80
+        for (let offset = 0; offset < onChainCount; offset += batchSize) {
+          const limit = Math.min(batchSize, onChainCount - offset)
+          let batch = []
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+              batch = await publicClient.readContract({
+                address: PUMPHUB_FACTORY_ADDRESS,
+                abi: PUMPHUB_FACTORY_ABI,
+                functionName: 'getTokens',
+                args: [BigInt(offset), BigInt(limit)]
+              })
+              break
+            } catch (e) {
+              const errMsg = String(e?.message || '').toLowerCase()
+              const isRateLimit = errMsg.includes('429') || errMsg.includes('rate limit') || errMsg.includes('too many requests')
+              console.warn(`getTokens batch ${offset}-${offset + limit} attempt ${attempt + 1} failed:`, e)
+              if (isRateLimit) break
+              if (attempt < 2) await new Promise(r => setTimeout(r, 600 * (attempt + 1)))
+            }
+          }
+          if (Array.isArray(batch) && batch.length > 0) tokenAddresses.push(...batch)
+          // Pace batch requests to reduce RPC pressure.
+          if (offset + batchSize < onChainCount) await new Promise(r => setTimeout(r, 350))
+        }
+        tokenAddresses = Array.from(new Set(tokenAddresses.map(a => a.toLowerCase())))
 
         if (cancelled) return
         if (!tokenAddresses?.length) {
@@ -1700,14 +1743,14 @@ const PumpHub = () => {
         }
 
         // Update sbMap with addresses we now know about
-        const lowerAddrs = tokenAddresses.map(a => a.toLowerCase())
+        const lowerAddrs = tokenAddresses
         if (supabase?.from && Object.keys(sbMap).length === 0) {
           try {
             const { data: sbRows } = await supabase
               .from('pumphub_tokens')
               .select('*')
               .in('token_address', lowerAddrs)
-            if (sbRows) sbRows.forEach(r => { sbMap[r.token_address] = r })
+            if (sbRows) sbRows.forEach(r => { sbMap[(r.token_address || '').toLowerCase()] = r })
           } catch (_) {}
         }
 
@@ -1765,7 +1808,7 @@ const PumpHub = () => {
           const statsR = mcResults[i * 3 + 2]
 
           if (metaR?.status === 'failure' || coreR?.status === 'failure' || statsR?.status === 'failure') {
-            const sbRow = sbMap[addr.toLowerCase()]
+            const sbRow = sbMap[addr]
             if (sbRow && sbRow.name && sbRow.name !== 'Unknown') {
               fullTokens.push({
                 address: addr, name: sbRow.name, symbol: sbRow.symbol || '???',
@@ -1786,7 +1829,7 @@ const PumpHub = () => {
           const meta = metaR.result
           const core = coreR.result
           const stats = statsR.result
-          const sbRow = sbMap[addr.toLowerCase()]
+          const sbRow = sbMap[addr]
           const bestImage = sbRow?.image_uri || meta[3] || ''
           const bestName = (sbRow?.name && sbRow.name !== 'Unknown') ? sbRow.name : (meta[0] || '')
           const bestSymbol = (sbRow?.symbol && sbRow.symbol !== '???') ? sbRow.symbol : (meta[1] || '')
@@ -1801,7 +1844,7 @@ const PumpHub = () => {
 
           const onChainCreatedAt = core[5] ? Number(core[5]) : 0
           upsertRows.push({
-            token_address: addr.toLowerCase(),
+            token_address: addr,
             creator: (core[0] || sbRow?.creator || '').toLowerCase(),
             name: bestName,
             symbol: bestSymbol,
@@ -1828,9 +1871,11 @@ const PumpHub = () => {
 
         // Step 6: Upsert all token data back to Supabase (background, best-effort)
         if (supabase?.from && upsertRows.length > 0) {
-          supabase.from('pumphub_tokens').upsert(upsertRows, { onConflict: 'token_address' }).catch(e => {
+          try {
+            await supabase.from('pumphub_tokens').upsert(upsertRows, { onConflict: 'token_address' })
+          } catch (e) {
             console.error('Supabase sync upsert failed:', e)
-          })
+          }
         }
       } catch (err) {
         console.error('Error fetching tokens:', err)

@@ -46,16 +46,31 @@ export const GAME_TYPES = {
 }
 
 // Create mock Supabase client for development
+const createMockQueryBuilder = () => {
+  const terminal = Promise.resolve({ data: [], error: null })
+  const chain = {
+    select: () => chain,
+    insert: async () => ({ data: null, error: null }),
+    update: async () => ({ data: null, error: null }),
+    upsert: async () => ({ data: null, error: null }),
+    order: () => chain,
+    limit: () => terminal,
+    in: () => terminal,
+    eq: () => chain,
+    maybeSingle: async () => ({ data: null, error: null }),
+    single: async () => ({ data: null, error: null }),
+    then: terminal.then.bind(terminal),
+    catch: terminal.catch.bind(terminal),
+    finally: terminal.finally.bind(terminal),
+  }
+  return chain
+}
+
 const createMockSupabase = () => ({
   auth: {
     getSession: async () => ({ data: { session: null }, error: null }),
   },
-  from: () => ({
-    select: () => ({ data: [], error: null }),
-    insert: () => ({ data: null, error: null }),
-    update: () => ({ data: null, error: null }),
-    upsert: () => ({ data: null, error: null })
-  })
+  from: () => createMockQueryBuilder()
 })
 
 // Initialize Supabase client

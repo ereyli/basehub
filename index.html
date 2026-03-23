@@ -108,18 +108,8 @@
       originalError.apply(console, args);
     };
     
-    // Block fetch requests to Coinbase analytics and Farcaster API
-    const originalFetch = window.fetch;
-    window.fetch = function(url, options) {
-      if (typeof url === 'string' && 
-          (url.includes('cca-lite.coinbase.com') ||
-           url.includes('warpcast.com') ||
-           url.includes('user-app-context') ||
-           url.includes('onboarding-state'))) {
-        return Promise.reject(new Error('Blocked analytics/API request'));
-      }
-      return originalFetch.call(this, url, options);
-    };
+    // NOTE: Do not override window.fetch globally.
+    // Blocking third-party calls here can unintentionally break app data requests.
   </script>
 </body>
 </html>
