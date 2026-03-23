@@ -2,7 +2,7 @@ import React from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useChainId } from 'wagmi'
-import { Users, Zap, Sun, Moon, Loader2, Activity, Smartphone, Gamepad2 } from 'lucide-react'
+import { Users, Zap, Sun, Moon, Loader2, Activity, Smartphone, Gamepad2, Shield } from 'lucide-react'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { isTestnetChainId } from '../config/networks'
 import { useFastDeployModal } from '../contexts/FastDeployContext'
@@ -157,10 +157,24 @@ const WebHeader = () => {
     { id: 'gn', label: 'GN', icon: Moon, color: '#3b82f6', onClick: handleQuickGN, loading: isLoadingGN },
     { id: 'fast-deploy', label: 'Fast Deploy', icon: Zap, color: '#ec4899', onClick: openFastDeployModal },
     { id: 'gaming', label: 'Gaming', icon: Gamepad2, color: '#f59e0b', path: '/', hash: 'gaming' },
+    { id: 'guild', label: 'Guild', icon: Shield, color: '#2563eb', path: '/base-guild', highlight: true },
   ]
 
   const renderAction = (action) => {
     const IconComponent = action.icon
+    if (action.path && !action.hash) {
+      return (
+        <Link
+          key={action.id}
+          to={action.path}
+          className={`quick-action-btn${action.highlight ? ' quick-action-btn--guild' : ''}`}
+          style={{ '--action-color': action.color }}
+        >
+          <IconComponent size={16} />
+          <span>{action.label}</span>
+        </Link>
+      )
+    }
     if (action.path) {
       const href = action.hash ? `${action.path}#${action.hash}` : action.path
       return (

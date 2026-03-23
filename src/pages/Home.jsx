@@ -1527,7 +1527,7 @@ const Home = () => {
                 </div>
               </div>
 
-              {/* GAMING Category - en altta */}
+              {/* GAMING Category */}
               <div id="gaming" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(245, 158, 11, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b' }}>
@@ -1539,6 +1539,22 @@ const Home = () => {
                 <div style={compactStyles.cardGrid}>
                   {games.filter(g => ['flip', 'dice', 'slot', 'lucky'].includes(g.id)).map((game) =>
                     renderCompactCard(game, null, game.path, 'gaming')
+                  )}
+                </div>
+              </div>
+
+              {/* GUILD Category - gaming altında */}
+              <div id="guild" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(37, 99, 235, 0.2)` }}>
+                <div style={compactStyles.categoryHeader}>
+                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(37, 99, 235, 0.15)', border: '1px solid rgba(37, 99, 235, 0.35)', color: '#2563eb' }}>
+                    <Shield size={compactStyles.iconSize} />
+                  </div>
+                  <h2 style={compactStyles.categoryTitle}>GUILD</h2>
+                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['base-guild-companion']))}
+                </div>
+                <div style={compactStyles.cardGrid}>
+                  {games.filter(g => ['base-guild-companion'].includes(g.id)).map((game) =>
+                    renderCompactCard(game, null, game.path, 'guild')
                   )}
                 </div>
               </div>

@@ -9,6 +9,7 @@ export const CATEGORIES = {
   DEX: 'dex',
   PUMP: 'pump',
   GAMING: 'gaming',
+  GUILD: 'guild',
   ANALYSIS: 'analysis',
   DEPLOY: 'deploy',
   SOCIAL: 'social',
@@ -18,6 +19,7 @@ export const CATEGORIES = {
 /** Nav section id -> product ids for sidebar/bottom nav */
 export const NAV_SECTIONS = {
   gaming: ['flip', 'dice', 'slot', 'lucky'],
+  guild: ['base-guild-companion'],
   nft: ['early-access', 'nft-launchpad', 'nft-launchpad-explore', 'prediction-arena'],
   analysis: ['wallet-analysis', 'contract-security', 'allowance-cleaner'],
   deploy: ['deploy', 'deploy-erc721', 'deploy-erc1155'],
@@ -50,6 +52,7 @@ const CAST_SHARE = {
   'contract-security': 'Analyze smart contract security risks on BaseHub. Stay safe on-chain.',
   'allowance-cleaner': 'Scan and revoke risky token approvals on BaseHub. Take back control of your wallet.',
   'featured-profiles': 'Register your profile on BaseHub Featured Profiles. Connect through mutual follows and earn.',
+  'base-guild-companion': 'Track your Base Guild mission progress with wallet checks and one-click actions inside BaseHub.',
   'prediction-arena': 'Create yes/no ETH prediction rounds on BaseHub. Win by consensus, earn XP.',
   'deploy': 'Deploy your own ERC20 token on BaseHub. No code – multi-chain in one click.',
   'deploy-erc721': 'Deploy your own NFT collection (ERC721) on BaseHub. Base, Ink, Soneium and more.',
@@ -71,6 +74,7 @@ export const PRODUCTS = [
   { id: 'contract-security', path: '/contract-security', label: 'Contract Security', title: 'Contract Security', description: 'Analyze smart contract security risks', castShareText: CAST_SHARE['contract-security'], category: CATEGORIES.ANALYSIS, color: '#8b5cf6', icon: 'Shield', xpReward: '500 XP', bonusXP: '0.50 USDC', networks: ['base'], isX402: true },
   { id: 'allowance-cleaner', path: '/allowance-cleaner', label: 'Allowance Cleaner', title: 'Allowance Cleaner', description: 'Scan and revoke risky token approvals', castShareText: CAST_SHARE['allowance-cleaner'], category: CATEGORIES.ANALYSIS, color: '#8b5cf6', icon: 'Trash2', xpReward: '300 XP', bonusXP: '0.1 USDC', networks: ['base'], isX402: true },
   { id: 'featured-profiles', path: '/featured-profiles', label: 'Featured Profiles', title: 'Featured Profiles', description: 'Register your profile and connect through mutual follows', castShareText: CAST_SHARE['featured-profiles'], category: CATEGORIES.SOCIAL, color: '#f59e0b', icon: 'Star', xpReward: '200 XP', bonusXP: '0.2-6.0 USDC', networks: ['base'], isX402: true },
+  { id: 'base-guild-companion', path: '/base-guild', label: 'Base Guild', title: 'Base Guild Companion', description: 'Complete Base Guild-style missions with one-click actions and wallet checks', castShareText: CAST_SHARE['base-guild-companion'], category: CATEGORIES.GUILD, color: '#2563eb', icon: 'Shield', xpReward: '500 XP', bonusXP: 'Community bonus', networks: ['base'] },
   { id: 'prediction-arena', path: '/prediction-arena', label: 'Prediction Arena', title: 'Prediction Arena', description: 'Create yes/no ETH prediction rounds and win by side consensus', castShareText: CAST_SHARE['prediction-arena'], category: CATEGORIES.NFT, color: '#14b8a6', icon: 'Users', xpReward: '2000 XP', bonusXP: '200 XP per bet', networks: ['base'] },
   { id: 'deploy', path: '/deploy', label: 'Deploy Token', title: 'Deploy Token', description: 'Create your own ERC20 token', castShareText: CAST_SHARE['deploy'], category: CATEGORIES.DEPLOY, color: '#f59e0b', icon: 'Coins', iconImage: '/crypto-logos/basahub logo/ERC20.png', xpReward: '850 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'katana', 'megaeth', 'tempo', 'arc-restnet', 'robinhood-testnet'] },
   { id: 'deploy-erc721', path: '/deploy-erc721', label: 'ERC721', title: 'Deploy ERC721', description: 'Deploy your own NFT contract', castShareText: CAST_SHARE['deploy-erc721'], category: CATEGORIES.DEPLOY, color: '#06b6d4', icon: 'Package', iconImage: '/crypto-logos/basahub logo/ERC-721.png', xpReward: '850 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'katana', 'megaeth', 'tempo', 'arc-restnet', 'robinhood-testnet'] },
