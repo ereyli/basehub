@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAccount, useBalance, useChainId, usePublicClient, useReadContract } from 'wagmi'
 import {
   CheckCircle2,
@@ -16,6 +17,7 @@ import { useRainbowKitSwitchChain } from '../hooks/useRainbowKitSwitchChain'
 import { useTransactions } from '../hooks/useTransactions'
 import BackButton from '../components/BackButton'
 import EmbedMeta from '../components/EmbedMeta'
+import FastDeployButton from '../components/FastDeployButton'
 
 /** USDC on Base mainnet (Guild onchain holding checks) */
 const USDC_BASE = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
@@ -416,8 +418,8 @@ const BaseGuildCompanion = () => {
             {task.detail && <div style={{ color: '#60a5fa', fontSize: '12px', marginTop: '4px' }}>{task.detail}</div>}
           </div>
         </div>
-        <div style={{ fontWeight: 700, color: task.completed ? '#86efac' : '#f87171', fontSize: '13px', alignSelf: 'center' }}>
-          {task.completed ? 'Met' : 'Not met'}
+        <div style={{ fontWeight: 700, color: task.completed ? '#86efac' : '#94a3b8', fontSize: '13px', alignSelf: 'center' }}>
+          {task.completed ? 'Done' : 'Open'}
         </div>
       </div>
     ))
@@ -547,6 +549,71 @@ const BaseGuildCompanion = () => {
 
       <h2 style={{ color: '#e2e8f0', fontSize: '16px', margin: '22px 0 10px 0' }}>Builders &amp; Founders — Contracts</h2>
       <p style={{ color: '#64748b', fontSize: '12px', margin: '0 0 10px 0' }}>Matches contract deploy roles on guild.xyz/base/builders-founders</p>
+      <div
+        style={{
+          marginBottom: '10px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <FastDeployButton compact label="Fast Deploy" />
+        <Link
+          to="/deploy"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '8px 12px',
+            borderRadius: '10px',
+            border: '1px solid rgba(59,130,246,0.45)',
+            background: 'rgba(59,130,246,0.18)',
+            color: '#bfdbfe',
+            fontSize: '12px',
+            fontWeight: 600,
+            textDecoration: 'none',
+          }}
+        >
+          Deploy ERC20
+        </Link>
+        <Link
+          to="/deploy-erc721"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '8px 12px',
+            borderRadius: '10px',
+            border: '1px solid rgba(6,182,212,0.45)',
+            background: 'rgba(6,182,212,0.16)',
+            color: '#a5f3fc',
+            fontSize: '12px',
+            fontWeight: 600,
+            textDecoration: 'none',
+          }}
+        >
+          Deploy ERC721
+        </Link>
+        <Link
+          to="/deploy-erc1155"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '8px 12px',
+            borderRadius: '10px',
+            border: '1px solid rgba(139,92,246,0.45)',
+            background: 'rgba(139,92,246,0.16)',
+            color: '#ddd6fe',
+            fontSize: '12px',
+            fontWeight: 600,
+            textDecoration: 'none',
+          }}
+        >
+          Deploy ERC1155
+        </Link>
+      </div>
       <div style={{ display: 'grid', gap: '10px' }}>{renderRows(buildersChecks)}</div>
 
       <div
