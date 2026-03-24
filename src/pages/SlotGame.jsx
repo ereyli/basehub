@@ -221,7 +221,7 @@ const SlotGame = () => {
 
   return (
     <div style={containerStyle}>
-      <EmbedMeta title="Crypto Slots - BaseHub" description="Spin the reels, match symbols, win XP." buttonText="Play Crypto Slots!" image="/image.svg" />
+      <EmbedMeta title="Crypto Slots - BaseHub" description="Spin the reels, match symbols, win XP." buttonText="Play Crypto Slots!" image="/share-image.jpeg" />
 
       {/* Top glow */}
       <div style={{ position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)', width: 500, height: 350, background: 'radial-gradient(ellipse, rgba(239, 68, 68, 0.06) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />

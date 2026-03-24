@@ -187,7 +187,7 @@ const FlipGame = () => {
         title="Coin Flip - BaseHub"
         description="Flip a coin and win XP! 50% chance to win 500 bonus XP. Play on BaseHub!"
         buttonText="Play Coin Flip!"
-        image="/image.svg"
+        image="/share-image.jpeg"
       />
       <BackButton />
       <GamingShortcuts />
