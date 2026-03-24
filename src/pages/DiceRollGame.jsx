@@ -197,7 +197,7 @@ const DiceRollGame = () => {
         title="Dice Roll - BaseHub"
         description="Roll two dice and win XP! 1/36 chance to win 1500 bonus XP. Play on BaseHub!"
         buttonText="Play Dice Roll!"
-        image="/share-image.jpeg"
+        image="/share-image-v2.png"
       />
       <BackButton />
       <GamingShortcuts />

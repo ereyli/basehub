@@ -67,7 +67,7 @@ const DeployToken = () => {
                  title="Deploy Token - BaseHub"
                  description="Deploy your own ERC20 token on Base network"
                  buttonText="🪙 Deploy Token!"
-                 image="/share-image.jpeg"
+                 image="/share-image-v2.png"
                />
 
       <div className="deploy-container">

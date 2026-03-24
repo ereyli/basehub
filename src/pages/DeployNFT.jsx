@@ -100,7 +100,7 @@ const DeployNFT = () => {
           title="Deploy NFT Collection - BaseHub"
           description="Deploy your own NFT collection on Base network"
           buttonText="🖼️ Deploy NFT!"
-          image="/share-image.jpeg"
+          image="/share-image-v2.png"
         />
 
       <div className="deploy-container">
