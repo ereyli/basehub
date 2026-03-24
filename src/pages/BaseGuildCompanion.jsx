@@ -348,6 +348,9 @@ const BaseGuildCompanion = () => {
   const completedCount = allChecks.filter((c) => c.completed).length
   const progress = allChecks.length ? Math.round((completedCount / allChecks.length) * 100) : 0
 
+  const summaryDone = useMemo(() => allChecks.filter((c) => c.completed), [allChecks])
+  const summaryOpen = useMemo(() => allChecks.filter((c) => !c.completed), [allChecks])
+
   const handleRefresh = async () => {
     setIsRefreshing(true)
     await Promise.all([fetchNonce(), refetchEth(), refetchUsdc(), loadExplorer()])
@@ -502,44 +505,170 @@ const BaseGuildCompanion = () => {
         style={{
           marginTop: '16px',
           background: 'rgba(15,23,42,0.75)',
-          border: '1px solid rgba(255,255,255,0.08)',
+          border: '1px solid rgba(59, 130, 246, 0.22)',
           borderRadius: '14px',
-          padding: '14px',
+          padding: '16px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-          <span style={{ color: '#e2e8f0', fontWeight: 600 }}>Progress (Onchain + Builders deploys)</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ color: '#93c5fd', fontWeight: 700 }}>
-              {completedCount}/{allChecks.length} ({progress}%)
-            </span>
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              style={{
-                border: '1px solid rgba(96,165,250,0.5)',
-                background: 'rgba(59,130,246,0.2)',
-                color: '#bfdbfe',
-                borderRadius: '8px',
-                padding: '6px 10px',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '12px',
-              }}
-            >
-              <RefreshCw size={14} className={isRefreshing ? 'spinning' : ''} />
-              Refresh
-            </button>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h2 style={{ margin: 0, color: '#f1f5f9', fontSize: '17px', fontWeight: 700 }}>Guild Readiness</h2>
+            <p style={{ margin: '6px 0 0 0', color: '#94a3b8', fontSize: '12px', maxWidth: '640px', lineHeight: 1.45 }}>
+              Wallet + Blockscout based <strong>estimated</strong> summary. Which roles are likely complete and which are still open in one view.
+              Final verification and claim are always on{' '}
+              <a href="https://guild.xyz/base/onchain" target="_blank" rel="noreferrer" style={{ color: '#93c5fd' }}>
+                Guild
+              </a>
+              .
+            </p>
           </div>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            style={{
+              border: '1px solid rgba(96,165,250,0.5)',
+              background: 'rgba(59,130,246,0.2)',
+              color: '#bfdbfe',
+              borderRadius: '8px',
+              padding: '6px 10px',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              flexShrink: 0,
+            }}
+          >
+            <RefreshCw size={14} className={isRefreshing ? 'spinning' : ''} />
+            Refresh
+          </button>
         </div>
-        <div style={{ marginTop: '10px', height: '10px', background: 'rgba(255,255,255,0.08)', borderRadius: '999px', overflow: 'hidden' }}>
+
+        {isConnected && address && !explorerStats.explorerOk && (
+          <div
+            style={{
+              marginTop: '12px',
+              padding: '8px 10px',
+              borderRadius: '8px',
+              background: 'rgba(251, 191, 36, 0.08)',
+              border: '1px solid rgba(251, 191, 36, 0.28)',
+              color: '#fcd34d',
+              fontSize: '12px',
+            }}
+          >
+            Explorer is currently limited or unavailable; tx and deploy lines may be incomplete, so re-check on Guild.
+          </div>
+        )}
+
+        <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+          <span style={{ color: '#cbd5e1', fontSize: '13px', fontWeight: 600 }}>Progress (Onchain + deploy)</span>
+          <span style={{ color: '#93c5fd', fontWeight: 700, fontSize: '13px' }}>
+            {completedCount}/{allChecks.length} · %{progress}
+          </span>
+        </div>
+        <div style={{ marginTop: '8px', height: '10px', background: 'rgba(255,255,255,0.08)', borderRadius: '999px', overflow: 'hidden' }}>
           <div style={{ width: `${progress}%`, height: '100%', background: 'linear-gradient(90deg, #2563eb, #22c55e)' }} />
         </div>
-        <div style={{ marginTop: '8px', color: '#64748b', fontSize: '12px' }}>
-          ETH: {ethBalance ? eth.toFixed(6) : '—'} · USDC: {usdcRaw != null ? usdc.toFixed(2) : '—'} · Tx count: {explorerStats.explorerOk ? explorerStats.totalTx : (nonce ?? '—')}
+
+        <div
+          style={{
+            marginTop: '14px',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '12px',
+          }}
+        >
+          <div
+            style={{
+              borderRadius: '10px',
+              border: '1px solid rgba(34, 197, 94, 0.25)',
+              background: 'rgba(22, 101, 52, 0.12)',
+              padding: '12px',
+            }}
+          >
+            <div style={{ color: '#86efac', fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>
+              Likely complete ({summaryDone.length})
+            </div>
+            {summaryDone.length === 0 ? (
+              <div style={{ color: '#64748b', fontSize: '12px' }}>No completed roles yet — check tasks below.</div>
+            ) : (
+              <ul style={{ margin: 0, paddingLeft: '18px', color: '#e2e8f0', fontSize: '12px', lineHeight: 1.5 }}>
+                {summaryDone.map((t) => (
+                  <li key={t.id}>{t.guildTitle}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div
+            style={{
+              borderRadius: '10px',
+              border: '1px solid rgba(248, 113, 113, 0.22)',
+              background: 'rgba(127, 29, 29, 0.12)',
+              padding: '12px',
+            }}
+          >
+            <div style={{ color: '#fca5a5', fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>
+              Open (estimated) ({summaryOpen.length})
+            </div>
+            {summaryOpen.length === 0 ? (
+              <div style={{ color: '#86efac', fontSize: '12px' }}>Everything looks complete — verify on Guild.</div>
+            ) : (
+              <ul style={{ margin: 0, paddingLeft: '18px', color: '#e2e8f0', fontSize: '12px', lineHeight: 1.5 }}>
+                {summaryOpen.map((t) => (
+                  <li key={t.id}>{t.guildTitle}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        <div style={{ marginTop: '14px', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+          <span style={{ color: '#64748b', fontSize: '12px', marginRight: '4px' }}>Final step:</span>
+          <a
+            href="https://guild.xyz/base/onchain"
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              background: 'rgba(37, 99, 235, 0.25)',
+              border: '1px solid rgba(96, 165, 250, 0.45)',
+              color: '#bfdbfe',
+              fontSize: '12px',
+              fontWeight: 600,
+              textDecoration: 'none',
+            }}
+          >
+            Guild — Onchain <ExternalLink size={14} />
+          </a>
+          <a
+            href="https://guild.xyz/base/builders-founders"
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              background: 'rgba(37, 99, 235, 0.15)',
+              border: '1px solid rgba(96, 165, 250, 0.35)',
+              color: '#93c5fd',
+              fontSize: '12px',
+              fontWeight: 600,
+              textDecoration: 'none',
+            }}
+          >
+            Guild — Builders <ExternalLink size={14} />
+          </a>
+        </div>
+
+        <div style={{ marginTop: '10px', color: '#64748b', fontSize: '12px' }}>
+          ETH: {ethBalance ? eth.toFixed(6) : '—'} · USDC: {usdcRaw != null ? usdc.toFixed(2) : '—'} · Tx: {explorerStats.explorerOk ? explorerStats.totalTx : (nonce ?? '—')}
         </div>
       </div>
 
