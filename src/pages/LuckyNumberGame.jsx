@@ -198,7 +198,7 @@ const LuckyNumberGame = () => {
         title="Lucky Number - BaseHub"
         description="Pick a number 1-10 and win XP! 10% chance to win 1000 bonus XP. Play on BaseHub!"
         buttonText="Play Lucky Number!"
-        image="/share-image-v2.png"
+        image="/image2.jpeg"
       />
       <BackButton />
       <GamingShortcuts />
