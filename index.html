@@ -71,6 +71,39 @@
     })();
   </script>
   <div id="root"></div>
+  <!-- Miniapp-only first paint (matches App.jsx getUseMiniappLayout heuristics): logo before bundle loads -->
+  <script>
+    (function () {
+      var mini = false;
+      try {
+        mini = window.location !== window.parent.location || window.parent !== window;
+        if (!mini) {
+          var h = (window.location.href || '').toLowerCase();
+          mini = h.indexOf('farcaster.xyz') >= 0 || h.indexOf('warpcast.com') >= 0;
+        }
+        if (!mini && typeof navigator !== 'undefined' && navigator.userAgent) {
+          var ua = navigator.userAgent.toLowerCase();
+          mini = ua.indexOf('coinbase') >= 0 || ua.indexOf('base wallet') >= 0 || ua.indexOf('cbwallet') >= 0 ||
+            (ua.indexOf('base') >= 0 && (ua.indexOf('app') >= 0 || ua.indexOf('in-app') >= 0));
+        }
+      } catch (e) { mini = true; }
+      if (!mini) return;
+      var root = document.getElementById('root');
+      if (!root) return;
+      var wrap = document.createElement('div');
+      wrap.id = 'app-initial-splash';
+      wrap.setAttribute('aria-hidden', 'true');
+      wrap.style.cssText = 'position:fixed;inset:0;z-index:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#3b82f6 0%,#1e40af 50%,#1d4ed8 100%);';
+      var img = document.createElement('img');
+      img.src = '/basehub-icon.png?v=1';
+      img.alt = '';
+      img.decoding = 'async';
+      img.setAttribute('fetchpriority', 'high');
+      img.style.cssText = 'width:auto;height:min(38vh,200px);max-width:min(72vw,280px);object-fit:contain;';
+      wrap.appendChild(img);
+      root.appendChild(wrap);
+    })();
+  </script>
   <script type="module" src="/src/main.jsx"></script>
   <script>
     (function() {

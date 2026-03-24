@@ -242,13 +242,16 @@ function FarcasterAppContent() {
             textAlign: 'center',
             padding: '20px'
           }}>
-            {/* Logo */}
-            <img 
-              src="/icon.png" 
-              alt="BaseHub" 
+            {/* Logo (same asset as fc:miniapp splashImageUrl) */}
+            <img
+              src="/basehub-icon.png?v=1"
+              alt="BaseHub"
+              decoding="async"
+              fetchPriority="high"
               style={{
-                height: '280px',
                 width: 'auto',
+                height: 'min(38vh, 200px)',
+                maxWidth: 'min(72vw, 280px)',
                 objectFit: 'contain',
                 marginBottom: '24px',
                 animation: 'pulse 2s infinite'
