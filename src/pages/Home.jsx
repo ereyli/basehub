@@ -1115,7 +1115,7 @@ const Home = () => {
                               <Sparkles size={18} style={{ color: 'white' }} />
                             </div>
                             <h3 style={{ ...compactStyles.cardTitle, color: '#8b5cf6' }}>Wheel</h3>
-                            <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-50K</div>
+                            <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-224K</div>
                           </>
                         ) : (
                           <>
@@ -1125,11 +1125,11 @@ const Home = () => {
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <h3 style={{ ...compactStyles.cardTitle, color: '#8b5cf6' }}>NFT Wheel of Fortune</h3>
-                                <p style={compactStyles.cardDescription}>Spin to win 2K-50K XP daily! (NFT holders only)</p>
+                                <p style={compactStyles.cardDescription}>Spin to win 2K-224K XP daily! (NFT holders only)</p>
                               </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                              <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-50K XP</div>
+                              <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-224K XP</div>
                               <div style={{ background: 'rgba(251, 191, 36, 0.15)', border: '1px solid rgba(251, 191, 36, 0.3)', borderRadius: '20px', padding: '4px 12px', fontSize: '11px', fontWeight: '700', color: '#fbbf24' }}>MEGA JACKPOT</div>
                             </div>
                           </>
