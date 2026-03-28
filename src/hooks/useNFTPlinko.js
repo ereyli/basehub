@@ -23,8 +23,8 @@ export function segmentIdToSlotIndex(segmentId) {
 }
 
 const DAILY_DROP_LIMIT = 4
-const DROP_COST = '0.01 USDC'
-const SPIN_COST_AMOUNT = BigInt(10000) // 0.01 USDC (6 decimals)
+const DROP_COST = '0.05 USDC'
+const SPIN_COST_AMOUNT = BigInt(50000) // 0.05 USDC (6 decimals)
 
 const PLINKO_X402_PAYMENT_PATH = '/api/x402-nft-plinko'
 
@@ -166,7 +166,7 @@ export const useNFTPlinko = () => {
           const err = errorData.error
           const errStr = typeof err === 'string' ? err : (err?.message || (typeof err === 'object' ? JSON.stringify(err) : ''))
           if (errStr === 'insufficient_funds' || (errStr && errStr.includes && errStr.includes('insufficient_funds'))) {
-            errorMessage = 'Insufficient USDC. You need at least 0.01 USDC on Base to play Plinko.'
+            errorMessage = 'Insufficient USDC. You need at least 0.05 USDC on Base to play Plinko.'
           } else if (errStr && (errStr.toLowerCase().includes('reject') || errStr.toLowerCase().includes('denied') || errStr.toLowerCase().includes('declined'))) {
             errorMessage = 'Payment was declined or cancelled.'
           } else if (errStr) {
@@ -175,11 +175,11 @@ export const useNFTPlinko = () => {
             errorMessage = 'Payment required. Complete the payment in your wallet to play.'
           }
         } else if (response.status === 500) {
-          errorMessage = 'Payment could not be completed. Make sure you have at least 0.01 USDC on Base and try again.'
+          errorMessage = 'Payment could not be completed. Make sure you have at least 0.05 USDC on Base and try again.'
         } else if (errorData.message) {
           const msg = String(errorData.message).toLowerCase()
           if (msg.includes('insufficient') || msg.includes('usdc')) {
-            errorMessage = 'Insufficient USDC. You need at least 0.01 USDC on Base to play Plinko.'
+            errorMessage = 'Insufficient USDC. You need at least 0.05 USDC on Base to play Plinko.'
           } else if (msg.includes('reject') || msg.includes('denied') || msg.includes('declined')) {
             errorMessage = 'Payment was declined or cancelled.'
           } else {
@@ -188,7 +188,7 @@ export const useNFTPlinko = () => {
         }
       } catch (e) {
         if (response.status === 500) {
-          errorMessage = 'Payment could not be completed. Make sure you have at least 0.01 USDC on Base and try again.'
+          errorMessage = 'Payment could not be completed. Make sure you have at least 0.05 USDC on Base and try again.'
         } else {
           errorMessage = `Payment failed with status ${response.status}. Please try again.`
         }

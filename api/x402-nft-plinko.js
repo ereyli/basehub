@@ -1,4 +1,4 @@
-// x402 Payment for NFT Plinko (0.01 USDC) — payment only, outcome on client.
+// x402 Payment for NFT Plinko (0.05 USDC) — payment only, outcome on client.
 // Reference: api/x402-nft-wheel.js
 
 import { Hono } from 'hono'
@@ -9,7 +9,7 @@ import { facilitator } from '@coinbase/x402'
 const app = new Hono()
 
 const RECEIVING_ADDRESS = process.env.X402_RECEIVING_ADDRESS || '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
-const PRICE = '$0.01'
+const PRICE = '$0.05'
 const NETWORK = process.env.X402_NETWORK || 'base'
 
 let facilitatorConfig
@@ -52,7 +52,7 @@ app.use(
         price: PRICE,
         network: NETWORK,
         config: {
-          description: 'BaseHub NFT Plinko - Pay 0.01 USDC',
+          description: 'BaseHub NFT Plinko - Pay 0.05 USDC',
           mimeType: 'application/json',
           maxTimeoutSeconds: 600,
         },
