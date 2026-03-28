@@ -7,7 +7,7 @@ import BackButton from '../components/BackButton'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { getFarcasterUniversalLink } from '../config/farcaster'
-import { Zap, Users, Package, CheckCircle, ExternalLink, Sparkles, Share2, AlertCircle, Gift, Percent, Rocket, Crown, Shield, Star } from 'lucide-react'
+import { Zap, Users, Package, CheckCircle, ExternalLink, Sparkles, Share2, AlertCircle, Gift, Percent, Rocket, Crown, Shield, Star, CircleDot } from 'lucide-react'
 import { NETWORKS, getTransactionExplorerUrl } from '../config/networks'
 
 const EarlyAccessNFT = () => {
@@ -490,6 +490,22 @@ const EarlyAccessNFT = () => {
             >
               <Gift size={18} style={{ flexShrink: 0, color: accentLight }} />
               <span style={{ flex: 1 }}>Access the <strong style={{ color: '#e2e8f0' }}>Wheel game</strong> and earn XP</span>
+              <ExternalLink size={14} style={{ color: '#475569' }} />
+            </Link>
+
+            <Link to="/nft-plinko" style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: isMobile ? '13px 14px' : '16px 18px',
+              background: 'rgba(34, 211, 238, 0.06)', borderLeft: '3px solid #22d3ee',
+              borderRadius: 12, color: '#cbd5e1', textDecoration: 'none',
+              fontSize: isMobile ? '0.88rem' : '0.92rem', fontWeight: 500,
+              transition: 'background 0.2s',
+            }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(34, 211, 238, 0.1)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(34, 211, 238, 0.06)'}
+            >
+              <CircleDot size={18} style={{ flexShrink: 0, color: '#22d3ee' }} />
+              <span style={{ flex: 1 }}>Play <strong style={{ color: '#e2e8f0' }}>NFT Plinko</strong> — same XP odds, 0.05 USDC per drop</span>
               <ExternalLink size={14} style={{ color: '#475569' }} />
             </Link>
 

@@ -60,7 +60,6 @@ export default function SwapHubActivity({ isMobile = false }) {
         </h3>
         <span style={{
           fontSize: '10px',
-          color: '#64748b',
           background: 'rgba(34, 197, 94, 0.2)',
           color: '#22c55e',
           padding: '2px 6px',

@@ -1,11 +1,31 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig({
+// Vite does not run /api/* (Vercel serverless). Proxy to a host that serves them.
+// Default: production. Override with DEV_API_PROXY=http://127.0.0.1:3000 when using `vercel dev` on 3000 (run Vite on another port, e.g. VITE_PORT=5173).
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const raw =
+    env.DEV_API_PROXY ||
+    env.VITE_DEV_API_PROXY ||
+    (env.VITE_API_URL && env.VITE_API_URL.replace(/\/$/, '')) ||
+    'https://www.basehub.fun'
+
+  // Avoid apex→www redirects: if the proxy gets a 302 to another host, the browser follows it and hits CORS from localhost.
+  const apiTarget = raw.replace(/^https?:\/\/basehub\.fun/i, 'https://www.basehub.fun')
+
+  return {
   plugins: [react()],
   server: {
-    port: 3000,
-    host: true
+    port: Number(env.VITE_PORT) || 3000,
+    host: true,
+    proxy: {
+      '/api': {
+        target: apiTarget,
+        changeOrigin: true,
+        secure: true,
+      },
+    },
   },
   build: {
     outDir: 'dist',
@@ -35,4 +55,5 @@ export default defineConfig({
       buffer: 'buffer',
     },
   },
+  }
 })

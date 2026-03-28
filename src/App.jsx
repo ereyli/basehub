@@ -47,6 +47,7 @@ import SwapHub from './pages/SwapHub'
 import Profile from './pages/Profile'
 import EarlyAccessNFT from './pages/EarlyAccessNFT'
 import NFTWheelGame from './pages/NFTWheelGame'
+import NFTPlinkoGame from './pages/NFTPlinkoGame'
 import PumpHub from './pages/PumpHub'
 import FrameLanding from './pages/FrameLanding'
 import PredictionArena from './pages/PredictionArena'
@@ -352,6 +353,7 @@ function FarcasterAppContent() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/early-access" element={<EarlyAccessNFT />} />
               <Route path="/nft-wheel" element={<NFTWheelGame />} />
+              <Route path="/nft-plinko" element={<NFTPlinkoGame />} />
               <Route path="/pumphub" element={<PumpHub />} />
               <Route path="/prediction-arena" element={<PredictionArena />} />
               <Route path="/base-guild" element={<BaseGuildCompanion />} />
@@ -425,6 +427,7 @@ function WebAppContent() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/early-access" element={<EarlyAccessNFT />} />
               <Route path="/nft-wheel" element={<NFTWheelGame />} />
+              <Route path="/nft-plinko" element={<NFTPlinkoGame />} />
 <Route path="/pumphub" element={<PumpHub />} />
             <Route path="/prediction-arena" element={<PredictionArena />} />
             <Route path="/base-guild" element={<BaseGuildCompanion />} />

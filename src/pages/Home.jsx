@@ -13,9 +13,9 @@ import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { NETWORKS, getNetworkKey } from '../config/networks'
 import { getProductsForHome, getProductsForHomeByNetwork, getNetworksForProductIds } from '../config/products'
-import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat, Sparkles, RotateCcw, Gift, LayoutGrid } from 'lucide-react'
+import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat, Sparkles, RotateCcw, Gift, LayoutGrid, CircleDot } from 'lucide-react'
 
-const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Search, Shield, Trash2, Star, Layers, Package, Factory, Rocket, Image, Sparkles, ArrowLeftRight, Repeat, Zap, Users, LayoutGrid }
+const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Search, Shield, Trash2, Star, Layers, Package, Factory, Rocket, Image, Sparkles, ArrowLeftRight, Repeat, Zap, Users, LayoutGrid, CircleDot }
 
 const Home = () => {
   const location = useLocation()
@@ -1070,7 +1070,7 @@ const Home = () => {
                   }}>
                     BETA
                   </span>
-                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['early-access', 'nft-wheel']))}
+                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['early-access', 'nft-wheel', 'nft-plinko']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
                   <Link to="/early-access" className="game-card" style={{ textDecoration: 'none', display: 'block' }} state={{ fromHomeSection: 'early-access' }}>
@@ -1131,6 +1131,38 @@ const Home = () => {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
                               <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-50K XP</div>
                               <div style={{ background: 'rgba(251, 191, 36, 0.15)', border: '1px solid rgba(251, 191, 36, 0.3)', borderRadius: '20px', padding: '4px 12px', fontSize: '11px', fontWeight: '700', color: '#fbbf24' }}>MEGA JACKPOT</div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                  <Link to="/nft-plinko" className="game-card" style={{ textDecoration: 'none', display: 'block' }} state={{ fromHomeSection: 'early-access' }}>
+                    <div style={{ ...compactStyles.card('#22d3ee'), height: '100%' }}>
+                      <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #22d3ee20 0%, #22d3ee0c 35%, #22d3ee04 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
+                      <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
+                        {isCompactMode ? (
+                          <>
+                            <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#22d3ee22', border: '1px solid #22d3ee44', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <CircleDot size={18} style={{ color: 'white' }} />
+                            </div>
+                            <h3 style={{ ...compactStyles.cardTitle, color: '#22d3ee' }}>Plinko</h3>
+                            <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-224K</div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                              <div style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '12px', background: '#22d3ee22', border: '1px solid #22d3ee44', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <CircleDot size={22} style={{ color: 'white' }} />
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <h3 style={{ ...compactStyles.cardTitle, color: '#22d3ee' }}>NFT Plinko</h3>
+                                <p style={compactStyles.cardDescription}>Arcade drop — same XP odds as Wheel (NFT holders)</p>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                              <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-224K XP</div>
+                              <div style={{ background: 'rgba(34, 211, 238, 0.15)', border: '1px solid rgba(34, 211, 238, 0.35)', borderRadius: '20px', padding: '4px 12px', fontSize: '11px', fontWeight: '700', color: '#22d3ee' }}>0.05 USDC</div>
                             </div>
                           </>
                         )}

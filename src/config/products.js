@@ -20,7 +20,7 @@ export const CATEGORIES = {
 export const NAV_SECTIONS = {
   gaming: ['flip', 'dice', 'slot', 'lucky'],
   guild: ['base-guild-companion'],
-  nft: ['early-access', 'nft-launchpad', 'nft-launchpad-explore', 'prediction-arena'],
+  nft: ['early-access', 'nft-launchpad', 'nft-launchpad-explore', 'prediction-arena', 'nft-plinko'],
   analysis: ['wallet-analysis', 'contract-security', 'allowance-cleaner'],
   deploy: ['deploy', 'deploy-erc721', 'deploy-erc1155'],
   social: ['featured-profiles'],
@@ -42,6 +42,7 @@ const MOBILE_STATIC_ITEMS = [
 const CAST_SHARE = {
   'early-access': 'Mint the BaseHub Early Access Pass and unlock exclusive benefits. Multi-chain Web3 platform on Base!',
   'nft-wheel': 'Spin the NFT Wheel of Fortune on BaseHub – massive XP rewards for NFT holders. Try your luck!',
+  'nft-plinko': 'Drop the NFT Plinko ball on BaseHub – same XP odds as the Wheel. NFT holders only!',
   'x402-premium': 'Pay with USDC via x402 on BaseHub. Simple Web3 payments on Base.',
   'swap': 'Swap tokens on Base with SwapHub – DEX aggregator. Earn XP at $100, $1k, $10k volume milestones!',
   'flip': 'Flip a coin and earn XP on BaseHub. Simple, fun, multi-chain gaming!',
@@ -64,6 +65,7 @@ const CAST_SHARE = {
 export const PRODUCTS = [
   { id: 'early-access', path: '/early-access', label: 'Early Access', title: 'Early Access Pass', description: 'Mint your BaseHub Early Access Pass and unlock exclusive benefits', castShareText: CAST_SHARE['early-access'], category: CATEGORIES.EARLY_ACCESS, color: '#fbbf24', icon: 'Rocket', xpReward: '3000 XP', bonusXP: null, networks: ['base'] },
   { id: 'nft-wheel', path: '/nft-wheel', label: 'NFT Wheel', title: 'NFT Wheel of Fortune', description: 'Spin to win massive XP rewards (NFT holders only)', castShareText: CAST_SHARE['nft-wheel'], category: CATEGORIES.EARLY_ACCESS, color: '#8b5cf6', icon: 'Sparkles', xpReward: '2K-50K XP', bonusXP: 'MEGA JACKPOT!', networks: ['base'], isNFTGated: true },
+  { id: 'nft-plinko', path: '/nft-plinko', label: 'NFT Plinko', title: 'NFT Plinko', description: 'Drop the ball and win XP (same odds as Wheel, NFT holders only)', castShareText: CAST_SHARE['nft-plinko'], category: CATEGORIES.EARLY_ACCESS, color: '#22d3ee', icon: 'CircleDot', xpReward: '2K-224K XP', bonusXP: '0.05 USDC', networks: ['base'], isNFTGated: true },
   { id: 'x402-premium', path: null, label: 'x402 test', title: 'x402 test', description: 'Pay 0.1 USDC via x402', castShareText: CAST_SHARE['x402-premium'], category: CATEGORIES.SOCIAL, color: '#8b5cf6', icon: 'Star', xpReward: '500 XP', bonusXP: '0.1 USDC', networks: ['base'], isX402: true, isPayment: true },
   { id: 'swap', path: '/swap', label: 'SwapHub', title: 'SwapHub', description: 'DEX Aggregator - Swap tokens on Base', castShareText: CAST_SHARE['swap'], category: CATEGORIES.DEX, color: '#3b82f6', icon: 'ArrowLeftRight', xpReward: '5k XP / $100', bonusXP: 'Milestones up to 50M XP', networks: ['base'] },
   { id: 'flip', path: '/flip', label: 'Coinflip', title: 'Coin Flip', description: 'Flip a coin and earn XP', castShareText: CAST_SHARE['flip'], category: CATEGORIES.GAMING, color: '#f59e0b', icon: 'Coins', iconImage: '/crypto-logos/basahub logo/CoinFlip.png', xpReward: '150 XP', bonusXP: '+500 XP (Win)', networks: ['base', 'ink', 'soneium', 'katana', 'megaeth', 'tempo', 'arc-restnet', 'robinhood-testnet'] },

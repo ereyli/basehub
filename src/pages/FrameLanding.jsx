@@ -41,6 +41,13 @@ const FRAME_CONFIG = {
     description: 'Spin the wheel and win NFTs on Base.',
     imageUrl: WEB_OG_IMAGE,
   },
+  'nft-plinko': {
+    path: '/nft-plinko',
+    buttonText: 'Play NFT Plinko',
+    title: 'NFT Plinko - BaseHub',
+    description: 'Drop the ball and win XP on Base.',
+    imageUrl: WEB_OG_IMAGE,
+  },
   'wallet-analysis': {
     path: '/wallet-analysis',
     buttonText: 'Analyze wallet',
