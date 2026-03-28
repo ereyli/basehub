@@ -1116,6 +1116,7 @@ const Home = () => {
                             </div>
                             <h3 style={{ ...compactStyles.cardTitle, color: '#8b5cf6' }}>Wheel</h3>
                             <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-224K</div>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: '#c4b5fd' }}>x402</div>
                           </>
                         ) : (
                           <>
@@ -1125,12 +1126,13 @@ const Home = () => {
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <h3 style={{ ...compactStyles.cardTitle, color: '#8b5cf6' }}>NFT Wheel of Fortune</h3>
-                                <p style={compactStyles.cardDescription}>Spin to win 2K-224K XP daily! (NFT holders only)</p>
+                                <p style={compactStyles.cardDescription}>Spin to win 2K-224K XP daily! Pay via x402. (NFT holders only)</p>
                               </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
                               <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-224K XP</div>
                               <div style={{ background: 'rgba(251, 191, 36, 0.15)', border: '1px solid rgba(251, 191, 36, 0.3)', borderRadius: '20px', padding: '4px 12px', fontSize: '11px', fontWeight: '700', color: '#fbbf24' }}>MEGA JACKPOT</div>
+                              <div style={{ background: 'rgba(196, 181, 253, 0.12)', border: '1px solid rgba(167, 139, 250, 0.35)', borderRadius: '20px', padding: '4px 12px', fontSize: '11px', fontWeight: '700', color: '#c4b5fd' }}>x402</div>
                             </div>
                           </>
                         )}
@@ -1148,6 +1150,7 @@ const Home = () => {
                             </div>
                             <h3 style={{ ...compactStyles.cardTitle, color: '#22d3ee' }}>Plinko</h3>
                             <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-224K</div>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: '#67e8f9' }}>x402</div>
                           </>
                         ) : (
                           <>
@@ -1157,12 +1160,13 @@ const Home = () => {
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <h3 style={{ ...compactStyles.cardTitle, color: '#22d3ee' }}>NFT Plinko</h3>
-                                <p style={compactStyles.cardDescription}>Arcade drop — same XP odds as Wheel (NFT holders)</p>
+                                <p style={compactStyles.cardDescription}>Arcade drop — same XP odds as Wheel. Pay via x402. (NFT holders)</p>
                               </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
                               <div style={{ ...compactStyles.xpBadge, color: '#fbbf24' }}>2K-224K XP</div>
-                              <div style={{ background: 'rgba(34, 211, 238, 0.15)', border: '1px solid rgba(34, 211, 238, 0.35)', borderRadius: '20px', padding: '4px 12px', fontSize: '11px', fontWeight: '700', color: '#22d3ee' }}>0.05 USDC</div>
+                              <div style={{ background: 'rgba(251, 191, 36, 0.15)', border: '1px solid rgba(251, 191, 36, 0.3)', borderRadius: '20px', padding: '4px 12px', fontSize: '11px', fontWeight: '700', color: '#fbbf24' }}>MEGA JACKPOT</div>
+                              <div style={{ background: 'rgba(34, 211, 238, 0.12)', border: '1px solid rgba(34, 211, 238, 0.35)', borderRadius: '20px', padding: '4px 12px', fontSize: '11px', fontWeight: '700', color: '#67e8f9' }}>x402</div>
                             </div>
                           </>
                         )}

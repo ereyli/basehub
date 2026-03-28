@@ -16,7 +16,7 @@ export function segmentIdToSlotIndex(segmentId) {
 }
 
 const DAILY_DROP_LIMIT = 4
-const DROP_COST = '0.05 USDC'
+const DROP_COST = 'x402'
 const SPIN_COST_AMOUNT = BigInt(50000) // 0.05 USDC (6 decimals)
 
 const PLINKO_X402_PAYMENT_PATH = '/api/x402-nft-plinko'

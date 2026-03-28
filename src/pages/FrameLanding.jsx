@@ -38,14 +38,14 @@ const FRAME_CONFIG = {
     path: '/nft-wheel',
     buttonText: 'Spin NFT Wheel',
     title: 'NFT Wheel - BaseHub',
-    description: 'Spin the wheel and win NFTs on Base.',
+    description: 'Spin the wheel for XP on Base. Pay via x402 (USDC).',
     imageUrl: WEB_OG_IMAGE,
   },
   'nft-plinko': {
     path: '/nft-plinko',
     buttonText: 'Play NFT Plinko',
     title: 'NFT Plinko - BaseHub',
-    description: 'Drop the ball and win XP on Base.',
+    description: 'Drop the ball and win XP on Base. Pay via x402 (USDC).',
     imageUrl: WEB_OG_IMAGE,
   },
   'wallet-analysis': {

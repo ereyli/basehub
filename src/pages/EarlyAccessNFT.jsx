@@ -489,7 +489,7 @@ const EarlyAccessNFT = () => {
               onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(59, 130, 246, 0.04)'}
             >
               <Gift size={18} style={{ flexShrink: 0, color: accentLight }} />
-              <span style={{ flex: 1 }}>Access the <strong style={{ color: '#e2e8f0' }}>Wheel game</strong> and earn XP</span>
+              <span style={{ flex: 1 }}>Access the <strong style={{ color: '#e2e8f0' }}>Wheel</strong> and earn XP — pay via <strong style={{ color: '#c4b5fd' }}>x402</strong> per spin</span>
               <ExternalLink size={14} style={{ color: '#475569' }} />
             </Link>
 
@@ -505,7 +505,7 @@ const EarlyAccessNFT = () => {
               onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(34, 211, 238, 0.06)'}
             >
               <CircleDot size={18} style={{ flexShrink: 0, color: '#22d3ee' }} />
-              <span style={{ flex: 1 }}>Play <strong style={{ color: '#e2e8f0' }}>NFT Plinko</strong> — same XP odds, 0.05 USDC per drop</span>
+              <span style={{ flex: 1 }}>Play <strong style={{ color: '#e2e8f0' }}>NFT Plinko</strong> — same XP odds as the Wheel; pay via <strong style={{ color: '#67e8f9' }}>x402</strong> per drop</span>
               <ExternalLink size={14} style={{ color: '#475569' }} />
             </Link>
 

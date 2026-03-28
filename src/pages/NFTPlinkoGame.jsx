@@ -34,7 +34,6 @@ const NFTPlinkoGame = () => {
     loading,
     error,
     nextResetTime,
-    dropCost,
     dailyLimit,
     startDrop,
     completeDrop,
@@ -264,7 +263,8 @@ const NFTPlinkoGame = () => {
           NFT Plinko
         </h1>
         <p style={{ color: '#94a3af', fontSize: isMobile ? 13 : 16, margin: 0, fontWeight: 500 }}>
-          Drop the ball — same XP odds as the Wheel · {dropCost} · {dailyLimit}/day
+          Drop the ball — same XP odds as the Wheel · Each drop is paid via{' '}
+          <strong style={{ color: '#67e8f9' }}>x402</strong> (USDC on Base) · {dailyLimit}/day
         </p>
       </div>
 
@@ -530,7 +530,7 @@ const NFTPlinkoGame = () => {
                   {isPaying ? (
                     <>
                       <RotateCw size={24} style={{ animation: 'spin 1s linear infinite' }} />
-                      <span>Paying {dropCost}…</span>
+                      <span>Confirming x402 payment…</span>
                     </>
                   ) : isDropping ? (
                     <>
@@ -545,7 +545,7 @@ const NFTPlinkoGame = () => {
                   ) : (
                     <>
                       <Coins size={24} />
-                      <span>Pay {dropCost} & Drop</span>
+                      <span>Pay via x402 &amp; Drop</span>
                     </>
                   )}
                 </button>

@@ -20,7 +20,8 @@ export const WHEEL_VISUAL_ORDER = [
 const DAILY_SPIN_LIMIT = 3
 
 // x402 Payment cost per spin
-const SPIN_COST = '0.05 USDC'
+// UI copy: payment is HTTP 402 / x402 (USDC on Base under the hood)
+const SPIN_COST = 'x402'
 const SPIN_COST_AMOUNT = BigInt(50000) // 0.05 USDC (6 decimals)
 
 export const useNFTWheel = () => {

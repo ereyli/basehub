@@ -34,7 +34,6 @@ const NFTWheelGame = () => {
     loading,
     error,
     nextResetTime,
-    spinCost,
     spinWheel,
     completeSpin
   } = useNFTWheel()
@@ -247,7 +246,7 @@ const NFTWheelGame = () => {
           margin: 0,
           fontWeight: '500'
         }}>
-          Exclusive rewards for NFT holders
+          Exclusive rewards for NFT holders · Each spin is paid via <strong style={{ color: '#c4b5fd' }}>x402</strong> (USDC on Base)
         </p>
       </div>
 
@@ -667,7 +666,7 @@ const NFTWheelGame = () => {
                   {isPaying ? (
                     <>
                       <RotateCw size={24} style={{ animation: 'spin 1s linear infinite' }} />
-                      <span>Processing Payment...</span>
+                      <span>Confirming x402 payment…</span>
                     </>
                   ) : isSpinning ? (
                     <>
@@ -682,7 +681,7 @@ const NFTWheelGame = () => {
                   ) : (
                     <>
                       <Sparkles size={24} />
-                      <span>Pay {spinCost} & Spin!</span>
+                      <span>Pay via x402 &amp; Spin!</span>
                     </>
                   )}
                 </button>
