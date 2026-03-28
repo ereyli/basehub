@@ -3,17 +3,10 @@ import { useAccount, useWalletClient } from 'wagmi'
 import { useSupabase } from './useSupabase'
 import { getNFTCount, addXP } from '../utils/xpUtils'
 import { wrapFetchWithPayment } from 'x402-fetch'
+import { NFT_LUCK_SEGMENTS } from '../config/nftLuckSegments'
 
-// Same XP tiers & weights as NFT Wheel (useNFTWheel.js)
-export const PLINKO_SEGMENTS = [
-  { id: 0, xp: 3500, label: '3.5K', color: '#3b82f6', weight: 40 },
-  { id: 1, xp: 7000, label: '7K', color: '#10b981', weight: 30 },
-  { id: 2, xp: 14000, label: '14K', color: '#8b5cf6', weight: 15 },
-  { id: 3, xp: 28000, label: '28K', color: '#ec4899', weight: 7 },
-  { id: 4, xp: 56000, label: '56K', color: '#06b6d4', weight: 3 },
-  { id: 5, xp: 112000, label: '112K', color: '#ef4444', weight: 2 },
-  { id: 6, xp: 224000, label: '224K', color: '#fbbf24', weight: 3, isJackpot: true },
-]
+// Same pool as NFT Wheel (`src/config/nftLuckSegments.js`)
+export const PLINKO_SEGMENTS = NFT_LUCK_SEGMENTS
 
 export function segmentIdToSlotIndex(segmentId) {
   if (segmentId === 0) return 0
