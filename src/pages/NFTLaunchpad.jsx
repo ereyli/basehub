@@ -34,10 +34,10 @@ function timeAgo(dateStr) {
   return `${Math.floor(days / 30)}mo ago`
 }
 
-function formatMintPrice(price) {
+function formatMintPrice(price, isTempo) {
   const p = (price ?? '0').toString().trim()
   if (p === '' || Number(p) === 0) return 'Free'
-  return `${p} ETH`
+  return isTempo ? `${p} PUSD` : `${p} ETH`
 }
 
 // Convert IPFS hash to gateway URL
@@ -264,13 +264,14 @@ export default function NFTLaunchpad() {
   const {
     createCollection, isLoading: isCreating, loadingStep,
     error: createError, success, contractAddress, deployTxHash, slug: deployedSlug,
-    deployFeeEth, isEarlyAccessHolder,
+    deployFeeLabel, isTempoChain, isEarlyAccessHolder,
   } = useNFTLaunchpad()
 
   const getProcessingLabel = () => {
     if (!loadingStep) return 'Processing...'
     if (loadingStep === 'uploading_image') return 'Uploading image to IPFS...'
     if (loadingStep === 'uploading_metadata') return 'Uploading metadata...'
+    if (loadingStep === 'approving_token') return 'Confirm pathUSD approval (TIP20)...'
     if (loadingStep === 'deploying') return 'Confirm in wallet (deploy)...'
     return 'Processing...'
   }
@@ -779,7 +780,7 @@ export default function NFTLaunchpad() {
                       </div>
 
                       <div>
-                        <label style={{ fontSize: '12px', fontWeight: '600', color: '#94a3b8', marginBottom: '6px', display: 'block' }}>Mint Price (ETH)</label>
+                        <label style={{ fontSize: '12px', fontWeight: '600', color: '#94a3b8', marginBottom: '6px', display: 'block' }}>{isTempoChain ? 'Mint Price (PUSD)' : 'Mint Price (ETH)'}</label>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                           <button type="button" onClick={() => setMintPrice('0')}
                             style={{
@@ -811,10 +812,13 @@ export default function NFTLaunchpad() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', fontSize: '13px', fontWeight: '700', color: '#93c5fd' }}>
                         <Coins size={14} /> How it works
                       </div>
-                      <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.7 }}>
-                        <div style={{ display: 'flex', gap: '6px', marginBottom: '2px' }}>
-                          <span style={{ color: '#475569' }}>1.</span> Deploy fee: <strong style={{ color: '#e2e8f0' }}>{deployFeeEth} ETH</strong>
-                          {isEarlyAccessHolder ? (
+                        <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.7 }}>
+                        <div style={{ display: 'flex', gap: '6px', marginBottom: '2px', flexWrap: 'wrap' }}>
+                          <span style={{ color: '#475569' }}>1.</span> Deploy fee:{' '}
+                          <strong style={{ color: '#e2e8f0' }}>{deployFeeLabel}</strong>
+                          {isTempoChain ? (
+                            <span style={{ color: '#64748b' }}> (pathUSD / TIP20 — approve in wallet)</span>
+                          ) : isEarlyAccessHolder ? (
                             <span style={{ color: '#22c55e', marginLeft: '4px' }}>(Early Access discount)</span>
                           ) : (
                             <span style={{ color: '#94a3b8' }}> — <a href="/early-access" style={{ color: '#93c5fd' }}>Hold Early Access Pass</a> for 0.0005 ETH</span>
@@ -822,7 +826,7 @@ export default function NFTLaunchpad() {
                           <span style={{ color: '#64748b' }}> (one-time)</span>
                         </div>
                         <div style={{ display: 'flex', gap: '6px', marginBottom: '2px' }}>
-                          <span style={{ color: '#475569' }}>2.</span> Each mint at <strong style={{ color: '#e2e8f0' }}>{formatMintPrice(mintPrice)}</strong> goes <strong style={{ color: '#22c55e' }}>directly to you</strong>
+                          <span style={{ color: '#475569' }}>2.</span> Each mint at <strong style={{ color: '#e2e8f0' }}>{formatMintPrice(mintPrice, isTempoChain)}</strong> goes <strong style={{ color: '#22c55e' }}>directly to you</strong>
                         </div>
                         <div style={{ display: 'flex', gap: '6px' }}>
                           <span style={{ color: '#475569' }}>3.</span> A shareable mint page is auto-created for your collection
@@ -843,7 +847,7 @@ export default function NFTLaunchpad() {
                           <img src={currentPreviewUrl} alt="Preview" style={{ width: '52px', height: '52px', borderRadius: '10px', objectFit: 'cover' }} />
                           <div>
                             <div style={{ fontWeight: '700', color: '#e2e8f0', fontSize: '15px' }}>{name.trim()}</div>
-                            <div style={{ fontSize: '12px', color: '#64748b' }}>{symbol || '???'} · {formatMintPrice(mintPrice)} · {supply} supply</div>
+                            <div style={{ fontSize: '12px', color: '#64748b' }}>{symbol || '???'} · {formatMintPrice(mintPrice, isTempoChain)} · {supply} supply</div>
                           </div>
                         </div>
                       </div>
@@ -875,7 +879,7 @@ export default function NFTLaunchpad() {
                       {loading ? (
                         <>{getProcessingLabel()}</>
                       ) : (
-                        <><Rocket size={16} /> Deploy Collection ({deployFeeEth} ETH)</>
+                        <><Rocket size={16} /> Deploy Collection ({deployFeeLabel})</>
                       )}
                     </button>
                   </form>
@@ -1033,7 +1037,7 @@ export default function NFTLaunchpad() {
                               )}
                             </div>
                             <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
-                              {c.symbol} · <strong style={{ color: '#94a3b8' }}>{formatMintPrice(c.mint_price)}</strong> · {timeAgo(c.created_at)}
+                              {c.symbol} · <strong style={{ color: '#94a3b8' }}>{formatMintPrice(c.mint_price, Number(c.chain_id) === NETWORKS.TEMPO.chainId)}</strong> · {timeAgo(c.created_at)}
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#64748b' }}>
                               <span>Minted</span>

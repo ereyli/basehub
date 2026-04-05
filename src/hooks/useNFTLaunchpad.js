@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useAccount, useWalletClient, useChainId, useReadContract, usePublicClient, useWriteContract } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { config, DATA_SUFFIX } from '../config/wagmi'
-import { parseEther, encodeAbiParameters, parseAbiParameters, toEventHash } from 'viem'
+// Tempo TIP20: do not append DATA_SUFFIX to token approve — extra calldata can cause revert or odd behavior.
+import { parseEther, encodeAbiParameters, parseAbiParameters, toEventHash, maxUint256 } from 'viem'
 import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/pinata'
 import {
   encodeDeployerCall,
@@ -63,7 +64,7 @@ export function useNFTLaunchpad() {
   const validateNetwork = async () => {
     if (!isCorrectNetwork) {
       throw new Error(
-        `Please switch to Base, InkChain, Soneium or MegaETH. You are currently on ${networkName}. Use the network selector.`
+        `Please switch to Base, InkChain, Soneium, MegaETH or Tempo. You are currently on ${networkName}. Use the network selector.`
       )
     }
   }
@@ -107,13 +108,13 @@ export function useNFTLaunchpad() {
     const required = BigInt(feeAmount || 4_400_000n)
     if (BigInt(allowance || 0n) >= required) return
 
+    // Unlimited approval avoids edge cases with exact amounts; deployer only pulls `required`.
     const approveHash = await writeContractAsync({
       address: feeToken,
       abi: erc20Abi,
       functionName: 'approve',
-      args: [deployerAddress, required],
+      args: [deployerAddress, maxUint256],
       chainId,
-      dataSuffix: DATA_SUFFIX,
     })
 
     await waitForTransactionReceipt(config, {
@@ -122,6 +123,18 @@ export function useNFTLaunchpad() {
       confirmations: 1,
       pollingInterval: 2000,
     })
+
+    const allowanceAfter = await publicClient.readContract({
+      address: feeToken,
+      abi: erc20Abi,
+      functionName: 'allowance',
+      args: [address, deployerAddress],
+    })
+    if (BigInt(allowanceAfter || 0n) < required) {
+      throw new Error(
+        'TIP20 allowance still too low after approve. Try again or revoke token spending for this app in your wallet, then approve again.'
+      )
+    }
   }
 
   /**
@@ -209,7 +222,9 @@ export function useNFTLaunchpad() {
       if (!deployerAddress) throw new Error('NFT Launchpad deployer not configured for this network.')
       if (!walletClient) throw new Error('Wallet not available.')
       if (isTempoChain) {
+        setLoadingStep('approving_token')
         await ensureTempoLaunchpadAllowance(deployerAddress)
+        setLoadingStep('deploying')
       }
 
       // Fee at tx time: read Early Access balance on Base only (Early Access Pass is Base-only)
@@ -321,6 +336,11 @@ export function useNFTLaunchpad() {
     }
   }
 
+  /** UI: Tempo uses pathUSD (TIP20 / PUSD-style), not ETH for deploy fee */
+  const deployFeeLabel = isTempoChain
+    ? '4.40 PUSD (pathUSD)'
+    : `${deployFeeEth} ETH`
+
   return {
     createCollection,
     isLoading,
@@ -331,6 +351,8 @@ export function useNFTLaunchpad() {
     deployTxHash,
     slug,
     deployFeeEth,
+    deployFeeLabel,
+    isTempoChain,
     isEarlyAccessHolder,
   }
 }
