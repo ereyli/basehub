@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { useAccount, useWalletClient, useChainId, useReadContract, usePublicClient, useWriteContract } from 'wagmi'
+import { useAccount, useWalletClient, useChainId, useReadContract, usePublicClient } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
-import { config, DATA_SUFFIX } from '../config/wagmi'
-// Tempo TIP20: do not append DATA_SUFFIX to token approve — extra calldata can cause revert or odd behavior.
-import { parseEther, encodeAbiParameters, parseAbiParameters, toEventHash, maxUint256 } from 'viem'
+import { config, DATA_SUFFIX, tempo } from '../config/wagmi'
+// Tempo TIP20: wagmi's global dataSuffix breaks approve — use raw sendTransaction (same as deploy tx).
+import { parseEther, encodeAbiParameters, parseAbiParameters, toEventHash, maxUint256, encodeFunctionData } from 'viem'
 import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/pinata'
 import {
   encodeDeployerCall,
@@ -35,7 +35,6 @@ function generateSlug(name) {
 export function useNFTLaunchpad() {
   const { address } = useAccount()
   const { data: walletClient } = useWalletClient()
-  const { writeContractAsync } = useWriteContract()
   const chainId = useChainId()
   const publicClient = usePublicClient({ chainId })
   const { isCorrectNetwork, networkName } = useNetworkCheck()
@@ -67,6 +66,23 @@ export function useNFTLaunchpad() {
         `Please switch to Base, InkChain, Soneium, MegaETH or Tempo. You are currently on ${networkName}. Use the network selector.`
       )
     }
+  }
+
+  const sendTip20Approve = async (feeTokenAddr, spender, amount) => {
+    if (!walletClient) throw new Error('Wallet not available for pathUSD approval.')
+    const data = encodeFunctionData({
+      abi: [
+        { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ type: 'bool' }] },
+      ],
+      functionName: 'approve',
+      args: [spender, amount],
+    })
+    return walletClient.sendTransaction({
+      account: address,
+      chain: tempo,
+      to: feeTokenAddr,
+      data,
+    })
   }
 
   const ensureTempoLaunchpadAllowance = async (deployerAddress) => {
@@ -106,16 +122,35 @@ export function useNFTLaunchpad() {
     })
 
     const required = BigInt(feeAmount || 4_400_000n)
-    if (BigInt(allowance || 0n) >= required) return
 
-    // Unlimited approval avoids edge cases with exact amounts; deployer only pulls `required`.
-    const approveHash = await writeContractAsync({
+    const balance = await publicClient.readContract({
       address: feeToken,
-      abi: erc20Abi,
-      functionName: 'approve',
-      args: [deployerAddress, maxUint256],
-      chainId,
-    })
+      abi: [{ name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ type: 'uint256' }] }],
+      functionName: 'balanceOf',
+      args: [address],
+    }).catch(() => 0n)
+
+    if (BigInt(balance || 0n) < required) {
+      throw new Error(
+        `Insufficient pathUSD balance for deploy fee (~${Number(required) / 1e6} USD). Top up PUSD/pathUSD on Tempo, then try again.`
+      )
+    }
+
+    let current = BigInt(allowance || 0n)
+    if (current >= required) return
+
+    // Some TIP20 / bridged tokens need allowance reset before a new approve.
+    if (current > 0n && current < required) {
+      const resetHash = await sendTip20Approve(feeToken, deployerAddress, 0n)
+      await waitForTransactionReceipt(config, {
+        hash: resetHash,
+        chainId,
+        confirmations: 1,
+        pollingInterval: 2000,
+      })
+    }
+
+    const approveHash = await sendTip20Approve(feeToken, deployerAddress, maxUint256)
 
     await waitForTransactionReceipt(config, {
       hash: approveHash,
@@ -132,7 +167,7 @@ export function useNFTLaunchpad() {
     })
     if (BigInt(allowanceAfter || 0n) < required) {
       throw new Error(
-        'TIP20 allowance still too low after approve. Try again or revoke token spending for this app in your wallet, then approve again.'
+        'pathUSD approval did not apply. If your wallet added extra data to the approve tx, try a different wallet, or clear site token permissions and retry.'
       )
     }
   }

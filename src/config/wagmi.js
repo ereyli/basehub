@@ -107,6 +107,9 @@ const tempo = defineChain({
   },
 })
 
+/** Exported for Tempo TIP20 `approve` via raw `walletClient.sendTransaction` — avoids global `dataSuffix` on `writeContractAsync`. */
+export { tempo }
+
 // Arc Testnet - USDC as native/gas
 const arcRestnet = defineChain({
   id: NETWORKS.ARC_RESTNET.chainId,
