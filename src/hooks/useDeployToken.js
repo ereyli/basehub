@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAccount, useWriteContract, useWalletClient, useChainId, usePublicClient } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
-import { parseEther, encodeAbiParameters, parseAbiParameters } from 'viem'
+import { parseEther, encodeAbiParameters, parseAbiParameters, maxUint256 } from 'viem'
 import { config, DATA_SUFFIX } from '../config/wagmi'
 import { addXP } from '../utils/xpUtils'
 import { useNetworkCheck } from './useNetworkCheck'
@@ -376,7 +376,6 @@ export const useDeployToken = () => {
 
     const tempoDeployerAbi = [
       { name: 'feeToken', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
-      { name: 'FEE_USD6', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
     ]
     const erc20Abi = [
       { name: 'allowance', type: 'function', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], outputs: [{ type: 'uint256' }] },
@@ -393,12 +392,6 @@ export const useDeployToken = () => {
       throw new Error('TempoBaseHubDeployer fee token is not set. Call setFeeToken(pathUSD TIP20 address).')
     }
 
-    const feeAmount = await publicClient.readContract({
-      address: deployerAddress,
-      abi: tempoDeployerAbi,
-      functionName: 'FEE_USD6',
-    }).catch(() => 550_000n)
-
     const allowance = await publicClient.readContract({
       address: feeToken,
       abi: erc20Abi,
@@ -406,14 +399,32 @@ export const useDeployToken = () => {
       args: [address, deployerAddress],
     })
 
-    const required = BigInt(feeAmount || 550_000n)
-    if (BigInt(allowance || 0n) >= required) return
+    let current = BigInt(allowance || 0n)
+    // After a fee, allowance is maxUint256 - fee (still huge). Many TIP20/USDT-style tokens reject approve(newAmount) until approve(0).
+    if (current === maxUint256) return
+
+    if (current > 0n) {
+      const resetHash = await writeContractAsync({
+        address: feeToken,
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [deployerAddress, 0n],
+        chainId,
+        dataSuffix: DATA_SUFFIX,
+      })
+      await waitForTransactionReceipt(config, {
+        hash: resetHash,
+        chainId,
+        confirmations: 1,
+        pollingInterval: 2000,
+      })
+    }
 
     const approveHash = await writeContractAsync({
       address: feeToken,
       abi: erc20Abi,
       functionName: 'approve',
-      args: [deployerAddress, required],
+      args: [deployerAddress, maxUint256],
       chainId,
       dataSuffix: DATA_SUFFIX,
     })

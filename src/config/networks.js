@@ -282,6 +282,20 @@ export const getExplorerUrl = (chainId) => {
   return network.blockExplorerUrls[0] || NETWORKS.BASE.blockExplorerUrls[0]
 }
 
+/** Short label for mint/deploy UI (must match actual `getExplorerUrl` chain). */
+export const getBlockExplorerDisplayName = (chainId) => {
+  const cid = chainId != null ? Number(chainId) : NaN
+  if (cid === NETWORKS.BASE.chainId) return 'Basescan'
+  if (cid === NETWORKS.INKCHAIN.chainId) return 'Ink Explorer'
+  if (cid === NETWORKS.SONEIUM.chainId) return 'Soneium Explorer'
+  if (cid === NETWORKS.MEGAETH.chainId) return 'MegaETH Explorer'
+  if (cid === NETWORKS.TEMPO.chainId) return 'Tempo Explorer'
+  if (cid === NETWORKS.KATANA.chainId) return 'Katana Explorer'
+  const net = getNetworkConfig(cid)
+  if (net?.chainName) return `${net.chainName} Explorer`
+  return 'Explorer'
+}
+
 // Get transaction explorer URL
 export const getTransactionExplorerUrl = (chainId, txHash) => {
   const explorerUrl = getExplorerUrl(chainId)

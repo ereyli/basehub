@@ -9,7 +9,7 @@ import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { getFarcasterUniversalLink } from '../config/farcaster'
 import { supabase } from '../config/supabase'
-import { getAddressExplorerUrl, getCollectionMarketUrl, getTransactionExplorerUrl, getNetworkConfig, NETWORKS } from '../config/networks'
+import { getAddressExplorerUrl, getBlockExplorerDisplayName, getCollectionMarketUrl, getTransactionExplorerUrl, getNetworkConfig, NETWORKS } from '../config/networks'
 import { NFT_LAUNCH_COLLECTION_ABI } from '../config/nftCollection'
 
 const SHARE_BASE_URL = 'https://basehub.fun'
@@ -502,7 +502,7 @@ export default function NFTMintPage() {
                     OpenSea <ExternalLink size={12} />
                   </a>
                   <a href={getAddressExplorerUrl(collection?.chain_id ?? chainId, contractAddress)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    {(collection?.chain_id ?? chainId) === NETWORKS.BASE.chainId ? 'Basescan' : (collection?.chain_id ?? chainId) === NETWORKS.INKCHAIN.chainId ? 'Ink Explorer' : (collection?.chain_id ?? chainId) === NETWORKS.SONEIUM.chainId ? 'Soneium Explorer' : 'MegaETH Explorer'} <ExternalLink size={12} />
+                    {getBlockExplorerDisplayName(collection?.chain_id ?? chainId)} <ExternalLink size={12} />
                   </a>
                 </div>
                 {/* Share: Tweet (web) / Cast (Farcaster) */}
@@ -590,7 +590,7 @@ export default function NFTMintPage() {
                     <ExternalLink size={14} /> OpenSea
                   </a>
                   <a href={getAddressExplorerUrl(collection?.chain_id ?? chainId, contractAddress)} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ExternalLink size={14} /> {(collection?.chain_id ?? chainId) === NETWORKS.BASE.chainId ? 'Basescan' : (collection?.chain_id ?? chainId) === NETWORKS.INKCHAIN.chainId ? 'Ink Explorer' : (collection?.chain_id ?? chainId) === NETWORKS.SONEIUM.chainId ? 'Soneium Explorer' : 'MegaETH Explorer'}
+                    <ExternalLink size={14} /> {getBlockExplorerDisplayName(collection?.chain_id ?? chainId)}
                   </a>
                 </div>
 

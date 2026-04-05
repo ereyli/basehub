@@ -707,41 +707,41 @@ const BaseGuildCompanion = () => {
           Deploy ERC20
         </Link>
         <Link
-          to="/deploy-erc721"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '8px 12px',
-            borderRadius: '10px',
-            border: '1px solid rgba(6,182,212,0.45)',
-            background: 'rgba(6,182,212,0.16)',
-            color: '#a5f3fc',
-            fontSize: '12px',
-            fontWeight: 600,
-            textDecoration: 'none',
-          }}
-        >
-          Deploy ERC721
-        </Link>
-        <Link
-          to="/deploy-erc1155"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '8px 12px',
-            borderRadius: '10px',
-            border: '1px solid rgba(139,92,246,0.45)',
-            background: 'rgba(139,92,246,0.16)',
-            color: '#ddd6fe',
-            fontSize: '12px',
-            fontWeight: 600,
-            textDecoration: 'none',
-          }}
-        >
-          Deploy ERC1155
-        </Link>
+              to="/deploy-erc721"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 12px',
+                borderRadius: '10px',
+                border: '1px solid rgba(6,182,212,0.45)',
+                background: 'rgba(6,182,212,0.16)',
+                color: '#a5f3fc',
+                fontSize: '12px',
+                fontWeight: 600,
+                textDecoration: 'none',
+              }}
+            >
+              Deploy ERC721
+            </Link>
+            <Link
+              to="/deploy-erc1155"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 12px',
+                borderRadius: '10px',
+                border: '1px solid rgba(139,92,246,0.45)',
+                background: 'rgba(139,92,246,0.16)',
+                color: '#ddd6fe',
+                fontSize: '12px',
+                fontWeight: 600,
+                textDecoration: 'none',
+              }}
+            >
+              Deploy ERC1155
+            </Link>
       </div>
       <div style={{ display: 'grid', gap: '10px' }}>{renderRows(buildersChecks)}</div>
 

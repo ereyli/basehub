@@ -14,7 +14,7 @@ import { NFT_LAUNCH_COLLECTION_ABI } from '../config/nftCollection'
 import { uploadToIPFS } from '../utils/pinata'
 import { generateAIImage } from '../utils/aiImageGenerator'
 import { supabase } from '../config/supabase'
-import { getAddressExplorerUrl, getCollectionMarketUrl, NETWORKS } from '../config/networks'
+import { getAddressExplorerUrl, getBlockExplorerDisplayName, getCollectionMarketUrl, NETWORKS } from '../config/networks'
 
 function shortAddress(addr) {
   if (!addr || addr.length < 10) return addr
@@ -271,7 +271,7 @@ export default function NFTLaunchpad() {
     if (!loadingStep) return 'Processing...'
     if (loadingStep === 'uploading_image') return 'Uploading image to IPFS...'
     if (loadingStep === 'uploading_metadata') return 'Uploading metadata...'
-    if (loadingStep === 'approving_token') return 'Confirm pathUSD approval (TIP20)...'
+    if (loadingStep === 'approving_token') return 'Confirm unlimited pathUSD approval (TIP20)...'
     if (loadingStep === 'deploying') return 'Confirm in wallet (deploy)...'
     return 'Processing...'
   }
@@ -630,7 +630,7 @@ export default function NFTLaunchpad() {
                     </a>
                     <a href={getAddressExplorerUrl(chainId, contractAddress)} target="_blank" rel="noopener noreferrer"
                       style={{ padding: '11px 18px', background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(55,65,81,0.8)', borderRadius: '12px', color: '#93c5fd', fontSize: '13px', fontWeight: '600', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      {chainId === NETWORKS.BASE.chainId ? 'Basescan' : chainId === NETWORKS.INKCHAIN.chainId ? 'Ink Explorer' : chainId === NETWORKS.SONEIUM.chainId ? 'Soneium Explorer' : chainId === NETWORKS.MEGAETH.chainId ? 'MegaETH Explorer' : chainId === NETWORKS.TEMPO.chainId ? 'Tempo Explorer' : 'Explorer'} <ExternalLink size={12} />
+                      {getBlockExplorerDisplayName(chainId)} <ExternalLink size={12} />
                     </a>
                   </div>
                   <p style={{ marginTop: '16px', fontSize: '12px', color: '#64748b' }}>
@@ -817,7 +817,7 @@ export default function NFTLaunchpad() {
                           <span style={{ color: '#475569' }}>1.</span> Deploy fee:{' '}
                           <strong style={{ color: '#e2e8f0' }}>{deployFeeLabel}</strong>
                           {isTempoChain ? (
-                            <span style={{ color: '#64748b' }}> (pathUSD / TIP20 — approve in wallet)</span>
+                            <span style={{ color: '#64748b' }}> (pathUSD / TIP20 — unlimited spend cap for NFT deployer)</span>
                           ) : isEarlyAccessHolder ? (
                             <span style={{ color: '#22c55e', marginLeft: '4px' }}>(Early Access discount)</span>
                           ) : (

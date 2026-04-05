@@ -79,7 +79,7 @@ export default function FastDeployModal() {
           <>
             <p style={{ color: '#cbd5e1', marginBottom: 20, lineHeight: 1.5 }}>
               3 contracts will be deployed in sequence: <strong>ERC20</strong> → <strong>ERC721</strong> → <strong>ERC1155</strong>.
-              You will approve each step in your wallet. Same XP rewards (850 XP per deploy) apply.
+              On Tempo, approve pathUSD for the deployer as prompted. Same XP rewards (850 XP per deploy) apply.
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
               <button

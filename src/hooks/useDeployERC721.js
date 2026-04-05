@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useAccount, useWaitForTransactionReceipt, useWalletClient, useChainId, usePublicClient, useWriteContract } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
-import { parseEther, encodeAbiParameters, parseAbiParameters } from 'viem'
-import { config, DATA_SUFFIX } from '../config/wagmi'
+import { parseEther, encodeAbiParameters, parseAbiParameters, maxUint256 } from 'viem'
+import { config, DATA_SUFFIX, tempo } from '../config/wagmi'
+import { estimateTempoDeployTransactionGas } from '../utils/tempoGas'
 import { addXP } from '../utils/xpUtils'
 import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/pinata'
 import { useNetworkCheck } from './useNetworkCheck'
@@ -482,7 +483,6 @@ export const useDeployERC721 = () => {
     if (!publicClient || !address) throw new Error('Wallet/public client not ready')
     const deployerAbi = [
       { name: 'feeToken', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
-      { name: 'FEE_USD6', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
     ]
     const erc20Abi = [
       { name: 'allowance', type: 'function', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], outputs: [{ type: 'uint256' }] },
@@ -492,15 +492,27 @@ export const useDeployERC721 = () => {
     if (String(feeToken || '').toLowerCase() === '0x0000000000000000000000000000000000000000') {
       throw new Error('TempoBaseHubDeployer fee token is not set. Call setFeeToken(pathUSD TIP20 address).')
     }
-    const feeAmount = await publicClient.readContract({ address: deployerAddress, abi: deployerAbi, functionName: 'FEE_USD6' }).catch(() => 550_000n)
     const allowance = await publicClient.readContract({ address: feeToken, abi: erc20Abi, functionName: 'allowance', args: [address, deployerAddress] })
-    const required = BigInt(feeAmount || 550_000n)
-    if (BigInt(allowance || 0n) >= required) return
+    let current = BigInt(allowance || 0n)
+    if (current === maxUint256) return
+
+    if (current > 0n) {
+      const resetHash = await writeContractAsync({
+        address: feeToken,
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [deployerAddress, 0n],
+        chainId,
+        dataSuffix: DATA_SUFFIX,
+      })
+      await waitForTransactionReceipt(config, { hash: resetHash, chainId, confirmations: 1, pollingInterval: 2000 })
+    }
+
     const approveHash = await writeContractAsync({
       address: feeToken,
       abi: erc20Abi,
       functionName: 'approve',
-      args: [deployerAddress, required],
+      args: [deployerAddress, maxUint256],
       chainId,
       dataSuffix: DATA_SUFFIX,
     })
@@ -567,12 +579,21 @@ export const useDeployERC721 = () => {
         await ensureTempoDeployerAllowance(deployerAddress)
         const deployData = encodeDeployerCall('deployERC721', initCode)
         const deployDataWithSuffix = `${deployData}${DATA_SUFFIX.startsWith('0x') ? DATA_SUFFIX.slice(2) : DATA_SUFFIX}`
+        let deployGas = 3_000_000n
+        if (isTempoChain) {
+          deployGas = await estimateTempoDeployTransactionGas(publicClient, {
+            from: address,
+            to: deployerAddress,
+            data: deployDataWithSuffix,
+          })
+        }
         deployTxHash = await walletClient.sendTransaction({
           to: deployerAddress,
           data: deployDataWithSuffix,
           ...(isTempoChain ? {} : { value: parseEther(DEPLOYER_FEE_ETH) }),
           chainId,
-          gas: 3000000n,
+          gas: deployGas,
+          ...(isTempoChain ? { chain: tempo } : {}),
         })
         console.log('✅ Deploy transaction sent:', deployTxHash)
         const isFastChain = chainId === NETWORKS.INKCHAIN.chainId || chainId === NETWORKS.SONEIUM.chainId || chainId === NETWORKS.MEGAETH.chainId

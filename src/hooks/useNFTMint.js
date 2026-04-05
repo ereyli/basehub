@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAccount, useWalletClient, useChainId, usePublicClient } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
-import { encodeFunctionData } from 'viem'
-import { config, DATA_SUFFIX } from '../config/wagmi'
+import { encodeFunctionData, getAddress } from 'viem'
+import { config, DATA_SUFFIX, tempo } from '../config/wagmi'
 import { NETWORKS } from '../config/networks'
 import { NFT_LAUNCH_COLLECTION_ABI } from '../config/nftCollection'
 import { useNetworkCheck } from './useNetworkCheck'
@@ -20,7 +20,7 @@ export function useNFTMint(contractAddress) {
   const { address } = useAccount()
   const { data: walletClient } = useWalletClient()
   const chainId = useChainId()
-  const publicClient = usePublicClient()
+  const publicClient = usePublicClient({ chainId })
   const { isCorrectNetwork, networkName } = useNetworkCheck()
 
   const [isLoading, setIsLoading] = useState(false)
@@ -93,7 +93,7 @@ export function useNFTMint(contractAddress) {
       if (!address) throw new Error('Wallet not connected')
       if (!walletClient) throw new Error('Wallet not available')
       if (!isCorrectNetwork) {
-        throw new Error(`Please switch to Base, InkChain, Soneium or MegaETH. You are on ${networkName}.`)
+        throw new Error(`Please switch to a supported network (Base, Ink, Soneium, MegaETH, Tempo, …). You are on ${networkName}.`)
       }
       if (!contractAddress) throw new Error('No contract address provided')
       if (!saleActive) throw new Error('Sale is not active for this collection')
@@ -102,17 +102,46 @@ export function useNFTMint(contractAddress) {
       }
 
       const totalCost = mintPrice * BigInt(quantity)
-      // ERC-8021 Builder Code: Base only (Ink doesn't support it)
       const mintData = encodeMintCall(quantity)
-      const dataToSend = chainId === NETWORKS.BASE.chainId
-        ? `${mintData}${DATA_SUFFIX.startsWith('0x') ? DATA_SUFFIX.slice(2) : DATA_SUFFIX}`
-        : mintData
+      const isTempoChain = chainId === NETWORKS.TEMPO.chainId
+      const suffixHex = DATA_SUFFIX.startsWith('0x') ? DATA_SUFFIX.slice(2) : DATA_SUFFIX
+      // Builder attribution: Base + Tempo (same as deploy / NFT launchpad)
+      const dataToSend =
+        chainId === NETWORKS.BASE.chainId || isTempoChain
+          ? `${mintData}${suffixHex}`
+          : mintData
+
+      let gasLimit = 300_000n * BigInt(quantity)
+      if (isTempoChain) {
+        gasLimit = 5_000_000n * BigInt(quantity)
+        if (publicClient && address) {
+          try {
+            const est = await publicClient.estimateGas({
+              account: getAddress(address),
+              to: getAddress(contractAddress),
+              data: dataToSend,
+              value: totalCost,
+            })
+            const buffered = (est * 130n) / 100n
+            gasLimit =
+              buffered > 30_000_000n
+                ? 30_000_000n
+                : buffered < 2_500_000n
+                  ? 2_500_000n
+                  : buffered
+          } catch (e) {
+            console.warn('Tempo mint estimateGas failed, using default gas', e)
+          }
+        }
+      }
+
       const hash = await walletClient.sendTransaction({
         to: contractAddress,
         data: dataToSend,
         value: totalCost,
         chainId,
-        gas: 300000n * BigInt(quantity),
+        gas: gasLimit,
+        ...(isTempoChain ? { chain: tempo } : {}),
       })
       setTxHash(hash)
 

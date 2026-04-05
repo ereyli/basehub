@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { useAccount, useWalletClient, useChainId, useReadContract, usePublicClient } from 'wagmi'
+import { useAccount, useWalletClient, useChainId, useReadContract, usePublicClient, useWriteContract } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { config, DATA_SUFFIX, tempo } from '../config/wagmi'
-// Tempo TIP20: wagmi's global dataSuffix breaks approve — use raw sendTransaction (same as deploy tx).
-import { parseEther, encodeAbiParameters, parseAbiParameters, toEventHash, maxUint256, encodeFunctionData } from 'viem'
+// Tempo pathUSD: match useDeployToken.js — writeContractAsync + dataSuffix: DATA_SUFFIX (proven working on TempoBaseHubDeployer).
+import { parseEther, encodeAbiParameters, parseAbiParameters, toEventHash, maxUint256, getAddress } from 'viem'
 import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/pinata'
 import {
   encodeDeployerCall,
@@ -32,9 +32,17 @@ function generateSlug(name) {
   return `${base}-${rand}`
 }
 
+const TIP20_APPROVE_ABI = [
+  { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ type: 'bool' }] },
+]
+
+/** Tempo: deployment gas is much higher than Ethereum (see https://docs.tempo.xyz/quickstart/evm-compatibility); block cap 30M. */
+const TEMPO_NFT_DEPLOY_GAS_DEFAULT = 28_000_000n
+
 export function useNFTLaunchpad() {
   const { address } = useAccount()
   const { data: walletClient } = useWalletClient()
+  const { writeContractAsync } = useWriteContract()
   const chainId = useChainId()
   const publicClient = usePublicClient({ chainId })
   const { isCorrectNetwork, networkName } = useNetworkCheck()
@@ -68,26 +76,49 @@ export function useNFTLaunchpad() {
     }
   }
 
-  const sendTip20Approve = async (feeTokenAddr, spender, amount) => {
-    if (!walletClient) throw new Error('Wallet not available for pathUSD approval.')
-    const data = encodeFunctionData({
-      abi: [
-        { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ type: 'bool' }] },
-      ],
+  /** Same as useDeployToken.ensureTempoDeployerAllowance — wagmi writeContract + DATA_SUFFIX on Tempo. */
+  const tip20ApproveLikeTokenDeploy = async (feeTokenAddr, spender, amount) =>
+    writeContractAsync({
+      address: getAddress(feeTokenAddr),
+      abi: TIP20_APPROVE_ABI,
       functionName: 'approve',
-      args: [spender, amount],
+      args: [getAddress(spender), amount],
+      chainId,
+      dataSuffix: DATA_SUFFIX,
     })
-    return walletClient.sendTransaction({
-      account: address,
-      chain: tempo,
-      to: feeTokenAddr,
-      data,
-    })
+
+  /** TIP20 allowance can lag behind receipt on some RPCs — retry reads before failing. */
+  const readAllowanceWithRetry = async (feeTokenAddr, ownerAddr, spenderAddr, required, attempts = 12, delayMs = 350) => {
+    const erc20Abi = [
+      { name: 'allowance', type: 'function', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], outputs: [{ type: 'uint256' }] },
+    ]
+    const token = getAddress(feeTokenAddr)
+    const owner = getAddress(ownerAddr)
+    const spender = getAddress(spenderAddr)
+    const need = BigInt(required)
+    for (let i = 0; i < attempts; i++) {
+      const a = await publicClient.readContract({
+        address: token,
+        abi: erc20Abi,
+        functionName: 'allowance',
+        args: [owner, spender],
+      })
+      if (BigInt(a ?? 0n) >= need) return BigInt(a ?? 0n)
+      if (i < attempts - 1) await new Promise((r) => setTimeout(r, delayMs))
+    }
+    return publicClient.readContract({
+      address: token,
+      abi: erc20Abi,
+      functionName: 'allowance',
+      args: [owner, spender],
+    }).then((x) => BigInt(x ?? 0n))
   }
 
   const ensureTempoLaunchpadAllowance = async (deployerAddress) => {
     if (!isTempoChain) return
     if (!publicClient || !address) throw new Error('Wallet/public client not ready')
+
+    const deployer = getAddress(deployerAddress)
 
     const deployerAbi = [
       { name: 'feeToken', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
@@ -95,21 +126,23 @@ export function useNFTLaunchpad() {
     ]
     const erc20Abi = [
       { name: 'allowance', type: 'function', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], outputs: [{ type: 'uint256' }] },
-      { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ type: 'bool' }] },
+      ...TIP20_APPROVE_ABI,
     ]
 
-    const feeToken = await publicClient.readContract({
-      address: deployerAddress,
+    const feeTokenRaw = await publicClient.readContract({
+      address: deployer,
       abi: deployerAbi,
       functionName: 'feeToken',
     })
 
-    if (String(feeToken || '').toLowerCase() === '0x0000000000000000000000000000000000000000') {
+    if (String(feeTokenRaw || '').toLowerCase() === '0x0000000000000000000000000000000000000000') {
       throw new Error('Tempo NFT deployer fee token is not set. Call setFeeToken(pathUSD TIP20 address).')
     }
 
+    const feeToken = getAddress(feeTokenRaw)
+
     const feeAmount = await publicClient.readContract({
-      address: deployerAddress,
+      address: deployer,
       abi: deployerAbi,
       functionName: 'FEE_NFT_COLLECTION_USD6',
     }).catch(() => 4_400_000n)
@@ -118,7 +151,7 @@ export function useNFTLaunchpad() {
       address: feeToken,
       abi: erc20Abi,
       functionName: 'allowance',
-      args: [address, deployerAddress],
+      args: [getAddress(address), deployer],
     })
 
     const required = BigInt(feeAmount || 4_400_000n)
@@ -127,7 +160,7 @@ export function useNFTLaunchpad() {
       address: feeToken,
       abi: [{ name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ type: 'uint256' }] }],
       functionName: 'balanceOf',
-      args: [address],
+      args: [getAddress(address)],
     }).catch(() => 0n)
 
     if (BigInt(balance || 0n) < required) {
@@ -137,11 +170,12 @@ export function useNFTLaunchpad() {
     }
 
     let current = BigInt(allowance || 0n)
-    if (current >= required) return
+    // NFT Launchpad: always aim for unlimited pathUSD approval (maxUint256) for this deployer — not only "enough for one fee".
+    if (current === maxUint256) return
 
-    // Some TIP20 / bridged tokens need allowance reset before a new approve.
-    if (current > 0n && current < required) {
-      const resetHash = await sendTip20Approve(feeToken, deployerAddress, 0n)
+    // Some TIP20 / bridged tokens need approve(0) before any new approve when allowance is still positive but not max (e.g. after max − fee).
+    if (current > 0n) {
+      const resetHash = await tip20ApproveLikeTokenDeploy(feeToken, deployer, 0n)
       await waitForTransactionReceipt(config, {
         hash: resetHash,
         chainId,
@@ -150,7 +184,7 @@ export function useNFTLaunchpad() {
       })
     }
 
-    const approveHash = await sendTip20Approve(feeToken, deployerAddress, maxUint256)
+    const approveHash = await tip20ApproveLikeTokenDeploy(feeToken, deployer, maxUint256)
 
     await waitForTransactionReceipt(config, {
       hash: approveHash,
@@ -159,16 +193,47 @@ export function useNFTLaunchpad() {
       pollingInterval: 2000,
     })
 
-    const allowanceAfter = await publicClient.readContract({
-      address: feeToken,
-      abi: erc20Abi,
-      functionName: 'allowance',
-      args: [address, deployerAddress],
-    })
-    if (BigInt(allowanceAfter || 0n) < required) {
+    const allowanceAfter = await readAllowanceWithRetry(feeToken, address, deployer, required)
+    if (allowanceAfter < required) {
       throw new Error(
         'pathUSD approval did not apply. If your wallet added extra data to the approve tx, try a different wallet, or clear site token permissions and retry.'
       )
+    }
+  }
+
+  /** Same calldata + `from` as the wallet will use — catches InsufficientAllowance before MetaMask. */
+  const verifyTempoDeployViaEthCall = async (dataToSend, deployerAddress) => {
+    if (!isTempoChain || !publicClient || !address) return
+    const deployer = getAddress(deployerAddress)
+    const from = getAddress(address)
+    const tryCall = () =>
+      publicClient.call({
+        account: from,
+        to: deployer,
+        data: dataToSend,
+        gas: 50_000_000n,
+      })
+    const errStr = (e) =>
+      `${e?.shortMessage || ''} ${e?.message || ''} ${e?.cause?.message || ''} ${e?.details || ''} ${String(e)}`
+    const isInsufficientAllowance = (e) => /InsufficientAllowance|insufficient allowance/i.test(errStr(e))
+    try {
+      await tryCall()
+      return
+    } catch (e) {
+      if (!isInsufficientAllowance(e)) throw e
+      setLoadingStep('approving_token')
+      await ensureTempoLaunchpadAllowance(deployerAddress)
+      setLoadingStep('deploying')
+      try {
+        await tryCall()
+      } catch (e2) {
+        if (isInsufficientAllowance(e2)) {
+          throw new Error(
+            'pathUSD allowance is still insufficient for this deploy. In MetaMask, use the same account shown as connected on the site, then run the approve step again for the NFT deploy contract (0x0854…e9e9b).'
+          )
+        }
+        throw e2
+      }
     }
   }
 
@@ -279,16 +344,46 @@ export function useNFTLaunchpad() {
       }
 
       const deployData = encodeDeployerCall('deployNFTCollection', initCodeHex)
-      // ERC-8021 Builder Code: Base only (Ink doesn't support it)
-      const dataToSend = chainId === NETWORKS.BASE.chainId
-        ? `${deployData}${DATA_SUFFIX.startsWith('0x') ? DATA_SUFFIX.slice(2) : DATA_SUFFIX}`
-        : deployData
+      // ERC-8021 Builder Code: Base + Tempo (same as useDeployToken writeContractAsync + dataSuffix on Tempo deployERC20).
+      const suffixHex = DATA_SUFFIX.startsWith('0x') ? DATA_SUFFIX.slice(2) : DATA_SUFFIX
+      const dataToSend =
+        chainId === NETWORKS.BASE.chainId || chainId === NETWORKS.TEMPO.chainId
+          ? `${deployData}${suffixHex}`
+          : deployData
+      if (isTempoChain) {
+        await verifyTempoDeployViaEthCall(dataToSend, deployerAddress)
+      }
+
+      let deployGas = 5_000_000n
+      if (isTempoChain) {
+        deployGas = TEMPO_NFT_DEPLOY_GAS_DEFAULT
+        if (publicClient && address) {
+          try {
+            const est = await publicClient.estimateGas({
+              account: getAddress(address),
+              to: getAddress(deployerAddress),
+              data: dataToSend,
+            })
+            const buffered = (est * 130n) / 100n
+            deployGas = buffered > 30_000_000n ? 30_000_000n : buffered < 12_000_000n ? 12_000_000n : buffered
+          } catch (e) {
+            console.warn('Tempo NFT deploy estimateGas failed, using default gas', e)
+          }
+        }
+      }
+
       const txHash = await walletClient.sendTransaction({
-        to: deployerAddress,
+        ...(isTempoChain
+          ? {}
+          : {
+              account: address,
+              value: parseEther(feeEthForTx),
+            }),
+        to: getAddress(deployerAddress),
         data: dataToSend,
-        ...(isTempoChain ? {} : { value: parseEther(feeEthForTx) }),
+        ...(isTempoChain ? { chain: tempo } : {}),
         chainId,
-        gas: 5000000n,
+        gas: deployGas,
       })
       setDeployTxHash(txHash)
 
