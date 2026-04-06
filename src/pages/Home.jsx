@@ -510,9 +510,6 @@ const Home = () => {
   // Render a compact card for Farcaster mobile. sectionId: when linking from Home, pass so we can scroll back to that section.
   const renderCompactCard = (game, onClick = null, linkTo = null, sectionId = null) => {
     const titleColor = game.color?.startsWith?.('linear') ? '#3b82f6' : (game.color || '#e5e7eb')
-    const isUnsupported = game.isSupported === false
-    const isBaseOnly = Array.isArray(game.networks) && game.networks.length === 1 && game.networks.includes('base')
-    const canSwitchToBase = Array.isArray(game.networks) && game.networks.includes('base') && chainId !== NETWORKS.BASE.chainId
     const iconWrapStyle = isCompactMode ? {
       flexShrink: 0,
       width: '36px', height: '36px',
@@ -594,103 +591,8 @@ const Home = () => {
       }} />
     )
 
-    const unsupportedOverlay = isUnsupported ? (
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          zIndex: 5,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: isCompactMode ? '8px' : '12px',
-          background: 'rgba(2, 6, 23, 0.45)',
-          backdropFilter: 'blur(3px)',
-          WebkitBackdropFilter: 'blur(3px)',
-          borderRadius: isCompactMode ? '12px' : isWebMobile ? '14px' : '18px',
-        }}
-      >
-        <div
-          style={{
-            width: '100%',
-            maxWidth: isCompactMode ? '130px' : '220px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: isCompactMode ? '6px' : '8px',
-          }}
-        >
-          <div
-            style={{
-              fontSize: isCompactMode ? '9px' : '11px',
-              fontWeight: 700,
-              color: '#cbd5e1',
-              background: 'rgba(15, 23, 42, 0.85)',
-              border: '1px solid rgba(148, 163, 184, 0.35)',
-              borderRadius: '999px',
-              padding: isCompactMode ? '3px 8px' : '4px 10px',
-              lineHeight: 1.2,
-              textAlign: 'center',
-            }}
-          >
-            {isBaseOnly ? 'Available on Base only' : 'Not available on this network'}
-          </div>
-          {canSwitchToBase && (
-            <button
-              type="button"
-              onClick={async (e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                try {
-                  await switchChain({ chainId: NETWORKS.BASE.chainId })
-                } catch (err) {
-                  console.error('Switch to Base failed:', err)
-                }
-              }}
-              style={{
-                border: '1px solid rgba(96, 165, 250, 0.55)',
-                background: 'rgba(30, 64, 175, 0.55)',
-                color: '#dbeafe',
-                borderRadius: '10px',
-                padding: isCompactMode ? '4px 8px' : '6px 10px',
-                fontSize: isCompactMode ? '9px' : '11px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                lineHeight: 1.1,
-              }}
-            >
-              Switch to Base
-            </button>
-          )}
-        </div>
-      </div>
-    ) : null
-
     if (linkTo) {
       const linkState = sectionId ? { state: { fromHomeSection: sectionId } } : {}
-      if (isUnsupported) {
-        return (
-          <div
-            key={game.id}
-            className="game-card"
-            style={{ textDecoration: 'none', display: 'block' }}
-          >
-            <div
-              style={{
-                ...compactStyles.card(game.color),
-                height: '100%',
-                filter: 'grayscale(0.35) saturate(0.75)',
-                opacity: 0.75,
-                cursor: 'not-allowed',
-              }}
-            >
-              {glowOverlay}
-              <div style={{ position: 'relative', zIndex: 1 }}>{cardContent}</div>
-              {unsupportedOverlay}
-            </div>
-          </div>
-        )
-      }
       return (
         <Link
           key={game.id}
@@ -710,21 +612,16 @@ const Home = () => {
     return (
       <button
         key={game.id}
-        onClick={isUnsupported ? undefined : onClick}
+        onClick={onClick}
         className="game-card"
         style={{ 
           ...compactStyles.card(game.color),
           border: 'none',
-          cursor: isUnsupported ? 'not-allowed' : (onClick ? 'pointer' : 'default'),
-          ...(isUnsupported ? {
-            filter: 'grayscale(0.35) saturate(0.75)',
-            opacity: 0.75,
-          } : {}),
+          cursor: onClick ? 'pointer' : 'default',
         }}
       >
         {glowOverlay}
         <div style={{ position: 'relative', zIndex: 1 }}>{cardContent}</div>
-        {unsupportedOverlay}
       </button>
     )
   }
@@ -757,73 +654,14 @@ const Home = () => {
   }
 
   const isPumphubSupported = chainId === NETWORKS.BASE.chainId
-  const pumphubOverlay = !isPumphubSupported ? (
-    <div
-      style={{
-        position: 'absolute',
-        inset: 0,
-        zIndex: 6,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: isCompactMode ? '8px' : '12px',
-        background: 'rgba(2, 6, 23, 0.45)',
-        backdropFilter: 'blur(3px)',
-        WebkitBackdropFilter: 'blur(3px)',
-        borderRadius: isCompactMode ? '12px' : isWebMobile ? '14px' : '18px',
-      }}
-    >
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: isCompactMode ? '6px' : '8px' }}>
-        <div style={{
-          fontSize: isCompactMode ? '9px' : '11px',
-          fontWeight: 700,
-          color: '#cbd5e1',
-          background: 'rgba(15, 23, 42, 0.85)',
-          border: '1px solid rgba(148, 163, 184, 0.35)',
-          borderRadius: '999px',
-          padding: isCompactMode ? '3px 8px' : '4px 10px',
-          lineHeight: 1.2,
-        }}>
-          Available on Base only
-        </div>
-        <button
-          type="button"
-          onClick={async (e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            try {
-              await switchChain({ chainId: NETWORKS.BASE.chainId })
-            } catch (err) {
-              console.error('Switch to Base failed:', err)
-            }
-          }}
-          style={{
-            border: '1px solid rgba(96, 165, 250, 0.55)',
-            background: 'rgba(30, 64, 175, 0.55)',
-            color: '#dbeafe',
-            borderRadius: '10px',
-            padding: isCompactMode ? '4px 8px' : '6px 10px',
-            fontSize: isCompactMode ? '9px' : '11px',
-            fontWeight: 700,
-            cursor: 'pointer',
-            lineHeight: 1.1,
-          }}
-        >
-          Switch to Base
-        </button>
-      </div>
-    </div>
-  ) : null
 
   const games = React.useMemo(() => {
     const iconStyle = { width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }
-    const currentNetworkKey = chainId != null ? getNetworkKey(chainId) : null
-    const products = getProductsForHome()
+    const products = getProductsForHomeByNetwork(chainId, getNetworkKey)
     return products.map(p => {
       const icon = p.iconImage
         ? <img src={p.iconImage} alt={p.title} loading="lazy" style={iconStyle} />
         : (() => { const Icon = LUCIDE_ICONS[p.icon]; return Icon ? <Icon size={40} style={{ color: 'white' }} /> : null })()
-      const isSupported = !currentNetworkKey || (Array.isArray(p.networks) && p.networks.includes(currentNetworkKey))
       return {
         id: p.id,
         title: p.title,
@@ -838,10 +676,43 @@ const Home = () => {
         isNFTGated: p.isNFTGated ?? false,
         isX402: p.isX402 ?? false,
         isPayment: p.isPayment ?? false,
-        isSupported: p.category === 'analysis' ? true : isSupported,
       }
     })
   }, [chainId])
+
+  /** Analysis tools: always listed on Home on every chain; routes handle network checks. */
+  const analysisGames = React.useMemo(() => {
+    const ids = ['wallet-analysis', 'contract-security', 'allowance-cleaner']
+    const iconStyle = { width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }
+    const products = getProductsForHome()
+    return ids.map((id) => products.find((p) => p.id === id)).filter(Boolean).map((p) => {
+      const icon = p.iconImage
+        ? <img src={p.iconImage} alt={p.title} loading="lazy" style={iconStyle} />
+        : (() => { const Icon = LUCIDE_ICONS[p.icon]; return Icon ? <Icon size={40} style={{ color: 'white' }} /> : null })()
+      return {
+        id: p.id,
+        title: p.title,
+        description: p.description,
+        castShareText: p.castShareText || p.description,
+        icon,
+        path: p.path,
+        color: p.color,
+        xpReward: p.xpReward,
+        bonusXP: p.bonusXP ?? null,
+        networks: p.networks,
+        isNFTGated: p.isNFTGated ?? false,
+        isX402: p.isX402 ?? false,
+        isPayment: p.isPayment ?? false,
+      }
+    })
+  }, [])
+
+  const showDexSection = games.some(g => g.id === 'swap')
+  const showNftSection = games.some(g => ['nft-launchpad', 'nft-launchpad-explore'].includes(g.id))
+  const showPredictionSection = games.some(g => g.id === 'prediction-arena')
+  const showSocialSection = games.some(g => g.id === 'featured-profiles')
+  const showGamingSection = games.some(g => ['flip', 'dice', 'slot', 'lucky'].includes(g.id))
+  const showGuildSection = games.some(g => g.id === 'base-guild-companion')
 
   return (
     <div className="home" style={{ 
@@ -1048,7 +919,7 @@ const Home = () => {
           {/* Categorized Layout - Both Web and Farcaster */}
           {true ? (
             <div style={compactStyles.mainLayoutGap}>
-              {/* 1. Early Access NFT Category */}
+              {/* 1. Early Access NFT Category — always visible; target pages handle network switching */}
               <div id="early-access" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(245, 158, 11, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b' }}>
@@ -1177,6 +1048,7 @@ const Home = () => {
               </div>
 
               {/* 2. DEX Aggregator Category */}
+              {showDexSection && (
               <div id="dex" style={compactStyles.categoryContainer}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={compactStyles.categoryIconBox}>
@@ -1193,8 +1065,10 @@ const Home = () => {
                   )}
                 </div>
               </div>
+              )}
 
               {/* 3. PumpHub - Token Launchpad Category (same window style as NFT/PREDICTION) */}
+              {isPumphubSupported && (
               <div id="pumphub" style={{ 
                 ...compactStyles.categoryContainer, 
                 border: `1px solid rgba(0, 212, 255, 0.12)`
@@ -1217,9 +1091,8 @@ const Home = () => {
                     className="game-card"
                     style={{ textDecoration: 'none', display: 'block', position: 'relative' }}
                     state={{ fromHomeSection: 'pumphub' }}
-                    onClick={(e) => { if (!isPumphubSupported) e.preventDefault() }}
                   >
-                    <div style={{ ...compactStyles.card('#00d4ff'), height: '100%', ...(isPumphubSupported ? {} : { filter: 'grayscale(0.35) saturate(0.75)', opacity: 0.75 }) }}>
+                    <div style={{ ...compactStyles.card('#00d4ff'), height: '100%' }}>
                       <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #00d4ff20 0%, #00d4ff0c 35%, #00d4ff04 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
                       <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
                         {isCompactMode ? (
@@ -1247,7 +1120,6 @@ const Home = () => {
                           </>
                         )}
                       </div>
-                      {pumphubOverlay}
                     </div>
                   </Link>
                   <Link
@@ -1255,9 +1127,8 @@ const Home = () => {
                     className="game-card"
                     style={{ textDecoration: 'none', display: 'block', position: 'relative' }}
                     state={{ fromHomeSection: 'pumphub' }}
-                    onClick={(e) => { if (!isPumphubSupported) e.preventDefault() }}
                   >
-                    <div style={{ ...compactStyles.card('#8b5cf6'), height: '100%', ...(isPumphubSupported ? {} : { filter: 'grayscale(0.35) saturate(0.75)', opacity: 0.75 }) }}>
+                    <div style={{ ...compactStyles.card('#8b5cf6'), height: '100%' }}>
                       <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #8b5cf620 0%, #8b5cf60c 35%, #8b5cf604 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
                       <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
                         {isCompactMode ? (
@@ -1285,7 +1156,6 @@ const Home = () => {
                           </>
                         )}
                       </div>
-                      {pumphubOverlay}
                     </div>
                   </Link>
                 </div>
@@ -1298,8 +1168,10 @@ const Home = () => {
                   </div>
                 )}
               </div>
+              )}
 
               {/* NFT Category - moved up for visibility */}
+              {showNftSection && (
               <div id="nft" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(59, 130, 246, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.3)', color: '#3b82f6' }}>
@@ -1314,8 +1186,10 @@ const Home = () => {
                   )}
                 </div>
               </div>
+              )}
 
               {/* 5. Prediction Category (under NFT) */}
+              {showPredictionSection && (
               <div id="prediction" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(20, 184, 166, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(20, 184, 166, 0.15)', border: '1px solid rgba(20, 184, 166, 0.3)', color: '#14b8a6' }}>
@@ -1343,6 +1217,7 @@ const Home = () => {
                   )}
                 </div>
               </div>
+              )}
 
               {/* DEPLOY Category */}
               <div id="deploy" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(59, 130, 246, 0.12)` }}>
@@ -1400,7 +1275,7 @@ const Home = () => {
                 </div>
               </div>
 
-              {/* ANALYSIS Category */}
+              {/* ANALYSIS Category — always visible; routes handle Base / network requirements */}
               <div id="analysis" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(139, 92, 246, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(139, 92, 246, 0.15)', border: '1px solid rgba(139, 92, 246, 0.3)', color: '#8b5cf6' }}>
@@ -1410,13 +1285,14 @@ const Home = () => {
                   {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['wallet-analysis', 'contract-security', 'allowance-cleaner']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
-                  {games.filter(g => ['wallet-analysis', 'contract-security', 'allowance-cleaner'].includes(g.id)).map((game) =>
+                  {analysisGames.map((game) =>
                     renderCompactCard(game, null, game.path, 'analysis')
                   )}
                 </div>
               </div>
 
               {/* SOCIAL Category */}
+              {showSocialSection && (
               <div id="social" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(245, 158, 11, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b' }}>
@@ -1431,6 +1307,7 @@ const Home = () => {
                   )}
                 </div>
               </div>
+              )}
 
               {/* GM & GN Category */}
               <div id="gm-gn" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(34, 197, 94, 0.12)` }}>
@@ -1564,6 +1441,7 @@ const Home = () => {
               </div>
 
               {/* GAMING Category */}
+              {showGamingSection && (
               <div id="gaming" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(245, 158, 11, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b' }}>
@@ -1578,8 +1456,10 @@ const Home = () => {
                   )}
                 </div>
               </div>
+              )}
 
               {/* GUILD Category - gaming altında */}
+              {showGuildSection && (
               <div id="guild" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(37, 99, 235, 0.2)` }}>
                 <div style={compactStyles.categoryHeader}>
                   <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(37, 99, 235, 0.15)', border: '1px solid rgba(37, 99, 235, 0.35)', color: '#2563eb' }}>
@@ -1594,6 +1474,7 @@ const Home = () => {
                   )}
                 </div>
               </div>
+              )}
             </div>
           ) : (
             /* Farcaster: Original Grid Layout */
