@@ -333,6 +333,11 @@ export default function NFTLaunchpad() {
     return () => { cancelled = true }
   }, [success, chainId])
 
+  // Tempo: deploy flow is free-mint only — keep price at 0 and hide paid options in the UI.
+  useEffect(() => {
+    if (isTempoChain) setMintPrice('0')
+  }, [isTempoChain])
+
   // Read collection state from chain so SOLD OUT / LIVE status stays accurate.
   useEffect(() => {
     if (!publicClient || collections.length === 0) {
@@ -780,21 +785,38 @@ export default function NFTLaunchpad() {
                       </div>
 
                       <div>
-                        <label style={{ fontSize: '12px', fontWeight: '600', color: '#94a3b8', marginBottom: '6px', display: 'block' }}>{isTempoChain ? 'Mint Price (PUSD)' : 'Mint Price (ETH)'}</label>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                          <button type="button" onClick={() => setMintPrice('0')}
-                            style={{
-                              padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '600',
-                              background: (mintPrice === '0' || mintPrice === '' || Number(mintPrice) === 0) ? 'rgba(34,197,94,0.25)' : 'rgba(55,65,81,0.5)',
-                              color: (mintPrice === '0' || mintPrice === '' || Number(mintPrice) === 0) ? '#4ade80' : '#94a3b8',
-                              border: (mintPrice === '0' || mintPrice === '' || Number(mintPrice) === 0) ? '1px solid rgba(34,197,94,0.5)' : '1px solid rgba(55,65,81,0.6)',
-                              cursor: 'pointer',
-                            }}>
-                            Free
-                          </button>
-                          <input type="text" value={mintPrice} onChange={(e) => setMintPrice(e.target.value)} placeholder="0.005"
-                            style={{ flex: 1, minWidth: '120px', padding: '11px 14px', border: '1.5px solid rgba(55,65,81,0.6)', borderRadius: '10px', fontSize: '14px', background: 'rgba(15,23,42,0.6)', color: '#e2e8f0', boxSizing: 'border-box' }} />
-                        </div>
+                        <label style={{ fontSize: '12px', fontWeight: '600', color: '#94a3b8', marginBottom: '6px', display: 'block' }}>
+                          {isTempoChain ? 'Mint Price' : 'Mint Price (ETH)'}
+                        </label>
+                        {isTempoChain ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                            <span
+                              style={{
+                                padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '600',
+                                background: 'rgba(34,197,94,0.25)', color: '#4ade80',
+                                border: '1px solid rgba(34,197,94,0.5)',
+                              }}
+                            >
+                              Free
+                            </span>
+                            <span style={{ fontSize: '12px', color: '#64748b' }}>On Tempo, collections are free mint only.</span>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <button type="button" onClick={() => setMintPrice('0')}
+                              style={{
+                                padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '600',
+                                background: (mintPrice === '0' || mintPrice === '' || Number(mintPrice) === 0) ? 'rgba(34,197,94,0.25)' : 'rgba(55,65,81,0.5)',
+                                color: (mintPrice === '0' || mintPrice === '' || Number(mintPrice) === 0) ? '#4ade80' : '#94a3b8',
+                                border: (mintPrice === '0' || mintPrice === '' || Number(mintPrice) === 0) ? '1px solid rgba(34,197,94,0.5)' : '1px solid rgba(55,65,81,0.6)',
+                                cursor: 'pointer',
+                              }}>
+                              Free
+                            </button>
+                            <input type="text" value={mintPrice} onChange={(e) => setMintPrice(e.target.value)} placeholder="0.005"
+                              style={{ flex: 1, minWidth: '120px', padding: '11px 14px', border: '1.5px solid rgba(55,65,81,0.6)', borderRadius: '10px', fontSize: '14px', background: 'rgba(15,23,42,0.6)', color: '#e2e8f0', boxSizing: 'border-box' }} />
+                          </div>
+                        )}
                       </div>
 
                       <div>
@@ -826,7 +848,12 @@ export default function NFTLaunchpad() {
                           <span style={{ color: '#64748b' }}> (one-time)</span>
                         </div>
                         <div style={{ display: 'flex', gap: '6px', marginBottom: '2px' }}>
-                          <span style={{ color: '#475569' }}>2.</span> Each mint at <strong style={{ color: '#e2e8f0' }}>{formatMintPrice(mintPrice, isTempoChain)}</strong> goes <strong style={{ color: '#22c55e' }}>directly to you</strong>
+                          <span style={{ color: '#475569' }}>2.</span>
+                          {isTempoChain ? (
+                            <span>Mints are <strong style={{ color: '#e2e8f0' }}>free</strong> for collectors (Tempo deploy is free-mint only).</span>
+                          ) : (
+                            <span>Each mint at <strong style={{ color: '#e2e8f0' }}>{formatMintPrice(mintPrice, isTempoChain)}</strong> goes <strong style={{ color: '#22c55e' }}>directly to you</strong></span>
+                          )}
                         </div>
                         <div style={{ display: 'flex', gap: '6px' }}>
                           <span style={{ color: '#475569' }}>3.</span> A shareable mint page is auto-created for your collection
