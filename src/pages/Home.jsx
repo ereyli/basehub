@@ -1219,6 +1219,67 @@ const Home = () => {
               </div>
               )}
 
+              {/* Airdrop Hub — own category (not under Deploy) */}
+              <div id="airdrop-hub" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(59, 130, 246, 0.18)` }}>
+                <div style={compactStyles.categoryHeader}>
+                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.35)', color: '#3b82f6' }}>
+                    <LayoutGrid size={compactStyles.iconSize} />
+                  </div>
+                  <h2 style={compactStyles.categoryTitle}>AIRDROP HUB</h2>
+                  <span style={{
+                    padding: '3px 10px',
+                    background: 'rgba(59, 130, 246, 0.12)',
+                    border: '1px solid rgba(59, 130, 246, 0.28)',
+                    borderRadius: '20px',
+                    color: '#93c5fd',
+                    fontSize: '10px',
+                    fontWeight: '700',
+                    letterSpacing: '0.5px',
+                    fontFamily: 'Poppins, sans-serif'
+                  }}>
+                    MULTI-CHAIN
+                  </span>
+                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['deploy', 'deploy-erc721', 'deploy-erc1155']))}
+                </div>
+                <div style={{ ...compactStyles.cardGrid, gridTemplateColumns: isCompactMode ? undefined : 'minmax(0, 1fr)' }}>
+                  <Link
+                    to="/airdrop-hub"
+                    className="game-card"
+                    style={{ textDecoration: 'none', display: 'block', gridColumn: isCompactMode ? undefined : '1 / -1' }}
+                  >
+                    <div style={{ ...compactStyles.card('#3b82f6'), height: '100%' }}>
+                      <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #3b82f620 0%, #3b82f60c 35%, #3b82f604 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
+                      <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
+                        {isCompactMode ? (
+                          <>
+                            <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#3b82f622', border: '1px solid #3b82f644', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <LayoutGrid size={18} style={{ color: '#fff' }} />
+                            </div>
+                            <h3 style={{ ...compactStyles.cardTitle, color: '#93c5fd' }}>Airdrop Hub</h3>
+                            <div style={compactStyles.xpBadge}>All chains</div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                              <div style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '12px', background: '#3b82f622', border: '1px solid #3b82f644', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <LayoutGrid size={22} style={{ color: '#fff' }} />
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <h3 style={{ ...compactStyles.cardTitle, color: '#e2e8f0' }}>Airdrop Hub</h3>
+                                <p style={compactStyles.cardDescription}>GM, GN, flip, dice, lucky, and three deploys — auto picks, same XP</p>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
+                              <div style={compactStyles.xpBadge}>Explore</div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              </div>
+
               {/* DEPLOY Category */}
               <div id="deploy" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(59, 130, 246, 0.12)` }}>
                 <div style={compactStyles.categoryHeader}>

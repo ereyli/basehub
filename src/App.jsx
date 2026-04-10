@@ -52,6 +52,7 @@ import PumpHub from './pages/PumpHub'
 import FrameLanding from './pages/FrameLanding'
 import PredictionArena from './pages/PredictionArena'
 import BaseGuildCompanion from './pages/BaseGuildCompanion'
+import AirdropHub from './pages/AirdropHub'
 // Lazy load PrivacyPolicy and TermsOfService to avoid ad blocker issues
 const PrivacyPolicy = lazy(() => 
   import('./pages/PrivacyPolicy').catch(() => ({
@@ -355,6 +356,7 @@ function FarcasterAppContent() {
               <Route path="/nft-wheel" element={<NFTWheelGame />} />
               <Route path="/nft-plinko" element={<NFTPlinkoGame />} />
               <Route path="/pumphub" element={<PumpHub />} />
+              <Route path="/airdrop-hub" element={<AirdropHub />} />
               <Route path="/prediction-arena" element={<PredictionArena />} />
               <Route path="/base-guild" element={<BaseGuildCompanion />} />
               <Route path="/frames/:frameType" element={<FrameLanding />} />
@@ -429,6 +431,7 @@ function WebAppContent() {
               <Route path="/nft-wheel" element={<NFTWheelGame />} />
               <Route path="/nft-plinko" element={<NFTPlinkoGame />} />
 <Route path="/pumphub" element={<PumpHub />} />
+            <Route path="/airdrop-hub" element={<AirdropHub />} />
             <Route path="/prediction-arena" element={<PredictionArena />} />
             <Route path="/base-guild" element={<BaseGuildCompanion />} />
             <Route path="/frames/:frameType" element={<FrameLanding />} />

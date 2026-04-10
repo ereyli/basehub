@@ -107,49 +107,53 @@ const WebHeader = () => {
     loadNFTCount()
   }, [isConnected, address])
 
-  // Load XP from Supabase and refresh every 3 seconds
-  React.useEffect(() => {
-    const loadXP = async () => {
-      if (isConnected && address && supabase) {
-        try {
-          // Try to get XP directly from Supabase (same as Profile page)
-          // All wallet addresses are now normalized to lowercase in Supabase
-          const walletAddressLower = address.toLowerCase()
-          const { data: player, error: playerError } = await supabase
-            .from('players')
-            .select('total_xp')
-            .eq('wallet_address', walletAddressLower)
-            .single()
+  // Load XP from Supabase; poll every 3s and also refetch when addXP/recordTransaction fires basehub_xp_refresh
+  const loadXP = React.useCallback(async () => {
+    if (isConnected && address && supabase) {
+      try {
+        const walletAddressLower = address.toLowerCase()
+        const { data: player, error: playerError } = await supabase
+          .from('players')
+          .select('total_xp')
+          .eq('wallet_address', walletAddressLower)
+          .single()
 
-          if (!playerError && player && player.total_xp !== undefined && player.total_xp !== null) {
-            console.log('📊 Header: Using total_xp from Supabase:', player.total_xp)
-            setTotalXP(player.total_xp)
-          } else {
-            // Fallback to getXP function
-            console.log('⚠️ Header: Player not found in Supabase, using getXP fallback')
-            const xp = await getXP(address)
-            setTotalXP(xp)
-          }
-        } catch (error) {
-          console.error('❌ Error loading XP in header:', error)
-          // Fallback to getXP
-          try {
-            const xp = await getXP(address)
-            setTotalXP(xp)
-          } catch (fallbackError) {
-            console.error('❌ Error in getXP fallback:', fallbackError)
-            setTotalXP(0)
-          }
+        if (!playerError && player && player.total_xp !== undefined && player.total_xp !== null) {
+          console.log('📊 Header: Using total_xp from Supabase:', player.total_xp)
+          setTotalXP(player.total_xp)
+        } else {
+          console.log('⚠️ Header: Player not found in Supabase, using getXP fallback')
+          const xp = await getXP(address)
+          setTotalXP(xp)
         }
-      } else {
-        setTotalXP(0)
+      } catch (error) {
+        console.error('❌ Error loading XP in header:', error)
+        try {
+          const xp = await getXP(address)
+          setTotalXP(xp)
+        } catch (fallbackError) {
+          console.error('❌ Error in getXP fallback:', fallbackError)
+          setTotalXP(0)
+        }
       }
+    } else {
+      setTotalXP(0)
     }
-
-    loadXP()
-    const interval = setInterval(loadXP, 3000) // Refresh every 3 seconds
-    return () => clearInterval(interval)
   }, [isConnected, address, supabase])
+
+  React.useEffect(() => {
+    loadXP()
+    const interval = setInterval(loadXP, 3000)
+    return () => clearInterval(interval)
+  }, [loadXP])
+
+  React.useEffect(() => {
+    const onXPRefresh = () => {
+      loadXP()
+    }
+    window.addEventListener('basehub_xp_refresh', onXPRefresh)
+    return () => window.removeEventListener('basehub_xp_refresh', onXPRefresh)
+  }, [loadXP])
 
 
   const quickActions = [

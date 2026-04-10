@@ -125,7 +125,7 @@ export const NETWORKS = {
       'https://rpc.testnet.arc.network',
     ],
     blockExplorerUrls: ['https://testnet.arcscan.app'],
-    iconUrls: [],
+    iconUrls: ['/arc-testnet-logo.jpg'],
     isFarcasterSupported: false,
   },
   ROBINHOOD_TESTNET: {
@@ -140,7 +140,7 @@ export const NETWORKS = {
     },
     rpcUrls: ['https://rpc.testnet.chain.robinhood.com'],
     blockExplorerUrls: ['https://explorer.testnet.chain.robinhood.com'],
-    iconUrls: [],
+    iconUrls: ['/robinhood-testnet-logo.png'],
     isFarcasterSupported: false,
   },
 }

@@ -24,8 +24,7 @@ export const useRainbowKitSwitchChain = () => {
 
   const switchChain = async (params) => {
     if (!isWeb) {
-      // Not using RainbowKit, use regular switchChain
-      return wagmiSwitchChain.switchChain(params)
+      return wagmiSwitchChain.switchChainAsync(params)
     }
 
     // Prevent multiple simultaneous calls for the same chain
@@ -38,8 +37,8 @@ export const useRainbowKitSwitchChain = () => {
     processingChainIdRef.current = params.chainId
 
     try {
-      // Try RainbowKit's switchChain first
-      const result = await wagmiSwitchChain.switchChain(params)
+      // mutate (switchChain) does not return a Promise — use mutateAsync so await waits for the wallet
+      const result = await wagmiSwitchChain.switchChainAsync(params)
       isProcessingRef.current = false
       processingChainIdRef.current = null
       return result

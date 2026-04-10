@@ -147,6 +147,16 @@ export function showXPErrorToast (message, durationMs = 5500) {
   }, durationMs)
 }
 
+/** Bump localStorage flag and dispatch so header/stats can refetch XP without waiting for the 3s poll. */
+export function notifyXPRefresh () {
+  try {
+    localStorage.setItem('basehub_tx_refresh', Date.now().toString())
+  } catch (_) {}
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('basehub_xp_refresh'))
+  }
+}
+
 // Get NFT count for wallet (returns 0 if no NFT)
 export const getNFTCount = async (walletAddress) => {
   if (!walletAddress) return 0
@@ -302,7 +312,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
           const data = await invokeVerified()
           const newTotalXP = data?.new_total_xp ?? finalXP
           console.log(`✅ XP awarded via verified Edge Function. Total: ${newTotalXP}`)
-          localStorage.setItem('basehub_tx_refresh', Date.now().toString())
+          notifyXPRefresh()
           return newTotalXP
         } catch (e) {
           lastErr = e
@@ -342,7 +352,7 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
     }
     const newTotalXP = data?.new_total_xp ?? finalXP
     console.log(`✅ XP awarded via RPC. Total: ${newTotalXP}`)
-    localStorage.setItem('basehub_tx_refresh', Date.now().toString())
+    notifyXPRefresh()
     return newTotalXP
   } catch (error) {
     console.error('❌ Error in addXP:', error)
@@ -588,13 +598,13 @@ export const recordTransaction = async (transactionData) => {
     
     // Trigger header refresh by setting a flag in localStorage
     // Header will check this flag and refresh when it changes
-    localStorage.setItem('basehub_tx_refresh', Date.now().toString())
+    notifyXPRefresh()
   } catch (error) {
     console.error('❌ Error in recordTransaction:', error)
     // Even if transaction recording fails, try to trigger refresh
     // in case transaction was partially recorded
     try {
-      localStorage.setItem('basehub_tx_refresh', Date.now().toString())
+      notifyXPRefresh()
     } catch (e) {
       // Ignore localStorage errors
     }

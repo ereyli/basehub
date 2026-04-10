@@ -73,6 +73,12 @@ export const useTransactions = () => {
   // Ink, Soneium, MegaETH: fast chains – 0 confirmations + short polling so receipt comes quickly (like Ink)
   const isFastChain = chainId === NETWORKS.INKCHAIN.chainId || chainId === NETWORKS.SONEIUM.chainId || chainId === NETWORKS.MEGAETH.chainId
 
+  /** Receipt exists but execution reverted — must not be treated as a successful confirmation / timeout fallback. */
+  const isOnChainFailureError = (err) => {
+    const m = (err?.message || err?.shortMessage || '').toLowerCase()
+    return m.includes('reverted') || m.includes('failed on-chain')
+  }
+
   // Helper function to wait for transaction receipt with optimized polling for InkChain, Soneium, MegaETH
   const waitForTxReceipt = async (txHash, timeoutDuration = 60000) => {
     const receiptPromise = (async () => {
@@ -99,12 +105,16 @@ export const useTransactions = () => {
 
     // Never block UI longer than UI_MAX_WAIT_MS (Base app often hangs on RPC). Fast chains get full timeout.
     const uiWait = isFastChain ? timeoutDuration : UI_MAX_WAIT_MS
-    return await Promise.race([
+    const receipt = await Promise.race([
       receiptPromise,
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Transaction confirmation timeout')), uiWait)
       )
     ])
+    if (receipt?.status === 'reverted') {
+      throw new Error('Transaction failed on-chain (reverted).')
+    }
+    return receipt
   }
   const [error, setError] = useState(null)
   const isTempoChain = chainId === NETWORKS.TEMPO?.chainId
@@ -312,6 +322,7 @@ export const useTransactions = () => {
           await waitForTxReceipt(txHash, isFastChain ? 120000 : 60000)
           console.log('✅ GM transaction confirmed!')
         } catch (confirmError) {
+          if (isOnChainFailureError(confirmError)) throw confirmError
           console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
         }
         setError(null)
@@ -328,6 +339,7 @@ export const useTransactions = () => {
         try { await addXP(address, 150, 'GM_GAME', chainId, false, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
         try { await updateQuestProgress('gmUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
       } catch (confirmError) {
+        if (isOnChainFailureError(confirmError)) throw confirmError
         console.warn('⚠️ Confirmation timeout:', confirmError.message)
         try { await addXP(address, 150, 'GM_GAME', chainId, false, txHash) } catch (_) {}
         try { await updateQuestProgress('gmUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
@@ -417,6 +429,7 @@ export const useTransactions = () => {
           await waitForTxReceipt(txHash, isFastChain ? 120000 : 60000)
           console.log('✅ GN transaction confirmed!')
         } catch (confirmError) {
+          if (isOnChainFailureError(confirmError)) throw confirmError
           console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
         }
         setError(null)
@@ -431,6 +444,7 @@ export const useTransactions = () => {
         try { await addXP(address, 150, 'GN_GAME', chainId, false, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
         try { await updateQuestProgress('gnUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
       } catch (confirmError) {
+        if (isOnChainFailureError(confirmError)) throw confirmError
         console.warn('⚠️ Confirmation timeout:', confirmError.message)
         try { await addXP(address, 150, 'GN_GAME', chainId, false, txHash) } catch (_) {}
         try { await updateQuestProgress('gnUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
@@ -526,6 +540,7 @@ export const useTransactions = () => {
           await waitForTxReceipt(txHash, isFastChain ? 120000 : 60000)
           console.log('✅ Flip transaction confirmed!')
         } catch (confirmError) {
+          if (isOnChainFailureError(confirmError)) throw confirmError
           console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
         }
         setError(null)
@@ -540,6 +555,7 @@ export const useTransactions = () => {
         try { await addBonusXP(address, 'flip', playerWon, chainId, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
         try { await updateQuestProgress('coinFlipUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
       } catch (confirmError) {
+        if (isOnChainFailureError(confirmError)) throw confirmError
         console.warn('⚠️ Confirmation timeout:', confirmError.message)
         try { await addBonusXP(address, 'flip', playerWon, chainId, txHash) } catch (_) {}
         try { await updateQuestProgress('coinFlipUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
@@ -633,6 +649,7 @@ export const useTransactions = () => {
           await waitForTxReceipt(txHash, isFastChain ? 120000 : 60000)
           console.log('✅ Lucky Number transaction confirmed!')
         } catch (confirmError) {
+          if (isOnChainFailureError(confirmError)) throw confirmError
           console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
         }
         setError(null)
@@ -647,6 +664,7 @@ export const useTransactions = () => {
         try { await addBonusXP(address, 'luckynumber', playerWon, chainId, txHash) } catch (xpError) { console.error('❌ Error adding XP:', xpError) }
         try { await updateQuestProgress('luckyNumberUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
       } catch (confirmError) {
+        if (isOnChainFailureError(confirmError)) throw confirmError
         console.warn('⚠️ Confirmation timeout:', confirmError.message)
         try { await addBonusXP(address, 'luckynumber', playerWon, chainId, txHash) } catch (_) {}
         try { await updateQuestProgress('luckyNumberUsed', 1); await updateQuestProgress('transactions', 1) } catch (_) {}
@@ -741,6 +759,7 @@ export const useTransactions = () => {
           await waitForTxReceipt(txHash, isFastChain ? 120000 : 60000)
           console.log('✅ Dice Roll transaction confirmed!')
         } catch (confirmError) {
+          if (isOnChainFailureError(confirmError)) throw confirmError
           console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
         }
         setError(null)
@@ -765,6 +784,7 @@ export const useTransactions = () => {
           console.error('⚠️ Quest progress error (non-critical):', questError)
         }
       } catch (confirmError) {
+        if (isOnChainFailureError(confirmError)) throw confirmError
         console.warn('⚠️ Confirmation timeout (e.g. Base app):', confirmError.message)
         try {
           await addBonusXP(address, 'diceroll', playerWon, chainId, txHash)
@@ -947,6 +967,7 @@ export const useTransactions = () => {
               await waitForTxReceipt(txHash, isFastChain ? 120000 : 60000)
               console.log('✅ Slot transaction confirmed!')
             } catch (confirmError) {
+              if (isOnChainFailureError(confirmError)) throw confirmError
               console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
             }
             setError(null)
@@ -971,6 +992,7 @@ export const useTransactions = () => {
               console.error('⚠️ Quest progress error (non-critical):', questError)
             }
           } catch (confirmError) {
+            if (isOnChainFailureError(confirmError)) throw confirmError
             console.warn('⚠️ Confirmation timeout (e.g. Base app):', confirmError.message)
             try {
               await addXP(address, xpEarned, 'SLOT_GAME', chainId, false, txHash)
@@ -990,6 +1012,7 @@ export const useTransactions = () => {
             await waitForTxReceipt(txHash, isFastChain ? 120000 : 60000)
             console.log('✅ Slot credits purchase confirmed!')
           } catch (confirmError) {
+            if (isOnChainFailureError(confirmError)) throw confirmError
             console.warn('⚠️ Confirmation timeout (but XP already awarded):', confirmError.message)
           }
           setError(null)
@@ -1002,6 +1025,7 @@ export const useTransactions = () => {
           const timeoutDuration = isFastChain ? 120000 : 60000
           receipt = await waitForTxReceipt(txHash, timeoutDuration)
         } catch (confirmError) {
+          if (isOnChainFailureError(confirmError)) throw confirmError
           console.warn('⚠️ Confirmation timeout (e.g. Base app):', confirmError.message)
           try {
             await addXP(address, 10, 'SLOT_GAME_CREDITS', chainId, false, txHash)
