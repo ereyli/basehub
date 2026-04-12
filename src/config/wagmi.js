@@ -10,7 +10,8 @@ import { NETWORKS } from './networks'
 // - writeContract / writeContractAsync: dataSuffix: DATA_SUFFIX is passed on every call → suffix appended to tx data for attribution.
 // - EIP-5792 sendCalls (batch): capabilities: BUILDER_CODE_CAPABILITIES must be passed.
 // Schema 0: codesHex + codesLength(1) + schemaId(0) + ercMarker(16 bytes). Inline to avoid ox package resolution on Vercel.
-export const DATA_SUFFIX = '0x62635f6372386f6d7866660b0080218021802180218021802180218021'
+// Human-readable Builder Code: bc_rd8s0npa (base.dev → Settings → Builder Code)
+export const DATA_SUFFIX = '0x62635f72643873306e70610b0080218021802180218021802180218021'
 
 /** EIP-5792 sendCalls capabilities – Builder Code attribution for smart wallets. sendCalls({ calls, capabilities: BUILDER_CODE_CAPABILITIES }). */
 export const BUILDER_CODE_CAPABILITIES = {
