@@ -17,7 +17,8 @@ export default defineConfig(({ mode }) => {
   return {
   plugins: [react()],
   server: {
-    port: Number(env.VITE_PORT) || 3000,
+    // Default 5173 (Vite convention). Use 3000 only if you set VITE_PORT=3000 — avoids clashing with `vercel dev` on :3000.
+    port: Number(env.VITE_PORT) || 5173,
     host: true,
     proxy: {
       '/api': {

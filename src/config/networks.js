@@ -157,6 +157,7 @@ export const CONTRACT_ADDRESSES = {
     TOKEN_CONTRACT: '0xB2b2c587E51175a2aE4713d8Ea68A934a8527a4b',
     BASEHUB_DEPLOYER: '0xDC7EE816aEb2879A7B15bB7950638840f8695917',
     BASEHUB_NFT_COLLECTION_DEPLOYER: '0x8b31312A6cD06839EFE768bD3D09bE785b83574A',
+    PUMPHUB_FACTORY: '0xE7c2Fe007C65349C91B8ccAC3c5BE5a7f2FDaF21',
   },
   INKCHAIN: {
     GM_GAME: '0x5E86e9Cd50E7F64b692b90FaE1487d2F6ED1AbA9',
@@ -198,6 +199,19 @@ export const CONTRACT_ADDRESSES = {
     BASEHUB_NFT_COLLECTION_DEPLOYER: '0xCaA2a1FB271AE0a04415654e62FB26BDd1AdAC64',
   },
   TEMPO: {
+    /** PumpHubFactory on Tempo — optional; set `VITE_PUMPHUB_FACTORY_TEMPO` if using PumpHub on Tempo. */
+    PUMPHUB_FACTORY:
+      typeof import.meta !== 'undefined' && import.meta.env?.VITE_PUMPHUB_FACTORY_TEMPO
+        ? String(import.meta.env.VITE_PUMPHUB_FACTORY_TEMPO).trim()
+        : '',
+    /**
+     * TempoTokenFactory (`contracts/tempo/TempoTokenFactory.sol`) — PUSD fee, ERC20Template deploy.
+     * Set `VITE_TEMPO_TOKEN_FACTORY` after deploy; preferred over generic BaseHub deployer on Tempo.
+     */
+    TEMPO_TOKEN_FACTORY:
+      typeof import.meta !== 'undefined' && import.meta.env?.VITE_TEMPO_TOKEN_FACTORY
+        ? String(import.meta.env.VITE_TEMPO_TOKEN_FACTORY).trim()
+        : '',
     BASEHUB_DEPLOYER: '0x240eF5297a89e1354A83B4e58f8F0d19FB6051ed',
     BASEHUB_NFT_COLLECTION_DEPLOYER: '0x0854F20209f06bc6FaB3Dd9047784B4E08bE9e9b',
     DICE_ROLL: '0xc4a94DabeDb0Db43354874c67814c226391452B8',
@@ -226,6 +240,24 @@ export const CONTRACT_ADDRESSES = {
     BASEHUB_DEPLOYER: '0x84e4dD821c8F848470Fc49Def3B14Fc870Fa97f0',
   },
 }
+
+/** PumpHub factory for Base / Tempo (Tempo requires VITE_PUMPHUB_FACTORY_TEMPO). */
+export const getPumpHubFactoryAddress = (chainId) => {
+  if (chainId == null) return null
+  const cid = Number(chainId)
+  if (cid === NETWORKS.BASE.chainId) {
+    const a = CONTRACT_ADDRESSES.BASE?.PUMPHUB_FACTORY
+    return a && a.startsWith('0x') ? a : null
+  }
+  if (cid === NETWORKS.TEMPO.chainId) {
+    const raw = CONTRACT_ADDRESSES.TEMPO?.PUMPHUB_FACTORY
+    if (raw && /^0x[a-fA-F0-9]{40}$/.test(String(raw))) return String(raw)
+    return null
+  }
+  return null
+}
+
+export const isPumpHubSupportedChainId = (chainId) => Boolean(getPumpHubFactoryAddress(chainId))
 
 // Get network config by chain ID
 export const getNetworkConfig = (chainId) => {

@@ -7,7 +7,8 @@ import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import '@rainbow-me/rainbowkit/styles.css'
 import { FarcasterProvider, useFarcaster } from './contexts/FarcasterContext'
 import { config } from './config/wagmi'
-import { rainbowkitConfig, shouldUseRainbowKit } from './config/rainbowkit'
+import { rainbowkitConfig, shouldUseRainbowKit, isLocalDevHostname } from './config/rainbowkit'
+import { isAgentModeEnabled } from './config/features'
 import { isLikelyBaseApp } from './utils/xpUtils'
 import FarcasterBottomNav from './components/FarcasterBottomNav'
 import HomeScrollManager from './components/HomeScrollManager'
@@ -53,6 +54,14 @@ import FrameLanding from './pages/FrameLanding'
 import PredictionArena from './pages/PredictionArena'
 import BaseGuildCompanion from './pages/BaseGuildCompanion'
 import AirdropHub from './pages/AirdropHub'
+import AgentMode from './pages/AgentMode'
+import AgentModeSoon from './pages/AgentModeSoon'
+import AdminNotifications from './pages/AdminNotifications'
+
+function AgentModeGate() {
+  if (!isAgentModeEnabled()) return <AgentModeSoon />
+  return <AgentMode />
+}
 // Lazy load PrivacyPolicy and TermsOfService to avoid ad blocker issues
 const PrivacyPolicy = lazy(() => 
   import('./pages/PrivacyPolicy').catch(() => ({
@@ -357,6 +366,8 @@ function FarcasterAppContent() {
               <Route path="/nft-plinko" element={<NFTPlinkoGame />} />
               <Route path="/pumphub" element={<PumpHub />} />
               <Route path="/airdrop-hub" element={<AirdropHub />} />
+              <Route path="/agent" element={<AgentModeGate />} />
+              <Route path="/admin" element={<AdminNotifications />} />
               <Route path="/prediction-arena" element={<PredictionArena />} />
               <Route path="/base-guild" element={<BaseGuildCompanion />} />
               <Route path="/frames/:frameType" element={<FrameLanding />} />
@@ -432,6 +443,8 @@ function WebAppContent() {
               <Route path="/nft-plinko" element={<NFTPlinkoGame />} />
 <Route path="/pumphub" element={<PumpHub />} />
             <Route path="/airdrop-hub" element={<AirdropHub />} />
+            <Route path="/agent" element={<AgentModeGate />} />
+            <Route path="/admin" element={<AdminNotifications />} />
             <Route path="/prediction-arena" element={<PredictionArena />} />
             <Route path="/base-guild" element={<BaseGuildCompanion />} />
             <Route path="/frames/:frameType" element={<FrameLanding />} />
@@ -454,6 +467,7 @@ function WebAppContent() {
 // Miniapp layout = sadece Farcaster (iframe/URL) veya Base app (WebView). Mobil tarayıcı (Chrome/Safari) web layout alır.
 function getUseMiniappLayout() {
   if (typeof window === 'undefined') return false
+  if (isLocalDevHostname()) return false
   const isIframeOrFarcasterUrl =
     window.location !== window.parent.location ||
     window.parent !== window ||

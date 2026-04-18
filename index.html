@@ -52,12 +52,13 @@
     gtag('config', 'G-KYXB9BC4NR');
   </script>
   
+  <!-- Pre-bundle paint: match src/styles/index.css body (avoids empty “purple screen” if JS fails to load). -->
   <style>
     body {
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
       min-height: 100vh;
     }
   </style>
@@ -76,6 +77,8 @@
     (function () {
       var mini = false;
       try {
+        var host = (window.location && window.location.hostname) ? String(window.location.hostname).toLowerCase() : '';
+        if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host.slice(-10) === '.localhost') return;
         mini = window.location !== window.parent.location || window.parent !== window;
         if (!mini) {
           var h = (window.location.href || '').toLowerCase();
@@ -83,10 +86,10 @@
         }
         if (!mini && typeof navigator !== 'undefined' && navigator.userAgent) {
           var ua = navigator.userAgent.toLowerCase();
-          mini = ua.indexOf('coinbase') >= 0 || ua.indexOf('base wallet') >= 0 || ua.indexOf('cbwallet') >= 0 ||
-            (ua.indexOf('base') >= 0 && (ua.indexOf('app') >= 0 || ua.indexOf('in-app') >= 0));
+          // Align with src/utils/xpUtils isLikelyBaseApp — do not use ua.indexOf('app') (matches "Apple" in AppleWebKit).
+          mini = ua.indexOf('coinbase') >= 0 || ua.indexOf('base wallet') >= 0 || ua.indexOf('cbwallet') >= 0 || ua.indexOf('in-app') >= 0;
         }
-      } catch (e) { mini = true; }
+      } catch (e) { mini = false; }
       if (!mini) return;
       var root = document.getElementById('root');
       if (!root) return;

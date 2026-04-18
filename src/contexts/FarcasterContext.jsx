@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { sdk } from '@farcaster/miniapp-sdk'
 import { setMiniappDetectionFromSDK, BASE_APP_CLIENT_FID } from '../utils/xpUtils'
+import { isLocalDevHostname } from '../config/rainbowkit'
 
 const FarcasterContext = createContext()
 
@@ -23,13 +24,14 @@ export const FarcasterProvider = ({ children }) => {
   // Check if we're actually in Farcaster environment
   const [isInFarcaster, setIsInFarcaster] = useState(() => {
     if (typeof window === 'undefined') return false
-    
+    if (isLocalDevHostname()) return false
+
     // Check if we're in Farcaster Mini App environment (iframe or Farcaster URL; domain-agnostic)
-    const isInFarcasterEnv = window.location !== window.parent.location || 
+    const isInFarcasterEnv = window.location !== window.parent.location ||
                             window.parent !== window ||
                             window.location.href.includes('farcaster.xyz') ||
                             window.location.href.includes('warpcast.com')
-    
+
     console.log('🔍 Farcaster Context Environment Check:', { isInFarcasterEnv })
     return isInFarcasterEnv
   })
@@ -40,8 +42,9 @@ export const FarcasterProvider = ({ children }) => {
         console.log('🚀 Initializing Farcaster Mini App...')
         
         // Check if we're actually in Farcaster environment (iframe / URL)
-        const actuallyInFarcaster = typeof window !== 'undefined' && 
-          (window.location !== window.parent.location || 
+        const actuallyInFarcaster = typeof window !== 'undefined' &&
+          !isLocalDevHostname() &&
+          (window.location !== window.parent.location ||
            window.parent !== window ||
            window.location.href.includes('farcaster.xyz') ||
            window.location.href.includes('warpcast.com'))

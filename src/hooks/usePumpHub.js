@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useAccount, useWriteContract, useReadContract, useWaitForTransactionReceipt, useChainId, usePublicClient } from 'wagmi'
 import { parseEther, formatEther, formatUnits, parseUnits, decodeEventLog, maxUint256 } from 'viem'
-import { NETWORKS } from '../config/networks'
+import { NETWORKS, getPumpHubFactoryAddress, isPumpHubSupportedChainId } from '../config/networks'
 import { supabase } from '../config/supabase'
 import { DATA_SUFFIX } from '../config/wagmi'
 import { addXP } from '../utils/xpUtils'
@@ -263,13 +263,11 @@ const ERC20_ABI = [
   }
 ]
 
-// PumpHubFactory Contract Address (Base Mainnet)
-const PUMPHUB_FACTORY_ADDRESS = '0xE7c2Fe007C65349C91B8ccAC3c5BE5a7f2FDaF21'
-
 export const usePumpHub = () => {
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
   const publicClient = usePublicClient()
+  const factoryAddress = useMemo(() => getPumpHubFactoryAddress(chainId), [chainId])
   const [error, setError] = useState(null)
   const [pendingTransaction, setPendingTransaction] = useState(null) // { type: 'create'|'buy'|'sell', data: {...} }
   const [pendingSellData, setPendingSellData] = useState(null) // { tokenAddress, tokenAmount, minETHOut } - for sell after approve
@@ -381,8 +379,8 @@ export const usePumpHub = () => {
       throw new Error('Please connect your wallet')
     }
 
-    if (chainId !== NETWORKS.BASE.chainId) {
-      throw new Error('Please switch to Base network')
+    if (!factoryAddress) {
+      throw new Error('Please switch to Base or Tempo. On Tempo, set VITE_PUMPHUB_FACTORY_TEMPO after deploying PumpHubFactory.')
     }
 
     try {
@@ -394,7 +392,7 @@ export const usePumpHub = () => {
       const value = parseEther('0.001') // Minimum 0.001 ETH
 
       const hash = await writeContractAsync({
-        address: PUMPHUB_FACTORY_ADDRESS,
+        address: factoryAddress,
         abi: PUMPHUB_FACTORY_ABI,
         functionName: 'createToken',
         args: [name, symbol, description || '', imageUrl || '', allocation],
@@ -427,7 +425,7 @@ export const usePumpHub = () => {
       setError(errorMsg)
       throw new Error(errorMsg)
     }
-  }, [isConnected, chainId, writeContractAsync])
+  }, [isConnected, chainId, writeContractAsync, factoryAddress])
 
   // Process all transaction types when confirmed
   useEffect(() => {
@@ -454,7 +452,7 @@ export const usePumpHub = () => {
             // Get token metadata from contract
             try {
               const tokenMeta = await publicClient.readContract({
-                address: PUMPHUB_FACTORY_ADDRESS,
+                address: factoryAddress,
                 abi: PUMPHUB_FACTORY_ABI,
                 functionName: 'getTokenMeta',
                 args: [tokenAddress]
@@ -586,7 +584,7 @@ export const usePumpHub = () => {
     }
 
     processTransaction().catch(err => console.error('Error processing transaction:', err))
-  }, [isConfirmed, receipt, currentHash, address, publicClient, chainId])
+  }, [isConfirmed, receipt, currentHash, address, publicClient, chainId, factoryAddress])
 
   // Buy tokens
   const buyTokens = useCallback(async (tokenAddress, ethAmount, minTokensOut = 0n) => {
@@ -594,8 +592,8 @@ export const usePumpHub = () => {
       throw new Error('Please connect your wallet')
     }
 
-    if (chainId !== NETWORKS.BASE.chainId) {
-      throw new Error('Please switch to Base network')
+    if (!factoryAddress) {
+      throw new Error('Please switch to Base or Tempo (PumpHub must be deployed on this network).')
     }
 
     try {
@@ -606,7 +604,7 @@ export const usePumpHub = () => {
       const value = parseEther(ethAmount.toString())
 
       const hash = await writeContractAsync({
-        address: PUMPHUB_FACTORY_ADDRESS,
+        address: factoryAddress,
         abi: PUMPHUB_FACTORY_ABI,
         functionName: 'buy',
         args: [tokenAddress, minTokensOut],
@@ -639,7 +637,7 @@ export const usePumpHub = () => {
       setError(errorMsg)
       throw new Error(errorMsg)
     }
-  }, [isConnected, chainId, writeContractAsync])
+  }, [isConnected, chainId, writeContractAsync, factoryAddress])
   
   // Buy/sell are processed only in processTransaction above (single place) to avoid duplicate trade entries.
 
@@ -649,8 +647,8 @@ export const usePumpHub = () => {
       throw new Error('Please connect your wallet')
     }
 
-    if (chainId !== NETWORKS.BASE.chainId) {
-      throw new Error('Please switch to Base network')
+    if (!factoryAddress) {
+      throw new Error('Please switch to Base or Tempo (PumpHub must be deployed on this network).')
     }
 
     if (!publicClient || !address) {
@@ -672,7 +670,7 @@ export const usePumpHub = () => {
         address: tokenAddress,
         abi: ERC20_ABI,
         functionName: 'allowance',
-        args: [address, PUMPHUB_FACTORY_ADDRESS]
+        args: [address, factoryAddress]
       })
 
       console.log('Current allowance:', formatUnits(currentAllowance, 18))
@@ -693,7 +691,7 @@ export const usePumpHub = () => {
           address: tokenAddress,
           abi: ERC20_ABI,
           functionName: 'approve',
-          args: [PUMPHUB_FACTORY_ADDRESS, maxApproval],
+          args: [factoryAddress, maxApproval],
           dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
         })
 
@@ -708,7 +706,7 @@ export const usePumpHub = () => {
         // Execute sell immediately if allowance is sufficient
         console.log('💰 Executing sell transaction...')
         const sellHash = await writeContractAsync({
-          address: PUMPHUB_FACTORY_ADDRESS,
+          address: factoryAddress,
           abi: PUMPHUB_FACTORY_ABI,
           functionName: 'sell',
           args: [tokenAddress, amount, minETHOut],
@@ -746,7 +744,7 @@ export const usePumpHub = () => {
       setApproveHash(null)
       throw new Error(errorMsg)
     }
-  }, [isConnected, chainId, publicClient, address, writeContractAsync])
+  }, [isConnected, chainId, publicClient, address, writeContractAsync, factoryAddress])
 
   // Execute sell after approve is confirmed
   useEffect(() => {
@@ -763,7 +761,7 @@ export const usePumpHub = () => {
         try {
           // Execute sell transaction
           const sellHash = await writeContractAsync({
-            address: PUMPHUB_FACTORY_ADDRESS,
+            address: factoryAddress,
             abi: PUMPHUB_FACTORY_ABI,
             functionName: 'sell',
             args: [tokenAddress, amount, minETHOut],
@@ -797,12 +795,15 @@ export const usePumpHub = () => {
     }
     
     executeSellAfterApprove()
-  }, [isApproveConfirmed, approveReceipt, pendingSellData])
+  }, [isApproveConfirmed, approveReceipt, pendingSellData, factoryAddress, writeContractAsync])
 
   // Claim fees (for creators)
   const claimFees = useCallback(async () => {
     if (!isConnected) {
       throw new Error('Please connect your wallet')
+    }
+    if (!factoryAddress) {
+      throw new Error('Please switch to Base or Tempo (PumpHub must be deployed on this network).')
     }
 
     try {
@@ -811,7 +812,7 @@ export const usePumpHub = () => {
       isTransactionPendingRef.current = true
       
       const hash = await writeContractAsync({
-        address: PUMPHUB_FACTORY_ADDRESS,
+        address: factoryAddress,
         abi: PUMPHUB_FACTORY_ABI,
         functionName: 'claimFees',
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
@@ -840,12 +841,15 @@ export const usePumpHub = () => {
       setError(errorMsg)
       throw new Error(errorMsg)
     }
-  }, [isConnected, writeContractAsync])
+  }, [isConnected, writeContractAsync, factoryAddress])
 
   // Claim refund
   const claimRefund = useCallback(async () => {
     if (!isConnected) {
       throw new Error('Please connect your wallet')
+    }
+    if (!factoryAddress) {
+      throw new Error('Please switch to Base or Tempo (PumpHub must be deployed on this network).')
     }
 
     try {
@@ -854,7 +858,7 @@ export const usePumpHub = () => {
       isTransactionPendingRef.current = true
       
       const hash = await writeContractAsync({
-        address: PUMPHUB_FACTORY_ADDRESS,
+        address: factoryAddress,
         abi: PUMPHUB_FACTORY_ABI,
         functionName: 'claimRefund',
         dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
@@ -883,44 +887,44 @@ export const usePumpHub = () => {
       setError(errorMsg)
       throw new Error(errorMsg)
     }
-  }, [isConnected, writeContractAsync])
+  }, [isConnected, writeContractAsync, factoryAddress])
 
   // Update token stats in Supabase (call this after trades to refresh data)
   const updateTokenStats = async (tokenAddress) => {
-    if (!supabase || !supabase.from || !tokenAddress || !publicClient) return
+    if (!supabase || !supabase.from || !tokenAddress || !publicClient || !factoryAddress) return
 
     try {
       // Read current token data from contract
       const tokenCore = await publicClient.readContract({
-        address: PUMPHUB_FACTORY_ADDRESS,
+        address: factoryAddress,
         abi: PUMPHUB_FACTORY_ABI,
         functionName: 'tokenCore',
         args: [tokenAddress]
       })
 
       const tokenStats = await publicClient.readContract({
-        address: PUMPHUB_FACTORY_ADDRESS,
+        address: factoryAddress,
         abi: PUMPHUB_FACTORY_ABI,
         functionName: 'tokenStats',
         args: [tokenAddress]
       })
 
       const price = await publicClient.readContract({
-        address: PUMPHUB_FACTORY_ADDRESS,
+        address: factoryAddress,
         abi: PUMPHUB_FACTORY_ABI,
         functionName: 'getPrice',
         args: [tokenAddress]
       })
 
       const marketCap = await publicClient.readContract({
-        address: PUMPHUB_FACTORY_ADDRESS,
+        address: factoryAddress,
         abi: PUMPHUB_FACTORY_ABI,
         functionName: 'getMarketCap',
         args: [tokenAddress]
       })
 
       const graduationProgress = await publicClient.readContract({
-        address: PUMPHUB_FACTORY_ADDRESS,
+        address: factoryAddress,
         abi: PUMPHUB_FACTORY_ABI,
         functionName: 'getGraduationProgress',
         args: [tokenAddress]
@@ -961,7 +965,7 @@ export const usePumpHub = () => {
     error: error,
     hash: currentHash,
     isContractDeployed,
-    contractAddress: PUMPHUB_FACTORY_ADDRESS,
+    contractAddress: factoryAddress,
     lastCreatedToken, // Last created token info for success modal
     clearLastCreatedToken: () => setLastCreatedToken(null), // Clear after showing modal
     saveTokenToSupabase, // Export for manual updates
@@ -980,17 +984,16 @@ export const usePumpHub = () => {
 export const usePumpHubData = (tokenAddress = null) => {
   const { address } = useAccount()
   const chainId = useChainId()
-  
-  // PumpHubFactory Contract Address (Base Mainnet) - Updated
-  const FACTORY_ADDRESS = '0xE7c2Fe007C65349C91B8ccAC3c5BE5a7f2FDaF21'
-  const isContractDeployed = true
+  const FACTORY_ADDRESS = useMemo(() => getPumpHubFactoryAddress(chainId), [chainId])
+  const isContractDeployed = Boolean(FACTORY_ADDRESS)
+  const pumpReadsEnabled = isContractDeployed && isPumpHubSupportedChainId(chainId)
 
   // Platform stats
   const { data: platformStats } = useReadContract({
     address: FACTORY_ADDRESS,
     abi: PUMPHUB_FACTORY_ABI,
     functionName: 'getPlatformStats',
-    query: { enabled: isContractDeployed && chainId === NETWORKS.BASE.chainId }
+    query: { enabled: pumpReadsEnabled }
   })
 
   // All tokens count
@@ -998,7 +1001,7 @@ export const usePumpHubData = (tokenAddress = null) => {
     address: FACTORY_ADDRESS,
     abi: PUMPHUB_FACTORY_ABI,
     functionName: 'getAllTokensCount',
-    query: { enabled: isContractDeployed && chainId === NETWORKS.BASE.chainId }
+    query: { enabled: pumpReadsEnabled }
   })
 
   // Token data (if tokenAddress provided)
@@ -1007,7 +1010,7 @@ export const usePumpHubData = (tokenAddress = null) => {
     abi: PUMPHUB_FACTORY_ABI,
     functionName: 'tokenCore',
     args: tokenAddress ? [tokenAddress] : undefined,
-    query: { enabled: isContractDeployed && chainId === NETWORKS.BASE.chainId && !!tokenAddress }
+    query: { enabled: pumpReadsEnabled && !!tokenAddress }
   })
 
   const { data: tokenMeta } = useReadContract({
@@ -1015,15 +1018,15 @@ export const usePumpHubData = (tokenAddress = null) => {
     abi: PUMPHUB_FACTORY_ABI,
     functionName: 'getTokenMeta',
     args: tokenAddress ? [tokenAddress] : undefined,
-    query: { enabled: isContractDeployed && chainId === NETWORKS.BASE.chainId && !!tokenAddress }
+    query: { enabled: pumpReadsEnabled && !!tokenAddress }
   })
 
   const { data: tokenStats } = useReadContract({
     address: FACTORY_ADDRESS,
     abi: PUMPHUB_FACTORY_ABI,
-    functionName: 'getTokenStats',
+    functionName: 'tokenStats',
     args: tokenAddress ? [tokenAddress] : undefined,
-    query: { enabled: isContractDeployed && chainId === NETWORKS.BASE.chainId && !!tokenAddress }
+    query: { enabled: pumpReadsEnabled && !!tokenAddress }
   })
 
   const { data: price } = useReadContract({
@@ -1031,7 +1034,7 @@ export const usePumpHubData = (tokenAddress = null) => {
     abi: PUMPHUB_FACTORY_ABI,
     functionName: 'getPrice',
     args: tokenAddress ? [tokenAddress] : undefined,
-    query: { enabled: isContractDeployed && chainId === NETWORKS.BASE.chainId && !!tokenAddress }
+    query: { enabled: pumpReadsEnabled && !!tokenAddress }
   })
 
   const { data: marketCap } = useReadContract({
@@ -1039,7 +1042,7 @@ export const usePumpHubData = (tokenAddress = null) => {
     abi: PUMPHUB_FACTORY_ABI,
     functionName: 'getMarketCap',
     args: tokenAddress ? [tokenAddress] : undefined,
-    query: { enabled: isContractDeployed && chainId === NETWORKS.BASE.chainId && !!tokenAddress }
+    query: { enabled: pumpReadsEnabled && !!tokenAddress }
   })
 
   const { data: graduationProgress } = useReadContract({
@@ -1047,7 +1050,7 @@ export const usePumpHubData = (tokenAddress = null) => {
     abi: PUMPHUB_FACTORY_ABI,
     functionName: 'getGraduationProgress',
     args: tokenAddress ? [tokenAddress] : undefined,
-    query: { enabled: isContractDeployed && chainId === NETWORKS.BASE.chainId && !!tokenAddress }
+    query: { enabled: pumpReadsEnabled && !!tokenAddress }
   })
 
   // Token balance (if tokenAddress and user address provided)
@@ -1056,7 +1059,7 @@ export const usePumpHubData = (tokenAddress = null) => {
     abi: ERC20_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
-    query: { enabled: !!tokenAddress && !!address && chainId === NETWORKS.BASE.chainId }
+    query: { enabled: !!tokenAddress && !!address && pumpReadsEnabled }
   })
 
   return {

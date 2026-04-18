@@ -11,11 +11,11 @@ import DailyQuestSystem from '../components/DailyQuestSystem'
 import { useFastDeployModal } from '../contexts/FastDeployContext'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
-import { NETWORKS, getNetworkKey } from '../config/networks'
+import { NETWORKS, getNetworkKey, isPumpHubSupportedChainId } from '../config/networks'
 import { getProductsForHome, getProductsForHomeByNetwork, getNetworksForProductIds } from '../config/products'
-import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat, Sparkles, RotateCcw, Gift, LayoutGrid, CircleDot } from 'lucide-react'
+import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat, Sparkles, RotateCcw, Gift, LayoutGrid, CircleDot, Bot } from 'lucide-react'
 
-const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Search, Shield, Trash2, Star, Layers, Package, Factory, Rocket, Image, Sparkles, ArrowLeftRight, Repeat, Zap, Users, LayoutGrid, CircleDot }
+const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Search, Shield, Trash2, Star, Layers, Package, Factory, Rocket, Image, Sparkles, ArrowLeftRight, Repeat, Zap, Users, LayoutGrid, CircleDot, Bot }
 
 const Home = () => {
   const location = useLocation()
@@ -653,7 +653,7 @@ const Home = () => {
     )
   }
 
-  const isPumphubSupported = chainId === NETWORKS.BASE.chainId
+  const isPumphubSupported = !isConnected || isPumpHubSupportedChainId(chainId)
 
   const games = React.useMemo(() => {
     const iconStyle = { width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }
@@ -713,6 +713,7 @@ const Home = () => {
   const showSocialSection = games.some(g => g.id === 'featured-profiles')
   const showGamingSection = games.some(g => ['flip', 'dice', 'slot', 'lucky'].includes(g.id))
   const showGuildSection = games.some(g => g.id === 'base-guild-companion')
+  const showAgentSection = games.some(g => g.id === 'agent-mode')
 
   return (
     <div className="home" style={{ 
@@ -941,7 +942,7 @@ const Home = () => {
                   }}>
                     BETA
                   </span>
-                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['early-access', 'nft-wheel', 'nft-plinko']))}
+                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['early-access', 'nft-wheel', 'nft-plinko', 'agent-mode']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
                   <Link to="/early-access" className="game-card" style={{ textDecoration: 'none', display: 'block' }} state={{ fromHomeSection: 'early-access' }}>
@@ -1044,6 +1045,9 @@ const Home = () => {
                       </div>
                     </div>
                   </Link>
+                  {showAgentSection && games.filter(g => g.id === 'agent-mode').map((game) =>
+                    renderCompactCard(game, null, game.path, 'early-access')
+                  )}
                 </div>
               </div>
 
@@ -1078,11 +1082,11 @@ const Home = () => {
                     <Rocket size={compactStyles.iconSize} />
                   </div>
                   <h2 style={compactStyles.categoryTitle}>PUMPHUB</h2>
-                  {!isCompactMode && renderNetworkLogos(['base'])}
+                  {!isCompactMode && renderNetworkLogos(['base', 'tempo'])}
                 </div>
                 {!isCompactMode && (
                   <p style={{ color: '#9ca3af', fontSize: '15px', marginBottom: '24px', lineHeight: '1.6', fontFamily: 'Poppins, sans-serif' }}>
-                    Launch your own token with bonding curve. Fair launch, no presale. 0.3% trade fee goes to creator.
+                    Launch your own token with bonding curve on Base or Tempo. Fair launch, no presale. 0.3% trade fee goes to creator. Graduates to Uniswap-supported liquidity.
                   </p>
                 )}
                 <div style={compactStyles.cardGrid}>
@@ -1536,6 +1540,8 @@ const Home = () => {
                 </div>
               </div>
               )}
+
+
             </div>
           ) : (
             /* Farcaster: Original Grid Layout */

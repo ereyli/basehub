@@ -58,6 +58,47 @@ export const BASEHUB_DEPLOYER_ABI = [
   },
 ]
 
+/** TempoTokenFactory — `deployToken(name, symbol, initialSupply, decimals)` + PUSD fee (see `contracts/tempo/TempoTokenFactory.sol`). */
+export const TEMPO_TOKEN_FACTORY_ABI = [
+  {
+    inputs: [
+      { internalType: 'string', name: 'name', type: 'string' },
+      { internalType: 'string', name: 'symbol', type: 'string' },
+      { internalType: 'uint256', name: 'initialSupply', type: 'uint256' },
+      { internalType: 'uint8', name: 'decimals', type: 'uint8' },
+    ],
+    name: 'deployToken',
+    outputs: [{ internalType: 'address', name: '', type: 'address' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'deployFeeUsd6',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'feeToken',
+    outputs: [{ internalType: 'contract IFeeToken', name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'address', name: 'token', type: 'address' },
+      { indexed: true, internalType: 'address', name: 'creator', type: 'address' },
+      { indexed: false, internalType: 'string', name: 'name', type: 'string' },
+      { indexed: false, internalType: 'string', name: 'symbol', type: 'string' },
+    ],
+    name: 'TokenDeployed',
+    type: 'event',
+  },
+]
+
 export const DEPLOYER_FEE_ETH = '0.00025'
 /** NFT Launchpad: non–Early Access Pass holders */
 export const DEPLOYER_FEE_NFT_COLLECTION_ETH = '0.002'

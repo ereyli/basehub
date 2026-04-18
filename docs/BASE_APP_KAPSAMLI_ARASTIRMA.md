@@ -30,7 +30,7 @@ Kaynak: [Base Account – wallet_sendCalls](https://docs.base.org/base-account/r
 
 - Base, hangi **uygulamanın** işlemi tetiklediğini on-chain görmek istiyor (attribution).
 - **ERC-8021**: Tx calldata’nın **sonuna** standart bir **data suffix** eklenir; kontrat sadece ABI’ye göre okur, fazla byte’lar görmezden gelir.
-- **Builder Code**: base.dev’de kayıtlı, uygulamanıza özel kod (örn. `bc_cr8omxff`); suffix içinde bu kod taşınır.
+- **Builder Code**: base.dev’de kayıtlı, uygulamanıza özel kod (örn. `bc_rd8s0npa`); suffix içinde bu kod taşınır.
 
 ### 2.2 Suffix Formatı (Şema 0)
 

@@ -7,12 +7,14 @@ import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
 import NetworkGuard from '../components/NetworkGuard'
-import { getTransactionExplorerUrl } from '../config/networks'
+import { getTransactionExplorerUrl, getNetworkConfig, NETWORKS } from '../config/networks'
 import { getFarcasterUniversalLink } from '../config/farcaster'
 
 const DeployToken = () => {
   const { isConnected } = useAccount()
   const chainId = useChainId()
+  const networkLabel = getNetworkConfig(chainId)?.chainName ?? 'Base'
+  const isTempo = chainId === NETWORKS.TEMPO.chainId
   const { deployToken, isLoading, error } = useDeployToken()
   const navigate = useNavigate()
   
@@ -77,7 +79,7 @@ const DeployToken = () => {
             <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" loading="lazy" style={{ width: '60px', height: '60px', borderRadius: '16px' }} />
           </div>
           <h1>Deploy Your Token</h1>
-          <p>Create your own ERC20 token on Base network</p>
+          <p>Create your own ERC20 token on {isTempo ? 'Tempo (one-time PUSD fee)' : 'Base network'}</p>
         </div>
 
         {!deployResult ? (
@@ -147,7 +149,7 @@ const DeployToken = () => {
             <div className="deploy-info">
               <div className="info-item">
                 <Coins size={16} />
-                <span>Network: Base Mainnet</span>
+                <span>Network: {networkLabel}</span>
               </div>
               <div className="info-item">
                 <Zap size={16} />

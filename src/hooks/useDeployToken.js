@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { useAccount, useWriteContract, useWalletClient, useChainId, usePublicClient } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
-import { parseEther, encodeAbiParameters, parseAbiParameters, maxUint256 } from 'viem'
+import { parseEther, encodeAbiParameters, parseAbiParameters, maxUint256, parseEventLogs } from 'viem'
 import { config, DATA_SUFFIX } from '../config/wagmi'
 import { addXP } from '../utils/xpUtils'
 import { useNetworkCheck } from './useNetworkCheck'
 import { useQuestSystem } from './useQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { NETWORKS, getContractAddressByNetwork } from '../config/networks'
-import { BASEHUB_DEPLOYER_ABI, DEPLOYER_FEE_ETH } from '../config/deployer'
+import { BASEHUB_DEPLOYER_ABI, DEPLOYER_FEE_ETH, TEMPO_TOKEN_FACTORY_ABI } from '../config/deployer'
 
 // ERC20 ABI with constructor for writeContractAsync
 const ERC20_ABI = [
@@ -454,24 +454,86 @@ export const useDeployToken = () => {
       const feeWallet = '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
       const shortName = name.substring(0, 20)
       const shortSymbol = symbol.substring(0, 10)
-      const constructorData = encodeAbiParameters(
-        parseAbiParameters('string name, string symbol, uint256 initialSupply'),
-        [shortName, shortSymbol, BigInt(initialSupply)]
-      )
-      const initCode = ERC20_BYTECODE + constructorData.slice(2)
+      const decimalsNum =
+        typeof decimals === 'number' && !Number.isNaN(decimals)
+          ? Math.min(255, Math.max(0, Math.floor(decimals)))
+          : parseInt(String(decimals ?? '18'), 10) || 18
 
       let deployTxHash
       let contractAddress = null
       let feeTxHash = null
-      let feeLabel = isTempoChain ? '0.55 USD (TIP20)' : (DEPLOYER_FEE_ETH + ' ETH')
+      let feeLabel = isTempoChain ? '0.022 USD (PUSD)' : (DEPLOYER_FEE_ETH + ' ETH')
 
+      const tempoTokenFactory = isTempoChain ? getContractAddressByNetwork('TEMPO_TOKEN_FACTORY', chainId) : null
       const deployerAddress = getContractAddressByNetwork('BASEHUB_DEPLOYER', chainId)
+      const isValidTempoFactory =
+        typeof tempoTokenFactory === 'string' && /^0x[a-fA-F0-9]{40}$/i.test(tempoTokenFactory)
 
-      if (deployerAddress) {
+      const isFastChain =
+        chainId === NETWORKS.INKCHAIN.chainId ||
+        chainId === NETWORKS.SONEIUM.chainId ||
+        chainId === NETWORKS.MEGAETH.chainId
+      const timeoutDuration = isFastChain ? 120000 : 60000
+      const receiptPolling = isFastChain ? 1000 : 4000
+
+      if (isTempoChain && isValidTempoFactory) {
+        await ensureTempoDeployerAllowance(tempoTokenFactory)
+        let deployFeeUsd6 = 22_000n
+        try {
+          deployFeeUsd6 = await publicClient.readContract({
+            address: tempoTokenFactory,
+            abi: TEMPO_TOKEN_FACTORY_ABI,
+            functionName: 'deployFeeUsd6',
+          })
+        } catch {
+          /* default matches contract default */
+        }
+        feeLabel = `${Number(deployFeeUsd6) / 1e6} USD (PUSD)`
+        console.log('📦 Deploying via TempoTokenFactory (PUSD fee)...')
+        if (!walletClient) throw new Error('Wallet not available. Please connect your wallet.')
+        deployTxHash = await writeContractAsync({
+          address: tempoTokenFactory,
+          abi: TEMPO_TOKEN_FACTORY_ABI,
+          functionName: 'deployToken',
+          args: [shortName, shortSymbol, BigInt(initialSupply), decimalsNum],
+          chainId,
+          dataSuffix: DATA_SUFFIX,
+        })
+        console.log('✅ Deploy transaction sent:', deployTxHash)
+        const deployReceipt = await Promise.race([
+          waitForTransactionReceipt(config, {
+            hash: deployTxHash,
+            chainId,
+            confirmations: 1,
+            pollingInterval: receiptPolling,
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Deploy confirmation timeout')), timeoutDuration)),
+        ]).catch((e) => {
+          console.warn('⚠️ Deploy confirmation timeout:', e.message)
+          return null
+        })
+        if (deployReceipt?.logs?.length) {
+          try {
+            const evs = parseEventLogs({
+              abi: TEMPO_TOKEN_FACTORY_ABI,
+              logs: deployReceipt.logs,
+              eventName: 'TokenDeployed',
+            })
+            if (evs[0]?.args?.token) contractAddress = evs[0].args.token
+          } catch (e) {
+            console.warn('TokenDeployed log parse:', e)
+          }
+        }
+        console.log('✅ ERC20 deployed via TempoTokenFactory', contractAddress || '(check tx)')
+      } else if (deployerAddress) {
+        const constructorData = encodeAbiParameters(
+          parseAbiParameters('string name, string symbol, uint256 initialSupply'),
+          [shortName, shortSymbol, BigInt(initialSupply)]
+        )
+        const initCode = ERC20_BYTECODE + constructorData.slice(2)
         if (isTempoChain) {
           await ensureTempoDeployerAllowance(deployerAddress)
         }
-        // Single-tx via BaseHubDeployer (Base)
         console.log('📦 Deploying via BaseHubDeployer (single tx)...')
         if (!walletClient) throw new Error('Wallet not available. Please connect your wallet.')
         deployTxHash = await writeContractAsync({
@@ -481,34 +543,46 @@ export const useDeployToken = () => {
           args: [initCode],
           ...(isTempoChain ? {} : { value: parseEther(DEPLOYER_FEE_ETH) }),
           chainId,
-          dataSuffix: DATA_SUFFIX, // ERC-8021 Builder Code attribution (Base)
+          dataSuffix: DATA_SUFFIX,
         })
         console.log('✅ Deploy transaction sent:', deployTxHash)
-        const isFastChain = chainId === NETWORKS.INKCHAIN.chainId || chainId === NETWORKS.SONEIUM.chainId || chainId === NETWORKS.MEGAETH.chainId
-        const timeoutDuration = isFastChain ? 120000 : 60000
         const deployReceipt = await Promise.race([
-          waitForTransactionReceipt(config, { hash: deployTxHash, chainId, confirmations: 1, pollingInterval: isFastChain ? 1000 : 4000 }),
+          waitForTransactionReceipt(config, {
+            hash: deployTxHash,
+            chainId,
+            confirmations: 1,
+            pollingInterval: receiptPolling,
+          }),
           new Promise((_, reject) => setTimeout(() => reject(new Error('Deploy confirmation timeout')), timeoutDuration)),
         ]).catch((e) => {
           console.warn('⚠️ Deploy confirmation timeout:', e.message)
           return null
         })
         if (deployReceipt?.logs?.length) {
-          const deployerLog = deployReceipt.logs.find((l) => l.address?.toLowerCase() === deployerAddress.toLowerCase() && l.topics?.length >= 2)
+          const deployerLog = deployReceipt.logs.find(
+            (l) => l.address?.toLowerCase() === deployerAddress.toLowerCase() && l.topics?.length >= 2
+          )
           if (deployerLog?.topics?.[1]) contractAddress = '0x' + deployerLog.topics[1].slice(-40).toLowerCase()
         }
         console.log('✅ ERC20 deployed via deployer', contractAddress || '(check tx)')
       } else {
-        // Legacy two-tx (e.g. InkChain)
+        const constructorData = encodeAbiParameters(
+          parseAbiParameters('string name, string symbol, uint256 initialSupply'),
+          [shortName, shortSymbol, BigInt(initialSupply)]
+        )
+        const initCode = ERC20_BYTECODE + constructorData.slice(2)
         console.log('💰 Sending fee to wallet:', feeWallet)
         if (!walletClient) throw new Error('Wallet not available. Please connect your wallet.')
         feeTxHash = await walletClient.sendTransaction({ to: feeWallet, value: parseEther('0.0002'), chainId })
         console.log('✅ Fee transaction sent:', feeTxHash)
         try {
-          const isFastChain = chainId === NETWORKS.INKCHAIN.chainId || chainId === NETWORKS.SONEIUM.chainId || chainId === NETWORKS.MEGAETH.chainId
-          const timeoutDuration = isFastChain ? 120000 : 60000
           await Promise.race([
-            waitForTransactionReceipt(config, { hash: feeTxHash, chainId, confirmations: 1, pollingInterval: isFastChain ? 1000 : 4000 }),
+            waitForTransactionReceipt(config, {
+              hash: feeTxHash,
+              chainId,
+              confirmations: 1,
+              pollingInterval: receiptPolling,
+            }),
             new Promise((_, reject) => setTimeout(() => reject(new Error('Fee confirmation timeout')), timeoutDuration)),
           ])
         } catch (e) {
@@ -520,10 +594,13 @@ export const useDeployToken = () => {
         console.log('✅ Deploy transaction sent:', deployTxHash)
         feeLabel = '0.0002 ETH'
         try {
-          const isFastChain = chainId === NETWORKS.INKCHAIN.chainId || chainId === NETWORKS.SONEIUM.chainId || chainId === NETWORKS.MEGAETH.chainId
-          const timeoutDuration = isFastChain ? 120000 : 60000
           const deployReceipt = await Promise.race([
-            waitForTransactionReceipt(config, { hash: deployTxHash, chainId, confirmations: 1, pollingInterval: isFastChain ? 1000 : 4000 }),
+            waitForTransactionReceipt(config, {
+              hash: deployTxHash,
+              chainId,
+              confirmations: 1,
+              pollingInterval: receiptPolling,
+            }),
             new Promise((_, reject) => setTimeout(() => reject(new Error('Deploy confirmation timeout')), timeoutDuration)),
           ])
           contractAddress = deployReceipt?.contractAddress ?? null

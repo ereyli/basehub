@@ -11,7 +11,12 @@ export const TABLES = {
   MINIAPP_TRANSACTIONS: 'miniapp_transactions',
   LEADERBOARD: 'leaderboard',
   SWAPHUB_SWAPS: 'swaphub_swaps',
-  SWAPHUB_VOLUME: 'swaphub_volume'
+  SWAPHUB_VOLUME: 'swaphub_volume',
+  AGENT_SUBSCRIPTIONS: 'agent_subscriptions',
+  AGENT_PROFILES: 'agent_profiles',
+  AGENT_MEMORIES: 'agent_memories',
+  AGENT_RUNS: 'agent_runs',
+  AGENT_REFLECTIONS: 'agent_reflections',
 }
 
 // XP System Configuration

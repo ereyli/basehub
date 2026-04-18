@@ -151,10 +151,18 @@ export const rainbowkitConfig = getDefaultConfig({
   ssr: false, // Client-side rendering
 })
 
+/** Local dev hosts: web layout + RainbowKit (avoid iframe / miniapp false positives). */
+export function isLocalDevHostname () {
+  if (typeof window === 'undefined') return false
+  const h = (window.location.hostname || '').toLowerCase()
+  return h === 'localhost' || h === '127.0.0.1' || h === '[::1]' || h.endsWith('.localhost')
+}
+
 // Helper function to check if we're in Farcaster
 export const isInFarcaster = () => {
   if (typeof window === 'undefined') return false
-  
+  if (isLocalDevHostname()) return false
+
   return window.location !== window.parent.location ||
          window.parent !== window ||
          window.location.href.includes('farcaster.xyz') ||
@@ -164,9 +172,10 @@ export const isInFarcaster = () => {
 // Helper function to check if we should use RainbowKit (web only)
 export const shouldUseRainbowKit = () => {
   if (typeof window === 'undefined') return false
-  
+  if (isLocalDevHostname()) return true
+
   // Only use RainbowKit on web, not in Farcaster
-  return !isInFarcaster() && 
+  return !isInFarcaster() &&
          !window.location.href.includes('farcaster.xyz') &&
          !window.location.href.includes('warpcast.com')
 }

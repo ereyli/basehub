@@ -24,10 +24,10 @@ const PRICING = {
 }
 
 // Supabase client
-// Support both VITE_ prefix (for frontend compatibility) and direct env vars
+// Public URL may come from VITE_*; secrets must stay server-only.
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY
 const supabaseKey = supabaseServiceKey || supabaseAnonKey
 
 console.log('🔑 Supabase Configuration:', {
@@ -336,4 +336,3 @@ export default async function handler(req, res) {
     }
   }
 }
-

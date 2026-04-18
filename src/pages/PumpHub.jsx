@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { useAccount, useReadContract, usePublicClient, useBalance } from 'wagmi'
+import { useAccount, useReadContract, usePublicClient, useBalance, useChainId } from 'wagmi'
 import { formatEther, formatUnits, parseEther } from 'viem'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { 
@@ -15,9 +15,7 @@ import { useFarcaster } from '../contexts/FarcasterContext'
 import { getFarcasterUniversalLink } from '../config/farcaster'
 import { supabase } from '../config/supabase'
 import { uploadToIPFS } from '../utils/pinata'
-
-// Contract address
-const PUMPHUB_FACTORY_ADDRESS = '0xE7c2Fe007C65349C91B8ccAC3c5BE5a7f2FDaF21'
+import { getPumpHubFactoryAddress } from '../config/networks'
 
 // Contract ABI for reading tokens
 const PUMPHUB_FACTORY_ABI = [
@@ -982,7 +980,7 @@ const TokenCreatorCard = ({ creatorAddress, tokenAddress, isMobile = false }) =>
 // ============================================
 // TOKEN TRADE PANEL
 // ============================================
-const TokenTradePanel = ({ tokenData, tokenAddress, buyTokens, sellTokens, claimFees, isLoading, error, isMobile = false }) => {
+const TokenTradePanel = ({ tokenData, tokenAddress, factoryAddress, buyTokens, sellTokens, claimFees, isLoading, error, isMobile = false }) => {
   const { address, isConnected } = useAccount()
   const [tradeMode, setTradeMode] = useState('buy')
   const [amount, setAmount] = useState('')
@@ -1006,11 +1004,11 @@ const TokenTradePanel = ({ tokenData, tokenAddress, buyTokens, sellTokens, claim
   
   // Get creator fees
   const { data: creatorFees } = useReadContract({
-    address: PUMPHUB_FACTORY_ADDRESS,
+    address: factoryAddress,
     abi: PUMPHUB_FACTORY_ABI,
     functionName: 'fees',
     args: address ? [address] : undefined,
-    query: { enabled: !!address }
+    query: { enabled: !!address && !!factoryAddress }
   })
   
   const userTokenBalance = tokenBalance ? formatUnits(tokenBalance, 18) : '0'
@@ -1480,6 +1478,8 @@ const TokenCreationSuccessModal = ({ token, onClose, onViewToken }) => {
 // ============================================
 const PumpHub = () => {
   const { address, isConnected } = useAccount()
+  const chainId = useChainId()
+  const pumphubFactoryAddress = useMemo(() => getPumpHubFactoryAddress(chainId), [chainId])
   const publicClient = usePublicClient()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -1671,12 +1671,17 @@ const PumpHub = () => {
           return
         }
 
+        if (!pumphubFactoryAddress) {
+          if (!cancelled) setLoadingTokens(false)
+          return
+        }
+
         // Step 2: Get on-chain token count (retry on failure)
         let onChainCount = null
         for (let attempt = 0; attempt < 3; attempt++) {
           try {
             const countRaw = await publicClient.readContract({
-              address: PUMPHUB_FACTORY_ADDRESS,
+              address: pumphubFactoryAddress,
               abi: PUMPHUB_FACTORY_ABI,
               functionName: 'getAllTokensCount',
             })
@@ -1715,7 +1720,7 @@ const PumpHub = () => {
           for (let attempt = 0; attempt < 3; attempt++) {
             try {
               batch = await publicClient.readContract({
-                address: PUMPHUB_FACTORY_ADDRESS,
+                address: pumphubFactoryAddress,
                 abi: PUMPHUB_FACTORY_ABI,
                 functionName: 'getTokens',
                 args: [BigInt(offset), BigInt(limit)]
@@ -1758,9 +1763,9 @@ const PumpHub = () => {
         const multicallContracts = []
         tokenAddresses.forEach(addr => {
           multicallContracts.push(
-            { address: PUMPHUB_FACTORY_ADDRESS, abi: PUMPHUB_FACTORY_ABI, functionName: 'getTokenMeta', args: [addr] },
-            { address: PUMPHUB_FACTORY_ADDRESS, abi: PUMPHUB_FACTORY_ABI, functionName: 'tokenCore', args: [addr] },
-            { address: PUMPHUB_FACTORY_ADDRESS, abi: PUMPHUB_FACTORY_ABI, functionName: 'tokenStats', args: [addr] },
+            { address: pumphubFactoryAddress, abi: PUMPHUB_FACTORY_ABI, functionName: 'getTokenMeta', args: [addr] },
+            { address: pumphubFactoryAddress, abi: PUMPHUB_FACTORY_ABI, functionName: 'tokenCore', args: [addr] },
+            { address: pumphubFactoryAddress, abi: PUMPHUB_FACTORY_ABI, functionName: 'tokenStats', args: [addr] },
           )
         })
 
@@ -1886,7 +1891,7 @@ const PumpHub = () => {
 
     fetchTokens()
     return () => { cancelled = true }
-  }, [publicClient, parseOnChainToken])
+  }, [publicClient, parseOnChainToken, pumphubFactoryAddress])
   
   // Fetch selected token data (with retry on 429 rate limit)
   useEffect(() => {
@@ -1895,24 +1900,24 @@ const PumpHub = () => {
     const retryDelayMs = 1800
 
     const fetchSelectedTokenData = async (attempt = 0) => {
-      if (!selectedToken || !publicClient) return
+      if (!selectedToken || !publicClient || !pumphubFactoryAddress) return
       
       try {
         const [meta, core, stats] = await Promise.all([
           publicClient.readContract({
-            address: PUMPHUB_FACTORY_ADDRESS,
+            address: pumphubFactoryAddress,
             abi: PUMPHUB_FACTORY_ABI,
             functionName: 'getTokenMeta',
             args: [selectedToken]
           }),
           publicClient.readContract({
-            address: PUMPHUB_FACTORY_ADDRESS,
+            address: pumphubFactoryAddress,
             abi: PUMPHUB_FACTORY_ABI,
             functionName: 'tokenCore',
             args: [selectedToken]
           }),
           publicClient.readContract({
-            address: PUMPHUB_FACTORY_ADDRESS,
+            address: pumphubFactoryAddress,
             abi: PUMPHUB_FACTORY_ABI,
             functionName: 'tokenStats',
             args: [selectedToken]
@@ -1951,7 +1956,7 @@ const PumpHub = () => {
     
     fetchSelectedTokenData()
     return () => { cancelled = true }
-  }, [selectedToken, publicClient])
+  }, [selectedToken, publicClient, pumphubFactoryAddress])
   
   // Filter and sort tokens
   const filteredTokens = useMemo(() => {
@@ -2397,6 +2402,7 @@ const PumpHub = () => {
                         <TokenTradePanel 
                           tokenData={selectedTokenData} 
                           tokenAddress={selectedToken}
+                          factoryAddress={pumphubFactoryAddress}
                           buyTokens={buyTokens}
                           sellTokens={sellTokens}
                           claimFees={claimFees}
@@ -2422,6 +2428,7 @@ const PumpHub = () => {
                         <TokenTradePanel 
                           tokenData={selectedTokenData} 
                           tokenAddress={selectedToken}
+                          factoryAddress={pumphubFactoryAddress}
                           buyTokens={buyTokens}
                           sellTokens={sellTokens}
                           claimFees={claimFees}

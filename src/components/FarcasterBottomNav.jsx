@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useAccount, useChainId } from 'wagmi'
 import { useTransactions } from '../hooks/useTransactions'
 import { isTestnetChainId } from '../config/networks'
-import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, Trash2, Star, Users, Repeat, ArrowLeftRight } from 'lucide-react'
+import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, Trash2, Star, Users, Repeat, ArrowLeftRight, Bot } from 'lucide-react'
 import { getNavItems } from '../config/products'
 
-const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Rocket, Trash2, Star, Users, Repeat, ArrowLeftRight }
+const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Rocket, Trash2, Star, Users, Repeat, ArrowLeftRight, Bot }
 
 const FarcasterBottomNav = () => {
   const navigate = useNavigate()

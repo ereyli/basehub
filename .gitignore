@@ -89,3 +89,7 @@ typechain-types/
 
 # Local Netlify folder
 .netlify
+.vercel
+
+# Supabase CLI cache
+supabase/.temp/

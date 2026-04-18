@@ -3,10 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAccount, useChainId } from 'wagmi'
 import { useTransactions } from '../hooks/useTransactions'
 import { isTestnetChainId } from '../config/networks'
-import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, ChevronRight, ChevronLeft, Trash2, Star, Users, Repeat, Zap, ArrowLeftRight, Search, Sparkles } from 'lucide-react'
+import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, ChevronRight, ChevronLeft, Trash2, Star, Users, Repeat, Zap, ArrowLeftRight, Search, Sparkles, Bot } from 'lucide-react'
 import { getNavItems } from '../config/products'
 
-const LUCIDE_ICONS = { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, Trash2, Star, Users, Repeat, Zap, ArrowLeftRight, Search, Sparkles }
+const LUCIDE_ICONS = { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, Trash2, Star, Users, Repeat, Zap, ArrowLeftRight, Search, Sparkles, Bot }
 
 const WebBottomNav = () => {
   const navigate = useNavigate()

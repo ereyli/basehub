@@ -4,6 +4,8 @@
  * icon: Lucide icon name (string). iconImage: optional path for custom image.
  */
 
+import { isAgentModeEnabled } from './features'
+
 export const CATEGORIES = {
   EARLY_ACCESS: 'earlyAccess',
   DEX: 'dex',
@@ -14,12 +16,16 @@ export const CATEGORIES = {
   DEPLOY: 'deploy',
   SOCIAL: 'social',
   NFT: 'nft',
+  /** Wallet-centered bounded automation for the BaseHub web app */
+  AGENT: 'agent',
 }
 
 /** Nav section id -> product ids for sidebar/bottom nav */
 export const NAV_SECTIONS = {
   gaming: ['flip', 'dice', 'slot', 'lucky'],
   guild: ['base-guild-companion'],
+  /** Agent: visible in nav; /agent shows teaser until feature flag is on */
+  agent: ['agent-mode'],
   nft: ['early-access', 'nft-launchpad', 'nft-launchpad-explore', 'prediction-arena', 'nft-plinko'],
   analysis: ['wallet-analysis', 'contract-security', 'allowance-cleaner'],
   deploy: ['deploy', 'deploy-erc721', 'deploy-erc1155'],
@@ -28,7 +34,7 @@ export const NAV_SECTIONS = {
 }
 
 /** Mobile header quick menu: id list (order matters) */
-export const MOBILE_MENU_IDS = ['home', 'swap', 'pumphub', 'flip', 'dice', 'wallet-analysis', 'deploy', 'badges', 'profile']
+export const MOBILE_MENU_IDS = ['home', 'swap', 'agent-mode', 'pumphub', 'flip', 'dice', 'wallet-analysis', 'deploy', 'badges', 'profile']
 
 /** Static menu entries (not in PRODUCTS) for mobile header */
 const MOBILE_STATIC_ITEMS = [
@@ -55,6 +61,7 @@ const CAST_SHARE = {
   'featured-profiles': 'Register your profile on BaseHub Featured Profiles. Connect through mutual follows and earn.',
   'base-guild-companion': 'Track your Base Guild mission progress with wallet checks and one-click actions inside BaseHub.',
   'prediction-arena': 'Create yes/no ETH prediction rounds on BaseHub. Win by consensus, earn XP.',
+  'agent-mode': 'Create an agent wallet on BaseHub and let it run BaseHub GM and GN actions from its own address.',
   'deploy': 'Deploy your own ERC20 token on BaseHub. No code – multi-chain in one click.',
   'deploy-erc721': 'Deploy your own NFT collection (ERC721) on BaseHub. Base, Ink, Soneium and more.',
   'deploy-erc1155': 'Deploy multi-token contracts (ERC1155) on BaseHub. One contract, many assets.',
@@ -62,7 +69,7 @@ const CAST_SHARE = {
   'nft-launchpad-explore': 'Browse and mint from NFT collections launched on BaseHub. Base, Ink, Soneium, MegaETH.',
 }
 
-export const PRODUCTS = [
+const PRODUCTS_ALL = [
   { id: 'early-access', path: '/early-access', label: 'Early Access', title: 'Early Access Pass', description: 'Mint your BaseHub Early Access Pass and unlock exclusive benefits', castShareText: CAST_SHARE['early-access'], category: CATEGORIES.EARLY_ACCESS, color: '#fbbf24', icon: 'Rocket', xpReward: '3000 XP', bonusXP: null, networks: ['base'] },
   { id: 'nft-wheel', path: '/nft-wheel', label: 'NFT Wheel', title: 'NFT Wheel of Fortune', description: 'Spin to win XP — pay via x402 on Base (USDC). NFT holders only.', castShareText: CAST_SHARE['nft-wheel'], category: CATEGORIES.EARLY_ACCESS, color: '#8b5cf6', icon: 'Sparkles', xpReward: '2K-224K XP', bonusXP: 'MEGA JACKPOT!', networks: ['base'], isNFTGated: true },
   { id: 'nft-plinko', path: '/nft-plinko', label: 'NFT Plinko', title: 'NFT Plinko', description: 'Drop the ball and win XP — same odds as Wheel. Pay via x402. NFT holders only.', castShareText: CAST_SHARE['nft-plinko'], category: CATEGORIES.EARLY_ACCESS, color: '#22d3ee', icon: 'CircleDot', xpReward: '2K-224K XP', bonusXP: 'MEGA JACKPOT!', networks: ['base'], isNFTGated: true },
@@ -77,6 +84,7 @@ export const PRODUCTS = [
   { id: 'allowance-cleaner', path: '/allowance-cleaner', label: 'Allowance Cleaner', title: 'Allowance Cleaner', description: 'Scan and revoke risky token approvals', castShareText: CAST_SHARE['allowance-cleaner'], category: CATEGORIES.ANALYSIS, color: '#8b5cf6', icon: 'Trash2', xpReward: '300 XP', bonusXP: '0.1 USDC', networks: ['base'], isX402: true },
   { id: 'featured-profiles', path: '/featured-profiles', label: 'Featured Profiles', title: 'Featured Profiles', description: 'Register your profile and connect through mutual follows', castShareText: CAST_SHARE['featured-profiles'], category: CATEGORIES.SOCIAL, color: '#f59e0b', icon: 'Star', xpReward: '200 XP', bonusXP: '0.2-6.0 USDC', networks: ['base'], isX402: true },
   { id: 'base-guild-companion', path: '/base-guild', label: 'Base Guild', title: 'Base Guild Companion', description: 'Complete Base Guild-style missions with one-click actions and wallet checks', castShareText: CAST_SHARE['base-guild-companion'], category: CATEGORIES.GUILD, color: '#2563eb', icon: 'Shield', xpReward: '500 XP', bonusXP: 'Community bonus', networks: ['base'] },
+  { id: 'agent-mode', path: '/agent', label: 'Agent', title: 'Agent Mode (Beta)', description: 'Create a separate wallet and let it run BaseHub actions with your limits', castShareText: CAST_SHARE['agent-mode'], category: CATEGORIES.EARLY_ACCESS, color: '#60a5fa', icon: 'Bot', xpReward: 'Setup', bonusXP: 'Agent', networks: ['base'] },
   { id: 'prediction-arena', path: '/prediction-arena', label: 'Prediction Arena', title: 'Prediction Arena', description: 'Create yes/no ETH prediction rounds and win by side consensus', castShareText: CAST_SHARE['prediction-arena'], category: CATEGORIES.NFT, color: '#14b8a6', icon: 'Users', xpReward: '2000 XP', bonusXP: '200 XP per bet', networks: ['base'] },
   { id: 'deploy', path: '/deploy', label: 'Deploy Token', title: 'Deploy Token', description: 'Create your own ERC20 token', castShareText: CAST_SHARE['deploy'], category: CATEGORIES.DEPLOY, color: '#f59e0b', icon: 'Coins', iconImage: '/crypto-logos/basahub logo/ERC20.png', xpReward: '850 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'katana', 'megaeth', 'tempo', 'arc-restnet', 'robinhood-testnet'] },
   { id: 'deploy-erc721', path: '/deploy-erc721', label: 'ERC721', title: 'Deploy ERC721', description: 'Deploy your own NFT contract', castShareText: CAST_SHARE['deploy-erc721'], category: CATEGORIES.DEPLOY, color: '#06b6d4', icon: 'Package', iconImage: '/crypto-logos/basahub logo/ERC-721.png', xpReward: '850 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'katana', 'megaeth', 'tempo', 'arc-restnet', 'robinhood-testnet'] },
@@ -84,6 +92,19 @@ export const PRODUCTS = [
   { id: 'nft-launchpad', path: '/nft-launchpad', label: 'NFT Launchpad', title: 'NFT Launchpad', description: 'Create your own NFT collection. Upload art or generate with AI, then deploy on Base, Ink, Soneium, MegaETH or Tempo.', castShareText: CAST_SHARE['nft-launchpad'], category: CATEGORIES.NFT, color: '#3b82f6', icon: 'Package', xpReward: '2000 XP', bonusXP: '200 XP per mint', networks: ['base', 'ink', 'soneium', 'megaeth', 'tempo'], isX402: true, holderDiscount: 'Pass: 0.0005 ETH deploy (Base)' },
   { id: 'nft-launchpad-explore', path: '/nft-launchpad?tab=explore', label: 'Launched NFTs', title: 'Launched Collections', description: 'Browse and mint from NFT collections launched on Base, Ink, Soneium, MegaETH or Tempo', castShareText: CAST_SHARE['nft-launchpad-explore'], category: CATEGORIES.NFT, color: '#10b981', icon: 'LayoutGrid', xpReward: '200 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'megaeth', 'tempo'] },
 ]
+
+/** Public catalog — Agent stays listed; copy reflects “Soon” until VITE_AGENT_MODE_ENABLED=true */
+export const PRODUCTS = PRODUCTS_ALL.map((p) => {
+  if (p.id !== 'agent-mode') return p
+  if (!isAgentModeEnabled()) {
+    return {
+      ...p,
+      title: 'Agent Mode (Soon)',
+      description: 'Automated BaseHub actions from a dedicated wallet — coming soon.',
+    }
+  }
+  return p
+})
 
 /** Get product by id */
 export function getProductById(id) {
@@ -134,7 +155,7 @@ export function getProductsForHomeByNetwork(chainId, getNetworkKey) {
 
 /** Get mobile header menu items (order by MOBILE_MENU_IDS; label/icon from PRODUCTS or MOBILE_STATIC_ITEMS) */
 export function getMobileMenuItems() {
-  return MOBILE_MENU_IDS.map(id => {
+  return MOBILE_MENU_IDS.map((id) => {
     const staticItem = MOBILE_STATIC_ITEMS.find(s => s.id === id)
     if (staticItem) return staticItem
     const product = getProductById(id)
