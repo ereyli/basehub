@@ -70,7 +70,7 @@ export default function AdminNotifications() {
       e.preventDefault()
       const s = gateSecret.trim()
       if (!s) {
-        setLoginError('Şifre gerekli.')
+        setLoginError('Password required.')
         return
       }
       setLoginLoading(true)
@@ -87,7 +87,7 @@ export default function AdminNotifications() {
         })
         const data = await res.json().catch(() => ({}))
         if (!res.ok) {
-          if (res.status === 401) throw new Error('Şifre hatalı.')
+          if (res.status === 401) throw new Error('Incorrect password.')
           throw new Error(data.detail || data.error || `HTTP ${res.status}`)
         }
         setAdminSecret(s)
@@ -95,7 +95,7 @@ export default function AdminNotifications() {
         setUnlocked(true)
         await loadHistory(s)
       } catch (err) {
-        setLoginError(err.message || 'Giriş başarısız')
+        setLoginError(err.message || 'Sign-in failed.')
       } finally {
         setLoginLoading(false)
       }
@@ -159,14 +159,14 @@ export default function AdminNotifications() {
   if (!unlocked) {
     return (
       <div className="deploy-token-page" style={{ minHeight: '100vh' }}>
-        <EmbedMeta title="Admin — BaseHub" description="Internal" />
+        <EmbedMeta title="Admin sign-in — BaseHub" description="Internal" />
 
         <div className="deploy-container" style={{ maxWidth: 420, margin: '0 auto', padding: '24px 16px' }}>
           <BackButton />
 
-          <h1 style={{ fontSize: 22, margin: '16px 0 8px', color: '#e2e8f0' }}>Admin girişi</h1>
+          <h1 style={{ fontSize: 22, margin: '16px 0 8px', color: '#e2e8f0' }}>Admin sign-in</h1>
           <p style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.5, marginBottom: 22 }}>
-            Bildirim paneline erişmek için yönetici şifresini girin.
+            Enter the admin password to open the notification panel.
           </p>
 
           <form
@@ -182,13 +182,13 @@ export default function AdminNotifications() {
             }}
           >
             <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: '#94a3b8' }}>
-              Şifre
+              Password
               <input
                 type="password"
                 autoComplete="current-password"
                 value={gateSecret}
                 onChange={(ev) => setGateSecret(ev.target.value)}
-                placeholder="Admin şifresi"
+                placeholder="Admin password"
                 required
                 style={{
                   padding: '12px 14px',
@@ -204,7 +204,7 @@ export default function AdminNotifications() {
               <p style={{ margin: 0, fontSize: 13, color: '#f87171' }}>{loginError}</p>
             )}
             <button type="submit" className="deploy-button" disabled={loginLoading} style={{ width: '100%' }}>
-              {loginLoading ? '…' : 'Giriş'}
+              {loginLoading ? '…' : 'Sign in'}
             </button>
           </form>
         </div>
