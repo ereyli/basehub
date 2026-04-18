@@ -52,7 +52,7 @@ const PredictionArena = () => {
 
   const [markets, setMarkets] = useState([])
   const [question, setQuestion] = useState('')
-  const [durationSeconds, setDurationSeconds] = useState(3600)
+  const [durationSeconds, setDurationSeconds] = useState(43200)
   const [betInputs, setBetInputs] = useState({})
   const [activeTab, setActiveTab] = useState('markets')
   const [marketView, setMarketView] = useState('predictions')
@@ -108,9 +108,6 @@ const PredictionArena = () => {
 
   const durationOptions = useMemo(
     () => [
-      { label: '1 hour', value: 3600 },
-      { label: '2 hours', value: 7200 },
-      { label: '6 hours', value: 21600 },
       { label: '12 hours', value: 43200 },
       { label: '24 hours', value: 86400 },
     ],
