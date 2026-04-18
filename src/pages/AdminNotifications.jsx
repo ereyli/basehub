@@ -1,10 +1,12 @@
 /**
  * Internal admin: Base App push notifications (Base Dashboard API).
- * Auth: ADMIN_NOTIFICATIONS_SECRET sent in body; validated only on server.
+ * Secret only on server validation; gate screen then panel (no secret in main form).
  */
 import React, { useCallback, useState } from 'react'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
+
+const HISTORY_LIMIT = 10
 
 function formatDate(iso) {
   if (!iso) return ''
@@ -17,7 +19,12 @@ function formatDate(iso) {
 }
 
 export default function AdminNotifications() {
+  const [unlocked, setUnlocked] = useState(false)
   const [adminSecret, setAdminSecret] = useState('')
+  const [gateSecret, setGateSecret] = useState('')
+  const [loginLoading, setLoginLoading] = useState(false)
+  const [loginError, setLoginError] = useState(null)
+
   const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
   const [targetPath, setTargetPath] = useState('/')
@@ -29,13 +36,10 @@ export default function AdminNotifications() {
   const [historyItems, setHistoryItems] = useState([])
   const [historyLoading, setHistoryLoading] = useState(false)
   const [historyError, setHistoryError] = useState(null)
-  const [historySearch, setHistorySearch] = useState('')
 
-  const loadHistory = useCallback(async () => {
-    if (!adminSecret.trim()) {
-      setHistoryError('Önce admin secret girin.')
-      return
-    }
+  const loadHistory = useCallback(async (secret) => {
+    const key = secret ?? adminSecret
+    if (!key.trim()) return
     setHistoryLoading(true)
     setHistoryError(null)
     try {
@@ -43,10 +47,9 @@ export default function AdminNotifications() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          adminSecret,
+          adminSecret: key,
           action: 'list',
-          limit: 80,
-          search: historySearch.trim() || undefined,
+          limit: HISTORY_LIMIT,
         }),
       })
       const data = await res.json().catch(() => ({}))
@@ -60,7 +63,56 @@ export default function AdminNotifications() {
     } finally {
       setHistoryLoading(false)
     }
-  }, [adminSecret, historySearch])
+  }, [adminSecret])
+
+  const onGateSubmit = useCallback(
+    async (e) => {
+      e.preventDefault()
+      const s = gateSecret.trim()
+      if (!s) {
+        setLoginError('Şifre gerekli.')
+        return
+      }
+      setLoginLoading(true)
+      setLoginError(null)
+      try {
+        const res = await fetch('/api/admin-notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            adminSecret: s,
+            action: 'list',
+            limit: 1,
+          }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          if (res.status === 401) throw new Error('Şifre hatalı.')
+          throw new Error(data.detail || data.error || `HTTP ${res.status}`)
+        }
+        setAdminSecret(s)
+        setGateSecret('')
+        setUnlocked(true)
+        await loadHistory(s)
+      } catch (err) {
+        setLoginError(err.message || 'Giriş başarısız')
+      } finally {
+        setLoginLoading(false)
+      }
+    },
+    [gateSecret, loadHistory]
+  )
+
+  const lockPanel = useCallback(() => {
+    setUnlocked(false)
+    setAdminSecret('')
+    setGateSecret('')
+    setHistoryItems([])
+    setResult(null)
+    setError(null)
+    setHistoryError(null)
+    setLoginError(null)
+  }, [])
 
   const applyHistoryRow = useCallback((row) => {
     setTitle(row.title || '')
@@ -93,7 +145,7 @@ export default function AdminNotifications() {
         }
         setResult(data)
         if (!dryRun && data.ok) {
-          loadHistory()
+          loadHistory(adminSecret)
         }
       } catch (err) {
         setError(err.message || 'Request failed')
@@ -104,17 +156,89 @@ export default function AdminNotifications() {
     [adminSecret, title, message, targetPath, dryRun, loadHistory]
   )
 
+  if (!unlocked) {
+    return (
+      <div className="deploy-token-page" style={{ minHeight: '100vh' }}>
+        <EmbedMeta title="Admin — BaseHub" description="Internal" />
+
+        <div className="deploy-container" style={{ maxWidth: 420, margin: '0 auto', padding: '24px 16px' }}>
+          <BackButton />
+
+          <h1 style={{ fontSize: 22, margin: '16px 0 8px', color: '#e2e8f0' }}>Admin girişi</h1>
+          <p style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.5, marginBottom: 22 }}>
+            Bildirim paneline erişmek için yönetici şifresini girin.
+          </p>
+
+          <form
+            onSubmit={onGateSubmit}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 14,
+              padding: 20,
+              borderRadius: 14,
+              background: 'rgba(15, 23, 42, 0.92)',
+              border: '1px solid rgba(148, 163, 184, 0.15)',
+            }}
+          >
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: '#94a3b8' }}>
+              Şifre
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={gateSecret}
+                onChange={(ev) => setGateSecret(ev.target.value)}
+                placeholder="Admin şifresi"
+                required
+                style={{
+                  padding: '12px 14px',
+                  borderRadius: 10,
+                  border: '1px solid #334155',
+                  background: '#0f172a',
+                  color: '#e2e8f0',
+                  fontSize: 15,
+                }}
+              />
+            </label>
+            {loginError && (
+              <p style={{ margin: 0, fontSize: 13, color: '#f87171' }}>{loginError}</p>
+            )}
+            <button type="submit" className="deploy-button" disabled={loginLoading} style={{ width: '100%' }}>
+              {loginLoading ? '…' : 'Giriş'}
+            </button>
+          </form>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="deploy-token-page" style={{ minHeight: '100vh' }}>
       <EmbedMeta title="Admin — BaseHub" description="Internal" />
 
       <div className="deploy-container" style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
-        <BackButton />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <BackButton />
+          <button
+            type="button"
+            onClick={lockPanel}
+            style={{
+              padding: '8px 14px',
+              borderRadius: 10,
+              border: '1px solid rgba(148, 163, 184, 0.25)',
+              background: 'rgba(30, 41, 59, 0.6)',
+              color: '#94a3b8',
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+          >
+            Çıkış
+          </button>
+        </div>
 
         <h1 style={{ fontSize: 22, margin: '16px 0 8px', color: '#e2e8f0' }}>Notifications admin</h1>
         <p style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.5, marginBottom: 20 }}>
-          Base App bildirimleri. Anahtar ve Dashboard API yalnızca sunucuda (Vercel env). Bu sayfa herkese açık
-          URL’dir; erişim <strong>gizli anahtar</strong> ile sınırlıdır.
+          Base App bildirimleri. Anahtar ve Dashboard API yalnızca sunucuda (Vercel env).
         </p>
 
         <form
@@ -129,26 +253,6 @@ export default function AdminNotifications() {
             border: '1px solid rgba(148, 163, 184, 0.15)',
           }}
         >
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: '#94a3b8' }}>
-            Admin secret
-            <input
-              type="password"
-              autoComplete="off"
-              value={adminSecret}
-              onChange={(ev) => setAdminSecret(ev.target.value)}
-              placeholder="Vercel: ADMIN_NOTIFICATIONS_SECRET"
-              required
-              style={{
-                padding: '10px 12px',
-                borderRadius: 10,
-                border: '1px solid #334155',
-                background: '#0f172a',
-                color: '#e2e8f0',
-                fontSize: 14,
-              }}
-            />
-          </label>
-
           <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: '#94a3b8' }}>
             Title (max 30)
             <input
@@ -267,38 +371,16 @@ export default function AdminNotifications() {
         )}
 
         <section style={{ marginTop: 32 }}>
-          <h2 style={{ fontSize: 17, margin: '0 0 10px', color: '#e2e8f0' }}>Gönderim geçmişi</h2>
+          <h2 style={{ fontSize: 17, margin: '0 0 10px', color: '#e2e8f0' }}>
+            Son gönderimler (en fazla {HISTORY_LIMIT})
+          </h2>
           <p style={{ color: '#94a3b8', fontSize: 12, marginBottom: 12, lineHeight: 1.5 }}>
-            Sadece gerçek gönderimler Supabase’e yazılır. Satıra tıklayınca formu doldurur (yeniden göndermek için dry run
-            kapatabilirsin).
+            Sadece gerçek gönderimler kayıtlıdır. Satıra tıklayınca formu doldurur.
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12, alignItems: 'center' }}>
-            <input
-              type="search"
-              value={historySearch}
-              onChange={(ev) => setHistorySearch(ev.target.value)}
-              placeholder="Başlık veya mesajda ara…"
-              style={{
-                flex: '1 1 200px',
-                padding: '10px 12px',
-                borderRadius: 10,
-                border: '1px solid #334155',
-                background: '#0f172a',
-                color: '#e2e8f0',
-                fontSize: 14,
-              }}
-            />
-            <button
-              type="button"
-              className="deploy-button"
-              disabled={historyLoading}
-              onClick={() => loadHistory()}
-              style={{ padding: '10px 18px' }}
-            >
-              {historyLoading ? '…' : 'Geçmişi yükle'}
-            </button>
-          </div>
-          {historyError && (
+          {historyLoading && (
+            <p style={{ color: '#64748b', fontSize: 13 }}>Geçmiş yükleniyor…</p>
+          )}
+          {historyError && !historyLoading && (
             <p style={{ color: '#f87171', fontSize: 13, marginBottom: 8 }}>{historyError}</p>
           )}
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -335,7 +417,7 @@ export default function AdminNotifications() {
             ))}
           </ul>
           {!historyLoading && historyItems.length === 0 && !historyError && (
-            <p style={{ color: '#64748b', fontSize: 13 }}>Liste boş — “Geçmişi yükle” ile çek veya önce bir bildirim gönder.</p>
+            <p style={{ color: '#64748b', fontSize: 13 }}>Henüz kayıtlı gönderim yok — gerçek gönderim yaptığında burada görünür.</p>
           )}
         </section>
       </div>
