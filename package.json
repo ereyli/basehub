@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "worker": "node worker/agent-worker.js",
     "serve": "http-server dist -p 3000",
     "compile": "hardhat compile",
     "deploy:testnet": "hardhat run scripts/deploy.js --network baseSepolia",

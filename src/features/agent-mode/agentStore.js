@@ -1,6 +1,5 @@
 import { formatEther } from 'viem'
 import { AGENT_STORAGE_KEY, AGENT_STATUSES, DEFAULT_AGENT_SETTINGS } from './agentConstants'
-import { createBurnerWallet } from './agentWallet'
 
 const MAX_PLANS = 20
 const MAX_LOGS = 150
@@ -158,50 +157,6 @@ export function updateAgentState(updater) {
   const current = loadAgentState()
   const next = typeof updater === 'function' ? updater(current) : { ...current, ...updater }
   return saveAgentState(next)
-}
-
-/**
- * Create a new agent wallet and store it with encrypted private key.
- * The caller is responsible for encrypting the private key before passing it here.
- *
- * @param {{ address: string, encryptedKey: object, createdAt: string }} walletData
- */
-export function createAgentWallet(walletData) {
-  return updateAgentState((current) => ({
-    ...current,
-    wallet: {
-      address: walletData.address,
-      encryptedKey: walletData.encryptedKey,
-      createdAt: walletData.createdAt,
-      // No plain-text privateKey stored
-    },
-    status: AGENT_STATUSES.DISABLED,
-  }))
-}
-
-/**
- * Migrate a legacy wallet by replacing plain-text key with encrypted payload.
- * Called once when a legacy wallet is detected and user sets a PIN.
- *
- * @param {{ encryptedKey: object }} encryptedPayload
- */
-export function migrateWalletToEncrypted(encryptedPayload) {
-  return updateAgentState((current) => {
-    if (!current.wallet) return current
-    const { privateKey, ...rest } = current.wallet
-    return {
-      ...current,
-      wallet: {
-        ...rest,
-        encryptedKey: encryptedPayload,
-        // privateKey is intentionally omitted
-      },
-    }
-  })
-}
-
-export function deleteAgentWallet() {
-  return saveAgentState(createDefaultState())
 }
 
 export function updateAgentSettings(settingsPatch) {

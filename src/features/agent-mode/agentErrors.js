@@ -10,6 +10,26 @@ export function normalizeAgentError(error) {
 
   const message = rawMessage.toLowerCase()
 
+  if (message.includes('cloud worker has no eth')) {
+    return {
+      code: 'cloud-worker-gas',
+      shortMessage: rawMessage.slice(0, 160),
+      shouldPauseAgent: true,
+    }
+  }
+
+  if (
+    message.includes('delegated agent wallet') ||
+    message.includes('cloud worker is not an owner') ||
+    message.includes('spend permission')
+  ) {
+    return {
+      code: 'cloud-permission',
+      shortMessage: rawMessage.slice(0, 160),
+      shouldPauseAgent: true,
+    }
+  }
+
   if (
     message.includes('insufficient funds') ||
     message.includes('exceeds the balance') ||

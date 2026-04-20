@@ -204,6 +204,12 @@ function getPlannerMaxOutputTokens(planningWindow) {
   return Math.max(1800, Math.min(6500, 1200 + planningWindow * 170))
 }
 
+const PUMPHUB_MICRO_BUY_AMOUNTS_ETH = ['0.000006', '0.000009', '0.000012', '0.000015']
+
+function pickPumpHubBuyAmount(index = 0) {
+  return PUMPHUB_MICRO_BUY_AMOUNTS_ETH[index % PUMPHUB_MICRO_BUY_AMOUNTS_ETH.length]
+}
+
 function createStructuredAction(targetId, reason, priority, payload = {}) {
   return {
     targetId,
@@ -405,7 +411,7 @@ function repairActions(parsed, body, planningWindow) {
           : 'Rotate into a different PumpHub token so trade activity looks less repetitive.',
         payload: {
           pumpHubTokenAddress: candidate.pumpHubTokenAddress || '',
-          pumpHubTradeAmountEth: tradeBuy?.payload?.pumpHubTradeAmountEth || body.settings.pumpHubTradeAmountEth || '0.0001',
+          pumpHubTradeAmountEth: pickPumpHubBuyAmount(index),
         },
       })
     )
@@ -485,8 +491,8 @@ function repairActions(parsed, body, planningWindow) {
   if ((wantsDeploy || wantsBroadActivity) && !hasTarget('deploy-token') && deployToken && planningWindow >= 5) {
     requiredActions.push(
       createStructuredAction('deploy-token', 'Draft a simple ERC20 deploy so the routine includes one higher-intent BaseHub action.', 9, {
-        name: 'BaseHub Agent Token',
-        symbol: 'BHAT',
+        name: `BaseHub Agent Token ${Date.now().toString(36).slice(-4)}`,
+        symbol: `BHA${Math.floor(Math.random() * 90) + 10}`,
         initialSupply: '1000000',
       })
     )
@@ -495,8 +501,8 @@ function repairActions(parsed, body, planningWindow) {
   if ((wantsDeploy || wantsBroadActivity) && !hasTarget('deploy-erc721') && deployErc721 && planningWindow >= 7) {
     requiredActions.push(
       createStructuredAction('deploy-erc721', 'Draft a lightweight ERC721 collection deploy for a higher-intent step.', 10, {
-        name: 'BaseHub Agent Collection',
-        symbol: 'BHNFT',
+        name: `BaseHub Agent Collection ${Date.now().toString(36).slice(-4)}`,
+        symbol: `BAN${Math.floor(Math.random() * 90) + 10}`,
         uri: 'https://basehub.fun/agent/metadata/basehub-agent-collection',
       })
     )
@@ -505,9 +511,9 @@ function repairActions(parsed, body, planningWindow) {
   if ((wantsDeploy || wantsBroadActivity) && !hasTarget('deploy-erc1155') && deployErc1155 && planningWindow >= 9) {
     requiredActions.push(
       createStructuredAction('deploy-erc1155', 'Draft a lightweight ERC1155 deploy for a higher-intent step.', 11, {
-        name: 'BaseHub Agent Multi',
-        symbol: 'BHMULTI',
-        uri: 'https://basehub.fun/agent/metadata/{id}.json',
+        name: `BaseHub Agent Multi ${Date.now().toString(36).slice(-4)}`,
+        symbol: `BAM${Math.floor(Math.random() * 90) + 10}`,
+        uri: `https://basehub.fun/agent/metadata/${Date.now().toString(36).slice(-4)}/{id}.json`,
       })
     )
   }

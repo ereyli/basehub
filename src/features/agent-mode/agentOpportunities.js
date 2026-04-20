@@ -7,6 +7,7 @@ const BASE_CHAIN_ID = 8453
 const MAX_DISCOVERY_SCAN = 320
 const DEFAULT_ROTATION_SIZE = 24
 const MIN_DISCOVERY_VARIETY = 10
+const TARGET_ROTATION_MEMORY_KEY = 'basehub_agent_target_rotation_v1'
 
 function getAgentReadClient() {
   return createPublicClient({
@@ -33,7 +34,15 @@ function uniqueAddresses(items = []) {
 }
 
 function getItemKey(item) {
-  return String(item?.address || item?.contract_address || item?.contractAddress || '').toLowerCase()
+  return String(
+    item?.address ||
+      item?.token_address ||
+      item?.pumpHubTokenAddress ||
+      item?.tokenOutAddress ||
+      item?.contract_address ||
+      item?.contractAddress ||
+      ''
+  ).toLowerCase()
 }
 
 function shuffle(items = []) {
@@ -56,10 +65,47 @@ function getRecentTargetSet(logs = [], targetIds) {
   return new Set(
     (logs || [])
       .filter((entry) => allowedIds.has(entry?.targetId))
-      .slice(0, 40)
-      .map((entry) => String(entry?.payload?.pumpHubTokenAddress || entry?.payload?.contractAddress || '').toLowerCase())
+      .slice(0, 80)
+      .map((entry) =>
+        String(
+          entry?.payload?.pumpHubTokenAddress ||
+            entry?.payload?.tokenOutAddress ||
+            entry?.payload?.contractAddress ||
+            ''
+        ).toLowerCase()
+      )
       .filter(Boolean)
   )
+}
+
+function readLocalRotation(scope) {
+  if (typeof window === 'undefined' || !window.localStorage) return new Set()
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(TARGET_ROTATION_MEMORY_KEY) || '{}')
+    return new Set((parsed?.[scope] || []).map((item) => String(item || '').toLowerCase()).filter(Boolean))
+  } catch {
+    return new Set()
+  }
+}
+
+function rememberLocalRotation(scope, items = []) {
+  if (typeof window === 'undefined' || !window.localStorage) return
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(TARGET_ROTATION_MEMORY_KEY) || '{}')
+    const existing = Array.isArray(parsed?.[scope]) ? parsed[scope] : []
+    const next = [
+      ...items.map(getItemKey).filter(Boolean),
+      ...existing.map((item) => String(item || '').toLowerCase()).filter(Boolean),
+    ]
+    parsed[scope] = [...new Set(next)].slice(0, 120)
+    window.localStorage.setItem(TARGET_ROTATION_MEMORY_KEY, JSON.stringify(parsed))
+  } catch {
+    // Rotation memory is best-effort only.
+  }
+}
+
+function mergeSets(...sets) {
+  return new Set(sets.flatMap((set) => [...(set || [])]))
 }
 
 function pickLeastRecent(items = [], recentSet) {
@@ -76,7 +122,7 @@ function pickManyLeastRecent(items = [], recentSet, limit = DEFAULT_ROTATION_SIZ
 }
 
 export async function resolvePumpHubOpportunities({ settings = {}, logs = [], limit = 6 }) {
-  const recent = getRecentTargetSet(logs, ['pumphub-buy', 'pumphub-sell'])
+  const recent = mergeSets(getRecentTargetSet(logs, ['pumphub-buy', 'pumphub-sell']), readLocalRotation('pumphub'))
   const desiredRotationSize = Math.max(MIN_DISCOVERY_VARIETY, Math.min(Number(settings?.dailyTxTarget || 24), DEFAULT_ROTATION_SIZE))
 
   if (!supabase?.from) return null
@@ -88,11 +134,13 @@ export async function resolvePumpHubOpportunities({ settings = {}, logs = [], li
     .limit(MAX_DISCOVERY_SCAN)
 
   if (error) throw new Error(error.message || 'PumpHub opportunities could not be loaded.')
-  return pickManyLeastRecent(
+  const selected = pickManyLeastRecent(
     (data || []).map((item) => ({ address: item.token_address, name: item.name, symbol: item.symbol, source: 'latest' })),
     recent,
     Math.max(limit, desiredRotationSize, MIN_DISCOVERY_VARIETY)
   )
+  rememberLocalRotation('pumphub', selected)
+  return selected
 }
 
 export async function resolvePumpHubSellableOpportunities({ settings = {}, logs = [], walletAddress = '', limit = 6 }) {
@@ -130,7 +178,7 @@ export async function resolvePumpHubOpportunity({ settings = {}, logs = [] }) {
 
 export async function resolveFreeMintOpportunities({ logs = [], limit = 6 }) {
   if (!supabase?.from) return null
-  const recent = getRecentTargetSet(logs, 'free-nft-mint')
+  const recent = mergeSets(getRecentTargetSet(logs, 'free-nft-mint'), readLocalRotation('free-nft'))
   const { data, error } = await supabase
     .from('nft_launchpad_collections')
     .select('contract_address,name,symbol,slug,mint_price,total_minted,supply,is_active,created_at,chain_id')
@@ -146,7 +194,9 @@ export async function resolveFreeMintOpportunities({ logs = [], limit = 6 }) {
     const supply = Number(item.supply || 0)
     return mintPrice === 0 && item.contract_address && (supply === 0 || totalMinted < supply)
   })
-  return pickManyLeastRecent(freeCollections, recent, Math.max(limit, DEFAULT_ROTATION_SIZE, MIN_DISCOVERY_VARIETY)).map((picked) => ({
+  const selected = pickManyLeastRecent(freeCollections, recent, Math.max(limit, DEFAULT_ROTATION_SIZE, MIN_DISCOVERY_VARIETY))
+  rememberLocalRotation('free-nft', selected)
+  return selected.map((picked) => ({
     contractAddress: picked.contract_address,
     name: picked.name,
     symbol: picked.symbol,
@@ -172,9 +222,9 @@ export async function resolveFreeMintOpportunity({ logs = [] }) {
 }
 
 export async function resolveSwapHubOpportunities({ logs = [], limit = 12 }) {
-  const recent = getRecentTargetSet(logs, 'swaphub-swap')
+  const recent = mergeSets(getRecentTargetSet(logs, 'swaphub-swap'), readLocalRotation('swaphub'))
   const candidates = AGENT_SWAPHUB_TOKENS.filter((token) => token.address && token.address !== '0x0000000000000000000000000000000000000000')
-  return pickManyLeastRecent(
+  const selected = pickManyLeastRecent(
     candidates.map((item) => ({
       address: item.address,
       symbol: item.symbol,
@@ -185,6 +235,8 @@ export async function resolveSwapHubOpportunities({ logs = [], limit = 12 }) {
     recent,
     Math.max(limit, MIN_DISCOVERY_VARIETY)
   )
+  rememberLocalRotation('swaphub', selected)
+  return selected
 }
 
 export async function resolveSwapHubOpportunity({ logs = [] }) {

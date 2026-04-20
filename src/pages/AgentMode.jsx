@@ -1,9 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, Bot, Copy, ExternalLink, Lock, Play, Power, RefreshCw, Send, Trash2, Eye, EyeOff, Zap, Clock, Target, Wallet, MessageSquare, Activity, ChevronRight, Shield, Sparkles, Unlock } from 'lucide-react'
+import { AlertTriangle, Bot, Copy, ExternalLink, Play, Power, RefreshCw, Send, Trash2, Zap, Clock, Target, MessageSquare, Activity, ChevronRight, Shield, Sparkles } from 'lucide-react'
 import { formatEther, parseEther } from 'viem'
+import { useAccount, useWalletClient } from 'wagmi'
+import { wrapFetchWithPayment } from 'x402-fetch'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
-import { getAddressExplorerUrl, NETWORKS } from '../config/networks'
+import { NETWORKS } from '../config/networks'
+import { isAgentX402PurchaseSkipped } from '../config/features'
+import { supabase } from '../config/supabase'
 import { getEnabledTargets } from '../features/agent-mode/agentCatalog'
 import {
   AGENT_GAS_BUFFER_WEI,
@@ -12,9 +16,20 @@ import {
   AGENT_STATUSES,
   AGENT_TARGETS,
 } from '../features/agent-mode/agentConstants'
-import { encryptPrivateKey, decryptPrivateKey, isEncryptedWallet, isLegacyWallet } from '../features/agent-mode/agentCrypto'
+import {
+  connectBaseAccountDirect,
+  createDelegatedSubAccount,
+  executeCloudAgentAction,
+  fetchCloudAgentSession,
+  getCloudAgentSpenderAddress,
+  loadCloudAgentState,
+  registerCloudAgentSession,
+  requestNativeSpendPermission,
+  saveCloudAgentState,
+  startCloudAgentRun,
+  stopCloudAgentRun,
+} from '../features/agent-mode/agentCloud'
 import { normalizeAgentError } from '../features/agent-mode/agentErrors'
-import { executeAgentAction } from '../features/agent-mode/agentExecutor'
 import { createAgentLlmPlan } from '../features/agent-mode/agentLlmPlanner'
 import { fetchAgentMemory, writeAgentMemoryEvent } from '../features/agent-mode/agentMemoryClient'
 import { createAgentPlan } from '../features/agent-mode/agentPlanner'
@@ -27,17 +42,15 @@ import {
   buildDailyReport,
   clearAgentLogs,
   consumeNextPlannedAction,
-  createAgentWallet,
-  deleteAgentWallet,
   getNextPlannedAction,
   loadAgentState,
-  migrateWalletToEncrypted,
   resetAgentPlan,
   setAgentStatus,
   updateQueuedAction,
   updateAgentSettings,
 } from '../features/agent-mode/agentStore'
-import { createBurnerWallet, getBurnerBalance, maskPrivateKey } from '../features/agent-mode/agentWallet'
+import { getBurnerBalance } from '../features/agent-mode/agentWallet'
+import { calculateTokens, calcLevel, getXP, notifyXPRefresh, recordSwapTransaction, recordTransaction } from '../utils/xpUtils'
 
 /* ─── Helpers (unchanged logic) ─── */
 
@@ -51,6 +64,13 @@ function formatEth(value, digits = 5) {
   const numeric = Number(value || 0)
   if (!Number.isFinite(numeric)) return '0 ETH'
   return `${numeric.toFixed(digits)} ETH`
+}
+
+function formatShortAddress(address) {
+  const value = String(address || '').trim()
+  if (!value) return ''
+  if (value.length <= 12) return value
+  return `${value.slice(0, 6)}…${value.slice(-4)}`
 }
 
 function createFormFromState(state) {
@@ -127,6 +147,50 @@ function compactSummary(summary) {
   if (text.toLowerCase().includes('auto-run is paused')) return 'Routine paused.'
   if (text.length <= 120) return text
   return `${text.slice(0, 117)}...`
+}
+
+function formatNumber(value) {
+  const numeric = Number(value || 0)
+  if (!Number.isFinite(numeric)) return '0'
+  return numeric.toLocaleString()
+}
+
+const AGENT_TX_GAME_TYPES = {
+  'gm-game': 'GM_GAME',
+  'gn-game': 'GN_GAME',
+  'flip-game': 'FLIP_GAME',
+  'lucky-number': 'LUCKY_NUMBER',
+  'dice-roll': 'DICE_ROLL',
+  'pumphub-buy': 'PUMPHUB_BUY',
+  'pumphub-sell': 'PUMPHUB_SELL',
+  'swaphub-swap': 'SWAPHUB_SWAP',
+  'free-nft-mint': 'NFT_MINT',
+  'deploy-token': 'DEPLOY_TOKEN',
+  'deploy-erc721': 'DEPLOY_ERC721',
+  'deploy-erc1155': 'DEPLOY_ERC1155',
+}
+
+function getAgentGameType(action) {
+  return AGENT_TX_GAME_TYPES[action?.targetId] || String(action?.targetId || 'AGENT_ACTION').toUpperCase()
+}
+
+function getAgentBaseXp(action) {
+  if (action?.targetId === 'gm-game' || action?.targetId === 'gn-game') return 150
+  if (['flip-game', 'lucky-number', 'dice-roll'].includes(action?.targetId)) return 150
+  return 30
+}
+
+function getAgentAwardGameType(action) {
+  if (['gm-game', 'gn-game', 'flip-game', 'lucky-number', 'dice-roll'].includes(action?.targetId)) {
+    return getAgentGameType(action)
+  }
+  return 'CONTRACT_GAME'
+}
+
+function estimateUsdFromEthAmount(ethAmount) {
+  const eth = Number(ethAmount || 0)
+  if (!Number.isFinite(eth) || eth <= 0) return 0
+  return Number((eth * 3300).toFixed(2))
 }
 
 function describePlannerFallback(error) {
@@ -438,7 +502,14 @@ function deriveRoutineBuilderState(form) {
       form.enabledTargetIds.includes('deploy-erc1155'),
   }
 
-  return { intensity, budget, goals }
+  return {
+    intensity,
+    budget,
+    goals,
+    dailyTxTarget: Math.max(1, Number(form.dailyTxTarget || 1)),
+    intervalMinutes: Math.max(1, Number(form.intervalMinutes || 4)),
+    maxDailySpendEth: String(form.maxDailySpendEth || '0.001'),
+  }
 }
 
 function buildEnabledTargetIdsFromGoals(goals) {
@@ -461,13 +532,16 @@ function buildAllowedActionTypesFromGoals(goals) {
     .filter(Boolean)
 }
 
-function buildRoutinePromptFromSelections({ intensity, budget, goals }) {
+function buildRoutinePromptFromSelections({ intensity, budget, goals, dailyTxTarget, intervalMinutes, maxDailySpendEth }) {
   const intensityConfig = ROUTINE_INTENSITY_OPTIONS.find((item) => item.id === intensity) || ROUTINE_INTENSITY_OPTIONS[2]
   const budgetConfig = ROUTINE_BUDGET_OPTIONS.find((item) => item.id === budget) || ROUTINE_BUDGET_OPTIONS[1]
+  const txTarget = Math.max(1, Number(dailyTxTarget || intensityConfig.dailyTxTarget || 1))
+  const minutes = Math.max(1, Number(intervalMinutes || intensityConfig.intervalMinutes || 4))
+  const spendCap = String(maxDailySpendEth || budgetConfig.maxDailySpendEth)
   const selectedGoals = ROUTINE_GOAL_OPTIONS.filter((goal) => goals[goal.id]).map((goal) => goal.label.toLowerCase())
   const goalText = selectedGoals.length ? selectedGoals.join(', ') : 'light BaseHub activity'
 
-  return `Create a full BaseHub daily routine for me. Keep it human-looking and varied. Plan around ${intensityConfig.dailyTxTarget} actions, about every ${intensityConfig.intervalMinutes} minutes, stay under ${budgetConfig.maxDailySpendEth} ETH, and include ${goalText}. Discover trade tokens and free NFT targets yourself inside BaseHub.`
+  return `Create a full BaseHub daily routine for me. Keep it human-looking and varied. Plan around ${txTarget} actions, about every ${minutes} minutes, stay under ${spendCap} ETH, and include ${goalText}. Discover trade tokens and free NFT targets yourself inside BaseHub.`
 }
 
 function buildAgentBrief(plan, plannedCount, planSentence) {
@@ -504,24 +578,36 @@ function createInitialChatMessages(userPrompt = '') {
   return messages
 }
 
-function getStartGate({ wallet, enabledTargets, balance, settings }) {
-  if (!wallet?.address) {
-    return { ok: false, reason: 'Create a burner wallet first.' }
-  }
-
-  if (!enabledTargets.length) {
-    return { ok: false, reason: 'Enable at least one BaseHub action.' }
-  }
-
-  const minimumWei = getMinimumBalanceWei(enabledTargets, settings)
-  if ((balance?.raw || 0n) < minimumWei) {
+function getStartGate({ cloudReady = false, cloudExecutionReady = false, cloudExecutionIssue = '' }) {
+  if (cloudReady) {
+    if (cloudExecutionReady) return { ok: true }
     return {
       ok: false,
-      reason: `Fund the burner with at least ${formatEther(minimumWei)} ETH to start.`,
+      reason:
+        cloudExecutionIssue ||
+        'Cloud permission is saved, but the automatic executor is not ready yet.',
     }
   }
 
+  if (!cloudReady) return { ok: false, reason: 'Set up Cloud Agent first.' }
+
   return { ok: true }
+}
+
+function getCloudExecutionIssue(cloudState) {
+  const status = String(cloudState?.status || '')
+  const account = cloudState?.accountAddress || cloudState?.universalAddress || cloudState?.subAccount?.address
+  if (!account || !['cloud_ready', 'permission_ready'].includes(status)) return ''
+
+  if (cloudState?.accountMode !== 'delegated_sub_account') {
+    return 'Full auto needs delegated agent-wallet permission.'
+  }
+
+  if (cloudState?.executionMode !== 'worker_ready' || cloudState?.permissionModel !== 'delegated_worker') {
+    return 'Cloud permission is connected, but automatic execution still needs delegated worker permission.'
+  }
+
+  return ''
 }
 
 /* ─── CSS-in-JS Keyframes injection ─── */
@@ -565,6 +651,8 @@ if (typeof document !== 'undefined' && !document.getElementById(STYLE_ID)) {
 /* ─── Component ─── */
 
 export default function AgentMode() {
+  const { address: paymentWalletAddress, isConnected: isPaymentWalletConnected } = useAccount()
+  const { data: paymentWalletClient } = useWalletClient()
   const [agentState, setAgentState] = useState(() => loadAgentState())
   const [form, setForm] = useState(() => createFormFromState(loadAgentState()))
   const [error, setError] = useState(null)
@@ -572,7 +660,6 @@ export default function AgentMode() {
   const [planFeedback, setPlanFeedback] = useState('')
   const [plannerIssue, setPlannerIssue] = useState('')
   const [copiedKey, setCopiedKey] = useState('')
-  const [showPrivateKey, setShowPrivateKey] = useState(false)
   const [isExecuting, setIsExecuting] = useState(false)
   const [isPlanning, setIsPlanning] = useState(false)
   const [isChatting, setIsChatting] = useState(false)
@@ -584,6 +671,7 @@ export default function AgentMode() {
     deriveRoutineBuilderState(createFormFromState(loadAgentState()))
   )
   const [balance, setBalance] = useState({ raw: 0n, formatted: '0' })
+  const [agentXp, setAgentXp] = useState({ value: 0, loading: false, error: '' })
   const [memorySnapshot, setMemorySnapshot] = useState({
     profile: null,
     memories: [],
@@ -592,6 +680,17 @@ export default function AgentMode() {
     available: false,
     setupError: null,
   })
+  const [cloudAgentState, setCloudAgentState] = useState(() => loadCloudAgentState())
+  const [cloudAgentBusy, setCloudAgentBusy] = useState(false)
+  const [cloudAgentMessage, setCloudAgentMessage] = useState('')
+  const [agentAccess, setAgentAccess] = useState({
+    loading: true,
+    hasAccess: false,
+    isPassHolder: false,
+    priceUsdc: '15',
+    setupError: null,
+  })
+  const [agentAccessBusy, setAgentAccessBusy] = useState(false)
   const [activeTab, setActiveTab] = useState('chat')
   const [openSections, setOpenSections] = useState(() => {
     const _initState = loadAgentState()
@@ -600,18 +699,10 @@ export default function AgentMode() {
   })
   const executionLockRef = useRef(false)
   const chatEndRef = useRef(null)
-
-  // ─── PIN / Encryption state ───
-  // The decrypted private key lives ONLY in memory (never localStorage)
-  const sessionKeyRef = useRef(null)
-  const [isWalletLocked, setIsWalletLocked] = useState(true)
-  const [pinInput, setPinInput] = useState('')
-  const [pinError, setPinError] = useState('')
-  const [showPinModal, setShowPinModal] = useState(false)
-  const [pinModalMode, setPinModalMode] = useState('unlock') // 'unlock' | 'create' | 'migrate'
-  const [pinConfirmInput, setPinConfirmInput] = useState('')
-  const [isDecrypting, setIsDecrypting] = useState(false)
-  const [pendingStartAfterUnlock, setPendingStartAfterUnlock] = useState(false)
+  const cloudAccountAddress = cloudAgentState?.accountAddress || cloudAgentState?.universalAddress || cloudAgentState?.subAccount?.address || ''
+  const cloudDelegatedAddress = cloudAgentState?.subAccount?.address || cloudAgentState?.subAccountAddress || ''
+  const cloudExecutionAddress = cloudDelegatedAddress || cloudAccountAddress
+  const plannerWalletAddress = cloudExecutionAddress || cloudAccountAddress || ''
 
   const reloadState = useCallback(() => {
     const next = loadAgentState()
@@ -652,13 +743,13 @@ export default function AgentMode() {
     let cancelled = false
 
     async function refreshBalance() {
-      if (!agentState.wallet?.address) {
+      if (!cloudExecutionAddress) {
         setBalance({ raw: 0n, formatted: '0' })
         return
       }
 
       try {
-        const nextBalance = await getBurnerBalance(agentState.wallet.address)
+        const nextBalance = await getBurnerBalance(cloudExecutionAddress)
         if (!cancelled) setBalance(nextBalance)
       } catch (balanceError) {
         if (!cancelled) {
@@ -674,17 +765,53 @@ export default function AgentMode() {
       cancelled = true
       window.clearInterval(intervalId)
     }
-  }, [agentState.wallet?.address])
+  }, [cloudExecutionAddress])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function refreshAgentXp() {
+      if (!cloudExecutionAddress) {
+        setAgentXp({ value: 0, loading: false, error: '' })
+        return
+      }
+
+      setAgentXp((current) => ({ ...current, loading: true, error: '' }))
+      try {
+        const xp = await getXP(cloudExecutionAddress)
+        if (!cancelled) setAgentXp({ value: Number(xp || 0), loading: false, error: '' })
+      } catch (xpError) {
+        if (!cancelled) {
+          setAgentXp((current) => ({
+            ...current,
+            loading: false,
+            error: xpError?.message || 'Agent XP could not be loaded.',
+          }))
+        }
+      }
+    }
+
+    refreshAgentXp()
+    const intervalId = window.setInterval(refreshAgentXp, 12000)
+    window.addEventListener('basehub_xp_refresh', refreshAgentXp)
+    window.addEventListener('storage', refreshAgentXp)
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+      window.removeEventListener('basehub_xp_refresh', refreshAgentXp)
+      window.removeEventListener('storage', refreshAgentXp)
+    }
+  }, [cloudExecutionAddress])
 
   useEffect(() => {
     let cancelled = false
 
     async function loadMemory() {
-      if (!agentState.wallet?.address) {
+      if (!plannerWalletAddress) {
         setMemorySnapshot({ profile: null, memories: [], runs: [], reflections: [], available: false, setupError: null })
         return
       }
-      const snapshot = await fetchAgentMemory(agentState.wallet.address)
+      const snapshot = await fetchAgentMemory(plannerWalletAddress)
       if (!cancelled) setMemorySnapshot(snapshot)
     }
 
@@ -692,7 +819,100 @@ export default function AgentMode() {
     return () => {
       cancelled = true
     }
-  }, [agentState.wallet?.address, agentState.logs.length, agentState.currentPlan?.id])
+  }, [plannerWalletAddress, agentState.logs.length, agentState.currentPlan?.id])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadCloudSession() {
+      const localCloud = loadCloudAgentState()
+      setCloudAgentState(localCloud)
+      const ownerAddress = localCloud?.universalAddress || localCloud?.accountAddress
+      if (!ownerAddress) return
+      try {
+        const session = await fetchCloudAgentSession(ownerAddress)
+        if (!cancelled && session) {
+          setCloudAgentState({
+            ...(loadCloudAgentState() || localCloud || {}),
+            status: session.status === 'ready' ? 'cloud_ready' : session.status,
+            sessionId: session.id,
+            universalAddress: session.owner_address,
+            accountMode: session.policy?.accountMode || localCloud?.accountMode || 'direct_base_account',
+            accountAddress: session.owner_address,
+            subAccount: session.sub_account_address && session.sub_account_address !== session.owner_address
+              ? { ...(session.policy?.subAccount || {}), ...(localCloud?.subAccount || {}), address: session.sub_account_address }
+              : null,
+            allowanceEth: session.allowance_eth,
+            periodInDays: session.period_days,
+            spendPermission: session.spend_permission || localCloud?.spendPermission,
+            executionMode: session.policy?.executionMode || localCloud?.executionMode,
+            permissionModel: session.policy?.permissionModel || localCloud?.permissionModel,
+            automationOwner: session.policy?.automationOwner || localCloud?.automationOwner,
+            automationBlocked: session.policy?.automationBlocked || localCloud?.automationBlocked,
+            registeredAt: session.updated_at || session.created_at,
+          })
+        }
+      } catch (cloudError) {
+        if (!cancelled) {
+          console.warn('[Cloud Agent] session load failed:', cloudError?.message || cloudError)
+        }
+      }
+    }
+
+    loadCloudSession()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const refreshAgentAccess = useCallback(async () => {
+    if (isAgentX402PurchaseSkipped()) {
+      setAgentAccess({
+        loading: false,
+        hasAccess: true,
+        isPassHolder: false,
+        priceUsdc: '0',
+        setupError: null,
+      })
+      return
+    }
+
+    if (!paymentWalletAddress) {
+      setAgentAccess({
+        loading: false,
+        hasAccess: false,
+        isPassHolder: false,
+        priceUsdc: '15',
+        setupError: null,
+      })
+      return
+    }
+
+    setAgentAccess((current) => ({ ...current, loading: true, setupError: null }))
+    try {
+      const response = await fetch(`/api/agent-access?walletAddress=${encodeURIComponent(paymentWalletAddress)}`)
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error || 'Agent access check failed.')
+      setAgentAccess({
+        loading: false,
+        hasAccess: !!data.hasAccess,
+        isPassHolder: !!data.isPassHolder,
+        priceUsdc: String(data.priceUsdc || '15'),
+        setupError: data.setupError || null,
+      })
+    } catch (accessError) {
+      setAgentAccess((current) => ({
+        ...current,
+        loading: false,
+        hasAccess: false,
+        setupError: accessError?.message || 'Agent access check failed.',
+      }))
+    }
+  }, [paymentWalletAddress])
+
+  useEffect(() => {
+    refreshAgentAccess()
+  }, [refreshAgentAccess])
 
   // Auto-scroll chat
   useEffect(() => {
@@ -709,12 +929,19 @@ export default function AgentMode() {
   )
   const planSummary = useMemo(() => summarizePlan(latestPlan?.actions || []), [latestPlan])
   const planSentence = useMemo(() => formatPlanAsSentence(latestPlan?.actions || []), [latestPlan])
-  const walletExplorerUrl = agentState.wallet?.address
-    ? getAddressExplorerUrl(NETWORKS.BASE.chainId, agentState.wallet.address)
-    : null
+  const isCloudAgentReady = Boolean(
+    cloudAccountAddress &&
+    ['cloud_ready', 'permission_ready'].includes(String(cloudAgentState?.status || ''))
+  )
+  const cloudExecutionIssue = useMemo(() => getCloudExecutionIssue(cloudAgentState), [cloudAgentState])
+  const isCloudExecutionReady = Boolean(isCloudAgentReady && !cloudExecutionIssue)
   const startGate = useMemo(
-    () => getStartGate({ wallet: agentState.wallet, enabledTargets, balance, settings: agentState.settings }),
-    [agentState.wallet, enabledTargets, balance, agentState.settings]
+    () => getStartGate({
+      cloudReady: isCloudAgentReady,
+      cloudExecutionReady: isCloudExecutionReady,
+      cloudExecutionIssue,
+    }),
+    [isCloudAgentReady, isCloudExecutionReady, cloudExecutionIssue]
   )
   const hasPlan = Boolean(latestPlan?.actions?.length)
   const isPlanApproved = Boolean(latestPlan?.approvedAt)
@@ -736,6 +963,12 @@ export default function AgentMode() {
     [latestPlan, plannedCount, planSentenceText]
   )
   const queueHealth = useMemo(() => summarizeQueueHealth(latestPlan), [latestPlan])
+  const isAgentAccessUnlocked = isAgentX402PurchaseSkipped() || agentAccess.hasAccess
+  const agentAccessPriceLabel = `${agentAccess.priceUsdc} USDC`
+  const startGateWithAccess = useMemo(
+    () => (isAgentAccessUnlocked ? startGate : { ok: false, reason: 'Unlock Agent Mode first.' }),
+    [isAgentAccessUnlocked, startGate]
+  )
 
   const activeTargetTitles = useMemo(
     () =>
@@ -774,6 +1007,21 @@ export default function AgentMode() {
     [syncSettings]
   )
 
+  const patchRoutineBuilder = useCallback(
+    (patch) => {
+      setRoutineBuilder((current) => {
+        const next = { ...current, ...patch }
+        const formPatch = {}
+        if (patch.dailyTxTarget !== undefined) formPatch.dailyTxTarget = Math.max(1, Number(patch.dailyTxTarget || 1))
+        if (patch.intervalMinutes !== undefined) formPatch.intervalMinutes = Math.max(1, Number(patch.intervalMinutes || 1))
+        if (patch.maxDailySpendEth !== undefined) formPatch.maxDailySpendEth = String(patch.maxDailySpendEth || '0.001')
+        if (Object.keys(formPatch).length) patchForm(formPatch)
+        return next
+      })
+    },
+    [patchForm]
+  )
+
   const toggleRoutineGoal = useCallback((goalId) => {
     setRoutineBuilder((current) => ({
       ...current,
@@ -785,13 +1033,21 @@ export default function AgentMode() {
   }, [])
 
   const applyQuickStart = useCallback((preset) => {
+    const intensityConfig = ROUTINE_INTENSITY_OPTIONS.find((item) => item.id === preset.intensity) || ROUTINE_INTENSITY_OPTIONS[1]
+    const budgetConfig = ROUTINE_BUDGET_OPTIONS.find((item) => item.id === preset.budget) || ROUTINE_BUDGET_OPTIONS[1]
     setRoutineBuilder({
       intensity: preset.intensity,
       budget: preset.budget,
       goals: { ...preset.goals },
+      dailyTxTarget: intensityConfig.dailyTxTarget,
+      intervalMinutes: intensityConfig.intervalMinutes,
+      maxDailySpendEth: budgetConfig.maxDailySpendEth,
     })
     patchForm({
       userPrompt: preset.prompt,
+      dailyTxTarget: intensityConfig.dailyTxTarget,
+      intervalMinutes: intensityConfig.intervalMinutes,
+      maxDailySpendEth: budgetConfig.maxDailySpendEth,
     })
   }, [patchForm])
 
@@ -816,7 +1072,7 @@ export default function AgentMode() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            walletAddress: agentState.wallet?.address || '',
+            walletAddress: plannerWalletAddress,
             message,
             settings: {
               plannerInputMode: form.plannerInputMode,
@@ -900,7 +1156,7 @@ export default function AgentMode() {
     }
 
     run()
-  }, [agentState.wallet?.address, chatDraft, chatMessages, form, patchForm, reloadState])
+  }, [chatDraft, chatMessages, form, patchForm, plannerWalletAddress, reloadState])
 
   const refreshPlan = useCallback(
     async (stateOverride) => {
@@ -916,7 +1172,7 @@ export default function AgentMode() {
               settings: current.settings,
               report,
               logs: current.logs,
-              walletAddress: current.wallet?.address,
+              walletAddress: plannerWalletAddress,
             })
             setPlannerMode('ai')
             setPlannerIssue('')
@@ -932,7 +1188,7 @@ export default function AgentMode() {
             settings: current.settings,
             report,
             logs: current.logs,
-            walletAddress: current.wallet?.address,
+            walletAddress: plannerWalletAddress,
           })
           if (!current.settings.llmEnabled) {
             setPlannerMode('manual')
@@ -945,7 +1201,7 @@ export default function AgentMode() {
         setIsPlanning(false)
       }
     },
-    []
+    [plannerWalletAddress]
   )
 
   const pauseForFunding = useCallback(
@@ -963,6 +1219,10 @@ export default function AgentMode() {
   )
 
   const handleRefreshPlan = useCallback(async () => {
+    if (!isAgentAccessUnlocked) {
+      setError('Unlock Agent Mode first.')
+      return
+    }
     setError(null)
     setPlannerIssue('')
     const current = loadAgentState()
@@ -978,10 +1238,11 @@ export default function AgentMode() {
       )
     }
     setPlannerMode((currentMode) => (currentMode === 'manual' ? 'manual' : 'thinking'))
-    if (!current.wallet?.address) {
+    const cloudAddress = cloudExecutionAddress
+    if (!cloudAddress) {
       setPlanFeedback('')
       setPlannerMode('idle')
-      setError('Create a burner wallet first.')
+      setError('Connect Base Account first.')
       return
     }
     if (
@@ -1008,7 +1269,7 @@ export default function AgentMode() {
       try {
         await writeAgentMemoryEvent({
           eventType: 'run',
-          walletAddress: current.wallet.address,
+          walletAddress: cloudAddress,
           status: 'planned',
           summary: plan.rationale || plan.thoughtSummary || 'Agent created a plan block.',
           plannedActions: plan.actions.length,
@@ -1021,9 +1282,13 @@ export default function AgentMode() {
       setError('No plan was generated. Try again.')
     }
     reloadState()
-  }, [form, refreshPlan, reloadState, syncSettings])
+  }, [cloudExecutionAddress, form, isAgentAccessUnlocked, refreshPlan, reloadState, syncSettings])
 
   const handleAutoPlan = useCallback(async () => {
+    if (!isAgentAccessUnlocked) {
+      setError('Unlock Agent Mode first.')
+      return
+    }
     setError(null)
     setPlannerIssue('')
     const current = loadAgentState()
@@ -1042,6 +1307,9 @@ export default function AgentMode() {
       ROUTINE_INTENSITY_OPTIONS.find((item) => item.id === routineBuilder.intensity) || ROUTINE_INTENSITY_OPTIONS[2]
     const selectedBudget =
       ROUTINE_BUDGET_OPTIONS.find((item) => item.id === routineBuilder.budget) || ROUTINE_BUDGET_OPTIONS[1]
+    const dailyTxTarget = Math.max(1, Number(routineBuilder.dailyTxTarget || selectedIntensity.dailyTxTarget || 1))
+    const intervalMinutes = Math.max(1, Number(routineBuilder.intervalMinutes || selectedIntensity.intervalMinutes || 4))
+    const maxDailySpendEth = String(routineBuilder.maxDailySpendEth || selectedBudget.maxDailySpendEth)
     const autoPrompt = buildRoutinePromptFromSelections(routineBuilder)
     const nextForm = {
       ...form,
@@ -1049,9 +1317,9 @@ export default function AgentMode() {
       plannerInputMode: AGENT_INPUT_MODES.PROMPT,
       llmEnabled: true,
       allowedActionTypes: buildAllowedActionTypesFromGoals(routineBuilder.goals),
-      dailyTxTarget: selectedIntensity.dailyTxTarget,
-      intervalMinutes: selectedIntensity.intervalMinutes,
-      maxDailySpendEth: selectedBudget.maxDailySpendEth,
+      dailyTxTarget,
+      intervalMinutes,
+      maxDailySpendEth,
       enabledTargetIds,
       freeMintEnabled: !!routineBuilder.goals.freeMint,
       pumpHubTradeMode: AGENT_PUMPHUB_MODES.LATEST,
@@ -1077,7 +1345,118 @@ export default function AgentMode() {
       setError('No autonomous plan was generated. Try again.')
     }
     reloadState()
-  }, [form, refreshPlan, reloadState, routineBuilder, syncSettings])
+  }, [form, isAgentAccessUnlocked, refreshPlan, reloadState, routineBuilder, syncSettings])
+
+  const handleSetupCloudAgent = useCallback(async () => {
+    if (!isAgentAccessUnlocked) {
+      setError('Unlock Agent Mode first.')
+      return
+    }
+    setCloudAgentBusy(true)
+    setCloudAgentMessage('')
+    setError(null)
+    try {
+      const spenderAddress = getCloudAgentSpenderAddress()
+      if (!spenderAddress) {
+        throw new Error('Cloud Agent spender address is not configured.')
+      }
+
+      const selectedBudget =
+        ROUTINE_BUDGET_OPTIONS.find((item) => item.id === routineBuilder.budget) || ROUTINE_BUDGET_OPTIONS[1]
+      const permissionEth = String(routineBuilder.maxDailySpendEth || form.maxDailySpendEth || selectedBudget.maxDailySpendEth)
+      setCloudAgentMessage('Connecting Base Account...')
+      const { sdk, provider, universalAddress } = await connectBaseAccountDirect()
+
+      setCloudAgentMessage('Creating delegated agent wallet...')
+      const subAccount = await createDelegatedSubAccount({
+        sdk,
+        workerAddress: spenderAddress,
+      })
+      const subAccountAddress = subAccount.address
+
+      setCloudAgentMessage('Requesting limited spend permission...')
+      const { permission } = await requestNativeSpendPermission({
+        account: universalAddress,
+        spender: subAccountAddress,
+        allowanceEth: permissionEth,
+        periodInDays: 1,
+        provider,
+      })
+
+      const delegatedCloudState = saveCloudAgentState({
+        ...(loadCloudAgentState() || {}),
+        mode: 'cloud',
+        status: 'permission_ready',
+        universalAddress,
+        accountAddress: universalAddress,
+        subAccount,
+        allowanceEth: permissionEth,
+        periodInDays: 1,
+        spendPermission: permission,
+        accountMode: 'delegated_sub_account',
+        executionMode: 'worker_ready',
+        permissionModel: 'delegated_worker',
+        automationOwner: spenderAddress,
+        registeredAt: null,
+      })
+      setCloudAgentState(delegatedCloudState)
+
+      setCloudAgentMessage('Saving Cloud Agent permission...')
+      try {
+        const result = await registerCloudAgentSession({
+          ownerAddress: universalAddress,
+          subAccountAddress,
+          subAccount,
+          spendPermission: permission,
+          allowanceEth: permissionEth,
+          periodInDays: 1,
+          policy: {
+            mode: 'cloud_agent_v1',
+            accountMode: 'delegated_sub_account',
+            chainId: NETWORKS.BASE.chainId,
+            dailyTxTarget: Number(form.dailyTxTarget || 0),
+            maxDailySpendEth: permissionEth,
+            intervalMinutes: Number(form.intervalMinutes || 4),
+            enabledTargetIds: form.enabledTargetIds,
+            allowedActionTypes: form.allowedActionTypes,
+            spenderAddress,
+            automationOwner: spenderAddress,
+            executionMode: 'worker_ready',
+            permissionModel: 'delegated_worker',
+            requiresActionWhitelist: true,
+            subAccount,
+          },
+        })
+
+        setCloudAgentState({
+          ...(result.cloudState || delegatedCloudState || {}),
+          universalAddress,
+          accountAddress: universalAddress,
+          subAccount,
+          accountMode: 'delegated_sub_account',
+          executionMode: 'worker_ready',
+          permissionModel: 'delegated_worker',
+          automationOwner: spenderAddress,
+          spendPermission: permission,
+        })
+        setCloudAgentMessage('Cloud Agent ready. Start will run from the delegated agent wallet automatically.')
+      } catch (registrationError) {
+        console.warn('[Cloud Agent] session registration failed:', registrationError?.message || registrationError)
+        setCloudAgentState(delegatedCloudState)
+        setCloudAgentMessage('Cloud Agent ready locally. Session storage could not be saved, but Start can use the delegated agent wallet.')
+        setError(`Cloud session warning: ${registrationError?.message || 'registration failed'}`)
+      }
+    } catch (cloudError) {
+      setCloudAgentMessage('')
+      const message = cloudError.message || 'Cloud Agent setup failed.'
+      const popupHint = /new window|popup|permission to open/i.test(message)
+        ? 'Base Account popup could not open. Allow popups for this site, then try Set up cloud again.'
+        : message
+      setError(popupHint)
+    } finally {
+      setCloudAgentBusy(false)
+    }
+  }, [form.allowedActionTypes, form.dailyTxTarget, form.enabledTargetIds, form.intervalMinutes, form.maxDailySpendEth, isAgentAccessUnlocked, routineBuilder.budget, routineBuilder.maxDailySpendEth])
 
   // Cross-tab mutex: prevent two tabs from executing simultaneously
   const LOCK_KEY = 'basehub_agent_execution_lock'
@@ -1107,6 +1486,54 @@ export default function AgentMode() {
     }
   }
 
+  async function recordAgentResult({ walletAddress, action, result }) {
+    const txHash = result?.hash || result?.txHash
+    if (!walletAddress || !txHash || !action?.targetId) return
+
+    const gameType = getAgentGameType(action)
+    const xpAmount = getAgentBaseXp(action)
+
+    try {
+      if (typeof supabase?.rpc !== 'function') throw new Error('Supabase RPC is not available.')
+      const awardType = getAgentAwardGameType(action)
+      const { error: awardError } = await supabase.rpc('award_xp', {
+        p_wallet_address: walletAddress,
+        p_final_xp: xpAmount,
+        p_game_type: awardType,
+        p_transaction_hash: txHash,
+        p_source: 'web',
+      })
+      if (awardError) throw awardError
+      notifyXPRefresh()
+    } catch (xpErr) {
+      console.warn('[Agent] XP award failed:', xpErr?.message || xpErr)
+      try {
+        await recordTransaction({
+          wallet_address: walletAddress,
+          game_type: gameType,
+          xp_earned: xpAmount,
+          transaction_hash: txHash,
+          chain_id: NETWORKS.BASE.chainId,
+        })
+      } catch (txErr) {
+        console.warn('[Agent] Supabase tx record failed:', txErr?.message || txErr)
+      }
+    }
+
+    if (action.targetId === 'swaphub-swap') {
+      try {
+        const swapUsd =
+          Number(action.payload?.swapAmountUsd || 0) ||
+          estimateUsdFromEthAmount(action.payload?.swapAmountEth || action.estimatedSpendEth)
+        if (swapUsd > 0) {
+          await recordSwapTransaction(walletAddress, swapUsd, txHash)
+        }
+      } catch (swapErr) {
+        console.warn('[Agent] SwapHub volume record failed:', swapErr?.message || swapErr)
+      }
+    }
+  }
+
   const runNextAction = useCallback(async () => {
     if (executionLockRef.current) return
     if (!acquireCrossTabLock()) return // another tab is executing
@@ -1121,8 +1548,9 @@ export default function AgentMode() {
       let plan = current.currentPlan
       let action = getNextPlannedAction(current)
 
-      const liveBalance = current.wallet?.address
-        ? await getBurnerBalance(current.wallet.address)
+      const cloudAddress = cloudExecutionAddress
+      const liveBalance = cloudAddress
+        ? await getBurnerBalance(cloudAddress)
         : { raw: 0n, formatted: '0' }
       setBalance(liveBalance)
 
@@ -1174,8 +1602,8 @@ export default function AgentMode() {
         return
       }
 
-      if (!sessionKeyRef.current) {
-        appendLog({ status: 'blocked', title: 'Wallet locked', summary: 'Unlock the wallet with your PIN to continue.' })
+      if (!isCloudExecutionReady) {
+        appendLog({ status: 'blocked', title: 'Cloud Agent not ready', summary: cloudExecutionIssue || 'Set up Cloud Agent before starting.' })
         reloadState()
         return
       }
@@ -1186,11 +1614,16 @@ export default function AgentMode() {
       })
       reloadState()
 
-      const result = await executeAgentAction({
+      const result = await executeCloudAgentAction({
+        ownerAddress: cloudAddress,
+        subAccount: cloudAgentState?.subAccount || null,
         action,
-        privateKey: sessionKeyRef.current,
-        settings: current.settings,
+        settings: {
+          ...current.settings,
+          walletAddress: cloudAddress,
+        },
         logs: current.logs,
+        spendPermission: cloudAgentState?.spendPermission || null,
       })
 
       appendLog({
@@ -1203,9 +1636,14 @@ export default function AgentMode() {
         txHash: result.hash,
         spentWei: result.spentWei,
       })
+      await recordAgentResult({
+        walletAddress: cloudAddress,
+        action,
+        result,
+      })
       await safeWriteMemory({
         eventType: 'run',
-        walletAddress: current.wallet.address,
+        walletAddress: cloudAddress,
         status: 'success',
         summary: action.summary,
         plannedActions: plan?.actions?.length || 0,
@@ -1213,7 +1651,7 @@ export default function AgentMode() {
       })
       await safeWriteMemory({
         eventType: 'reflection',
-        walletAddress: current.wallet.address,
+        walletAddress: cloudAddress,
         reflectionType: 'execution',
         body: `I executed ${action.title} successfully and can use that result in the next planning pass.`,
         meta: { targetId: action.targetId },
@@ -1270,10 +1708,10 @@ export default function AgentMode() {
         title: normalized.code === 'fee' || normalized.code === 'balance' ? 'Agent stopped' : 'Execution failed',
         summary: normalized.shortMessage,
       })
-      if (current?.wallet?.address) {
+      if (cloudAddress || cloudAgentState?.accountAddress || cloudAgentState?.universalAddress) {
         await safeWriteMemory({
           eventType: 'reflection',
-          walletAddress: current.wallet.address,
+          walletAddress: cloudAddress || cloudAgentState?.accountAddress || cloudAgentState?.universalAddress,
           reflectionType: 'failure',
           body: normalized.shortMessage,
           meta: { code: normalized.code },
@@ -1292,30 +1730,92 @@ export default function AgentMode() {
         window.setTimeout(() => runNextAction(), 150)
       }
     }
-  }, [pauseForFunding, refreshPlan, reloadState])
+  }, [cloudAgentState, cloudExecutionAddress, executeCloudAgentAction, isCloudExecutionReady, pauseForFunding, refreshPlan, reloadState])
 
-  const startAgentRun = useCallback(() => {
-    if (!startGate.ok) {
-      setError(startGate.reason)
+  const startAgentRun = useCallback(async () => {
+    if (!isAgentAccessUnlocked) {
+      setError('Unlock Agent Mode first.')
       return false
     }
-    setAgentStatus(AGENT_STATUSES.ACTIVE)
-    appendLog({ status: 'info', title: 'Agent started', summary: 'Agent is now following today plan.' })
-    writeAgentMemoryEvent({
-      eventType: 'profile',
-      walletAddress: agentState.wallet.address,
-      objective: autoObjective,
-      currentIntent: latestPlan?.nextMove || '',
-      plannerMode,
-    })
-    reloadState()
-    window.setTimeout(() => runNextAction(), 150)
-    return true
-  }, [agentState.wallet?.address, autoObjective, latestPlan?.nextMove, plannerMode, reloadState, runNextAction, startGate])
+    if (!startGateWithAccess.ok) {
+      setError(startGateWithAccess.reason)
+      return false
+    }
+    const cloudAddress = cloudExecutionAddress
+    const currentState = loadAgentState()
+    const approvedPlan = currentState.currentPlan
+    if (isCloudAgentReady && !isCloudExecutionReady) {
+      const issue = cloudExecutionIssue || 'Cloud execution is not ready yet.'
+      setAgentStatus(AGENT_STATUSES.DISABLED)
+      setError(issue)
+      setPlanFeedback(issue)
+      appendLog({
+        status: 'blocked',
+        title: 'Cloud executor not ready',
+        summary: issue,
+      })
+      reloadState()
+      return false
+    }
+    try {
+      if (isCloudAgentReady) {
+        if (!approvedPlan?.approvedAt) {
+          setError('Approve the plan before starting.')
+          return false
+        }
+        await startCloudAgentRun({
+          ownerAddress: cloudAgentState?.accountAddress || cloudAgentState?.universalAddress || paymentWalletAddress,
+          subAccountAddress: cloudAddress,
+          subAccount: cloudAgentState?.subAccount || null,
+          currentPlan: approvedPlan,
+          settings: {
+            ...currentState.settings,
+            walletAddress: cloudAddress,
+          },
+          logs: currentState.logs,
+          spendPermission: cloudAgentState?.spendPermission || null,
+          intervalMinutes: currentState.settings.intervalMinutes,
+        })
+      }
+
+      setAgentStatus(AGENT_STATUSES.ACTIVE)
+      appendLog({
+        status: 'info',
+        title: isCloudAgentReady ? 'Cloud Agent started' : 'Agent started',
+        summary: isCloudAgentReady
+          ? 'Cloud Agent queued on VPS worker. It can continue after this tab is closed.'
+          : 'Agent is now following today plan.',
+      })
+      safeWriteMemory({
+        eventType: 'profile',
+        walletAddress: cloudAddress,
+        objective: autoObjective,
+        currentIntent: latestPlan?.nextMove || '',
+        plannerMode,
+      })
+      reloadState()
+      if (isCloudAgentReady) {
+        setPlanFeedback('Cloud Agent started. VPS worker will execute the approved plan automatically.')
+      } else {
+        window.setTimeout(() => runNextAction(), 150)
+      }
+      return true
+    } catch (startError) {
+      const normalized = normalizeAgentError(startError)
+      appendLog({
+        status: 'failed',
+        title: 'Cloud Agent start failed',
+        summary: normalized.shortMessage,
+      })
+      reloadState()
+      setError(normalized.shortMessage)
+      return false
+    }
+  }, [autoObjective, cloudAgentState, cloudExecutionAddress, cloudExecutionIssue, isAgentAccessUnlocked, isCloudAgentReady, isCloudExecutionReady, latestPlan?.nextMove, paymentWalletAddress, plannerMode, reloadState, runNextAction, startGateWithAccess])
 
   useEffect(() => {
-    if (!agentState.wallet?.address) return undefined
-    if (!sessionKeyRef.current) return undefined
+    if (isCloudAgentReady) return undefined
+    if (!isCloudExecutionReady) return undefined
     if (agentState.status !== AGENT_STATUSES.ACTIVE) return undefined
     if (!agentState.settings.autoRunEnabled) return undefined
 
@@ -1329,9 +1829,59 @@ export default function AgentMode() {
     agentState.settings.autoRunEnabled,
     agentState.settings.intervalMinutes,
     agentState.status,
-    agentState.wallet?.address,
-    isWalletLocked,
+    isCloudAgentReady,
+    isCloudExecutionReady,
     runNextAction,
+  ])
+
+  const handleUnlockAgentAccess = useCallback(async () => {
+    if (isAgentX402PurchaseSkipped()) {
+      await refreshAgentAccess()
+      return
+    }
+    if (!isPaymentWalletConnected || !paymentWalletAddress || !paymentWalletClient) {
+      setError('Connect your main wallet first, then unlock Agent Mode.')
+      return
+    }
+
+    setAgentAccessBusy(true)
+    setError(null)
+    try {
+      const endpoint = agentAccess.isPassHolder ? '/api/x402-agent-access-pass' : '/api/x402-agent-access'
+      const fetchWithPayment = wrapFetchWithPayment(
+        fetch,
+        paymentWalletClient,
+        BigInt(16000000) // 16 USDC max guard; standard price is 15 USDC.
+      )
+
+      const response = await fetchWithPayment(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletAddress: paymentWalletAddress,
+          agentWalletAddress: cloudExecutionAddress || null,
+        }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || data.success === false) {
+        throw new Error(data.error || data.message || 'Agent Mode unlock payment failed.')
+      }
+
+      await refreshAgentAccess()
+      setPlanFeedback('Agent Mode unlocked. You can set up cloud, generate a plan, and start.')
+    } catch (unlockError) {
+      const message = unlockError?.message || 'Agent Mode unlock payment failed.'
+      setError(message)
+    } finally {
+      setAgentAccessBusy(false)
+    }
+  }, [
+    agentAccess.isPassHolder,
+    cloudExecutionAddress,
+    isPaymentWalletConnected,
+    paymentWalletAddress,
+    paymentWalletClient,
+    refreshAgentAccess,
   ])
 
   const handleCopy = useCallback(async (value, key) => {
@@ -1358,6 +1908,8 @@ export default function AgentMode() {
   const totalQueueActions = latestPlan?.queue?.length || 0
   const progressPct = totalQueueActions > 0 ? Math.round((completedQueueActions / totalQueueActions) * 100) : 0
   const isAgentActive = agentState.status === AGENT_STATUSES.ACTIVE
+  const agentXpLevel = calcLevel(agentXp.value)
+  const agentBhupEstimate = calculateTokens(agentXp.value)
 
   /* shared styles */
   const glassCard = {
@@ -1384,6 +1936,43 @@ export default function AgentMode() {
     background: 'rgba(2,6,23,0.4)',
     border: '1px solid rgba(148,163,184,0.04)',
   }
+  const currentSetupStep = !isAgentAccessUnlocked
+    ? 1
+    : !isCloudExecutionReady
+      ? 2
+      : !hasPlan
+        ? 3
+        : !isPlanApproved
+          ? 4
+          : isAgentActive
+            ? 5
+            : 4
+  const setupSteps = [
+    {
+      number: 1,
+      title: 'Unlock',
+      text: 'Pay once with x402',
+      done: isAgentAccessUnlocked,
+    },
+    {
+      number: 2,
+      title: 'Cloud',
+      text: 'Give limited permission',
+      done: isCloudExecutionReady,
+    },
+    {
+      number: 3,
+      title: 'Plan',
+      text: 'Choose routine and generate',
+      done: hasPlan,
+    },
+    {
+      number: 4,
+      title: 'Start',
+      text: 'Approve and run',
+      done: isPlanApproved || isAgentActive,
+    },
+  ]
 
   return (
     <div style={{
@@ -1394,108 +1983,18 @@ export default function AgentMode() {
     }}>
       <EmbedMeta
         title="Agent Mode"
-        description="Create a burner wallet in BaseHub and let it run BaseHub routines from its own address."
+        description="Set up Cloud Agent and let it run approved BaseHub routines automatically."
         url="https://www.basehub.fun/agent"
       />
 
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px 100px' }}>
+      <div style={{
+        width: 'min(calc(100% - 32px), 1180px)',
+        margin: '0 auto',
+        padding: 'clamp(18px, 2.6vw, 34px) 0 120px',
+      }}>
         <BackButton />
 
-        {/* ═══════════════════════════════════════════ */}
-        {/*  WELCOME — No wallet                       */}
-        {/* ═══════════════════════════════════════════ */}
-        {!agentState.wallet ? (
-          <div style={{
-            position: 'relative', overflow: 'hidden',
-            ...glassCard,
-            padding: '56px 36px 52px', textAlign: 'center',
-            maxWidth: 480, margin: '56px auto',
-            animation: 'agentFadeIn 0.7s ease',
-            boxShadow: '0 8px 60px rgba(59,130,246,0.06), 0 0 0 1px rgba(148,163,184,0.04)',
-          }}>
-            {/* Ambient glow */}
-            <div style={{
-              position: 'absolute', top: -120, left: '50%', transform: 'translateX(-50%)',
-              width: 400, height: 400,
-              background: 'radial-gradient(circle, rgba(99,102,241,0.08) 0%, rgba(59,130,246,0.04) 40%, transparent 70%)',
-              filter: 'blur(60px)', pointerEvents: 'none',
-            }} />
-            <div style={{
-              position: 'absolute', bottom: -80, right: -80, width: 240, height: 240,
-              background: 'radial-gradient(circle, rgba(6,182,212,0.06) 0%, transparent 70%)',
-              filter: 'blur(50px)', pointerEvents: 'none',
-            }} />
-
-            <div style={{
-              width: 68, height: 68, borderRadius: 20, margin: '0 auto 28px',
-              background: 'linear-gradient(145deg, rgba(99,102,241,0.15), rgba(59,130,246,0.1))',
-              border: '1px solid rgba(129,140,248,0.12)',
-              display: 'grid', placeItems: 'center', position: 'relative',
-              boxShadow: '0 0 40px rgba(99,102,241,0.1)',
-            }}>
-              <Bot size={32} color="#a5b4fc" />
-            </div>
-
-            <h1 style={{
-              margin: '0 0 10px', fontSize: 26, fontWeight: 800,
-              background: 'linear-gradient(135deg, #f1f5f9, #cbd5e1)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              letterSpacing: '-0.03em',
-            }}>
-              Agent Mode
-            </h1>
-            <p style={{
-              margin: '0 auto 40px', fontSize: 14, color: '#64748b',
-              lineHeight: 1.7, maxWidth: 340, fontWeight: 400,
-            }}>
-              Automated on-chain routines from an isolated burner wallet. Set your strategy, approve the plan, and let it run.
-            </p>
-
-            <div style={{ display: 'grid', gap: 8, textAlign: 'left', marginBottom: 40 }}>
-              {[
-                { icon: <Wallet size={16} />, t: 'Create wallet', d: 'PIN-encrypted burner on Base' },
-                { icon: <Target size={16} />, t: 'Configure routine', d: 'Activity types, pace and budget' },
-                { icon: <Play size={16} />, t: 'Approve & launch', d: 'Review the plan, then start' },
-              ].map((s, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
-                  borderRadius: 14, background: 'rgba(15,23,42,0.5)',
-                  border: '1px solid rgba(148,163,184,0.04)',
-                  transition: 'border-color 0.2s ease',
-                }}>
-                  <div style={{
-                    width: 34, height: 34, borderRadius: 10,
-                    background: 'linear-gradient(135deg, rgba(99,102,241,0.1), rgba(59,130,246,0.06))',
-                    border: '1px solid rgba(129,140,248,0.08)',
-                    display: 'grid', placeItems: 'center', color: '#818cf8', flexShrink: 0,
-                  }}>{s.icon}</div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#e2e8f0', letterSpacing: '-0.01em' }}>{s.t}</div>
-                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>{s.d}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <button type="button" onClick={() => {
-              setPinModalMode('create'); setPinInput(''); setPinConfirmInput(''); setPinError(''); setShowPinModal(true)
-            }} style={{
-              display: 'inline-flex', alignItems: 'center', gap: 10,
-              padding: '13px 36px', borderRadius: 14, border: 'none',
-              background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-              color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-              boxShadow: '0 4px 20px rgba(99,102,241,0.25), inset 0 1px 0 rgba(255,255,255,0.08)',
-              transition: 'all 0.2s ease', letterSpacing: '-0.01em',
-            }}>
-              <Wallet size={16} />
-              Create Wallet
-            </button>
-          </div>
-        ) : (
-          /* ═══════════════════════════════════════════ */
-          /*  DASHBOARD                                 */
-          /* ═══════════════════════════════════════════ */
-          <>
+        <>
             {/* ─── Header ─── */}
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -1520,48 +2019,321 @@ export default function AgentMode() {
                   </p>
                 </div>
               </div>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 7,
-                padding: '7px 14px', borderRadius: 999,
-                background: sc.bg, border: `1px solid ${sc.border}`,
-              }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                 <div style={{
-                  width: 7, height: 7, borderRadius: '50%', background: sc.dotColor,
-                  animation: isAgentActive ? 'statusPulse 2s ease-in-out infinite' : 'none',
-                  boxShadow: isAgentActive ? `0 0 8px ${sc.dotColor}` : 'none',
-                }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: sc.color, letterSpacing: '0.02em' }}>
-                  {formatStatus(agentState.status)}
-                </span>
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '7px 11px', borderRadius: 999,
+                  background: 'rgba(250,204,21,0.08)',
+                  border: '1px solid rgba(250,204,21,0.12)',
+                  color: '#fde68a',
+                }}>
+                  <Zap size={13} />
+                  <span style={{ fontSize: 11, fontWeight: 800 }}>Agent XP</span>
+                  <span style={{ fontSize: 12, fontWeight: 900, color: '#f8fafc' }}>
+                    {agentXp.loading && !agentXp.value ? '...' : formatNumber(agentXp.value)}
+                  </span>
+                  <span style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8' }}>L{agentXpLevel}</span>
+                </div>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  padding: '7px 14px', borderRadius: 999,
+                  background: sc.bg, border: `1px solid ${sc.border}`,
+                }}>
+                  <div style={{
+                    width: 7, height: 7, borderRadius: '50%', background: sc.dotColor,
+                    animation: isAgentActive ? 'statusPulse 2s ease-in-out infinite' : 'none',
+                    boxShadow: isAgentActive ? `0 0 8px ${sc.dotColor}` : 'none',
+                  }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: sc.color, letterSpacing: '0.02em' }}>
+                    {formatStatus(agentState.status)}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* ─── Wallet locked ─── */}
-            {isWalletLocked && (
+            <div style={{
+              ...glassCard,
+              padding: '16px',
+              marginBottom: 16,
+              background: 'linear-gradient(135deg, rgba(15,23,42,0.72), rgba(15,23,42,0.46))',
+            }}>
               <div style={{
-                display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px',
-                borderRadius: 14,
-                background: 'linear-gradient(135deg, rgba(245,158,11,0.06), rgba(217,119,6,0.03))',
-                border: '1px solid rgba(245,158,11,0.1)',
-                marginBottom: 16, animation: 'agentFadeIn 0.3s ease',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+                gap: 10,
               }}>
-                <Lock size={14} color="#f59e0b" />
-                <span style={{ fontSize: 13, color: '#fbbf24', fontWeight: 600, flex: 1, letterSpacing: '-0.01em' }}>
-                  {isLegacyWallet(agentState.wallet) ? 'Legacy wallet — encrypt with a PIN' : 'Wallet locked — unlock to run'}
-                </span>
-                <button type="button" onClick={() => {
-                  setPinModalMode(isLegacyWallet(agentState.wallet) ? 'migrate' : 'unlock')
-                  setPinInput(''); setPinConfirmInput(''); setPinError(''); setShowPinModal(true)
-                }} style={{
-                  padding: '6px 16px', borderRadius: 9, border: 'none',
-                  background: 'rgba(245,158,11,0.15)', color: '#fbbf24',
-                  fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0,
-                  transition: 'all 0.15s ease',
-                }}>
-                  {isLegacyWallet(agentState.wallet) ? 'Set PIN' : 'Unlock'}
-                </button>
+                {setupSteps.map(step => {
+                  const active = currentSetupStep === step.number
+                  return (
+                    <div key={step.number} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '12px 14px',
+                      borderRadius: 14,
+                      background: step.done
+                        ? 'rgba(34,197,94,0.08)'
+                        : active
+                          ? 'rgba(96,165,250,0.1)'
+                          : 'rgba(2,6,23,0.36)',
+                      border: `1px solid ${step.done
+                        ? 'rgba(34,197,94,0.16)'
+                        : active
+                          ? 'rgba(96,165,250,0.18)'
+                          : 'rgba(148,163,184,0.05)'}`,
+                    }}>
+                      <div style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: 10,
+                        display: 'grid',
+                        placeItems: 'center',
+                        flexShrink: 0,
+                        background: step.done
+                          ? 'linear-gradient(135deg, rgba(34,197,94,0.22), rgba(22,163,74,0.08))'
+                          : active
+                            ? 'linear-gradient(135deg, rgba(59,130,246,0.24), rgba(99,102,241,0.1))'
+                            : 'rgba(15,23,42,0.75)',
+                        color: step.done ? '#86efac' : active ? '#bfdbfe' : '#64748b',
+                        fontSize: 12,
+                        fontWeight: 900,
+                        border: '1px solid rgba(255,255,255,0.05)',
+                      }}>
+                        {step.done ? '✓' : step.number}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{
+                          fontSize: 13,
+                          fontWeight: 900,
+                          color: step.done ? '#bbf7d0' : active ? '#e0f2fe' : '#94a3b8',
+                          letterSpacing: '-0.01em',
+                        }}>
+                          {step.title}
+                        </div>
+                        <div style={{ marginTop: 2, fontSize: 11, color: active ? '#93c5fd' : '#64748b', fontWeight: 600 }}>
+                          {step.text}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {!isAgentAccessUnlocked && (
+              <div style={{
+                ...glassCard,
+                padding: '18px 20px',
+                marginBottom: 16,
+                background: 'linear-gradient(135deg, rgba(250,204,21,0.08), rgba(15,23,42,0.55))',
+                border: '1px solid rgba(250,204,21,0.14)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{
+                    width: 34, height: 34, borderRadius: 11,
+                    background: 'rgba(250,204,21,0.1)',
+                    border: '1px solid rgba(250,204,21,0.14)',
+                    display: 'grid', placeItems: 'center',
+                    color: '#fde68a',
+                  }}>
+                    <Shield size={16} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 220 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <div style={{ fontSize: 14, fontWeight: 900, color: '#f8fafc' }}>Unlock Agent Mode</div>
+                      <span style={{
+                        padding: '3px 8px',
+                        borderRadius: 999,
+                        fontSize: 10,
+                        fontWeight: 900,
+                        color: agentAccess.isPassHolder ? '#86efac' : '#fde68a',
+                        background: agentAccess.isPassHolder ? 'rgba(34,197,94,0.12)' : 'rgba(250,204,21,0.1)',
+                        border: `1px solid ${agentAccess.isPassHolder ? 'rgba(34,197,94,0.18)' : 'rgba(250,204,21,0.16)'}`,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                      }}>
+                        {agentAccess.loading ? 'checking' : agentAccess.isPassHolder ? '30% discount' : 'one-time'}
+                      </span>
+                    </div>
+                    <div style={{ marginTop: 5, fontSize: 12, color: '#94a3b8', lineHeight: 1.5 }}>
+                      Pay once with your main wallet. Early Access Pass holders get 30% off automatically.
+                    </div>
+                    <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 12, color: '#fde68a', fontWeight: 900 }}>
+                        {agentAccessPriceLabel}
+                      </span>
+                      {!agentAccess.loading && !agentAccess.isPassHolder && (
+                        <a
+                          href="/early-access"
+                          style={{
+                            fontSize: 11,
+                            color: '#7dd3fc',
+                            fontWeight: 800,
+                            textDecoration: 'none',
+                          }}
+                        >
+                          Mint pass for discount
+                        </a>
+                      )}
+                    </div>
+                    {agentAccess.setupError && (
+                      <div style={{ marginTop: 6, fontSize: 11, color: '#fca5a5', fontWeight: 700 }}>
+                        {agentAccess.setupError}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={agentAccessBusy || agentAccess.loading || !isPaymentWalletConnected}
+                    onClick={handleUnlockAgentAccess}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '11px 18px',
+                      borderRadius: 13,
+                      border: '1px solid rgba(250,204,21,0.18)',
+                      background: agentAccessBusy || agentAccess.loading || !isPaymentWalletConnected
+                        ? 'rgba(250,204,21,0.08)'
+                        : 'linear-gradient(135deg, #facc15, #f59e0b)',
+                      color: agentAccessBusy || agentAccess.loading || !isPaymentWalletConnected ? '#a16207' : '#111827',
+                      fontSize: 12,
+                      fontWeight: 900,
+                      cursor: agentAccessBusy || agentAccess.loading || !isPaymentWalletConnected ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {agentAccessBusy ? <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Zap size={13} />}
+                    {!isPaymentWalletConnected ? 'Connect wallet' : agentAccessBusy ? 'Paying…' : 'Pay with x402'}
+                  </button>
+                </div>
               </div>
             )}
+
+            {/* ─── Cloud Agent ─── */}
+            <div style={{
+              ...glassCard,
+              padding: '18px 20px',
+              marginBottom: 16,
+              background: 'linear-gradient(135deg, rgba(14,165,233,0.06), rgba(15,23,42,0.48))',
+              border: '1px solid rgba(56,189,248,0.1)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{
+                  width: 34, height: 34, borderRadius: 11,
+                  background: 'rgba(14,165,233,0.1)',
+                  border: '1px solid rgba(56,189,248,0.12)',
+                  display: 'grid', placeItems: 'center',
+                  color: '#7dd3fc',
+                }}>
+                  <Shield size={16} />
+                </div>
+                <div style={{ flex: 1, minWidth: 220 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: '#e0f2fe', letterSpacing: '-0.01em' }}>Cloud Agent</div>
+                    <span style={{
+                      padding: '3px 8px',
+                      borderRadius: 999,
+                      fontSize: 10,
+                      fontWeight: 800,
+                      color: isCloudExecutionReady ? '#86efac' : isCloudAgentReady ? '#fbbf24' : '#93c5fd',
+                      background: isCloudExecutionReady
+                        ? 'rgba(34,197,94,0.12)'
+                        : isCloudAgentReady
+                          ? 'rgba(245,158,11,0.12)'
+                          : 'rgba(59,130,246,0.12)',
+                      border: `1px solid ${isCloudExecutionReady
+                        ? 'rgba(34,197,94,0.18)'
+                        : isCloudAgentReady
+                          ? 'rgba(245,158,11,0.18)'
+                          : 'rgba(59,130,246,0.18)'}`,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                    }}>
+                      {isCloudExecutionReady ? 'auto ready' : isCloudAgentReady ? 'permission only' : 'setup beta'}
+                    </span>
+                  </div>
+                  <div style={{ marginTop: 4, fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
+                    Creates a delegated agent wallet with a daily cap, then runs approved BaseHub actions automatically.
+                  </div>
+                  {(cloudAccountAddress || cloudDelegatedAddress) && (
+                    <div style={{
+                      marginTop: 6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      flexWrap: 'wrap',
+                      fontSize: 11,
+                      color: '#7dd3fc',
+                      fontWeight: 700,
+                    }}>
+                      {cloudDelegatedAddress && (
+                        <>
+                          <span>
+                            Agent wallet: {formatShortAddress(cloudDelegatedAddress)}
+                            {cloudAgentState.allowanceEth ? ` · cap ${cloudAgentState.allowanceEth} ETH/day` : ''}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(cloudDelegatedAddress, 'cloud-agent-wallet')}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              padding: '4px 8px',
+                              borderRadius: 8,
+                              border: '1px solid rgba(56,189,248,0.14)',
+                              background: 'rgba(14,165,233,0.08)',
+                              color: '#bae6fd',
+                              fontSize: 10,
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <Copy size={10} />
+                            {copiedKey === 'cloud-agent-wallet' ? 'Copied' : 'Copy'}
+                          </button>
+                        </>
+                      )}
+                      {cloudAccountAddress && cloudDelegatedAddress && cloudAccountAddress.toLowerCase() !== cloudDelegatedAddress.toLowerCase() && (
+                        <span style={{ color: '#64748b', fontWeight: 700 }}>
+                          Main: {formatShortAddress(cloudAccountAddress)}
+                        </span>
+                      )}
+                      {cloudAccountAddress && !cloudDelegatedAddress && (
+                        <span>
+                          Main account: {formatShortAddress(cloudAccountAddress)}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {cloudAgentMessage && (
+                    <div style={{ marginTop: 6, fontSize: 11, color: '#bae6fd', fontWeight: 600 }}>{cloudAgentMessage}</div>
+                  )}
+                  {cloudExecutionIssue && (
+                    <div style={{ marginTop: 8, fontSize: 11, color: '#fbbf24', fontWeight: 700, lineHeight: 1.5 }}>
+                      {cloudExecutionIssue}
+                    </div>
+                  )}
+                </div>
+                <button type="button" disabled={cloudAgentBusy || !isAgentAccessUnlocked} onClick={handleSetupCloudAgent} style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '10px 16px',
+                  borderRadius: 12,
+                  border: '1px solid rgba(56,189,248,0.18)',
+                  background: cloudAgentBusy || !isAgentAccessUnlocked ? 'rgba(14,165,233,0.08)' : 'linear-gradient(135deg, rgba(14,165,233,0.18), rgba(37,99,235,0.1))',
+                  color: cloudAgentBusy || !isAgentAccessUnlocked ? '#64748b' : '#bae6fd',
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: cloudAgentBusy ? 'wait' : !isAgentAccessUnlocked ? 'not-allowed' : 'pointer',
+                  letterSpacing: '-0.01em',
+                }}>
+                  {cloudAgentBusy ? <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Shield size={13} />}
+                  {isCloudAgentReady ? 'Update permission' : 'Set up cloud'}
+                </button>
+              </div>
+            </div>
 
             {/* ─── Mission Card ─── */}
             <div style={{
@@ -1638,14 +2410,14 @@ export default function AgentMode() {
             {/* ─── Controls ─── */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 18 }}>
               {!hasPlan && (
-                <button type="button" disabled={isPlanning || isWalletLocked} onClick={() => {
+                <button type="button" disabled={isPlanning || !isCloudAgentReady || !isAgentAccessUnlocked} onClick={() => {
                   handleAutoPlan().catch(e => { setPlanFeedback(''); setPlannerMode('backup'); setError(normalizeAgentError(e).shortMessage) })
                 }} style={{
                   display: 'flex', alignItems: 'center', gap: 8, padding: '11px 24px', borderRadius: 12, border: 'none',
-                  background: isPlanning || isWalletLocked ? 'rgba(99,102,241,0.2)' : 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                  background: isPlanning || !isCloudAgentReady || !isAgentAccessUnlocked ? 'rgba(99,102,241,0.2)' : 'linear-gradient(135deg, #6366f1, #4f46e5)',
                   color: '#fff', fontSize: 13, fontWeight: 700, letterSpacing: '-0.01em',
-                  cursor: isPlanning || isWalletLocked ? 'not-allowed' : 'pointer',
-                  boxShadow: isPlanning || isWalletLocked ? 'none' : '0 2px 16px rgba(99,102,241,0.2)',
+                  cursor: isPlanning || !isCloudAgentReady || !isAgentAccessUnlocked ? 'not-allowed' : 'pointer',
+                  boxShadow: isPlanning || !isCloudAgentReady || !isAgentAccessUnlocked ? 'none' : '0 2px 16px rgba(99,102,241,0.2)',
                   transition: 'all 0.2s ease',
                 }}>
                   {isPlanning ? <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Sparkles size={14} />}
@@ -1653,49 +2425,44 @@ export default function AgentMode() {
                 </button>
               )}
               {hasPlan && !isPlanApproved && (
-                <button type="button" onClick={() => {
+                <button type="button" disabled={!isAgentAccessUnlocked} onClick={() => {
+                  if (!isAgentAccessUnlocked) { setError('Unlock Agent Mode first.'); return }
                   approveCurrentPlan()
                   appendLog({ status: 'info', title: 'Plan approved', summary: 'The agent can now execute this plan.' })
                   setPlanFeedback('Plan approved — start when ready.')
                   reloadState()
                 }} style={{
                   display: 'flex', alignItems: 'center', gap: 8, padding: '11px 24px', borderRadius: 12, border: 'none',
-                  background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                  color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', letterSpacing: '-0.01em',
-                  boxShadow: '0 2px 16px rgba(99,102,241,0.2)', transition: 'all 0.2s ease',
+                  background: isAgentAccessUnlocked ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'rgba(99,102,241,0.2)',
+                  color: '#fff', fontSize: 13, fontWeight: 700, cursor: isAgentAccessUnlocked ? 'pointer' : 'not-allowed', letterSpacing: '-0.01em',
+                  boxShadow: isAgentAccessUnlocked ? '0 2px 16px rgba(99,102,241,0.2)' : 'none', transition: 'all 0.2s ease',
                 }}>
                   <Sparkles size={14} />
                   Approve Plan
                 </button>
               )}
               {isPlanApproved && !isAgentActive && (
-                <button type="button" disabled={!startGate.ok} onClick={() => {
-                  if (!startGate.ok) { setError(startGate.reason); return }
-                  if (isWalletLocked) {
-                    setPinModalMode(isLegacyWallet(agentState.wallet) ? 'migrate' : 'unlock')
-                    setPinError('')
-                    setPinInput('')
-                    setPinConfirmInput('')
-                    setPendingStartAfterUnlock(true)
-                    setShowPinModal(true)
-                    return
-                  }
-                  startAgentRun()
+                <button type="button" disabled={!startGateWithAccess.ok} onClick={() => {
+                  if (!startGateWithAccess.ok) { setError(startGateWithAccess.reason); return }
+                  startAgentRun().catch((e) => setError(normalizeAgentError(e).shortMessage))
                 }} style={{
                   display: 'flex', alignItems: 'center', gap: 8, padding: '11px 24px', borderRadius: 12, border: 'none',
-                  background: startGate.ok ? 'linear-gradient(135deg, #22c55e, #16a34a)' : 'rgba(34,197,94,0.15)',
-                  color: startGate.ok ? '#fff' : '#475569',
+                  background: startGateWithAccess.ok ? 'linear-gradient(135deg, #22c55e, #16a34a)' : 'rgba(34,197,94,0.15)',
+                  color: startGateWithAccess.ok ? '#fff' : '#475569',
                   fontSize: 13, fontWeight: 700, letterSpacing: '-0.01em',
-                  cursor: startGate.ok ? 'pointer' : 'not-allowed',
-                  boxShadow: startGate.ok ? '0 2px 16px rgba(34,197,94,0.2)' : 'none',
+                  cursor: startGateWithAccess.ok ? 'pointer' : 'not-allowed',
+                  boxShadow: startGateWithAccess.ok ? '0 2px 16px rgba(34,197,94,0.2)' : 'none',
                   transition: 'all 0.2s ease',
                 }}>
                   <Play size={14} />
-                  {isWalletLocked ? 'Start & Unlock' : 'Start'}
+                  Start
                 </button>
               )}
               {isAgentActive && (
                 <button type="button" onClick={() => {
+                  stopCloudAgentRun({
+                    ownerAddress: cloudAgentState?.accountAddress || cloudAgentState?.universalAddress || paymentWalletAddress,
+                  }).catch((e) => setError(normalizeAgentError(e).shortMessage))
                   setAgentStatus(AGENT_STATUSES.DISABLED)
                   appendLog({ status: 'info', title: 'Agent stopped', summary: 'Routine fully stopped.' })
                   reloadState()
@@ -1837,7 +2604,18 @@ export default function AgentMode() {
                         {ROUTINE_INTENSITY_OPTIONS.map(opt => {
                           const active = routineBuilder.intensity === opt.id
                           return (
-                            <button key={opt.id} type="button" onClick={() => setRoutineBuilder(c => ({ ...c, intensity: opt.id }))} style={{
+                            <button key={opt.id} type="button" onClick={() => {
+                              setRoutineBuilder(c => ({
+                                ...c,
+                                intensity: opt.id,
+                                dailyTxTarget: opt.dailyTxTarget,
+                                intervalMinutes: opt.intervalMinutes,
+                              }))
+                              patchForm({
+                                dailyTxTarget: opt.dailyTxTarget,
+                                intervalMinutes: opt.intervalMinutes,
+                              })
+                            }} style={{
                               display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px',
                               borderRadius: 12, cursor: 'pointer', textAlign: 'left',
                               background: active ? 'rgba(59,130,246,0.08)' : 'rgba(2,6,23,0.3)',
@@ -1853,6 +2631,38 @@ export default function AgentMode() {
                           )
                         })}
                       </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
+                        <label style={{ display: 'grid', gap: 5 }}>
+                          <span style={{ fontSize: 10, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Tx/day</span>
+                          <input
+                            type="number"
+                            min="1"
+                            max="1000"
+                            value={routineBuilder.dailyTxTarget || form.dailyTxTarget}
+                            onChange={(e) => patchRoutineBuilder({ dailyTxTarget: e.target.value })}
+                            style={{
+                              width: '100%', boxSizing: 'border-box', padding: '10px 11px', borderRadius: 11,
+                              border: '1px solid rgba(96,165,250,0.12)', background: 'rgba(2,6,23,0.45)',
+                              color: '#dbeafe', fontSize: 12, fontWeight: 800, outline: 'none',
+                            }}
+                          />
+                        </label>
+                        <label style={{ display: 'grid', gap: 5 }}>
+                          <span style={{ fontSize: 10, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Every min</span>
+                          <input
+                            type="number"
+                            min="1"
+                            max="240"
+                            value={routineBuilder.intervalMinutes || form.intervalMinutes}
+                            onChange={(e) => patchRoutineBuilder({ intervalMinutes: e.target.value })}
+                            style={{
+                              width: '100%', boxSizing: 'border-box', padding: '10px 11px', borderRadius: 11,
+                              border: '1px solid rgba(96,165,250,0.12)', background: 'rgba(2,6,23,0.45)',
+                              color: '#dbeafe', fontSize: 12, fontWeight: 800, outline: 'none',
+                            }}
+                          />
+                        </label>
+                      </div>
                     </div>
                     <div>
                       <div style={labelStyle}>Budget</div>
@@ -1860,7 +2670,14 @@ export default function AgentMode() {
                         {ROUTINE_BUDGET_OPTIONS.map(opt => {
                           const active = routineBuilder.budget === opt.id
                           return (
-                            <button key={opt.id} type="button" onClick={() => setRoutineBuilder(c => ({ ...c, budget: opt.id }))} style={{
+                            <button key={opt.id} type="button" onClick={() => {
+                              setRoutineBuilder(c => ({
+                                ...c,
+                                budget: opt.id,
+                                maxDailySpendEth: opt.maxDailySpendEth,
+                              }))
+                              patchForm({ maxDailySpendEth: opt.maxDailySpendEth })
+                            }} style={{
                               display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px',
                               borderRadius: 12, cursor: 'pointer', textAlign: 'left',
                               background: active ? 'rgba(34,197,94,0.08)' : 'rgba(2,6,23,0.3)',
@@ -1876,6 +2693,24 @@ export default function AgentMode() {
                           )
                         })}
                       </div>
+                      <label style={{ display: 'grid', gap: 5, marginTop: 8 }}>
+                        <span style={{ fontSize: 10, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                          ETH permission / day
+                        </span>
+                        <input
+                          type="number"
+                          min="0.0001"
+                          max="1"
+                          step="0.0001"
+                          value={routineBuilder.maxDailySpendEth || form.maxDailySpendEth}
+                          onChange={(e) => patchRoutineBuilder({ maxDailySpendEth: e.target.value })}
+                          style={{
+                            width: '100%', boxSizing: 'border-box', padding: '10px 11px', borderRadius: 11,
+                            border: '1px solid rgba(74,222,128,0.12)', background: 'rgba(2,6,23,0.45)',
+                            color: '#dcfce7', fontSize: 12, fontWeight: 800, outline: 'none',
+                          }}
+                        />
+                      </label>
                     </div>
                   </div>
 
@@ -2122,332 +2957,9 @@ export default function AgentMode() {
               )}
             </div>
 
-            {/* ══════════════════════════════════════ */}
-            {/*  SECTION: Wallet                       */}
-            {/* ══════════════════════════════════════ */}
-            <div style={{ ...glassCard, marginBottom: 10, overflow: 'hidden' }}>
-              <button type="button" onClick={() => setOpenSections(p => ({ ...p, wallet: !p.wallet }))} style={sectionBtn(openSections.wallet)}>
-                <div style={{
-                  width: 30, height: 30, borderRadius: 9,
-                  background: 'linear-gradient(135deg, rgba(59,130,246,0.12), rgba(37,99,235,0.06))',
-                  border: '1px solid rgba(59,130,246,0.08)',
-                  display: 'grid', placeItems: 'center',
-                }}>
-                  <Shield size={14} color="#60a5fa" />
-                </div>
-                <span style={{ flex: 1, textAlign: 'left', fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em' }}>Wallet</span>
-                <span style={{ fontSize: 11, color: '#334155', fontFamily: "'SF Mono', 'Fira Code', monospace", fontWeight: 500 }}>
-                  {agentState.wallet.address.slice(0, 6)}\u2026{agentState.wallet.address.slice(-4)}
-                </span>
-                <ChevronRight size={15} color="#475569" style={{
-                  transform: openSections.wallet ? 'rotate(90deg)' : 'none', transition: 'transform 0.25s ease',
-                }} />
-              </button>
-              {openSections.wallet && (
-                <div style={{ ...sectionBody, display: 'grid', gap: 12 }}>
-                  {/* Address */}
-                  <div style={innerCard}>
-                    <div style={{ ...labelStyle, marginBottom: 6 }}>Address</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: '#cbd5e1', fontFamily: "'SF Mono', 'Fira Code', monospace", overflowWrap: 'anywhere', lineHeight: 1.6, letterSpacing: '0.01em' }}>
-                      {agentState.wallet.address}
-                    </div>
-                  </div>
-
-                  {/* Balance */}
-                  <div style={{ ...innerCard, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <div style={{ ...labelStyle, marginBottom: 4 }}>Balance</div>
-                      <div style={{ fontSize: 20, fontWeight: 800, color: '#f1f5f9', letterSpacing: '-0.02em' }}>{formatEth(balance.formatted)}</div>
-                    </div>
-                    <div style={{
-                      padding: '5px 12px', borderRadius: 8,
-                      background: startGate.ok ? 'rgba(34,197,94,0.08)' : 'rgba(245,158,11,0.08)',
-                      color: startGate.ok ? '#4ade80' : '#f59e0b', fontSize: 11, fontWeight: 700,
-                    }}>
-                      {startGate.ok ? 'Funded' : 'Low balance'}
-                    </div>
-                  </div>
-
-                  {/* Private Key */}
-                  <div style={innerCard}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                      <span style={{ ...labelStyle, marginBottom: 0 }}>Private Key</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 5,
-                          background: isWalletLocked ? 'rgba(245,158,11,0.08)' : 'rgba(34,197,94,0.08)',
-                          color: isWalletLocked ? '#f59e0b' : '#4ade80', fontSize: 10, fontWeight: 700,
-                        }}>
-                          {isWalletLocked ? <Lock size={9} /> : <Unlock size={9} />}
-                          {isWalletLocked ? 'Locked' : 'Open'}
-                        </span>
-                        {!isWalletLocked && sessionKeyRef.current && (
-                          <button type="button" onClick={() => setShowPrivateKey(c => !c)} style={{
-                            background: 'transparent', border: 'none', padding: '2px 6px',
-                            color: '#475569', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3,
-                          }}>
-                            {showPrivateKey ? <EyeOff size={10} /> : <Eye size={10} />}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    <div style={{
-                      fontFamily: "'SF Mono', 'Fira Code', monospace", fontSize: 11,
-                      color: showPrivateKey && !isWalletLocked ? '#fca5a5' : '#334155',
-                      overflowWrap: 'anywhere', lineHeight: 1.5,
-                    }}>
-                      {showPrivateKey && !isWalletLocked && sessionKeyRef.current
-                        ? sessionKeyRef.current
-                        : isEncryptedWallet(agentState.wallet)
-                          ? 'AES-256-GCM encrypted'
-                          : maskPrivateKey(agentState.wallet.privateKey || '')}
-                    </div>
-                  </div>
-
-                  {/* Lock controls */}
-                  <div style={{
-                    padding: '12px 16px', borderRadius: 13,
-                    background: isWalletLocked ? 'rgba(245,158,11,0.04)' : 'rgba(34,197,94,0.04)',
-                    border: `1px solid ${isWalletLocked ? 'rgba(245,158,11,0.06)' : 'rgba(34,197,94,0.06)'}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-                  }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: isWalletLocked ? '#f59e0b' : '#4ade80' }}>
-                      {isWalletLocked
-                        ? isLegacyWallet(agentState.wallet) ? 'Legacy — needs PIN' : 'Enter PIN to unlock'
-                        : 'Session unlocked'}
-                    </span>
-                    {isWalletLocked ? (
-                      <button type="button" onClick={() => {
-                        setPinModalMode(isLegacyWallet(agentState.wallet) ? 'migrate' : 'unlock')
-                        setPinInput(''); setPinConfirmInput(''); setPinError(''); setShowPinModal(true)
-                      }} style={{
-                        display: 'flex', alignItems: 'center', gap: 5,
-                        padding: '6px 14px', borderRadius: 8, border: 'none',
-                        background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                        color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', flexShrink: 0,
-                      }}>
-                        <Unlock size={11} />
-                        {isLegacyWallet(agentState.wallet) ? 'Set PIN' : 'Unlock'}
-                      </button>
-                    ) : (
-                      <button type="button" onClick={() => { sessionKeyRef.current = null; setIsWalletLocked(true); setShowPrivateKey(false) }} style={{
-                        display: 'flex', alignItems: 'center', gap: 5,
-                        padding: '6px 14px', borderRadius: 8,
-                        background: 'rgba(30,41,59,0.4)', border: '1px solid rgba(148,163,184,0.06)',
-                        color: '#64748b', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-                      }}>
-                        <Lock size={11} /> Lock
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button type="button" onClick={() => handleCopy(agentState.wallet.address, 'address')} style={{
-                      display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9,
-                      background: 'rgba(30,41,59,0.4)', border: '1px solid rgba(148,163,184,0.06)',
-                      color: '#94a3b8', fontSize: 11, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s ease',
-                    }}>
-                      <Copy size={11} />
-                      {copiedKey === 'address' ? 'Copied' : 'Copy'}
-                    </button>
-                    {walletExplorerUrl && (
-                      <a href={walletExplorerUrl} target="_blank" rel="noreferrer" style={{
-                        display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9,
-                        background: 'rgba(30,41,59,0.4)', border: '1px solid rgba(148,163,184,0.06)',
-                        color: '#94a3b8', fontSize: 11, fontWeight: 600, textDecoration: 'none',
-                      }}>
-                        <ExternalLink size={11} /> Explorer
-                      </a>
-                    )}
-                    <button type="button" onClick={() => {
-                      deleteAgentWallet(); sessionKeyRef.current = null; setIsWalletLocked(true); reloadState(); setShowPrivateKey(false)
-                    }} style={{
-                      display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9,
-                      marginLeft: 'auto',
-                      background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(248,113,113,0.06)',
-                      color: '#f87171', fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                    }}>
-                      <Trash2 size={11} /> Delete
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
           </>
-        )}
       </div>
 
-      {/* ─── PIN Modal ─── */}
-      {showPinModal && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 9999,
-          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(12px)',
-          display: 'grid', placeItems: 'center',
-          animation: 'agentFadeIn 0.2s ease',
-        }}>
-          <div style={{
-            width: '100%', maxWidth: 380, padding: 32, borderRadius: 24,
-            background: 'linear-gradient(180deg, rgba(15,23,42,0.98), rgba(2,6,23,0.98))',
-            border: '1px solid rgba(148,163,184,0.06)',
-            boxShadow: '0 25px 80px rgba(0,0,0,0.6)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: 14,
-                background: 'linear-gradient(145deg, rgba(99,102,241,0.15), rgba(59,130,246,0.08))',
-                border: '1px solid rgba(129,140,248,0.1)',
-                display: 'grid', placeItems: 'center',
-              }}>
-                <Lock size={20} color="#a5b4fc" />
-              </div>
-              <div>
-                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#f1f5f9', letterSpacing: '-0.02em' }}>
-                  {pinModalMode === 'create' ? 'Set PIN' : pinModalMode === 'migrate' ? 'Encrypt Wallet' : 'Unlock'}
-                </h3>
-                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#475569', fontWeight: 400 }}>
-                  {pinModalMode === 'create' ? 'Choose a PIN to encrypt your key'
-                    : pinModalMode === 'migrate' ? 'Set a PIN for your existing key'
-                    : 'Enter PIN to decrypt'}
-                </p>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gap: 14 }}>
-              <div>
-                <label style={{ ...labelStyle, marginBottom: 8 }}>
-                  {pinModalMode === 'unlock' ? 'PIN' : 'Choose PIN (4+ chars)'}
-                </label>
-                <input type="password" value={pinInput}
-                  onChange={(e) => { setPinInput(e.target.value); setPinError('') }}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && pinModalMode === 'unlock') document.getElementById('pin-submit-btn')?.click() }}
-                  autoFocus placeholder="Enter PIN\u2026"
-                  style={{
-                    width: '100%', padding: '12px 16px', borderRadius: 12,
-                    background: 'rgba(2,6,23,0.6)', border: '1px solid rgba(148,163,184,0.08)',
-                    color: '#f1f5f9', fontSize: 16, letterSpacing: '0.12em',
-                    outline: 'none', fontFamily: "'Inter', sans-serif", boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              {(pinModalMode === 'create' || pinModalMode === 'migrate') && (
-                <div>
-                  <label style={{ ...labelStyle, marginBottom: 8 }}>Confirm PIN</label>
-                  <input type="password" value={pinConfirmInput}
-                    onChange={(e) => { setPinConfirmInput(e.target.value); setPinError('') }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') document.getElementById('pin-submit-btn')?.click() }}
-                    placeholder="Confirm\u2026"
-                    style={{
-                      width: '100%', padding: '12px 16px', borderRadius: 12,
-                      background: 'rgba(2,6,23,0.6)', border: '1px solid rgba(148,163,184,0.08)',
-                      color: '#f1f5f9', fontSize: 16, letterSpacing: '0.12em',
-                      outline: 'none', fontFamily: "'Inter', sans-serif", boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
-              )}
-
-              {pinError && (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '8px 12px', borderRadius: 10,
-                  background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(248,113,113,0.08)',
-                  color: '#fca5a5', fontSize: 13,
-                }}>
-                  <AlertTriangle size={12} /> {pinError}
-                </div>
-              )}
-
-              {(pinModalMode === 'create' || pinModalMode === 'migrate') && (
-                <div style={{
-                  padding: '10px 14px', borderRadius: 10,
-                  background: 'rgba(245,158,11,0.04)', border: '1px solid rgba(245,158,11,0.06)',
-                  color: '#f59e0b', fontSize: 11, lineHeight: 1.5, fontWeight: 500,
-                }}>
-                  If you lose this PIN the key cannot be recovered.
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
-                <button type="button"
-                  onClick={() => {
-                    setShowPinModal(false)
-                    setPinInput('')
-                    setPinConfirmInput('')
-                    setPinError('')
-                    setPendingStartAfterUnlock(false)
-                  }}
-                  style={{
-                    flex: 1, padding: '12px 0', borderRadius: 12,
-                    background: 'rgba(30,41,59,0.4)', border: '1px solid rgba(148,163,184,0.06)',
-                    color: '#64748b', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                  }}
-                >Cancel</button>
-                <button id="pin-submit-btn" type="button" disabled={isDecrypting}
-                  onClick={async () => {
-                    const pin = pinInput.trim()
-                    if (pin.length < 4) { setPinError('PIN must be at least 4 characters.'); return }
-                    if (pinModalMode === 'create' || pinModalMode === 'migrate') {
-                      if (pin !== pinConfirmInput.trim()) { setPinError('PINs do not match.'); return }
-                    }
-                    setIsDecrypting(true); setPinError('')
-                    try {
-                      if (pinModalMode === 'create') {
-                        const raw = createBurnerWallet()
-                        const encrypted = await encryptPrivateKey(raw.privateKey, pin)
-                        createAgentWallet({ address: raw.address, encryptedKey: encrypted, createdAt: raw.createdAt })
-                        sessionKeyRef.current = raw.privateKey
-                        setIsWalletLocked(false)
-                        setOpenSections(prev => ({ ...prev, routine: true }))
-                        reloadState(); setShowPinModal(false); setPinInput(''); setPinConfirmInput('')
-                        if (pendingStartAfterUnlock) {
-                          setPendingStartAfterUnlock(false)
-                          window.setTimeout(() => startAgentRun(), 120)
-                        }
-                      } else if (pinModalMode === 'migrate') {
-                        const legacyKey = agentState.wallet.privateKey
-                        if (!legacyKey) { setPinError('No private key found.'); return }
-                        const encrypted = await encryptPrivateKey(legacyKey, pin)
-                        migrateWalletToEncrypted(encrypted)
-                        sessionKeyRef.current = legacyKey
-                        setIsWalletLocked(false); reloadState(); setShowPinModal(false); setPinInput(''); setPinConfirmInput('')
-                        if (pendingStartAfterUnlock) {
-                          setPendingStartAfterUnlock(false)
-                          window.setTimeout(() => startAgentRun(), 120)
-                        }
-                      } else {
-                        const decrypted = await decryptPrivateKey(agentState.wallet.encryptedKey, pin)
-                        sessionKeyRef.current = decrypted
-                        setIsWalletLocked(false); setShowPinModal(false); setPinInput('')
-                        if (pendingStartAfterUnlock) {
-                          setPendingStartAfterUnlock(false)
-                          window.setTimeout(() => startAgentRun(), 120)
-                        }
-                      }
-                    } catch (cryptoErr) { setPinError(cryptoErr.message || 'Decryption failed.') }
-                    finally { setIsDecrypting(false) }
-                  }}
-                  style={{
-                    flex: 1, padding: '12px 0', borderRadius: 12, border: 'none',
-                    background: isDecrypting ? 'rgba(99,102,241,0.2)' : 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                    color: '#fff', fontSize: 13, fontWeight: 700,
-                    cursor: isDecrypting ? 'wait' : 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    boxShadow: isDecrypting ? 'none' : '0 2px 12px rgba(99,102,241,0.15)',
-                  }}
-                >
-                  {isDecrypting ? (
-                    <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> {pinModalMode === 'unlock' ? 'Decrypting\u2026' : 'Encrypting\u2026'}</>
-                  ) : (
-                    <>{pinModalMode === 'unlock' ? <Unlock size={13} /> : <Shield size={13} />} {pinModalMode === 'unlock' ? 'Unlock' : 'Encrypt'}</>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

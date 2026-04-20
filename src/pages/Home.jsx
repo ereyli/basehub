@@ -942,7 +942,7 @@ const Home = () => {
                   }}>
                     BETA
                   </span>
-                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['early-access', 'nft-wheel', 'nft-plinko', 'agent-mode']))}
+                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['early-access', 'nft-wheel', 'nft-plinko']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
                   <Link to="/early-access" className="game-card" style={{ textDecoration: 'none', display: 'block' }} state={{ fromHomeSection: 'early-access' }}>
@@ -1045,13 +1045,54 @@ const Home = () => {
                       </div>
                     </div>
                   </Link>
-                  {showAgentSection && games.filter(g => g.id === 'agent-mode').map((game) =>
-                    renderCompactCard(game, null, game.path, 'early-access')
-                  )}
                 </div>
               </div>
 
-              {/* 2. DEX Aggregator Category */}
+              {/* 2. Agent Mode Category */}
+              {showAgentSection && (
+              <div id="agent-mode" style={{
+                ...compactStyles.categoryContainer,
+                border: `1px solid rgba(96, 165, 250, 0.14)`,
+                background: isCompactMode
+                  ? 'linear-gradient(135deg, rgba(15,23,42,0.88), rgba(30,41,59,0.72))'
+                  : 'linear-gradient(135deg, rgba(15,23,42,0.88), rgba(30,41,59,0.68))',
+              }}>
+                <div style={compactStyles.categoryHeader}>
+                  <div style={{
+                    ...compactStyles.categoryIconBox,
+                    background: 'rgba(96, 165, 250, 0.15)',
+                    border: '1px solid rgba(96, 165, 250, 0.3)',
+                    color: '#93c5fd',
+                  }}>
+                    <Bot size={compactStyles.iconSize} />
+                  </div>
+                  <h2 style={compactStyles.categoryTitle}>
+                    {isCompactMode ? 'AGENT' : 'AGENT MODE'}
+                  </h2>
+                  <span style={{
+                    padding: '3px 10px',
+                    background: 'rgba(34, 197, 94, 0.10)',
+                    border: '1px solid rgba(34, 197, 94, 0.24)',
+                    borderRadius: '20px',
+                    color: '#86efac',
+                    fontSize: '10px',
+                    fontWeight: '800',
+                    letterSpacing: '0.5px',
+                    fontFamily: 'Poppins, sans-serif',
+                  }}>
+                    AUTO
+                  </span>
+                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['agent-mode']))}
+                </div>
+                <div style={compactStyles.cardGrid}>
+                  {games.filter(g => g.id === 'agent-mode').map((game) =>
+                    renderCompactCard(game, null, game.path, 'agent-mode')
+                  )}
+                </div>
+              </div>
+              )}
+
+              {/* 3. DEX Aggregator Category */}
               {showDexSection && (
               <div id="dex" style={compactStyles.categoryContainer}>
                 <div style={compactStyles.categoryHeader}>
@@ -1071,7 +1112,7 @@ const Home = () => {
               </div>
               )}
 
-              {/* 3. PumpHub - Token Launchpad Category (same window style as NFT/PREDICTION) */}
+              {/* 4. PumpHub - Token Launchpad Category (same window style as NFT/PREDICTION) */}
               {isPumphubSupported && (
               <div id="pumphub" style={{ 
                 ...compactStyles.categoryContainer, 

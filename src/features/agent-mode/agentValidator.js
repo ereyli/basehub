@@ -52,47 +52,20 @@ export function validateDraftPlan({ queue = [], context }) {
     validQueue.push(action)
   }
 
-  const firstBuyIndex = validQueue.findIndex((item) => item.actionType === 'pumphub-buy')
   const sellIndices = validQueue
     .map((item, index) => ({ item, index }))
     .filter((entry) => entry.item.actionType === 'pumphub-sell')
 
   if (sellIndices.length && !canSellPumpHub) {
-    if (firstBuyIndex === -1) {
-      const removedCount = sellIndices.length
-      const filteredQueue = validQueue.filter((item) => item.actionType !== 'pumphub-sell')
-      validQueue.length = 0
-      validQueue.push(...filteredQueue)
-      warnings.push(
-        removedCount === 1
-          ? 'PumpHub sell was removed because there is no token balance and no earlier buy in the draft.'
-          : `Removed ${removedCount} PumpHub sell actions because there is no token balance and no earlier buy in the draft.`
-      )
-    } else {
-      const preBuySells = sellIndices.filter((entry) => entry.index < firstBuyIndex)
-      if (preBuySells.length) {
-        const reordered = []
-        const deferredSells = []
-
-        validQueue.forEach((item, index) => {
-          if (index < firstBuyIndex && item.actionType === 'pumphub-sell') {
-            deferredSells.push(item)
-            return
-          }
-          reordered.push(item)
-        })
-
-        const insertIndex = reordered.findIndex((item, index) => index > firstBuyIndex && item.actionType !== 'pumphub-buy')
-        reordered.splice(insertIndex === -1 ? reordered.length : insertIndex, 0, ...deferredSells)
-        validQueue.length = 0
-        validQueue.push(...reordered)
-        warnings.push(
-          preBuySells.length === 1
-            ? 'PumpHub sell was moved after the first buy because no sellable balance existed yet.'
-            : `${preBuySells.length} PumpHub sell actions were moved after the first buy because no sellable balance existed yet.`
-        )
-      }
-    }
+    const removedCount = sellIndices.length
+    const filteredQueue = validQueue.filter((item) => item.actionType !== 'pumphub-sell')
+    validQueue.length = 0
+    validQueue.push(...filteredQueue)
+    warnings.push(
+      removedCount === 1
+        ? 'PumpHub sell was removed because there is no sellable token balance yet.'
+        : `Removed ${removedCount} PumpHub sell actions because there is no sellable token balance yet.`
+    )
   }
 
   const reorderedQueue = validQueue.map((item, index) => ({

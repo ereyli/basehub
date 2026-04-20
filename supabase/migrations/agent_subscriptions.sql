@@ -9,13 +9,25 @@ create table if not exists public.agent_subscriptions (
   network text not null default 'base',
   entitlement text not null default 'agent_subscription',
   payment_tx_hash text,
+  discount_reason text,
+  access_type text not null default 'one_time',
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   expires_at timestamptz,
   constraint agent_subscriptions_payer_format
     check (payer_wallet_address ~* '^0x[a-f0-9]{40}$'),
   constraint agent_subscriptions_agent_format
     check (agent_wallet_address is null or agent_wallet_address ~* '^0x[a-f0-9]{40}$')
 );
+
+alter table public.agent_subscriptions
+  add column if not exists discount_reason text;
+
+alter table public.agent_subscriptions
+  add column if not exists access_type text not null default 'one_time';
+
+alter table public.agent_subscriptions
+  add column if not exists updated_at timestamptz not null default now();
 
 create index if not exists idx_agent_subscriptions_payer_created
   on public.agent_subscriptions (lower(payer_wallet_address), created_at desc);
