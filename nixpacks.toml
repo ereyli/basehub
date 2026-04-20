@@ -1,0 +1,17 @@
+providers = ["node"]
+
+[variables]
+NODE_VERSION = "20"
+NODE_ENV = "production"
+
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = ["npm install"]
+
+[phases.build]
+cmds = []
+
+[start]
+cmd = "npm run worker"
