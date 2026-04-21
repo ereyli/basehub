@@ -2424,7 +2424,9 @@ export default function AgentMode() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                     <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 8px #22c55e', animation: 'agentPulse 2s ease infinite' }} />
                     <span style={{ fontSize: 11, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Running</span>
-                    <span style={{ fontSize: 11, color: '#334155', marginLeft: 'auto', fontWeight: 500 }}>Tab must stay open</span>
+                    <span style={{ fontSize: 11, color: '#64748b', marginLeft: 'auto', fontWeight: 600 }}>
+                      VPS worker keeps running
+                    </span>
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 800, color: '#f8fafc', marginBottom: 4, letterSpacing: '-0.03em' }}>
                     {nextAction ? nextAction.title : 'Waiting for next action\u2026'}
