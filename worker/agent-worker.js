@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { executeCloudAction } from '../api/agent-cloud-execute.js'
 
 const RUNS_TABLE = 'agent_cloud_runs'
+const CLOUD_SESSIONS_TABLE = 'agent_cloud_sessions'
 const MEMORY_RUNS_TABLE = 'agent_runs'
 const MEMORY_REFLECTIONS_TABLE = 'agent_reflections'
 
@@ -91,6 +92,10 @@ function compactError(error) {
     error?.cause?.message ||
     'Cloud Agent execution failed.'
   )
+}
+
+function isOwnerMismatchError(message) {
+  return String(message || '').toLowerCase().includes('cloud worker is not an owner')
 }
 
 async function acquireRun(supabase, run) {
@@ -246,6 +251,29 @@ async function processRun(supabase, run) {
 
     await writeMemory(supabase, locked, action, null, 'failed', message)
       .catch((memoryError) => console.warn('[agent-worker] memory write failed:', memoryError.message))
+
+    if (isOwnerMismatchError(message)) {
+      await supabase
+        .from(CLOUD_SESSIONS_TABLE)
+        .update({
+          status: 'needs_permission',
+          updated_at: nowIso(),
+        })
+        .eq('owner_address', locked.owner_address)
+        .eq('sub_account_address', locked.sub_account_address)
+        .throwOnError()
+        .catch((sessionError) => console.warn('[agent-worker] session status update failed:', sessionError.message))
+
+      await releaseRun(supabase, locked.id, locked.lockId, {
+        status: 'failed',
+        current_plan: failedPlan,
+        logs,
+        stopped_at: nowIso(),
+        last_error: message,
+      })
+      console.warn(`[agent-worker] stopped run ${locked.id}: owner permission mismatch`)
+      return
+    }
 
     await releaseRun(supabase, locked.id, locked.lockId, {
       status: 'active',

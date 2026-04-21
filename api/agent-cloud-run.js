@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { getCloudSession } from './_agentCloud.js'
 
 const RUNS_TABLE = 'agent_cloud_runs'
 
@@ -79,6 +80,25 @@ export default async function handler(req, res) {
     const subAccountAddress = normalizeAddress(body.subAccountAddress)
     if (!isAddress(subAccountAddress)) {
       return json(res, 400, { error: 'subAccountAddress is required.' })
+    }
+
+    const { session, setupError } = await getCloudSession(ownerAddress)
+    if (setupError) {
+      return json(res, 500, { error: setupError })
+    }
+    if (!session) {
+      return json(res, 409, { error: 'Cloud Agent permission is not registered yet. Run Set up cloud first.' })
+    }
+    if (String(session.status || '') !== 'ready') {
+      return json(res, 409, { error: 'Cloud Agent permission needs to be updated before starting.' })
+    }
+    if (normalizeAddress(session.sub_account_address) !== subAccountAddress) {
+      return json(res, 409, { error: 'Cloud Agent wallet changed. Refresh the page and start again.' })
+    }
+    if (session.worker_owns_sub_account === false) {
+      return json(res, 409, {
+        error: 'Saved agent wallet belongs to an older worker permission. Click Update permission once, then start again.',
+      })
     }
 
     const currentPlan = body.currentPlan && typeof body.currentPlan === 'object' ? body.currentPlan : null
