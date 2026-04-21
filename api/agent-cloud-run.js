@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 const RUNS_TABLE = 'agent_cloud_runs'
+const SESSIONS_TABLE = 'agent_cloud_sessions'
 
 function getServerSupabase() {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
@@ -98,15 +99,30 @@ export default async function handler(req, res) {
       .eq('owner_address', ownerAddress)
       .in('status', ['active', 'executing', 'paused'])
 
+    const { data: session } = await supabase
+      .from(SESSIONS_TABLE)
+      .select('policy')
+      .eq('owner_address', ownerAddress)
+      .maybeSingle()
+
+    const sessionPolicy = session?.policy && typeof session.policy === 'object' ? session.policy : {}
+    const agentSignerEncrypted = sessionPolicy.agentSignerEncrypted || null
+    const agentSignerAddress = sessionPolicy.agentSignerAddress || null
+
     const payload = {
       owner_address: ownerAddress,
       sub_account_address: subAccountAddress,
       status: 'active',
       current_plan: currentPlan,
-      settings: body.settings || {},
       logs: Array.isArray(body.logs) ? body.logs.slice(0, 50) : [],
       spend_permission: body.spendPermission || {},
       sub_account: body.subAccount || {},
+      settings: {
+        ...(body.settings || {}),
+        agentSignerEncrypted,
+        agentSignerAddress,
+        signerModel: agentSignerEncrypted ? 'per_user_agent_signer' : 'shared_worker_signer',
+      },
       interval_minutes: Math.max(1, Number(body.intervalMinutes || body.settings?.intervalMinutes || 4)),
       next_run_at: new Date().toISOString(),
       last_error: null,

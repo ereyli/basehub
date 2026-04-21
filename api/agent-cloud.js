@@ -32,6 +32,7 @@ app.post('/', async (c) => {
     allowanceEth: body.allowanceEth,
     periodInDays: body.periodInDays,
     policy: body.policy,
+    agentSigner: body.agentSigner,
   })
 
   return c.json({ ok: true, session })

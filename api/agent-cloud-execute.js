@@ -36,6 +36,7 @@ import {
   ERC721_DEPLOY_BYTECODE,
 } from '../src/features/agent-mode/agentDeployArtifacts.js'
 import { BASEHUB_DEPLOYER_ABI, DEPLOYER_FEE_ETH, encodeDeployerCall } from '../src/config/deployer.js'
+import { decryptAgentSignerPrivateKey } from './_agentSignerCrypto.js'
 
 const BASE = {
   id: AGENT_BASE_CHAIN_ID,
@@ -92,8 +93,8 @@ function sanitizeDeploySymbol(value, fallback) {
   return next.slice(0, 10) || fallback
 }
 
-function getClients() {
-  const account = privateKeyToAccount(normalizePrivateKey(process.env.CLOUD_AGENT_WORKER_PRIVATE_KEY))
+function getClients(privateKey = process.env.CLOUD_AGENT_WORKER_PRIVATE_KEY) {
+  const account = privateKeyToAccount(normalizePrivateKey(privateKey))
   const transport = fallback([http(AGENT_RPC_URL, { timeout: 12000, retryCount: 1, retryDelay: 800 })], {
     rank: false,
     retryCount: 1,
@@ -110,6 +111,28 @@ function getClients() {
   }
 }
 
+async function ensureSignerGas({ publicClient, workerWalletClient, signerAddress }) {
+  const workerAddress = workerWalletClient.account.address
+  if (workerAddress.toLowerCase() === signerAddress.toLowerCase()) return null
+
+  const minWei = parseEther(process.env.AGENT_SIGNER_MIN_GAS_ETH || '0.00003')
+  const topUpWei = parseEther(process.env.AGENT_SIGNER_GAS_TOPUP_ETH || '0.00006')
+  const signerBalance = await publicClient.getBalance({ address: signerAddress })
+  if (signerBalance >= minWei) return null
+
+  const workerBalance = await publicClient.getBalance({ address: workerAddress })
+  if (workerBalance < topUpWei) {
+    throw new Error(`Cloud worker needs ETH to top up user agent signer gas. Fund worker ${workerAddress}.`)
+  }
+
+  const hash = await workerWalletClient.sendTransaction({
+    to: signerAddress,
+    value: topUpWei,
+  })
+  const receipt = await publicClient.waitForTransactionReceipt({ hash })
+  return { hash, receipt, value: topUpWei, gasTopUp: true }
+}
+
 function getReadableError(error) {
   const parts = [
     error?.shortMessage,
@@ -122,10 +145,10 @@ function getReadableError(error) {
   return parts.find((part) => String(part || '').trim()) || 'Cloud Agent execution failed.'
 }
 
-async function assertCloudExecutorReady({ publicClient, ownerAddress, workerAddress, permission }) {
-  const workerBalanceWei = await publicClient.getBalance({ address: workerAddress })
-  if (workerBalanceWei <= 0n) {
-    throw new Error(`Cloud worker has no ETH for gas. Fund worker ${workerAddress} with a small amount of ETH.`)
+async function assertCloudExecutorReady({ publicClient, ownerAddress, executorAddress, permission }) {
+  const executorBalanceWei = await publicClient.getBalance({ address: executorAddress })
+  if (executorBalanceWei <= 0n) {
+    throw new Error(`Cloud agent signer has no ETH for gas. Fund signer ${executorAddress} or worker gas top-up.`)
   }
 
   const spender = getPermissionSpender(permission)
@@ -424,11 +447,20 @@ export async function executeCloudAction({
   const normalizedOwner = String(ownerAddress || '').trim()
   if (!isAddress(normalizedOwner)) throw new Error('Connected Base Account address is required.')
 
-  const { publicClient, walletClient, workerAccount } = getClients()
+  const signerPrivateKey = decryptAgentSignerPrivateKey(settings?.agentSignerEncrypted)
+  const executionKey = signerPrivateKey || workerKey
+  const { publicClient, walletClient, workerAccount } = getClients(executionKey)
+  const sharedWorkerClients = signerPrivateKey ? getClients(workerKey) : { walletClient, workerAccount }
+  const gasTopUpReceipt = await ensureSignerGas({
+    publicClient,
+    workerWalletClient: sharedWorkerClients.walletClient,
+    signerAddress: workerAccount.address,
+  })
+
   await assertCloudExecutorReady({
     publicClient,
     ownerAddress: normalizedOwner,
-    workerAddress: workerAccount.address,
+    executorAddress: workerAccount.address,
     permission: spendPermission,
   })
 
@@ -461,7 +493,7 @@ export async function executeCloudAction({
   })
   const calls = [...fundingCalls, ...actionCalls]
 
-  const receipts = deploymentReceipt ? [deploymentReceipt] : []
+  const receipts = [gasTopUpReceipt, deploymentReceipt].filter(Boolean)
   for (const call of calls) {
     const hash = await walletClient.writeContract({
       address: normalizedOwner,

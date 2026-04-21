@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { encryptAgentSignerPrivateKey } from './_agentSignerCrypto.js'
 
 const CLOUD_TABLE = 'agent_cloud_sessions'
 
@@ -13,6 +14,15 @@ function getServerSupabase() {
 
 function normalizeAddress(address) {
   return String(address || '').trim().toLowerCase()
+}
+
+function redactCloudSession(session) {
+  if (!session) return null
+  const policy = session.policy && typeof session.policy === 'object' ? { ...session.policy } : {}
+  if (policy.agentSignerEncrypted) {
+    policy.agentSignerEncrypted = { redacted: true, alg: policy.agentSignerEncrypted.alg || 'aes-256-gcm' }
+  }
+  return { ...session, policy }
 }
 
 export async function getCloudSession(ownerAddress) {
@@ -35,7 +45,7 @@ export async function getCloudSession(ownerAddress) {
     .maybeSingle()
 
   if (error) throw new Error(error.message)
-  return { session: data || null, available: true, setupError: null }
+  return { session: redactCloudSession(data), available: true, setupError: null }
 }
 
 export async function upsertCloudSession({
@@ -46,6 +56,7 @@ export async function upsertCloudSession({
   allowanceEth,
   periodInDays,
   policy = {},
+  agentSigner,
 }) {
   const supabase = getServerSupabase()
   if (!supabase) {
@@ -58,6 +69,11 @@ export async function upsertCloudSession({
     throw new Error('ownerAddress and subAccountAddress are required.')
   }
 
+  const signerAddress = normalizeAddress(agentSigner?.address || policy?.agentSignerAddress)
+  const encryptedSigner = agentSigner?.privateKey
+    ? encryptAgentSignerPrivateKey(agentSigner.privateKey)
+    : policy?.agentSignerEncrypted || null
+
   const payload = {
     owner_address: normalizedOwner,
     sub_account_address: normalizedSubAccount,
@@ -68,6 +84,9 @@ export async function upsertCloudSession({
     policy: {
       ...(policy || {}),
       subAccount: subAccount || policy?.subAccount || null,
+      signerModel: encryptedSigner ? 'per_user_agent_signer' : (policy?.signerModel || 'shared_worker_signer'),
+      agentSignerAddress: signerAddress || policy?.agentSignerAddress || null,
+      agentSignerEncrypted: encryptedSigner || policy?.agentSignerEncrypted || null,
     },
     status: 'ready',
     updated_at: new Date().toISOString(),
@@ -80,7 +99,7 @@ export async function upsertCloudSession({
     .single()
 
   if (error) throw new Error(error.message)
-  return data
+  return redactCloudSession(data)
 }
 
 export async function disableCloudSession(ownerAddress) {
@@ -96,5 +115,5 @@ export async function disableCloudSession(ownerAddress) {
     .maybeSingle()
 
   if (error) throw new Error(error.message)
-  return data || null
+  return redactCloudSession(data)
 }

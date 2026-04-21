@@ -87,8 +87,9 @@ export async function connectBaseAccountDirect() {
 export async function createDelegatedSubAccount({
   sdk,
   workerAddress,
+  signerAddress,
 }) {
-  const automationOwner = String(workerAddress || getCloudAgentSpenderAddress()).trim()
+  const automationOwner = String(signerAddress || workerAddress || getCloudAgentSpenderAddress()).trim()
   if (!automationOwner) {
     throw new Error('Cloud agent worker address is not configured.')
   }
@@ -106,6 +107,16 @@ export async function createDelegatedSubAccount({
     throw new Error('Base Account did not return an agent sub-account.')
   }
   return serializeForJson(subAccount)
+}
+
+export async function createAgentSigner() {
+  const { generatePrivateKey, privateKeyToAccount } = await import('viem/accounts')
+  const privateKey = generatePrivateKey()
+  const account = privateKeyToAccount(privateKey)
+  return {
+    address: account.address,
+    privateKey,
+  }
 }
 
 export async function requestNativeSpendPermission({
@@ -177,6 +188,7 @@ export async function registerCloudAgentSession({
   allowanceEth,
   periodInDays,
   policy,
+  agentSigner,
 }) {
   const res = await fetch(`${getCloudApiBase()}/api/agent-cloud`, {
     method: 'POST',
@@ -190,6 +202,7 @@ export async function registerCloudAgentSession({
       allowanceEth,
       periodInDays,
       policy,
+      agentSigner,
     }),
   })
   const data = await res.json().catch(() => ({}))

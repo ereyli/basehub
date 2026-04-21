@@ -44,18 +44,26 @@ SUPABASE_URL=...
 SUPABASE_SERVICE_KEY=...
 CLOUD_AGENT_WORKER_PRIVATE_KEY=0x...
 VITE_CLOUD_AGENT_SPENDER_ADDRESS=0x...
+AGENT_SIGNER_ENCRYPTION_KEY=...
 VITE_AGENT_MODE_RPC_URL=https://...
 ```
 
 Opsiyonel:
 
 ```bash
+AGENT_SIGNER_MIN_GAS_ETH=0.00003
+AGENT_SIGNER_GAS_TOPUP_ETH=0.00006
 AGENT_WORKER_POLL_MS=15000
 AGENT_WORKER_LOCK_MS=180000
 AGENT_WORKER_BATCH_SIZE=3
 ```
 
-Not: `VITE_CLOUD_AGENT_SPENDER_ADDRESS`, `CLOUD_AGENT_WORKER_PRIVATE_KEY` icindeki cüzdan adresiyle ayni olmali.
+Notlar:
+
+- `VITE_CLOUD_AGENT_SPENDER_ADDRESS`, `CLOUD_AGENT_WORKER_PRIVATE_KEY` icindeki cüzdan adresiyle ayni olmali.
+- Yeni Cloud Agent modelinde BaseHub action transaction signer'i ortak worker degil, kullaniciya ozel uretilen agent signer olur.
+- `AGENT_SIGNER_ENCRYPTION_KEY` Vercel/API ve Coolify worker tarafinda birebir ayni olmali. Aksi halde API'nin kaydettigi user-specific signer worker tarafinda cozulmez.
+- Worker cüzdani artik asil BaseHub action sender'i degil; sadece yeni user-specific signer'in gasi cok dusukse ufak top-up yapmak icin kullanilir.
 
 ## 4. Deploy
 
