@@ -797,6 +797,7 @@ export default function AgentMode() {
   const [cloudRun, setCloudRun] = useState(null)
   const [cloudAgentBusy, setCloudAgentBusy] = useState(false)
   const [cloudAgentMessage, setCloudAgentMessage] = useState('')
+  const [changeWalletModalOpen, setChangeWalletModalOpen] = useState(false)
   const [agentAccess, setAgentAccess] = useState({
     loading: true,
     hasAccess: false,
@@ -1491,16 +1492,16 @@ export default function AgentMode() {
 
   const handleSetupCloudAgent = useCallback(async (optionsOrEvent = {}) => {
     const forceNewWallet = optionsOrEvent?.forceNew === true
+    const confirmedNewWallet = optionsOrEvent?.confirmed === true
     if (!isAgentAccessUnlocked) {
       setError('Unlock Agent Mode first.')
       return
     }
-    if (forceNewWallet && cloudDelegatedAddress) {
-      const confirmed = window.confirm(
-        'Create a new agent wallet? The old wallet will stay onchain, but BaseHub will stop using it for new Agent Mode runs.'
-      )
-      if (!confirmed) return
+    if (forceNewWallet && cloudDelegatedAddress && !confirmedNewWallet) {
+      setChangeWalletModalOpen(true)
+      return
     }
+    if (forceNewWallet) setChangeWalletModalOpen(false)
     setCloudAgentBusy(true)
     setCloudAgentMessage('')
     setError(null)
@@ -1546,9 +1547,17 @@ export default function AgentMode() {
         subAccount = await createDelegatedSubAccount({
           sdk,
           workerAddress: spenderAddress,
+          forceUnique: forceNewWallet,
         })
       }
       const subAccountAddress = subAccount.address
+      if (
+        forceNewWallet &&
+        cloudDelegatedAddress &&
+        String(subAccountAddress || '').toLowerCase() === String(cloudDelegatedAddress || '').toLowerCase()
+      ) {
+        throw new Error('Base Account returned the same agent wallet. Try Change wallet again or update permission.')
+      }
       const reusedSavedSubAccount =
         String(savedSession?.sub_account_address || '').toLowerCase() === String(subAccountAddress || '').toLowerCase()
 
@@ -2165,6 +2174,11 @@ export default function AgentMode() {
       done: hasPlan && (isPlanApproved || isAgentActive),
     },
   ]
+  const cloudIssueShort = cloudExecutionIssue
+    ? cloudExecutionIssue.toLowerCase().includes('older') || cloudExecutionIssue.toLowerCase().includes('old ')
+      ? 'Permission update needed'
+      : 'Setup needs attention'
+    : ''
 
   return (
     <div style={{
@@ -2404,14 +2418,14 @@ export default function AgentMode() {
             {/* ─── Cloud Agent ─── */}
             <div style={{
               ...glassCard,
-              padding: '18px 20px',
+              padding: '16px 18px',
               marginBottom: 16,
               background: 'linear-gradient(135deg, rgba(14,165,233,0.06), rgba(15,23,42,0.48))',
               border: '1px solid rgba(56,189,248,0.1)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                 <div style={{
-                  width: 34, height: 34, borderRadius: 11,
+                  width: 38, height: 38, borderRadius: 12,
                   background: 'rgba(14,165,233,0.1)',
                   border: '1px solid rgba(56,189,248,0.12)',
                   display: 'grid', placeItems: 'center',
@@ -2444,12 +2458,9 @@ export default function AgentMode() {
                       {isCloudExecutionReady ? 'auto ready' : isCloudAgentReady ? 'permission only' : 'setup beta'}
                     </span>
                   </div>
-                  <div style={{ marginTop: 4, fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
-                    Creates a delegated agent wallet with a daily cap, then runs approved BaseHub actions automatically.
-                  </div>
                   {(cloudAccountAddress || cloudDelegatedAddress) && (
                     <div style={{
-                      marginTop: 6,
+                      marginTop: 8,
                       display: 'flex',
                       alignItems: 'center',
                       gap: 8,
@@ -2461,7 +2472,7 @@ export default function AgentMode() {
                       {cloudDelegatedAddress && (
                         <>
                           <span>
-                            Agent wallet: {formatShortAddress(cloudDelegatedAddress)}
+                            Agent {formatShortAddress(cloudDelegatedAddress)}
                             {cloudAgentState.allowanceEth ? ` · cap ${cloudAgentState.allowanceEth} ETH/day` : ''}
                           </span>
                           <button
@@ -2488,12 +2499,12 @@ export default function AgentMode() {
                       )}
                       {cloudAccountAddress && cloudDelegatedAddress && cloudAccountAddress.toLowerCase() !== cloudDelegatedAddress.toLowerCase() && (
                         <span style={{ color: '#64748b', fontWeight: 700 }}>
-                          Main: {formatShortAddress(cloudAccountAddress)}
+                          Main {formatShortAddress(cloudAccountAddress)}
                         </span>
                       )}
                       {cloudAccountAddress && !cloudDelegatedAddress && (
                         <span>
-                          Main account: {formatShortAddress(cloudAccountAddress)}
+                          Main {formatShortAddress(cloudAccountAddress)}
                         </span>
                       )}
                     </div>
@@ -2502,8 +2513,9 @@ export default function AgentMode() {
                     <div style={{ marginTop: 6, fontSize: 11, color: '#bae6fd', fontWeight: 600 }}>{cloudAgentMessage}</div>
                   )}
                   {cloudExecutionIssue && (
-                    <div style={{ marginTop: 8, fontSize: 11, color: '#fbbf24', fontWeight: 700, lineHeight: 1.5 }}>
-                      {cloudExecutionIssue}
+                    <div style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#fbbf24', fontWeight: 800 }}>
+                      <AlertTriangle size={12} />
+                      {cloudIssueShort}
                     </div>
                   )}
                 </div>
@@ -2546,7 +2558,7 @@ export default function AgentMode() {
                       }}
                     >
                       <RefreshCw size={13} />
-                      Change wallet
+                      New wallet
                     </button>
                   )}
                 </div>
@@ -3216,6 +3228,95 @@ export default function AgentMode() {
 
           </>
       </div>
+
+      {changeWalletModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="agent-wallet-change-title"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            display: 'grid',
+            placeItems: 'center',
+            padding: 18,
+            background: 'rgba(2,6,23,0.72)',
+            backdropFilter: 'blur(14px)',
+          }}
+        >
+          <div style={{
+            width: 'min(100%, 430px)',
+            borderRadius: 24,
+            border: '1px solid rgba(148,163,184,0.14)',
+            background: 'linear-gradient(145deg, rgba(15,23,42,0.98), rgba(2,6,23,0.96))',
+            boxShadow: '0 24px 80px rgba(0,0,0,0.45)',
+            padding: 24,
+            animation: 'agentFadeIn 0.2s ease',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+              <div style={{
+                width: 42,
+                height: 42,
+                borderRadius: 14,
+                display: 'grid',
+                placeItems: 'center',
+                color: '#7dd3fc',
+                background: 'rgba(14,165,233,0.1)',
+                border: '1px solid rgba(56,189,248,0.14)',
+              }}>
+                <Shield size={18} />
+              </div>
+              <div>
+                <h2 id="agent-wallet-change-title" style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#f8fafc' }}>
+                  Create new agent wallet?
+                </h2>
+                <p style={{ margin: '3px 0 0', fontSize: 12, color: '#64748b', fontWeight: 700 }}>
+                  BaseHub will stop using the current one.
+                </p>
+              </div>
+            </div>
+            <p style={{ margin: '0 0 18px', fontSize: 13, lineHeight: 1.6, color: '#94a3b8' }}>
+              The old wallet stays onchain with its history. A new delegated wallet will be created and used for future Agent Mode runs.
+            </p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setChangeWalletModalOpen(false)}
+                style={{
+                  padding: '11px 16px',
+                  borderRadius: 13,
+                  border: '1px solid rgba(148,163,184,0.1)',
+                  background: 'rgba(15,23,42,0.72)',
+                  color: '#cbd5e1',
+                  fontSize: 12,
+                  fontWeight: 900,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSetupCloudAgent({ forceNew: true, confirmed: true })}
+                style={{
+                  padding: '11px 16px',
+                  borderRadius: 13,
+                  border: '1px solid rgba(56,189,248,0.22)',
+                  background: 'linear-gradient(135deg, #0ea5e9, #2563eb)',
+                  color: '#f8fafc',
+                  fontSize: 12,
+                  fontWeight: 900,
+                  cursor: 'pointer',
+                  boxShadow: '0 14px 32px rgba(37,99,235,0.18)',
+                }}
+              >
+                Create new wallet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
