@@ -7,6 +7,7 @@ import { getAgentReasoningContext } from './agentTools.js'
 import { createQueuedAction } from './agentValidator.js'
 
 const PUMPHUB_MICRO_BUY_AMOUNTS_ETH = ['0.000006', '0.000009', '0.000012', '0.000015']
+const PLAN_REQUEST_TIMEOUT_MS = 90000
 
 function pickRotatingItem(items = [], index = 0) {
   if (!items.length) return null
@@ -157,36 +158,49 @@ export async function createAgentLlmPlan({ settings, report, logs, walletAddress
     spentWei: String(report?.spentWei || '0'),
     spentEth: String(report?.spentEth || '0'),
   }
-  const res = await fetch(`${getApiBase()}/api/agent-llm-plan`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      settings: {
-        ...settings,
-        walletAddress,
-      },
-      context,
-      report: serializedReport,
-      toolContext: getAgentReasoningContext(settings),
-      basehubKnowledge: getBaseHubKnowledgeSummary(),
-      discoveredOpportunities: discoveredOpportunities.map((item) => ({
-        targetId: item.targetId,
-        title: item.title,
-        available: !!item.available,
-        source: item.source,
-        priorityScore: Number(item.priorityScore || 0),
-        summary: item.summary || '',
-        payload: item.payload || {},
-      })),
-      availableTargets: serializedTargets,
-      recentLogs: (logs || []).slice(0, 12).map((log) => ({
-        status: log.status,
-        targetId: log.targetId || null,
-        summary: log.summary || '',
-        timestamp: log.timestamp,
-      })),
-    }),
-  })
+  const controller = new AbortController()
+  const timeoutId = globalThis.setTimeout(() => controller.abort(), PLAN_REQUEST_TIMEOUT_MS)
+  let res
+  try {
+    res = await fetch(`${getApiBase()}/api/agent-llm-plan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        settings: {
+          ...settings,
+          walletAddress,
+        },
+        context,
+        report: serializedReport,
+        toolContext: getAgentReasoningContext(settings),
+        basehubKnowledge: getBaseHubKnowledgeSummary(),
+        discoveredOpportunities: discoveredOpportunities.map((item) => ({
+          targetId: item.targetId,
+          title: item.title,
+          available: !!item.available,
+          source: item.source,
+          priorityScore: Number(item.priorityScore || 0),
+          summary: item.summary || '',
+          payload: item.payload || {},
+        })),
+        availableTargets: serializedTargets,
+        recentLogs: (logs || []).slice(0, 12).map((log) => ({
+          status: log.status,
+          targetId: log.targetId || null,
+          summary: log.summary || '',
+          timestamp: log.timestamp,
+        })),
+      }),
+    })
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error('AI planner timed out. Backup planner can be used.')
+    }
+    throw error
+  } finally {
+    globalThis.clearTimeout(timeoutId)
+  }
 
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {

@@ -1030,6 +1030,7 @@ export default function AgentMode() {
   )
   const hasPlan = Boolean(latestPlan?.actions?.length)
   const isPlanApproved = Boolean(latestPlan?.approvedAt)
+  const canStartApprovedPlan = Boolean(hasPlan && isPlanApproved && !isPlanning && !isAgentActive)
   const autoObjective = useMemo(
     () =>
       buildAutoObjective({
@@ -1871,6 +1872,9 @@ export default function AgentMode() {
     const cloudAddress = cloudExecutionAddress
     const currentState = loadAgentState()
     const approvedPlan = currentState.currentPlan
+    const approvedQueue = Array.isArray(approvedPlan?.queue) ? approvedPlan.queue : []
+    const approvedActions = Array.isArray(approvedPlan?.actions) ? approvedPlan.actions : []
+    const approvedPlanHasWork = approvedQueue.length > 0 || approvedActions.length > 0
     if (isCloudAgentReady && !isCloudExecutionReady) {
       const issue = cloudExecutionIssue || 'Cloud execution is not ready yet.'
       setAgentStatus(AGENT_STATUSES.DISABLED)
@@ -1886,8 +1890,8 @@ export default function AgentMode() {
     }
     try {
       if (isCloudAgentReady) {
-        if (!approvedPlan?.approvedAt) {
-          setError('Approve the plan before starting.')
+        if (!approvedPlan?.approvedAt || !approvedPlanHasWork) {
+          setError('Generate and approve a plan before starting.')
           return false
         }
         const startedRun = await startCloudAgentRun({
@@ -2098,7 +2102,7 @@ export default function AgentMode() {
       number: 4,
       title: 'Start',
       text: 'Approve and run',
-      done: isPlanApproved || isAgentActive,
+      done: hasPlan && (isPlanApproved || isAgentActive),
     },
   ]
 
@@ -2539,7 +2543,7 @@ export default function AgentMode() {
 
             {/* ─── Controls ─── */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 18 }}>
-              {!hasPlan && (
+              {!hasPlan && !isAgentActive && (
                 <button type="button" disabled={isPlanning || !isCloudAgentReady || !isAgentAccessUnlocked} onClick={() => {
                   handleAutoPlan().catch(e => { setPlanFeedback(''); setPlannerMode('backup'); setError(normalizeAgentError(e).shortMessage) })
                 }} style={{
@@ -2571,7 +2575,7 @@ export default function AgentMode() {
                   Approve Plan
                 </button>
               )}
-              {isPlanApproved && !isAgentActive && (
+              {canStartApprovedPlan && (
                 <button type="button" disabled={!startGateWithAccess.ok} onClick={() => {
                   if (!startGateWithAccess.ok) { setError(startGateWithAccess.reason); return }
                   startAgentRun().catch((e) => setError(normalizeAgentError(e).shortMessage))
