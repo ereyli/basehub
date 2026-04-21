@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, Bot, Copy, ExternalLink, Play, Power, RefreshCw, Send, Trash2, Zap, Clock, Target, MessageSquare, Activity, ChevronRight, Shield, Sparkles } from 'lucide-react'
+import { AlertTriangle, Bot, CheckCircle2, Copy, ExternalLink, Play, Power, RefreshCw, Send, Trash2, Zap, Clock, Target, MessageSquare, Activity, ChevronRight, Shield, Sparkles } from 'lucide-react'
 import { formatEther, parseEther } from 'viem'
 import { useAccount, useWalletClient } from 'wagmi'
 import { wrapFetchWithPayment } from 'x402-fetch'
@@ -509,9 +509,75 @@ function deriveRoutineBuilderState(form) {
     intensity,
     budget,
     goals,
-    dailyTxTarget: Math.max(1, Number(form.dailyTxTarget || 1)),
-    intervalMinutes: Math.max(1, Number(form.intervalMinutes || 4)),
+    dailyTxTarget: String(Math.max(1, Number(form.dailyTxTarget || 1))),
+    intervalMinutes: String(Math.max(1, Number(form.intervalMinutes || 4))),
     maxDailySpendEth: String(form.maxDailySpendEth || '0.001'),
+    customPrompt: String(form.userPrompt || ''),
+  }
+}
+
+function sanitizeRoutineNumber(value, fallback, { integer = true, min = 1, max = Infinity } = {}) {
+  const raw = String(value ?? '').replace(',', '.').trim()
+  const numeric = Number(raw)
+  const fallbackNumber = Number(fallback)
+  const safeFallback = Number.isFinite(fallbackNumber) ? fallbackNumber : min
+  const nextValue = Number.isFinite(numeric) ? numeric : safeFallback
+  const bounded = Math.min(max, Math.max(min, nextValue))
+  return integer ? Math.round(bounded) : bounded
+}
+
+function buildRoutineFormFromBuilder(routineBuilder, currentForm) {
+  const selectedIntensity =
+    ROUTINE_INTENSITY_OPTIONS.find((item) => item.id === routineBuilder.intensity) || ROUTINE_INTENSITY_OPTIONS[2]
+  const selectedBudget =
+    ROUTINE_BUDGET_OPTIONS.find((item) => item.id === routineBuilder.budget) || ROUTINE_BUDGET_OPTIONS[1]
+  const enabledTargetIds = buildEnabledTargetIdsFromGoals(routineBuilder.goals)
+  const dailyTxTarget = sanitizeRoutineNumber(routineBuilder.dailyTxTarget, selectedIntensity.dailyTxTarget, {
+    integer: true,
+    min: 1,
+    max: 2000,
+  })
+  const intervalMinutes = sanitizeRoutineNumber(routineBuilder.intervalMinutes, selectedIntensity.intervalMinutes, {
+    integer: true,
+    min: 1,
+    max: 240,
+  })
+  const maxDailySpendEth = String(
+    sanitizeRoutineNumber(routineBuilder.maxDailySpendEth, selectedBudget.maxDailySpendEth, {
+      integer: false,
+      min: 0.0001,
+      max: 1,
+    })
+  )
+  const promptText = String(routineBuilder.customPrompt || '').trim() || buildRoutinePromptFromSelections({
+    ...routineBuilder,
+    dailyTxTarget,
+    intervalMinutes,
+    maxDailySpendEth,
+  })
+
+  return {
+    nextForm: {
+      ...currentForm,
+      userPrompt: promptText,
+      plannerInputMode: AGENT_INPUT_MODES.PROMPT,
+      llmEnabled: true,
+      allowedActionTypes: buildAllowedActionTypesFromGoals(routineBuilder.goals),
+      dailyTxTarget,
+      intervalMinutes,
+      maxDailySpendEth,
+      enabledTargetIds,
+      freeMintEnabled: !!routineBuilder.goals.freeMint,
+      pumpHubTradeMode: AGENT_PUMPHUB_MODES.LATEST,
+    },
+    normalizedBuilder: {
+      ...routineBuilder,
+      dailyTxTarget: String(dailyTxTarget),
+      intervalMinutes: String(intervalMinutes),
+      maxDailySpendEth,
+      customPrompt: promptText,
+    },
+    enabledTargetIds,
   }
 }
 
@@ -757,15 +823,6 @@ export default function AgentMode() {
     window.addEventListener('storage', onStorage)
     return () => window.removeEventListener('storage', onStorage)
   }, [reloadState])
-
-  useEffect(() => {
-    setRoutineBuilder(deriveRoutineBuilderState(form))
-  }, [
-    form.dailyTxTarget,
-    form.maxDailySpendEth,
-    form.enabledTargetIds,
-    form.freeMintEnabled,
-  ])
 
   useEffect(() => {
     let cancelled = false
@@ -1082,16 +1139,10 @@ export default function AgentMode() {
   const patchRoutineBuilder = useCallback(
     (patch) => {
       setRoutineBuilder((current) => {
-        const next = { ...current, ...patch }
-        const formPatch = {}
-        if (patch.dailyTxTarget !== undefined) formPatch.dailyTxTarget = Math.max(1, Number(patch.dailyTxTarget || 1))
-        if (patch.intervalMinutes !== undefined) formPatch.intervalMinutes = Math.max(1, Number(patch.intervalMinutes || 1))
-        if (patch.maxDailySpendEth !== undefined) formPatch.maxDailySpendEth = String(patch.maxDailySpendEth || '0.001')
-        if (Object.keys(formPatch).length) patchForm(formPatch)
-        return next
+        return { ...current, ...patch }
       })
     },
-    [patchForm]
+    []
   )
 
   const toggleRoutineGoal = useCallback((goalId) => {
@@ -1111,17 +1162,28 @@ export default function AgentMode() {
       intensity: preset.intensity,
       budget: preset.budget,
       goals: { ...preset.goals },
-      dailyTxTarget: intensityConfig.dailyTxTarget,
-      intervalMinutes: intensityConfig.intervalMinutes,
+      dailyTxTarget: String(intensityConfig.dailyTxTarget),
+      intervalMinutes: String(intensityConfig.intervalMinutes),
       maxDailySpendEth: budgetConfig.maxDailySpendEth,
+      customPrompt: preset.prompt,
     })
-    patchForm({
-      userPrompt: preset.prompt,
-      dailyTxTarget: intensityConfig.dailyTxTarget,
-      intervalMinutes: intensityConfig.intervalMinutes,
-      maxDailySpendEth: budgetConfig.maxDailySpendEth,
-    })
-  }, [patchForm])
+    setPlanFeedback('Template selected. Save settings to apply it.')
+  }, [])
+
+  const handleSaveRoutineSettings = useCallback(() => {
+    const { nextForm, normalizedBuilder, enabledTargetIds } = buildRoutineFormFromBuilder(routineBuilder, form)
+    if (enabledTargetIds.length === 0) {
+      setError('Select at least one activity first.')
+      return null
+    }
+    setError(null)
+    setPlannerIssue('')
+    setRoutineBuilder(normalizedBuilder)
+    setForm(nextForm)
+    const syncedState = syncSettings(nextForm)
+    setPlanFeedback('Routine settings saved. Generate a plan when you are ready.')
+    return { nextForm, syncedState }
+  }, [form, routineBuilder, syncSettings])
 
   const handleSendMissionMessage = useCallback(() => {
     const run = async () => {
@@ -1369,33 +1431,13 @@ export default function AgentMode() {
       reloadState()
       setPlanFeedback('Current run stopped. Building a fresh AI draft...')
     }
-    const enabledTargetIds = buildEnabledTargetIdsFromGoals(routineBuilder.goals)
+    const { nextForm, normalizedBuilder, enabledTargetIds } = buildRoutineFormFromBuilder(routineBuilder, form)
     if (enabledTargetIds.length === 0) {
       setError('Select at least one routine goal first.')
       return
     }
 
-    const selectedIntensity =
-      ROUTINE_INTENSITY_OPTIONS.find((item) => item.id === routineBuilder.intensity) || ROUTINE_INTENSITY_OPTIONS[2]
-    const selectedBudget =
-      ROUTINE_BUDGET_OPTIONS.find((item) => item.id === routineBuilder.budget) || ROUTINE_BUDGET_OPTIONS[1]
-    const dailyTxTarget = Math.max(1, Number(routineBuilder.dailyTxTarget || selectedIntensity.dailyTxTarget || 1))
-    const intervalMinutes = Math.max(1, Number(routineBuilder.intervalMinutes || selectedIntensity.intervalMinutes || 4))
-    const maxDailySpendEth = String(routineBuilder.maxDailySpendEth || selectedBudget.maxDailySpendEth)
-    const autoPrompt = buildRoutinePromptFromSelections(routineBuilder)
-    const nextForm = {
-      ...form,
-      userPrompt: autoPrompt,
-      plannerInputMode: AGENT_INPUT_MODES.PROMPT,
-      llmEnabled: true,
-      allowedActionTypes: buildAllowedActionTypesFromGoals(routineBuilder.goals),
-      dailyTxTarget,
-      intervalMinutes,
-      maxDailySpendEth,
-      enabledTargetIds,
-      freeMintEnabled: !!routineBuilder.goals.freeMint,
-      pumpHubTradeMode: AGENT_PUMPHUB_MODES.LATEST,
-    }
+    setRoutineBuilder(normalizedBuilder)
     setForm(nextForm)
 
     if (current.status !== AGENT_STATUSES.ACTIVE) {
@@ -2696,13 +2738,10 @@ export default function AgentMode() {
                               setRoutineBuilder(c => ({
                                 ...c,
                                 intensity: opt.id,
-                                dailyTxTarget: opt.dailyTxTarget,
-                                intervalMinutes: opt.intervalMinutes,
+                                dailyTxTarget: String(opt.dailyTxTarget),
+                                intervalMinutes: String(opt.intervalMinutes),
                               }))
-                              patchForm({
-                                dailyTxTarget: opt.dailyTxTarget,
-                                intervalMinutes: opt.intervalMinutes,
-                              })
+                              setPlanFeedback('Pace updated in draft. Save settings to apply it.')
                             }} style={{
                               display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px',
                               borderRadius: 12, cursor: 'pointer', textAlign: 'left',
@@ -2726,7 +2765,7 @@ export default function AgentMode() {
                             type="number"
                             min="1"
                             max="1000"
-                            value={routineBuilder.dailyTxTarget || form.dailyTxTarget}
+                            value={routineBuilder.dailyTxTarget ?? ''}
                             onChange={(e) => patchRoutineBuilder({ dailyTxTarget: e.target.value })}
                             style={{
                               width: '100%', boxSizing: 'border-box', padding: '10px 11px', borderRadius: 11,
@@ -2741,7 +2780,7 @@ export default function AgentMode() {
                             type="number"
                             min="1"
                             max="240"
-                            value={routineBuilder.intervalMinutes || form.intervalMinutes}
+                            value={routineBuilder.intervalMinutes ?? ''}
                             onChange={(e) => patchRoutineBuilder({ intervalMinutes: e.target.value })}
                             style={{
                               width: '100%', boxSizing: 'border-box', padding: '10px 11px', borderRadius: 11,
@@ -2764,7 +2803,7 @@ export default function AgentMode() {
                                 budget: opt.id,
                                 maxDailySpendEth: opt.maxDailySpendEth,
                               }))
-                              patchForm({ maxDailySpendEth: opt.maxDailySpendEth })
+                              setPlanFeedback('Budget updated in draft. Save settings to apply it.')
                             }} style={{
                               display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px',
                               borderRadius: 12, cursor: 'pointer', textAlign: 'left',
@@ -2790,7 +2829,7 @@ export default function AgentMode() {
                           min="0.0001"
                           max="1"
                           step="0.0001"
-                          value={routineBuilder.maxDailySpendEth || form.maxDailySpendEth}
+                          value={routineBuilder.maxDailySpendEth ?? ''}
                           onChange={(e) => patchRoutineBuilder({ maxDailySpendEth: e.target.value })}
                           style={{
                             width: '100%', boxSizing: 'border-box', padding: '10px 11px', borderRadius: 11,
@@ -2825,8 +2864,8 @@ export default function AgentMode() {
                       Custom prompt
                     </summary>
                     <textarea
-                      value={form.userPrompt}
-                      onChange={(e) => patchForm({ userPrompt: e.target.value })}
+                      value={routineBuilder.customPrompt ?? ''}
+                      onChange={(e) => patchRoutineBuilder({ customPrompt: e.target.value })}
                       placeholder="Describe the routine you want in plain language..."
                       rows={3}
                       style={{
@@ -2838,6 +2877,46 @@ export default function AgentMode() {
                       }}
                     />
                   </details>
+
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    flexWrap: 'wrap',
+                    marginTop: 16,
+                    padding: '14px 16px',
+                    borderRadius: 14,
+                    background: 'linear-gradient(135deg, rgba(15,23,42,0.65), rgba(2,6,23,0.55))',
+                    border: '1px solid rgba(148,163,184,0.07)',
+                  }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: '#e2e8f0', letterSpacing: '-0.01em' }}>
+                        Save manual settings
+                      </div>
+                      <div style={{ marginTop: 3, fontSize: 11, color: '#64748b', lineHeight: 1.45 }}>
+                        Activity, tx/day, interval and ETH permission update the dashboard only after saving.
+                      </div>
+                    </div>
+                    <button type="button" onClick={handleSaveRoutineSettings} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 7,
+                      padding: '10px 16px',
+                      borderRadius: 12,
+                      border: '1px solid rgba(125,211,252,0.22)',
+                      background: 'linear-gradient(135deg, rgba(14,165,233,0.18), rgba(59,130,246,0.12))',
+                      color: '#bae6fd',
+                      fontSize: 12,
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      letterSpacing: '-0.01em',
+                    }}>
+                      <CheckCircle2 size={13} />
+                      Save settings
+                    </button>
+                  </div>
 
                   {/* Agent brief */}
                   {hasPlan && (
