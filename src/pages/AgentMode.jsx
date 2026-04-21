@@ -675,11 +675,52 @@ function getCloudExecutionIssue(cloudState) {
     return 'Cloud Agent was set up with the old per-user sender model. Run Update permission once to switch back to the shared sender.'
   }
 
+  if (cloudState?.workerOwnsSubAccount === false) {
+    return 'This saved agent wallet belongs to an older sender. Run Update permission once to create a shared-sender compatible agent wallet.'
+  }
+
   if (cloudState?.executionMode !== 'worker_ready' || cloudState?.permissionModel !== 'delegated_worker') {
     return 'Cloud permission is connected, but automatic execution still needs delegated worker permission.'
   }
 
   return ''
+}
+
+function buildCloudStateFromSession(session, fallback = {}) {
+  if (!session) return fallback || null
+  return {
+    ...(fallback || {}),
+    status: session.status === 'ready' ? 'cloud_ready' : session.status,
+    sessionId: session.id,
+    universalAddress: session.owner_address,
+    accountMode: session.policy?.accountMode || fallback?.accountMode || 'direct_base_account',
+    accountAddress: session.owner_address,
+    subAccount: session.sub_account_address && session.sub_account_address !== session.owner_address
+      ? { ...(session.policy?.subAccount || {}), ...(fallback?.subAccount || {}), address: session.sub_account_address }
+      : null,
+    allowanceEth: session.allowance_eth,
+    periodInDays: session.period_days,
+    spendPermission: session.spend_permission || fallback?.spendPermission,
+    executionMode: session.policy?.executionMode || fallback?.executionMode,
+    permissionModel: session.policy?.permissionModel || fallback?.permissionModel,
+    automationOwner: session.policy?.automationOwner || session.policy?.workerAddress || fallback?.automationOwner,
+    workerAddress: session.policy?.workerAddress || session.policy?.spenderAddress || fallback?.workerAddress,
+    signerModel: session.policy?.signerModel || fallback?.signerModel || 'shared_worker_signer',
+    agentSignerAddress: session.policy?.agentSignerAddress || null,
+    workerOwnsSubAccount: typeof session.worker_owns_sub_account === 'boolean' ? session.worker_owns_sub_account : null,
+    automationBlocked: session.policy?.automationBlocked || fallback?.automationBlocked,
+    registeredAt: session.updated_at || session.created_at,
+  }
+}
+
+function canReuseCloudSession(session, workerAddress) {
+  if (!session?.sub_account_address) return false
+  const policy = session.policy || {}
+  if (policy.signerModel === 'per_user_agent_signer' || policy.agentSignerAddress) return false
+  if (session.worker_owns_sub_account === false) return false
+  const policyWorker = String(policy.workerAddress || policy.automationOwner || policy.spenderAddress || '').toLowerCase()
+  if (policyWorker && policyWorker !== String(workerAddress || '').toLowerCase()) return false
+  return true
 }
 
 /* ─── CSS-in-JS Keyframes injection ─── */
@@ -920,25 +961,7 @@ export default function AgentMode() {
       try {
         const session = await fetchCloudAgentSession(ownerAddress)
         if (!cancelled && session) {
-          setCloudAgentState({
-            ...(loadCloudAgentState() || localCloud || {}),
-            status: session.status === 'ready' ? 'cloud_ready' : session.status,
-            sessionId: session.id,
-            universalAddress: session.owner_address,
-            accountMode: session.policy?.accountMode || localCloud?.accountMode || 'direct_base_account',
-            accountAddress: session.owner_address,
-            subAccount: session.sub_account_address && session.sub_account_address !== session.owner_address
-              ? { ...(session.policy?.subAccount || {}), ...(localCloud?.subAccount || {}), address: session.sub_account_address }
-              : null,
-            allowanceEth: session.allowance_eth,
-            periodInDays: session.period_days,
-            spendPermission: session.spend_permission || localCloud?.spendPermission,
-            executionMode: session.policy?.executionMode || localCloud?.executionMode,
-            permissionModel: session.policy?.permissionModel || localCloud?.permissionModel,
-            automationOwner: session.policy?.automationOwner || localCloud?.automationOwner,
-            automationBlocked: session.policy?.automationBlocked || localCloud?.automationBlocked,
-            registeredAt: session.updated_at || session.created_at,
-          })
+          setCloudAgentState(buildCloudStateFromSession(session, loadCloudAgentState() || localCloud || {}))
         }
       } catch (cloudError) {
         if (!cancelled) {
@@ -1486,12 +1509,33 @@ export default function AgentMode() {
       setCloudAgentMessage('Connecting Base Account...')
       const { sdk, provider, universalAddress } = await connectBaseAccountDirect()
 
-      setCloudAgentMessage('Creating delegated agent wallet...')
-      const subAccount = await createDelegatedSubAccount({
-        sdk,
-        workerAddress: spenderAddress,
+      setCloudAgentMessage('Checking saved agent wallet...')
+      const savedSession = await fetchCloudAgentSession(universalAddress).catch((sessionError) => {
+        console.warn('[Cloud Agent] existing session lookup failed:', sessionError?.message || sessionError)
+        return null
       })
+
+      let subAccount = null
+      if (canReuseCloudSession(savedSession, spenderAddress)) {
+        subAccount = {
+          ...(savedSession.policy?.subAccount || {}),
+          address: savedSession.sub_account_address,
+        }
+        setCloudAgentMessage('Using your saved agent wallet...')
+      } else {
+        setCloudAgentMessage(
+          savedSession?.sub_account_address
+            ? 'Saved agent wallet uses an old sender. Creating a shared-sender compatible wallet...'
+            : 'Creating delegated agent wallet...'
+        )
+        subAccount = await createDelegatedSubAccount({
+          sdk,
+          workerAddress: spenderAddress,
+        })
+      }
       const subAccountAddress = subAccount.address
+      const reusedSavedSubAccount =
+        String(savedSession?.sub_account_address || '').toLowerCase() === String(subAccountAddress || '').toLowerCase()
 
       setCloudAgentMessage('Requesting limited spend permission...')
       const { permission } = await requestNativeSpendPermission({
@@ -1519,6 +1563,7 @@ export default function AgentMode() {
         workerAddress: spenderAddress,
         signerModel: 'shared_worker_signer',
         agentSignerAddress: null,
+        workerOwnsSubAccount: reusedSavedSubAccount ? savedSession.worker_owns_sub_account : null,
         registeredAt: null,
       })
       setCloudAgentState(delegatedCloudState)
@@ -1565,6 +1610,7 @@ export default function AgentMode() {
           workerAddress: spenderAddress,
           signerModel: 'shared_worker_signer',
           agentSignerAddress: null,
+          workerOwnsSubAccount: reusedSavedSubAccount ? savedSession.worker_owns_sub_account : null,
           spendPermission: permission,
         })
         setCloudAgentMessage('Cloud Agent ready. Start will run from the delegated agent wallet automatically.')

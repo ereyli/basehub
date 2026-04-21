@@ -1,6 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
+import { createPublicClient, http, isAddress } from 'viem'
+import { AGENT_RPC_URL } from '../src/features/agent-mode/agentConstants.js'
 
 const CLOUD_TABLE = 'agent_cloud_sessions'
+const BASE_ACCOUNT_OWNER_ABI = [
+  {
+    name: 'isOwnerAddress',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+]
 
 function getServerSupabase() {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
@@ -15,6 +26,30 @@ function normalizeAddress(address) {
   return String(address || '').trim().toLowerCase()
 }
 
+function getWorkerAddress() {
+  return normalizeAddress(process.env.VITE_CLOUD_AGENT_SPENDER_ADDRESS || process.env.CLOUD_AGENT_SPENDER_ADDRESS)
+}
+
+async function checkWorkerOwnsSubAccount(subAccountAddress) {
+  const normalizedSubAccount = normalizeAddress(subAccountAddress)
+  const workerAddress = getWorkerAddress()
+  if (!isAddress(normalizedSubAccount) || !isAddress(workerAddress)) return null
+
+  try {
+    const publicClient = createPublicClient({ transport: http(AGENT_RPC_URL) })
+    const code = await publicClient.getCode({ address: normalizedSubAccount })
+    if (!code || code === '0x') return null
+    return await publicClient.readContract({
+      address: normalizedSubAccount,
+      abi: BASE_ACCOUNT_OWNER_ABI,
+      functionName: 'isOwnerAddress',
+      args: [workerAddress],
+    })
+  } catch {
+    return null
+  }
+}
+
 function redactCloudSession(session) {
   if (!session) return null
   const policy = session.policy && typeof session.policy === 'object' ? { ...session.policy } : {}
@@ -22,6 +57,15 @@ function redactCloudSession(session) {
     policy.agentSignerEncrypted = { redacted: true, alg: policy.agentSignerEncrypted.alg || 'aes-256-gcm' }
   }
   return { ...session, policy }
+}
+
+async function decorateCloudSession(session) {
+  const redacted = redactCloudSession(session)
+  if (!redacted) return null
+  return {
+    ...redacted,
+    worker_owns_sub_account: await checkWorkerOwnsSubAccount(redacted.sub_account_address),
+  }
 }
 
 export async function getCloudSession(ownerAddress) {
@@ -44,7 +88,7 @@ export async function getCloudSession(ownerAddress) {
     .maybeSingle()
 
   if (error) throw new Error(error.message)
-  return { session: redactCloudSession(data), available: true, setupError: null }
+  return { session: await decorateCloudSession(data), available: true, setupError: null }
 }
 
 export async function upsertCloudSession({
@@ -92,7 +136,7 @@ export async function upsertCloudSession({
     .single()
 
   if (error) throw new Error(error.message)
-  return redactCloudSession(data)
+  return decorateCloudSession(data)
 }
 
 export async function disableCloudSession(ownerAddress) {
@@ -108,5 +152,5 @@ export async function disableCloudSession(ownerAddress) {
     .maybeSingle()
 
   if (error) throw new Error(error.message)
-  return redactCloudSession(data)
+  return decorateCloudSession(data)
 }

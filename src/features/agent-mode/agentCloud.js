@@ -210,6 +210,10 @@ export async function registerCloudAgentSession({
     executionMode: policy?.executionMode,
     permissionModel: policy?.permissionModel,
     automationOwner: policy?.automationOwner || policy?.spenderAddress,
+    workerAddress: policy?.workerAddress || policy?.spenderAddress,
+    signerModel: policy?.signerModel || 'shared_worker_signer',
+    agentSignerAddress: null,
+    workerOwnsSubAccount: null,
     registeredAt: new Date().toISOString(),
   })
   return { ...data, cloudState: nextState }
