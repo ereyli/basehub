@@ -106,8 +106,8 @@ async function acquireRun(supabase, run) {
       updated_at: nowIso(),
     })
     .eq('id', run.id)
-    .in('status', ['active', 'executing'])
-    .or(`locked_until.is.null,locked_until.lt.${nowIso()}`)
+    .eq('status', 'active')
+    .is('lock_id', null)
     .select('*')
     .maybeSingle()
 
