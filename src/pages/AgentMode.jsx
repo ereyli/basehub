@@ -20,6 +20,7 @@ import {
   connectBaseAccountDirect,
   createDelegatedSubAccount,
   executeCloudAgentAction,
+  fetchCloudAgentRun,
   fetchCloudAgentSession,
   getCloudAgentSpenderAddress,
   loadCloudAgentState,
@@ -46,6 +47,7 @@ import {
   loadAgentState,
   resetAgentPlan,
   setAgentStatus,
+  updateAgentState,
   updateQueuedAction,
   updateAgentSettings,
 } from '../features/agent-mode/agentStore'
@@ -681,6 +683,7 @@ export default function AgentMode() {
     setupError: null,
   })
   const [cloudAgentState, setCloudAgentState] = useState(() => loadCloudAgentState())
+  const [cloudRun, setCloudRun] = useState(null)
   const [cloudAgentBusy, setCloudAgentBusy] = useState(false)
   const [cloudAgentMessage, setCloudAgentMessage] = useState('')
   const [agentAccess, setAgentAccess] = useState({
@@ -708,6 +711,30 @@ export default function AgentMode() {
     const next = loadAgentState()
     setAgentState(next)
     setForm(createFormFromState(next))
+  }, [])
+
+  const syncCloudRunState = useCallback((run) => {
+    if (!run || typeof run !== 'object') return
+    setCloudRun(run)
+
+    const hasPlan = run.current_plan && typeof run.current_plan === 'object'
+    const hasLogs = Array.isArray(run.logs)
+    if (hasPlan || hasLogs) {
+      const nextState = updateAgentState((current) => ({
+        ...current,
+        status: ['active', 'executing'].includes(run.status)
+          ? AGENT_STATUSES.ACTIVE
+          : run.status === 'paused'
+            ? AGENT_STATUSES.PAUSED
+            : ['stopped', 'cancelled', 'replaced', 'completed', 'failed'].includes(run.status) && current.status === AGENT_STATUSES.ACTIVE
+              ? AGENT_STATUSES.DISABLED
+              : current.status,
+        currentPlan: hasPlan ? run.current_plan : current.currentPlan,
+        logs: hasLogs ? run.logs : current.logs,
+      }))
+      setAgentState(nextState)
+      setForm(createFormFromState(nextState))
+    }
   }, [])
 
   useEffect(() => {
@@ -969,6 +996,50 @@ export default function AgentMode() {
     () => (isAgentAccessUnlocked ? startGate : { ok: false, reason: 'Unlock Agent Mode first.' }),
     [isAgentAccessUnlocked, startGate]
   )
+
+  useEffect(() => {
+    if (!isCloudAgentReady) return undefined
+    const ownerAddress = cloudAgentState?.accountAddress || cloudAgentState?.universalAddress || paymentWalletAddress
+    if (!ownerAddress) return undefined
+
+    let cancelled = false
+    const pollCloudRun = async () => {
+      try {
+        const run = await fetchCloudAgentRun(ownerAddress)
+        if (cancelled || !run) return
+        const runIsLive = ['active', 'executing', 'paused'].includes(String(run.status || ''))
+        const runBelongsToCurrentView = cloudRun?.id && Number(cloudRun.id) === Number(run.id)
+        const localIsRunning = agentState.status === AGENT_STATUSES.ACTIVE
+        if (runIsLive || runBelongsToCurrentView || localIsRunning) {
+          syncCloudRunState(run)
+          setError(null)
+        }
+      } catch (cloudRunError) {
+        if (!cancelled && agentState.status === AGENT_STATUSES.ACTIVE) {
+          console.warn('[Cloud Agent] run sync failed:', cloudRunError?.message || cloudRunError)
+        }
+      }
+    }
+
+    pollCloudRun()
+    const intervalId = window.setInterval(pollCloudRun, 10000)
+    window.addEventListener('focus', pollCloudRun)
+    window.addEventListener('visibilitychange', pollCloudRun)
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+      window.removeEventListener('focus', pollCloudRun)
+      window.removeEventListener('visibilitychange', pollCloudRun)
+    }
+  }, [
+    agentState.status,
+    cloudAgentState?.accountAddress,
+    cloudAgentState?.universalAddress,
+    cloudRun?.id,
+    isCloudAgentReady,
+    paymentWalletAddress,
+    syncCloudRunState,
+  ])
 
   const activeTargetTitles = useMemo(
     () =>
@@ -1763,7 +1834,7 @@ export default function AgentMode() {
           setError('Approve the plan before starting.')
           return false
         }
-        await startCloudAgentRun({
+        const startedRun = await startCloudAgentRun({
           ownerAddress: cloudAgentState?.accountAddress || cloudAgentState?.universalAddress || paymentWalletAddress,
           subAccountAddress: cloudAddress,
           subAccount: cloudAgentState?.subAccount || null,
@@ -1776,6 +1847,7 @@ export default function AgentMode() {
           spendPermission: cloudAgentState?.spendPermission || null,
           intervalMinutes: currentState.settings.intervalMinutes,
         })
+        syncCloudRunState(startedRun)
       }
 
       setAgentStatus(AGENT_STATUSES.ACTIVE)
@@ -1811,7 +1883,7 @@ export default function AgentMode() {
       setError(normalized.shortMessage)
       return false
     }
-  }, [autoObjective, cloudAgentState, cloudExecutionAddress, cloudExecutionIssue, isAgentAccessUnlocked, isCloudAgentReady, isCloudExecutionReady, latestPlan?.nextMove, paymentWalletAddress, plannerMode, reloadState, runNextAction, startGateWithAccess])
+  }, [autoObjective, cloudAgentState, cloudExecutionAddress, cloudExecutionIssue, isAgentAccessUnlocked, isCloudAgentReady, isCloudExecutionReady, latestPlan?.nextMove, paymentWalletAddress, plannerMode, reloadState, runNextAction, startGateWithAccess, syncCloudRunState])
 
   useEffect(() => {
     if (isCloudAgentReady) return undefined

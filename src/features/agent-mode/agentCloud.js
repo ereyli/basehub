@@ -225,6 +225,16 @@ export async function fetchCloudAgentSession(ownerAddress) {
   return data.session || null
 }
 
+export async function fetchCloudAgentRun(ownerAddress) {
+  if (!ownerAddress) return null
+  const res = await fetch(`${getCloudApiBase()}/api/agent-cloud-run?ownerAddress=${encodeURIComponent(ownerAddress)}`)
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(data.error || 'Cloud Agent run could not be loaded.')
+  }
+  return data.run || null
+}
+
 export async function executeCloudAgentAction({
   ownerAddress,
   subAccount,
