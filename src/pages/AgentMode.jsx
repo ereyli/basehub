@@ -1489,10 +1489,17 @@ export default function AgentMode() {
     reloadState()
   }, [form, isAgentAccessUnlocked, refreshPlan, reloadState, routineBuilder, syncSettings])
 
-  const handleSetupCloudAgent = useCallback(async () => {
+  const handleSetupCloudAgent = useCallback(async (optionsOrEvent = {}) => {
+    const forceNewWallet = optionsOrEvent?.forceNew === true
     if (!isAgentAccessUnlocked) {
       setError('Unlock Agent Mode first.')
       return
+    }
+    if (forceNewWallet && cloudDelegatedAddress) {
+      const confirmed = window.confirm(
+        'Create a new agent wallet? The old wallet will stay onchain, but BaseHub will stop using it for new Agent Mode runs.'
+      )
+      if (!confirmed) return
     }
     setCloudAgentBusy(true)
     setCloudAgentMessage('')
@@ -1516,18 +1523,26 @@ export default function AgentMode() {
       })
 
       let subAccount = null
-      if (canReuseCloudSession(savedSession, spenderAddress)) {
+      if (forceNewWallet) {
+        setCloudAgentMessage('Stopping old agent run before switching wallet...')
+        await stopCloudAgentRun({ ownerAddress: universalAddress }).catch((stopError) => {
+          console.warn('[Cloud Agent] old run stop failed:', stopError?.message || stopError)
+        })
+      }
+
+      if (!forceNewWallet && canReuseCloudSession(savedSession, spenderAddress)) {
         subAccount = {
           ...(savedSession.policy?.subAccount || {}),
           address: savedSession.sub_account_address,
         }
         setCloudAgentMessage('Using your saved agent wallet...')
       } else {
-        setCloudAgentMessage(
-          savedSession?.sub_account_address
+        const setupMessage = forceNewWallet
+          ? 'Creating a new delegated agent wallet...'
+          : savedSession?.sub_account_address
             ? 'Saved agent wallet uses an old sender. Creating a shared-sender compatible wallet...'
             : 'Creating delegated agent wallet...'
-        )
+        setCloudAgentMessage(setupMessage)
         subAccount = await createDelegatedSubAccount({
           sdk,
           workerAddress: spenderAddress,
@@ -1630,7 +1645,7 @@ export default function AgentMode() {
     } finally {
       setCloudAgentBusy(false)
     }
-  }, [form.allowedActionTypes, form.dailyTxTarget, form.enabledTargetIds, form.intervalMinutes, form.maxDailySpendEth, isAgentAccessUnlocked, routineBuilder.budget, routineBuilder.maxDailySpendEth])
+  }, [cloudDelegatedAddress, form.allowedActionTypes, form.dailyTxTarget, form.enabledTargetIds, form.intervalMinutes, form.maxDailySpendEth, isAgentAccessUnlocked, routineBuilder.budget, routineBuilder.maxDailySpendEth])
 
   // Cross-tab mutex: prevent two tabs from executing simultaneously
   const LOCK_KEY = 'basehub_agent_execution_lock'
@@ -2492,23 +2507,49 @@ export default function AgentMode() {
                     </div>
                   )}
                 </div>
-                <button type="button" disabled={cloudAgentBusy || !isAgentAccessUnlocked} onClick={handleSetupCloudAgent} style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '10px 16px',
-                  borderRadius: 12,
-                  border: '1px solid rgba(56,189,248,0.18)',
-                  background: cloudAgentBusy || !isAgentAccessUnlocked ? 'rgba(14,165,233,0.08)' : 'linear-gradient(135deg, rgba(14,165,233,0.18), rgba(37,99,235,0.1))',
-                  color: cloudAgentBusy || !isAgentAccessUnlocked ? '#64748b' : '#bae6fd',
-                  fontSize: 12,
-                  fontWeight: 800,
-                  cursor: cloudAgentBusy ? 'wait' : !isAgentAccessUnlocked ? 'not-allowed' : 'pointer',
-                  letterSpacing: '-0.01em',
-                }}>
-                  {cloudAgentBusy ? <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Shield size={13} />}
-                  {isCloudAgentReady ? 'Update permission' : 'Set up cloud'}
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <button type="button" disabled={cloudAgentBusy || !isAgentAccessUnlocked} onClick={handleSetupCloudAgent} style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '10px 16px',
+                    borderRadius: 12,
+                    border: '1px solid rgba(56,189,248,0.18)',
+                    background: cloudAgentBusy || !isAgentAccessUnlocked ? 'rgba(14,165,233,0.08)' : 'linear-gradient(135deg, rgba(14,165,233,0.18), rgba(37,99,235,0.1))',
+                    color: cloudAgentBusy || !isAgentAccessUnlocked ? '#64748b' : '#bae6fd',
+                    fontSize: 12,
+                    fontWeight: 800,
+                    cursor: cloudAgentBusy ? 'wait' : !isAgentAccessUnlocked ? 'not-allowed' : 'pointer',
+                    letterSpacing: '-0.01em',
+                  }}>
+                    {cloudAgentBusy ? <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Shield size={13} />}
+                    {isCloudAgentReady ? 'Update permission' : 'Set up cloud'}
+                  </button>
+                  {cloudDelegatedAddress && (
+                    <button
+                      type="button"
+                      disabled={cloudAgentBusy || !isAgentAccessUnlocked}
+                      onClick={() => handleSetupCloudAgent({ forceNew: true })}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '10px 14px',
+                        borderRadius: 12,
+                        border: '1px solid rgba(148,163,184,0.12)',
+                        background: cloudAgentBusy || !isAgentAccessUnlocked ? 'rgba(15,23,42,0.45)' : 'rgba(15,23,42,0.72)',
+                        color: cloudAgentBusy || !isAgentAccessUnlocked ? '#64748b' : '#cbd5e1',
+                        fontSize: 12,
+                        fontWeight: 800,
+                        cursor: cloudAgentBusy ? 'wait' : !isAgentAccessUnlocked ? 'not-allowed' : 'pointer',
+                        letterSpacing: '-0.01em',
+                      }}
+                    >
+                      <RefreshCw size={13} />
+                      Change wallet
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
