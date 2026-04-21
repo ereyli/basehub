@@ -1014,6 +1014,7 @@ export default function AgentMode() {
   )
   const planSummary = useMemo(() => summarizePlan(latestPlan?.actions || []), [latestPlan])
   const planSentence = useMemo(() => formatPlanAsSentence(latestPlan?.actions || []), [latestPlan])
+  const isAgentActive = agentState.status === AGENT_STATUSES.ACTIVE
   const isCloudAgentReady = Boolean(
     cloudAccountAddress &&
     ['cloud_ready', 'permission_ready'].includes(String(cloudAgentState?.status || ''))
@@ -2039,7 +2040,6 @@ export default function AgentMode() {
   const completedQueueActions = latestPlan?.queue?.filter(q => q.status === 'completed').length || 0
   const totalQueueActions = latestPlan?.queue?.length || 0
   const progressPct = totalQueueActions > 0 ? Math.round((completedQueueActions / totalQueueActions) * 100) : 0
-  const isAgentActive = agentState.status === AGENT_STATUSES.ACTIVE
   const agentXpLevel = calcLevel(agentXp.value)
   const agentBhupEstimate = calculateTokens(agentXp.value)
 
