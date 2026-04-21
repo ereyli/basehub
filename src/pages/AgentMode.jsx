@@ -18,7 +18,6 @@ import {
 } from '../features/agent-mode/agentConstants'
 import {
   connectBaseAccountDirect,
-  createAgentSigner,
   createDelegatedSubAccount,
   executeCloudAgentAction,
   fetchCloudAgentRun,
@@ -670,6 +669,10 @@ function getCloudExecutionIssue(cloudState) {
 
   if (cloudState?.accountMode !== 'delegated_sub_account') {
     return 'Full auto needs delegated agent-wallet permission.'
+  }
+
+  if (cloudState?.signerModel === 'per_user_agent_signer' || cloudState?.agentSignerAddress) {
+    return 'Cloud Agent was set up with the old per-user sender model. Run Update permission once to switch back to the shared sender.'
   }
 
   if (cloudState?.executionMode !== 'worker_ready' || cloudState?.permissionModel !== 'delegated_worker') {
@@ -1483,13 +1486,10 @@ export default function AgentMode() {
       setCloudAgentMessage('Connecting Base Account...')
       const { sdk, provider, universalAddress } = await connectBaseAccountDirect()
 
-      setCloudAgentMessage('Creating user-specific agent signer...')
-      const agentSigner = await createAgentSigner()
-
       setCloudAgentMessage('Creating delegated agent wallet...')
       const subAccount = await createDelegatedSubAccount({
         sdk,
-        signerAddress: agentSigner.address,
+        workerAddress: spenderAddress,
       })
       const subAccountAddress = subAccount.address
 
@@ -1515,10 +1515,10 @@ export default function AgentMode() {
         accountMode: 'delegated_sub_account',
         executionMode: 'worker_ready',
         permissionModel: 'delegated_worker',
-        automationOwner: agentSigner.address,
+        automationOwner: spenderAddress,
         workerAddress: spenderAddress,
-        signerModel: 'per_user_agent_signer',
-        agentSignerAddress: agentSigner.address,
+        signerModel: 'shared_worker_signer',
+        agentSignerAddress: null,
         registeredAt: null,
       })
       setCloudAgentState(delegatedCloudState)
@@ -1532,7 +1532,6 @@ export default function AgentMode() {
           spendPermission: permission,
           allowanceEth: permissionEth,
           periodInDays: 1,
-          agentSigner,
           policy: {
             mode: 'cloud_agent_v1',
             accountMode: 'delegated_sub_account',
@@ -1543,10 +1542,10 @@ export default function AgentMode() {
             enabledTargetIds: form.enabledTargetIds,
             allowedActionTypes: form.allowedActionTypes,
             spenderAddress,
-            automationOwner: agentSigner.address,
+            automationOwner: spenderAddress,
             workerAddress: spenderAddress,
-            signerModel: 'per_user_agent_signer',
-            agentSignerAddress: agentSigner.address,
+            signerModel: 'shared_worker_signer',
+            agentSignerAddress: null,
             executionMode: 'worker_ready',
             permissionModel: 'delegated_worker',
             requiresActionWhitelist: true,
@@ -1562,10 +1561,10 @@ export default function AgentMode() {
           accountMode: 'delegated_sub_account',
           executionMode: 'worker_ready',
           permissionModel: 'delegated_worker',
-          automationOwner: agentSigner.address,
+          automationOwner: spenderAddress,
           workerAddress: spenderAddress,
-          signerModel: 'per_user_agent_signer',
-          agentSignerAddress: agentSigner.address,
+          signerModel: 'shared_worker_signer',
+          agentSignerAddress: null,
           spendPermission: permission,
         })
         setCloudAgentMessage('Cloud Agent ready. Start will run from the delegated agent wallet automatically.')

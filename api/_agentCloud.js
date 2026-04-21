@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js'
-import { encryptAgentSignerPrivateKey } from './_agentSignerCrypto.js'
 
 const CLOUD_TABLE = 'agent_cloud_sessions'
 
@@ -56,7 +55,6 @@ export async function upsertCloudSession({
   allowanceEth,
   periodInDays,
   policy = {},
-  agentSigner,
 }) {
   const supabase = getServerSupabase()
   if (!supabase) {
@@ -69,11 +67,6 @@ export async function upsertCloudSession({
     throw new Error('ownerAddress and subAccountAddress are required.')
   }
 
-  const signerAddress = normalizeAddress(agentSigner?.address || policy?.agentSignerAddress)
-  const encryptedSigner = agentSigner?.privateKey
-    ? encryptAgentSignerPrivateKey(agentSigner.privateKey)
-    : policy?.agentSignerEncrypted || null
-
   const payload = {
     owner_address: normalizedOwner,
     sub_account_address: normalizedSubAccount,
@@ -84,9 +77,9 @@ export async function upsertCloudSession({
     policy: {
       ...(policy || {}),
       subAccount: subAccount || policy?.subAccount || null,
-      signerModel: encryptedSigner ? 'per_user_agent_signer' : (policy?.signerModel || 'shared_worker_signer'),
-      agentSignerAddress: signerAddress || policy?.agentSignerAddress || null,
-      agentSignerEncrypted: encryptedSigner || policy?.agentSignerEncrypted || null,
+      signerModel: 'shared_worker_signer',
+      agentSignerAddress: null,
+      agentSignerEncrypted: null,
     },
     status: 'ready',
     updated_at: new Date().toISOString(),
