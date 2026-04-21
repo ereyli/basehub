@@ -20,6 +20,15 @@ function getSupabase() {
   })
 }
 
+function getSupabaseHost() {
+  try {
+    const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''
+    return new URL(url).host
+  } catch {
+    return 'unknown'
+  }
+}
+
 function nowIso() {
   return new Date().toISOString()
 }
@@ -145,7 +154,10 @@ async function writeMemory(supabase, run, action, result, status, summary) {
 
 async function processRun(supabase, run) {
   const locked = await acquireRun(supabase, run)
-  if (!locked) return
+  if (!locked) {
+    console.log(`[agent-worker] skipped run ${run.id}: lock not acquired`)
+    return
+  }
 
   const actionItem = getNextAction(locked.current_plan)
   if (!actionItem) {
@@ -247,6 +259,7 @@ async function processRun(supabase, run) {
 }
 
 async function tick(supabase) {
+  const startedAt = nowIso()
   const { data, error } = await supabase
     .from(RUNS_TABLE)
     .select('*')
@@ -256,6 +269,7 @@ async function tick(supabase) {
     .limit(BATCH_SIZE)
 
   if (error) throw error
+  console.log(`[agent-worker] tick ${startedAt}: due_runs=${(data || []).length}`)
   for (const run of data || []) {
     await processRun(supabase, run)
   }
@@ -263,7 +277,7 @@ async function tick(supabase) {
 
 async function main() {
   const supabase = getSupabase()
-  console.log(`[agent-worker] started. poll=${POLL_MS}ms batch=${BATCH_SIZE}`)
+  console.log(`[agent-worker] started. poll=${POLL_MS}ms batch=${BATCH_SIZE} supabase=${getSupabaseHost()}`)
 
   let running = false
   const runTick = async () => {
