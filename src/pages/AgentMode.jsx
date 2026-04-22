@@ -7,6 +7,7 @@ import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
 import { NETWORKS } from '../config/networks'
 import { isAgentX402PurchaseSkipped } from '../config/features'
+import { isInFarcaster } from '../config/rainbowkit'
 import { supabase } from '../config/supabase'
 import { getEnabledTargets } from '../features/agent-mode/agentCatalog'
 import {
@@ -806,6 +807,7 @@ export default function AgentMode() {
   })
   const [agentAccessBusy, setAgentAccessBusy] = useState(false)
   const [activeTab, setActiveTab] = useState('chat')
+  const [isMobileRuntime, setIsMobileRuntime] = useState(false)
   const [openSections, setOpenSections] = useState(() => {
     const _initState = loadAgentState()
     const _hasPlan = !!(_initState.currentPlan?.actions?.length || _initState.plans?.[0]?.actions?.length)
@@ -817,6 +819,23 @@ export default function AgentMode() {
   const cloudDelegatedAddress = cloudAgentState?.subAccount?.address || cloudAgentState?.subAccountAddress || ''
   const cloudExecutionAddress = cloudDelegatedAddress || cloudAccountAddress
   const plannerWalletAddress = cloudExecutionAddress || cloudAccountAddress || ''
+  const isFarcasterRuntime = typeof window !== 'undefined' && isInFarcaster()
+  const isAgentModeUnsupportedRuntime = isFarcasterRuntime || isMobileRuntime
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+
+    const mobileQuery = window.matchMedia('(max-width: 767px)')
+    const detectMobileRuntime = () => {
+      const ua = window.navigator?.userAgent || ''
+      const touchMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua)
+      setIsMobileRuntime(Boolean(mobileQuery.matches || touchMobile))
+    }
+
+    detectMobileRuntime()
+    mobileQuery.addEventListener?.('change', detectMobileRuntime)
+    return () => mobileQuery.removeEventListener?.('change', detectMobileRuntime)
+  }, [])
 
   const reloadState = useCallback(() => {
     const next = loadAgentState()
@@ -2160,6 +2179,77 @@ export default function AgentMode() {
       ? 'Permission update needed'
       : 'Setup needs attention'
     : ''
+
+  if (isAgentModeUnsupportedRuntime) {
+    const reasonLabel = isFarcasterRuntime ? 'Farcaster mobile' : 'mobile'
+
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(180deg, #080d1a 0%, #060a14 42%, #030712 100%)',
+        color: '#e2e8f0',
+        fontFamily: "'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif",
+      }}>
+        <EmbedMeta
+          title="Agent Mode"
+          description="Agent Mode is available on desktop web."
+          url="https://www.basehub.fun/agent"
+        />
+
+        <div style={{
+          width: 'min(calc(100% - 28px), 760px)',
+          margin: '0 auto',
+          padding: 'clamp(18px, 6vw, 38px) 0 80px',
+        }}>
+          <BackButton />
+
+          <div style={{
+            ...glassCard,
+            marginTop: 18,
+            padding: '24px 22px',
+            background: 'linear-gradient(135deg, rgba(14,165,233,0.08), rgba(15,23,42,0.7))',
+            border: '1px solid rgba(125,211,252,0.12)',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              width: 54,
+              height: 54,
+              margin: '0 auto 16px',
+              borderRadius: 18,
+              display: 'grid',
+              placeItems: 'center',
+              background: 'rgba(14,165,233,0.1)',
+              border: '1px solid rgba(125,211,252,0.16)',
+              color: '#7dd3fc',
+            }}>
+              <Bot size={24} />
+            </div>
+
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#f8fafc', letterSpacing: '-0.03em' }}>
+              Agent Mode is web only
+            </div>
+            <div style={{ marginTop: 10, fontSize: 14, lineHeight: 1.65, color: '#94a3b8' }}>
+              Agent Mode is currently disabled on {reasonLabel}. Open BaseHub from a desktop browser to unlock,
+              set permissions, and run your cloud agent safely.
+            </div>
+
+            <div style={{
+              marginTop: 18,
+              padding: '12px 14px',
+              borderRadius: 14,
+              background: 'rgba(250,204,21,0.08)',
+              border: '1px solid rgba(250,204,21,0.12)',
+              color: '#fde68a',
+              fontSize: 12,
+              fontWeight: 800,
+            }}>
+              Payments and setup are blocked here, so you will not be charged from mobile.
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{
