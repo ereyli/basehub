@@ -2,14 +2,12 @@ import React, { useState, useEffect, Suspense, lazy } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
-import { useAccount } from 'wagmi'
 import { HelmetProvider } from 'react-helmet-async' 
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import '@rainbow-me/rainbowkit/styles.css'
 import { FarcasterProvider, useFarcaster } from './contexts/FarcasterContext'
 import { config } from './config/wagmi'
 import { rainbowkitConfig, shouldUseRainbowKit, isLocalDevHostname } from './config/rainbowkit'
-import { isAgentModeAllowedWallet, isAgentModeEnabled } from './config/features'
 import { isLikelyBaseApp } from './utils/xpUtils'
 import FarcasterBottomNav from './components/FarcasterBottomNav'
 import HomeScrollManager from './components/HomeScrollManager'
@@ -56,12 +54,9 @@ import PredictionArena from './pages/PredictionArena'
 import BaseGuildCompanion from './pages/BaseGuildCompanion'
 import AirdropHub from './pages/AirdropHub'
 import AgentMode from './pages/AgentMode'
-import AgentModeSoon from './pages/AgentModeSoon'
 import AdminNotifications from './pages/AdminNotifications'
 
 function AgentModeGate() {
-  const { address } = useAccount()
-  if (!isAgentModeEnabled() && !isAgentModeAllowedWallet(address)) return <AgentModeSoon />
   return <AgentMode />
 }
 // Lazy load PrivacyPolicy and TermsOfService to avoid ad blocker issues

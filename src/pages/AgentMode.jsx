@@ -3183,6 +3183,82 @@ export default function AgentMode() {
               )}
             </div>
 
+            <div style={{
+              ...glassCard,
+              marginTop: 18,
+              marginBottom: 24,
+              padding: isDesktop ? '24px 26px' : '18px',
+              background: 'linear-gradient(135deg, rgba(14,165,233,0.05), rgba(15,23,42,0.62))',
+              border: '1px solid rgba(125,211,252,0.08)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
+                <div style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 13,
+                  display: 'grid',
+                  placeItems: 'center',
+                  background: 'rgba(14,165,233,0.08)',
+                  border: '1px solid rgba(125,211,252,0.12)',
+                }}>
+                  <Shield size={17} color="#7dd3fc" />
+                </div>
+                <div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: '#f8fafc', letterSpacing: '-0.02em' }}>How Agent Mode Works</div>
+                  <div style={{ fontSize: 12, color: '#64748b', marginTop: 3 }}>One setup, one plan, then the VPS worker keeps the routine moving.</div>
+                </div>
+              </div>
+
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isDesktop ? 'repeat(4, minmax(0, 1fr))' : '1fr',
+                gap: 10,
+              }}>
+                {[
+                  ['1', 'Unlock', 'Pay once with your main wallet to enable Agent Mode.'],
+                  ['2', 'Give permission', 'Create or update the agent wallet with a daily ETH cap.'],
+                  ['3', 'Generate plan', 'Pick the routine style and approve the action plan.'],
+                  ['4', 'Run safely', 'The VPS worker executes approved BaseHub actions until limits stop it.'],
+                ].map(([step, title, body]) => (
+                  <div key={step} style={{
+                    padding: '14px 15px',
+                    borderRadius: 15,
+                    background: 'rgba(2,6,23,0.35)',
+                    border: '1px solid rgba(148,163,184,0.05)',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 8 }}>
+                      <span style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: 8,
+                        display: 'grid',
+                        placeItems: 'center',
+                        background: 'rgba(96,165,250,0.1)',
+                        color: '#93c5fd',
+                        fontSize: 11,
+                        fontWeight: 900,
+                      }}>{step}</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: '#e2e8f0' }}>{title}</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: '#64748b' }}>{body}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{
+                marginTop: 12,
+                padding: '11px 13px',
+                borderRadius: 13,
+                background: 'rgba(250,204,21,0.05)',
+                border: '1px solid rgba(250,204,21,0.08)',
+                color: '#94a3b8',
+                fontSize: 12,
+                lineHeight: 1.5,
+              }}>
+                XP, NFTs, tokens, and transaction history belong to the agent wallet that sends the transactions. If the agent pauses, add ETH to that wallet or lower the daily limits.
+              </div>
+            </div>
+
           </>
       </div>
     </div>
