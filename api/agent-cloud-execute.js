@@ -16,6 +16,7 @@ import { prepareSpendCallData } from '@base-org/account/spend-permission/node'
 import {
   AGENT_BASE_CHAIN_ID,
   AGENT_RPC_URL,
+  AGENT_SWAPHUB_TOKENS,
   AGENT_TARGET_IDS,
   DICE_ROLL_ABI,
   ERC20_BALANCE_ABI,
@@ -77,6 +78,39 @@ function normalizePrivateKey(value) {
 
 function isAddress(value) {
   return /^0x[a-fA-F0-9]{40}$/.test(String(value || '').trim())
+}
+
+function uniqueAddresses(items = []) {
+  const seen = new Set()
+  return items.filter((item) => {
+    const address = String(item?.address || item?.tokenOutAddress || '').trim()
+    if (!isAddress(address)) return false
+    const key = address.toLowerCase()
+    if (key === ZERO_ADDRESS.toLowerCase() || key === WETH_ADDRESS.toLowerCase()) return false
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+function buildSwapHubTokenCandidates(action = {}) {
+  const directAddress = String(action.payload?.tokenOutAddress || '').trim()
+  const payloadCandidates = Array.isArray(action.payload?.candidates) ? action.payload.candidates : []
+  const knownCandidates = Array.isArray(AGENT_SWAPHUB_TOKENS) ? AGENT_SWAPHUB_TOKENS : []
+
+  return uniqueAddresses([
+    directAddress ? {
+      address: directAddress,
+      symbol: action.payload?.tokenOutSymbol,
+      name: action.payload?.tokenOutName,
+    } : null,
+    ...payloadCandidates.map((item) => ({
+      address: item?.tokenOutAddress || item?.address,
+      symbol: item?.tokenOutSymbol || item?.symbol,
+      name: item?.tokenOutName || item?.name,
+    })),
+    ...knownCandidates,
+  ].filter(Boolean))
 }
 
 function sanitizeDeployName(value, fallback) {
@@ -323,29 +357,39 @@ async function buildCloudCalls({ action, settings = {}, logs = [], ownerAddress,
   }
 
   if (action.targetId === AGENT_TARGET_IDS.SWAPHUB_SWAP) {
-    const tokenOutAddress = String(action.payload?.tokenOutAddress || '').trim()
-    if (!isAddress(tokenOutAddress)) throw new Error('No SwapHub token target is available right now.')
     const amountInWei = parseEther(String(action.payload?.swapAmountEth || settings?.swapHubTradeAmountEth || '0.00008'))
-    const amounts = await publicClient.readContract({
-      address: UNISWAP_V2_ROUTER,
-      abi: UNISWAP_V2_ROUTER_ABI,
-      functionName: 'getAmountsOut',
-      args: [amountInWei, [WETH_ADDRESS, tokenOutAddress]],
-    })
-    if (!amounts || !Array.isArray(amounts) || BigInt(amounts[1] || 0) <= 0n) {
-      throw new Error('No SwapHub route is available for the chosen token right now.')
+    const candidates = buildSwapHubTokenCandidates(action)
+    if (!candidates.length) throw new Error('No SwapHub token target is available right now.')
+
+    let lastRouteError = null
+    for (const candidate of candidates.slice(0, 12)) {
+      const tokenOutAddress = String(candidate.address || '').trim()
+      try {
+        const amounts = await publicClient.readContract({
+          address: UNISWAP_V2_ROUTER,
+          abi: UNISWAP_V2_ROUTER_ABI,
+          functionName: 'getAmountsOut',
+          args: [amountInWei, [WETH_ADDRESS, tokenOutAddress]],
+        })
+        if (!amounts || !Array.isArray(amounts) || BigInt(amounts[1] || 0) <= 0n) continue
+        const amountOutMinimum = (BigInt(amounts[1]) * 95n) / 100n
+        const deadline = BigInt(Math.floor(Date.now() / 1000) + 60 * 10)
+        return [{
+          to: target.contractAddress,
+          value: amountInWei,
+          data: encodeFunctionData({
+            abi: SWAPHUB_AGGREGATOR_ABI,
+            functionName: 'swapV2',
+            args: [ZERO_ADDRESS, tokenOutAddress, amountInWei, amountOutMinimum, deadline],
+          }),
+        }]
+      } catch (routeError) {
+        lastRouteError = routeError
+      }
     }
-    const amountOutMinimum = (BigInt(amounts[1]) * 95n) / 100n
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + 60 * 10)
-    return [{
-      to: target.contractAddress,
-      value: amountInWei,
-      data: encodeFunctionData({
-        abi: SWAPHUB_AGGREGATOR_ABI,
-        functionName: 'swapV2',
-        args: [ZERO_ADDRESS, tokenOutAddress, amountInWei, amountOutMinimum, deadline],
-      }),
-    }]
+
+    const reason = lastRouteError ? getReadableError(lastRouteError) : 'No route returned output.'
+    throw new Error(`No SwapHub route is available right now. ${reason}`)
   }
 
   if (action.targetId === AGENT_TARGET_IDS.DEPLOY_TOKEN) {

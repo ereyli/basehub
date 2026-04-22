@@ -1,5 +1,4 @@
 import { parseEther } from 'viem'
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'
 import { base } from 'viem/chains'
 
 const CLOUD_AGENT_STORAGE_KEY = 'basehub_cloud_agent_v1'
@@ -88,26 +87,18 @@ export async function connectBaseAccountDirect() {
 export async function createDelegatedSubAccount({
   sdk,
   workerAddress,
-  forceUnique = false,
 }) {
   const automationOwner = String(workerAddress || getCloudAgentSpenderAddress()).trim()
   if (!automationOwner) {
     throw new Error('Cloud agent worker address is not configured.')
   }
   const baseSdk = sdk || (await createBaseAccountClient()).sdk
-  const entropyOwner = forceUnique ? privateKeyToAccount(generatePrivateKey()).address : ''
   const keys = [
     {
       type: 'address',
       publicKey: automationOwner,
     },
   ]
-  if (entropyOwner && entropyOwner.toLowerCase() !== automationOwner.toLowerCase()) {
-    keys.push({
-      type: 'address',
-      publicKey: entropyOwner,
-    })
-  }
   const subAccount = await baseSdk.subAccount.create({
     type: 'create',
     keys,
@@ -117,7 +108,6 @@ export async function createDelegatedSubAccount({
   }
   return {
     ...serializeForJson(subAccount),
-    ...(entropyOwner ? { entropyOwner } : {}),
   }
 }
 

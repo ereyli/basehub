@@ -797,7 +797,6 @@ export default function AgentMode() {
   const [cloudRun, setCloudRun] = useState(null)
   const [cloudAgentBusy, setCloudAgentBusy] = useState(false)
   const [cloudAgentMessage, setCloudAgentMessage] = useState('')
-  const [changeWalletModalOpen, setChangeWalletModalOpen] = useState(false)
   const [agentAccess, setAgentAccess] = useState({
     loading: true,
     hasAccess: false,
@@ -1495,18 +1494,11 @@ export default function AgentMode() {
     reloadState()
   }, [form, isAgentAccessUnlocked, refreshPlan, reloadState, routineBuilder, syncSettings])
 
-  const handleSetupCloudAgent = useCallback(async (optionsOrEvent = {}) => {
-    const forceNewWallet = optionsOrEvent?.forceNew === true
-    const confirmedNewWallet = optionsOrEvent?.confirmed === true
+  const handleSetupCloudAgent = useCallback(async () => {
     if (!isAgentAccessUnlocked) {
       setError('Unlock Agent Mode first.')
       return
     }
-    if (forceNewWallet && cloudDelegatedAddress && !confirmedNewWallet) {
-      setChangeWalletModalOpen(true)
-      return
-    }
-    if (forceNewWallet) setChangeWalletModalOpen(false)
     setCloudAgentBusy(true)
     setCloudAgentMessage('')
     setError(null)
@@ -1529,40 +1521,24 @@ export default function AgentMode() {
       })
 
       let subAccount = null
-      if (forceNewWallet) {
-        setCloudAgentMessage('Stopping old agent run before switching wallet...')
-        await stopCloudAgentRun({ ownerAddress: universalAddress }).catch((stopError) => {
-          console.warn('[Cloud Agent] old run stop failed:', stopError?.message || stopError)
-        })
-      }
 
-      if (!forceNewWallet && canReuseCloudSession(savedSession, spenderAddress)) {
+      if (canReuseCloudSession(savedSession, spenderAddress)) {
         subAccount = {
           ...(savedSession.policy?.subAccount || {}),
           address: savedSession.sub_account_address,
         }
         setCloudAgentMessage('Using your saved agent wallet...')
       } else {
-        const setupMessage = forceNewWallet
-          ? 'Creating a new delegated agent wallet...'
-          : savedSession?.sub_account_address
-            ? 'Saved agent wallet uses an old sender. Creating a shared-sender compatible wallet...'
-            : 'Creating delegated agent wallet...'
+        const setupMessage = savedSession?.sub_account_address
+          ? 'Refreshing the agent wallet permission...'
+          : 'Creating delegated agent wallet...'
         setCloudAgentMessage(setupMessage)
         subAccount = await createDelegatedSubAccount({
           sdk,
           workerAddress: spenderAddress,
-          forceUnique: forceNewWallet,
         })
       }
       const subAccountAddress = subAccount.address
-      if (
-        forceNewWallet &&
-        cloudDelegatedAddress &&
-        String(subAccountAddress || '').toLowerCase() === String(cloudDelegatedAddress || '').toLowerCase()
-      ) {
-        throw new Error('Base Account returned the same agent wallet. Try Change wallet again or update permission.')
-      }
       const reusedSavedSubAccount =
         String(savedSession?.sub_account_address || '').toLowerCase() === String(subAccountAddress || '').toLowerCase()
 
@@ -1659,7 +1635,7 @@ export default function AgentMode() {
     } finally {
       setCloudAgentBusy(false)
     }
-  }, [cloudDelegatedAddress, form.allowedActionTypes, form.dailyTxTarget, form.enabledTargetIds, form.intervalMinutes, form.maxDailySpendEth, isAgentAccessUnlocked, routineBuilder.budget, routineBuilder.maxDailySpendEth])
+  }, [form.allowedActionTypes, form.dailyTxTarget, form.enabledTargetIds, form.intervalMinutes, form.maxDailySpendEth, isAgentAccessUnlocked, routineBuilder.budget, routineBuilder.maxDailySpendEth])
 
   // Cross-tab mutex: prevent two tabs from executing simultaneously
   const LOCK_KEY = 'basehub_agent_execution_lock'
@@ -2542,30 +2518,6 @@ export default function AgentMode() {
                     {cloudAgentBusy ? <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Shield size={13} />}
                     {isCloudAgentReady ? 'Update permission' : 'Set up cloud'}
                   </button>
-                  {cloudDelegatedAddress && (
-                    <button
-                      type="button"
-                      disabled={cloudAgentBusy || !isAgentAccessUnlocked}
-                      onClick={() => handleSetupCloudAgent({ forceNew: true })}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        padding: '10px 14px',
-                        borderRadius: 12,
-                        border: '1px solid rgba(148,163,184,0.12)',
-                        background: cloudAgentBusy || !isAgentAccessUnlocked ? 'rgba(15,23,42,0.45)' : 'rgba(15,23,42,0.72)',
-                        color: cloudAgentBusy || !isAgentAccessUnlocked ? '#64748b' : '#cbd5e1',
-                        fontSize: 12,
-                        fontWeight: 800,
-                        cursor: cloudAgentBusy ? 'wait' : !isAgentAccessUnlocked ? 'not-allowed' : 'pointer',
-                        letterSpacing: '-0.01em',
-                      }}
-                    >
-                      <RefreshCw size={13} />
-                      New wallet
-                    </button>
-                  )}
                 </div>
               </div>
             </div>
@@ -3233,96 +3185,6 @@ export default function AgentMode() {
 
           </>
       </div>
-
-      {changeWalletModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="agent-wallet-change-title"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 1000,
-            display: 'grid',
-            placeItems: 'center',
-            padding: 18,
-            background: 'rgba(2,6,23,0.72)',
-            backdropFilter: 'blur(14px)',
-          }}
-        >
-          <div style={{
-            width: 'min(100%, 430px)',
-            borderRadius: 24,
-            border: '1px solid rgba(148,163,184,0.14)',
-            background: 'linear-gradient(145deg, rgba(15,23,42,0.98), rgba(2,6,23,0.96))',
-            boxShadow: '0 24px 80px rgba(0,0,0,0.45)',
-            padding: 24,
-            animation: 'agentFadeIn 0.2s ease',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-              <div style={{
-                width: 42,
-                height: 42,
-                borderRadius: 14,
-                display: 'grid',
-                placeItems: 'center',
-                color: '#7dd3fc',
-                background: 'rgba(14,165,233,0.1)',
-                border: '1px solid rgba(56,189,248,0.14)',
-              }}>
-                <Shield size={18} />
-              </div>
-              <div>
-                <h2 id="agent-wallet-change-title" style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#f8fafc' }}>
-                  Create new agent wallet?
-                </h2>
-                <p style={{ margin: '3px 0 0', fontSize: 12, color: '#64748b', fontWeight: 700 }}>
-                  BaseHub will stop using the current one.
-                </p>
-              </div>
-            </div>
-            <p style={{ margin: '0 0 18px', fontSize: 13, lineHeight: 1.6, color: '#94a3b8' }}>
-              The old wallet stays onchain with its history. A new delegated wallet will be created and used for future Agent Mode runs.
-            </p>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={() => setChangeWalletModalOpen(false)}
-                style={{
-                  padding: '11px 16px',
-                  borderRadius: 13,
-                  border: '1px solid rgba(148,163,184,0.1)',
-                  background: 'rgba(15,23,42,0.72)',
-                  color: '#cbd5e1',
-                  fontSize: 12,
-                  fontWeight: 900,
-                  cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSetupCloudAgent({ forceNew: true, confirmed: true })}
-                style={{
-                  padding: '11px 16px',
-                  borderRadius: 13,
-                  border: '1px solid rgba(56,189,248,0.22)',
-                  background: 'linear-gradient(135deg, #0ea5e9, #2563eb)',
-                  color: '#f8fafc',
-                  fontSize: 12,
-                  fontWeight: 900,
-                  cursor: 'pointer',
-                  boxShadow: '0 14px 32px rgba(37,99,235,0.18)',
-                }}
-              >
-                Create new wallet
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   )
 }
