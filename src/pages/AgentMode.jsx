@@ -3187,7 +3187,7 @@ export default function AgentMode() {
               ...glassCard,
               marginTop: 18,
               marginBottom: 24,
-              padding: isDesktop ? '24px 26px' : '18px',
+              padding: 'clamp(18px, 2vw, 26px)',
               background: 'linear-gradient(135deg, rgba(14,165,233,0.05), rgba(15,23,42,0.62))',
               border: '1px solid rgba(125,211,252,0.08)',
             }}>
@@ -3211,7 +3211,7 @@ export default function AgentMode() {
 
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: isDesktop ? 'repeat(4, minmax(0, 1fr))' : '1fr',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
                 gap: 10,
               }}>
                 {[
