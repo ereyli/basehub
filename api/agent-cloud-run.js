@@ -70,7 +70,7 @@ export default async function handler(req, res) {
           updated_at: new Date().toISOString(),
         })
         .eq('owner_address', ownerAddress)
-        .in('status', ['active', 'executing', 'paused'])
+        .in('status', ['active', 'executing', 'paused', 'paused_funding', 'failed_balance'])
         .select('*')
 
       if (error) throw error
@@ -116,7 +116,7 @@ export default async function handler(req, res) {
         updated_at: new Date().toISOString(),
       })
       .eq('owner_address', ownerAddress)
-      .in('status', ['active', 'executing', 'paused'])
+      .in('status', ['active', 'executing', 'paused', 'paused_funding', 'failed_balance'])
 
     const payload = {
       owner_address: ownerAddress,

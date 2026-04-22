@@ -9,6 +9,22 @@ const MEMORY_REFLECTIONS_TABLE = 'agent_reflections'
 const POLL_MS = Math.max(5000, Number(process.env.AGENT_WORKER_POLL_MS || 15000))
 const LOCK_MS = Math.max(30000, Number(process.env.AGENT_WORKER_LOCK_MS || 180000))
 const BATCH_SIZE = Math.max(1, Math.min(10, Number(process.env.AGENT_WORKER_BATCH_SIZE || 3)))
+const AUTO_BLOCK_SIZE = Math.max(3, Math.min(12, Number(process.env.AGENT_WORKER_AUTO_BLOCK_SIZE || 8)))
+
+const AGENT_TX_GAME_TYPES = {
+  'gm-game': 'GM_GAME',
+  'gn-game': 'GN_GAME',
+  'flip-game': 'FLIP_GAME',
+  'lucky-number': 'LUCKY_NUMBER',
+  'dice-roll': 'DICE_ROLL',
+  'pumphub-buy': 'PUMPHUB_BUY',
+  'pumphub-sell': 'PUMPHUB_SELL',
+  'swaphub-swap': 'SWAPHUB_SWAP',
+  'free-nft-mint': 'NFT_MINT',
+  'deploy-token': 'DEPLOY_TOKEN',
+  'deploy-erc721': 'DEPLOY_ERC721',
+  'deploy-erc1155': 'DEPLOY_ERC1155',
+}
 
 function getSupabase() {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
@@ -46,6 +62,104 @@ function getNextAction(plan = {}) {
   return normalizeQueue(plan)
     .filter((item) => ['approved', 'scheduled', 'draft'].includes(item.status || 'draft'))
     .sort((a, b) => Number(a.priority || 0) - Number(b.priority || 0))[0] || null
+}
+
+function getActionKey(item = {}) {
+  return item.executorMapping || item.actionType || item.targetId || item.id || 'agent-action'
+}
+
+function getAgentGameType(action = {}) {
+  return AGENT_TX_GAME_TYPES[action.targetId] || AGENT_TX_GAME_TYPES[action.id] || String(action.targetId || action.id || 'AGENT_ACTION').toUpperCase()
+}
+
+function getAgentBaseXp(action = {}) {
+  if (['gm-game', 'gn-game', 'flip-game', 'lucky-number', 'dice-roll'].includes(action.targetId)) return 150
+  return 30
+}
+
+function getAgentAwardGameType(action = {}) {
+  if (['gm-game', 'gn-game', 'flip-game', 'lucky-number', 'dice-roll'].includes(action.targetId)) {
+    return getAgentGameType(action)
+  }
+  return 'CONTRACT_GAME'
+}
+
+function countAttemptedActions(plan = {}) {
+  return normalizeQueue(plan).filter((item) => ['completed', 'failed', 'skipped'].includes(item.status)).length
+}
+
+function getDailyTarget(run = {}) {
+  const candidates = [
+    run.settings?.dailyTxTarget,
+    run.settings?.daily_tx_target,
+    run.current_plan?.dailyTxTarget,
+    run.current_plan?.daily_tx_target,
+    run.current_plan?.targetTxCount,
+  ]
+  const numeric = candidates.map((value) => Number(value)).find((value) => Number.isFinite(value) && value > 0)
+  return Math.max(1, Math.floor(numeric || normalizeQueue(run.current_plan).length || 1))
+}
+
+function getMaxPriority(plan = {}) {
+  return normalizeQueue(plan).reduce((max, item) => Math.max(max, Number(item.priority || 0)), 0)
+}
+
+function shuffle(items = []) {
+  const copy = [...items]
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1))
+    ;[copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]]
+  }
+  return copy
+}
+
+function cloneActionForContinuation(template = {}, priority = 0) {
+  const actionKey = getActionKey(template)
+  const params = { ...(template.params || template.payload || {}) }
+  if (actionKey === 'flip-game') params.side = Math.random() > 0.5 ? 'heads' : 'tails'
+  if (actionKey === 'lucky-number') params.guess = Math.floor(Math.random() * 10) + 1
+  if (actionKey === 'dice-roll') params.guess = Math.floor(Math.random() * 6) + 1
+
+  return {
+    ...template,
+    id: `auto_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    status: 'approved',
+    priority,
+    scheduledFor: null,
+    executedAt: null,
+    result: null,
+    error: null,
+    params,
+    reason: template.reason || template.summary || 'Auto-continued to reach the daily target.',
+  }
+}
+
+function buildContinuationActions(plan = {}, remaining = 0) {
+  const queue = normalizeQueue(plan)
+  if (!queue.length || remaining <= 0) return []
+
+  const failedByType = queue.reduce((acc, item) => {
+    if (item.status === 'failed') {
+      const key = getActionKey(item)
+      acc.set(key, (acc.get(key) || 0) + 1)
+    }
+    return acc
+  }, new Map())
+
+  const templates = shuffle(
+    queue.filter((item) => (
+      ['completed', 'approved', 'scheduled', 'draft'].includes(item.status || 'draft') &&
+      (failedByType.get(getActionKey(item)) || 0) < 2
+    ))
+  )
+  if (!templates.length) return []
+
+  const count = Math.min(AUTO_BLOCK_SIZE, remaining)
+  const maxPriority = getMaxPriority(plan)
+  return Array.from({ length: count }, (_, index) => {
+    const template = templates[index % templates.length]
+    return cloneActionForContinuation(template, maxPriority + index + 1)
+  })
 }
 
 function toExecutionAction(item = {}) {
@@ -96,6 +210,21 @@ function compactError(error) {
 
 function isOwnerMismatchError(message) {
   return String(message || '').toLowerCase().includes('cloud worker is not an owner')
+}
+
+function isFundingError(message) {
+  const text = String(message || '').toLowerCase()
+  if (text.includes('no pumphub token balance')) return false
+  return (
+    text.includes('insufficient funds') ||
+    text.includes('exceeds the balance') ||
+    text.includes('not enough funds') ||
+    text.includes('not enough eth') ||
+    text.includes('no eth for gas') ||
+    text.includes('balance too low') ||
+    text.includes('low balance') ||
+    text.includes('gas required exceeds allowance')
+  )
 }
 
 async function acquireRun(supabase, run) {
@@ -157,6 +286,20 @@ async function writeMemory(supabase, run, action, result, status, summary) {
   }).throwOnError()
 }
 
+async function awardAgentXp(supabase, run, action, result) {
+  const txHash = result?.hash
+  if (!txHash || !run?.sub_account_address || !action?.targetId) return
+
+  const { error } = await supabase.rpc('award_xp', {
+    p_wallet_address: String(run.sub_account_address).toLowerCase(),
+    p_final_xp: getAgentBaseXp(action),
+    p_game_type: getAgentAwardGameType(action),
+    p_transaction_hash: txHash,
+    p_source: 'web',
+  })
+  if (error) throw error
+}
+
 async function processRun(supabase, run) {
   const locked = await acquireRun(supabase, run)
   if (!locked) {
@@ -166,6 +309,33 @@ async function processRun(supabase, run) {
 
   const actionItem = getNextAction(locked.current_plan)
   if (!actionItem) {
+    const attempted = countAttemptedActions(locked.current_plan)
+    const dailyTarget = getDailyTarget(locked)
+    if (attempted < dailyTarget) {
+      const additions = buildContinuationActions(locked.current_plan, dailyTarget - attempted)
+      if (additions.length) {
+        const continuedPlan = {
+          ...(locked.current_plan || {}),
+          queue: [...normalizeQueue(locked.current_plan), ...additions],
+          autoContinuedAt: nowIso(),
+        }
+        const logs = appendRunLog(locked.logs, {
+          status: 'info',
+          title: 'Plan continued',
+          summary: `Added ${additions.length} more actions to keep moving toward ${dailyTarget} daily transactions.`,
+        })
+        await releaseRun(supabase, locked.id, locked.lockId, {
+          status: 'active',
+          current_plan: continuedPlan,
+          logs,
+          next_run_at: nowIso(),
+          last_error: null,
+        })
+        console.log(`[agent-worker] run ${locked.id} continued: attempted=${attempted}/${dailyTarget} added=${additions.length}`)
+        return
+      }
+    }
+
     await releaseRun(supabase, locked.id, locked.lockId, {
       status: 'completed',
       stopped_at: nowIso(),
@@ -224,6 +394,8 @@ async function processRun(supabase, run) {
 
     await writeMemory(supabase, locked, action, result, 'success', action.summary || action.title)
       .catch((error) => console.warn('[agent-worker] memory write failed:', error.message))
+    await awardAgentXp(supabase, locked, action, result)
+      .catch((error) => console.warn('[agent-worker] XP award failed:', error.message))
 
     await releaseRun(supabase, locked.id, locked.lockId, {
       status: 'active',
@@ -272,6 +444,26 @@ async function processRun(supabase, run) {
         last_error: message,
       })
       console.warn(`[agent-worker] stopped run ${locked.id}: owner permission mismatch`)
+      return
+    }
+
+    if (isFundingError(message)) {
+      const fundingMessage = 'Balance low, add ETH to continue.'
+      const fundingLogs = appendRunLog(logs, {
+        status: 'failed',
+        title: 'Balance low',
+        summary: fundingMessage,
+        targetId: action.targetId,
+        targetType: action.targetType,
+      })
+      await releaseRun(supabase, locked.id, locked.lockId, {
+        status: 'paused_funding',
+        current_plan: failedPlan,
+        logs: fundingLogs,
+        stopped_at: nowIso(),
+        last_error: fundingMessage,
+      })
+      console.warn(`[agent-worker] paused run ${locked.id}: ${fundingMessage}`)
       return
     }
 

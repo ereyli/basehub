@@ -831,14 +831,16 @@ export default function AgentMode() {
 
     const hasPlan = run.current_plan && typeof run.current_plan === 'object'
     const hasLogs = Array.isArray(run.logs)
+    const runStatus = String(run.status || '')
+    const fundingPaused = ['paused_funding', 'failed_balance'].includes(runStatus)
     if (hasPlan || hasLogs) {
       const nextState = updateAgentState((current) => ({
         ...current,
-        status: ['active', 'executing'].includes(run.status)
+        status: ['active', 'executing'].includes(runStatus)
           ? AGENT_STATUSES.ACTIVE
-          : run.status === 'paused'
+          : runStatus === 'paused' || fundingPaused
             ? AGENT_STATUSES.PAUSED
-            : ['stopped', 'cancelled', 'replaced', 'completed', 'failed'].includes(run.status) && current.status === AGENT_STATUSES.ACTIVE
+            : ['stopped', 'cancelled', 'replaced', 'completed', 'failed'].includes(runStatus) && current.status === AGENT_STATUSES.ACTIVE
               ? AGENT_STATUSES.DISABLED
               : current.status,
         currentPlan: hasPlan ? run.current_plan : current.currentPlan,
@@ -846,6 +848,9 @@ export default function AgentMode() {
       }))
       setAgentState(nextState)
       setForm(createFormFromState(nextState))
+    }
+    if (fundingPaused) {
+      setError(run.last_error || 'Balance low, add ETH to continue.')
     }
   }, [])
 
@@ -1094,12 +1099,12 @@ export default function AgentMode() {
       try {
         const run = await fetchCloudAgentRun(ownerAddress)
         if (cancelled || !run) return
-        const runIsLive = ['active', 'executing', 'paused'].includes(String(run.status || ''))
+        const runIsLive = ['active', 'executing', 'paused', 'paused_funding', 'failed_balance'].includes(String(run.status || ''))
         const runBelongsToCurrentView = cloudRun?.id && Number(cloudRun.id) === Number(run.id)
         const localIsRunning = agentState.status === AGENT_STATUSES.ACTIVE
         if (runIsLive || runBelongsToCurrentView || localIsRunning) {
           syncCloudRunState(run)
-          setError(null)
+          if (!['paused_funding', 'failed_balance'].includes(String(run.status || ''))) setError(null)
         }
       } catch (cloudRunError) {
         if (!cancelled && agentState.status === AGENT_STATUSES.ACTIVE) {
