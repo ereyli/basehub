@@ -30,8 +30,17 @@ Hem web hem miniapp (Farcaster / Base app) aynı edge function'dan geçer — `s
 1. 3s bekleme + 8 retry (2.5s aralık) ile `eth_getTransactionReceipt`
 2. `receipt.status === 0x1` (başarılı tx)
 3. `receipt.from === wallet_address` (cüzdan eşleşmesi)
-4. Duplicate kontrolü (`swaphub_swaps.tx_hash`)
-5. Volume kayıt + XP award
+4. `eth_getTransactionByHash` ile tx hedefi ve SwapHub selector doğrulaması
+5. Native ETH input için `tx.value`, ERC20 input için receipt `Transfer` log doğrulaması
+6. Server-side fiyatlandırma ile verified USD volume hesaplama
+7. Duplicate kontrolü (`swaphub_swaps.tx_hash`)
+8. Volume kayıt + XP award
+
+**ERC20 fiyatlandırma:**
+Yerleşik destek: ETH/WETH, USDC, USDbC, DAI. Ek token fiyatı gerekiyorsa function secret olarak `SWAPHUB_TOKEN_PRICES_JSON` verilebilir:
+```json
+{"0xTokenAddress":{"decimals":18,"usd":0.123}}
+```
 
 **Deploy (Supabase CLI):**
 ```bash

@@ -14,17 +14,34 @@ const BASE_RPC_URLS = [
 
 const SWAPHUB_AGGREGATOR = "0xbf579e68ba69de03ccec14476eb8d765ec558257"
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+const WETH_ADDRESS = "0x4200000000000000000000000000000000000006"
+const USDC_ADDRESS = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
+const USDBC_ADDRESS = "0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca"
+const DAI_ADDRESS = "0x50c5725949a6f0c72e6c4a641f24049a917db0cb"
 const SWAP_V2_SELECTOR = "0x83b82a53"
 const SWAP_V3_SELECTOR = "0x6b9262dc"
+const ERC20_TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 const DEFAULT_ETH_USD = 3500
 const MAX_VERIFIED_SWAP_USD = 1000
 const SUBMITTED_AMOUNT_TOLERANCE = 0.1
 const SUBMITTED_AMOUNT_ABSOLUTE_TOLERANCE = 0.05
 
+type TokenPricing = {
+  decimals: number
+  usd: number
+}
+
+type RpcLog = {
+  address?: string
+  topics?: string[]
+  data?: string
+}
+
 type TxReceipt = {
   status: string
   from?: string
   to?: string
+  logs?: RpcLog[]
 }
 
 type RpcTransaction = {
@@ -38,7 +55,7 @@ type ParsedSwapCall = {
   selector: string
   tokenIn: string
   tokenOut: string
-  amountInWei: bigint
+  amountIn: bigint
 }
 
 async function rpcCall<T>(method: string, params: unknown[]): Promise<T | null> {
@@ -70,6 +87,7 @@ async function getTransactionReceipt(txHash: string): Promise<TxReceipt | null> 
     status: receipt.status != null ? String(receipt.status) : "",
     from: receipt.from,
     to: receipt.to,
+    logs: Array.isArray(receipt.logs) ? receipt.logs : [],
   }
 }
 
@@ -114,7 +132,7 @@ function parseAggregatorSwapCall(input?: string): ParsedSwapCall | null {
       selector,
       tokenIn: decodeAddressWord(getCallWord(input, 0)),
       tokenOut: decodeAddressWord(getCallWord(input, 1)),
-      amountInWei: decodeUintWord(getCallWord(input, 2)),
+      amountIn: decodeUintWord(getCallWord(input, 2)),
     }
   }
 
@@ -123,7 +141,7 @@ function parseAggregatorSwapCall(input?: string): ParsedSwapCall | null {
       selector,
       tokenIn: decodeAddressWord(getCallWord(input, 0)),
       tokenOut: decodeAddressWord(getCallWord(input, 1)),
-      amountInWei: decodeUintWord(getCallWord(input, 3)),
+      amountIn: decodeUintWord(getCallWord(input, 3)),
     }
   }
 
@@ -134,10 +152,124 @@ function weiToEthNumber(valueWei: bigint): number {
   return Number(valueWei) / 1e18
 }
 
+function tokenAmountToNumber(amount: bigint, decimals: number): number {
+  if (amount <= 0n) return 0
+  const divisor = 10n ** BigInt(decimals)
+  const whole = amount / divisor
+  const fraction = amount % divisor
+  return Number(whole) + Number(fraction) / Number(divisor)
+}
+
 function getEthUsdPrice(): number {
   const raw = Deno.env.get("SWAPHUB_ETH_USD_FALLBACK") || Deno.env.get("ETH_USD_FALLBACK")
   const parsed = raw ? Number(raw) : DEFAULT_ETH_USD
   return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_ETH_USD
+}
+
+function parseTokenPriceOverrides(): Record<string, TokenPricing> {
+  const raw = Deno.env.get("SWAPHUB_TOKEN_PRICES_JSON")
+  if (!raw) return {}
+
+  try {
+    const parsed = JSON.parse(raw) as Record<string, { decimals?: unknown; usd?: unknown }>
+    return Object.entries(parsed).reduce<Record<string, TokenPricing>>((acc, [address, value]) => {
+      const decimals = Number(value?.decimals)
+      const usd = Number(value?.usd)
+      if (Number.isInteger(decimals) && decimals >= 0 && decimals <= 30 && Number.isFinite(usd) && usd > 0) {
+        acc[normalizeAddress(address)] = { decimals, usd }
+      }
+      return acc
+    }, {})
+  } catch (error) {
+    console.error("SWAPHUB_TOKEN_PRICES_JSON parse error:", error)
+    return {}
+  }
+}
+
+function getTokenPricing(tokenAddress: string): TokenPricing | null {
+  const token = normalizeAddress(tokenAddress)
+  const overrides = parseTokenPriceOverrides()
+  if (overrides[token]) return overrides[token]
+
+  if (token === ZERO_ADDRESS || token === WETH_ADDRESS) {
+    return { decimals: 18, usd: getEthUsdPrice() }
+  }
+  if (token === USDC_ADDRESS || token === USDBC_ADDRESS) {
+    return { decimals: 6, usd: 1 }
+  }
+  if (token === DAI_ADDRESS) {
+    return { decimals: 18, usd: 1 }
+  }
+
+  return null
+}
+
+function decodeAddressTopic(topic?: string): string {
+  if (!topic || typeof topic !== "string" || !topic.startsWith("0x")) return ""
+  const clean = topic.replace(/^0x/, "").padStart(64, "0")
+  return normalizeAddress(`0x${clean.slice(-40)}`)
+}
+
+function decodeHexBigInt(value?: string): bigint {
+  if (!value || typeof value !== "string" || !value.startsWith("0x")) return 0n
+  try {
+    return BigInt(value)
+  } catch (_) {
+    return 0n
+  }
+}
+
+function getVerifiedErc20InputAmount(receipt: TxReceipt, tokenIn: string, wallet: string, expectedAmount: bigint): bigint {
+  let total = 0n
+  for (const log of receipt.logs ?? []) {
+    const token = normalizeAddress(log.address || "")
+    const topics = log.topics ?? []
+    if (token !== tokenIn) continue
+    if (normalizeAddress(topics[0] || "") !== ERC20_TRANSFER_TOPIC) continue
+
+    const from = decodeAddressTopic(topics[1])
+    const to = decodeAddressTopic(topics[2])
+    if (from !== wallet || !to || to === wallet) continue
+
+    total += decodeHexBigInt(log.data)
+  }
+
+  return total >= expectedAmount ? total : 0n
+}
+
+function getVerifiedSwapAmountUsd(swapCall: ParsedSwapCall, tx: RpcTransaction, receipt: TxReceipt, wallet: string): {
+  amountUsd: number
+  verifiedInputAmount: bigint
+} {
+  if (swapCall.amountIn <= 0n) {
+    throw new Error("SwapHub amount is zero")
+  }
+
+  if (swapCall.tokenIn === ZERO_ADDRESS) {
+    const txValueWei = BigInt(tx.value || "0x0")
+    if (txValueWei <= 0n || swapCall.amountIn > txValueWei) {
+      throw new Error("SwapHub amount does not match transaction value")
+    }
+    return {
+      amountUsd: weiToEthNumber(swapCall.amountIn) * getEthUsdPrice(),
+      verifiedInputAmount: swapCall.amountIn,
+    }
+  }
+
+  const pricing = getTokenPricing(swapCall.tokenIn)
+  if (!pricing) {
+    throw new Error("Unsupported SwapHub token price")
+  }
+
+  const verifiedInputAmount = getVerifiedErc20InputAmount(receipt, swapCall.tokenIn, wallet, swapCall.amountIn)
+  if (verifiedInputAmount <= 0n) {
+    throw new Error("SwapHub ERC20 input transfer was not found on-chain")
+  }
+
+  return {
+    amountUsd: tokenAmountToNumber(verifiedInputAmount, pricing.decimals) * pricing.usd,
+    verifiedInputAmount,
+  }
 }
 
 // Per-$100 XP and milestone tiers (must match xpUtils.js constants)
@@ -243,22 +375,16 @@ Deno.serve(async (req) => {
       })
     }
 
-    if (swapCall.tokenIn !== ZERO_ADDRESS) {
-      return new Response(JSON.stringify({ error: "Only native ETH SwapHub volume is eligible for XP right now" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      })
+    let verifiedAmount = 0
+    try {
+      verifiedAmount = getVerifiedSwapAmountUsd(swapCall, tx, receipt, wallet).amountUsd
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: error instanceof Error ? error.message : "SwapHub verification failed" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      )
     }
 
-    const txValueWei = BigInt(tx.value || "0x0")
-    if (txValueWei <= 0n || swapCall.amountInWei <= 0n || swapCall.amountInWei > txValueWei) {
-      return new Response(JSON.stringify({ error: "SwapHub amount does not match transaction value" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      })
-    }
-
-    const verifiedAmount = weiToEthNumber(swapCall.amountInWei) * getEthUsdPrice()
     if (!Number.isFinite(verifiedAmount) || verifiedAmount <= 0 || verifiedAmount > MAX_VERIFIED_SWAP_USD) {
       return new Response(JSON.stringify({ error: "Verified SwapHub volume is outside allowed limits" }), {
         status: 400,
