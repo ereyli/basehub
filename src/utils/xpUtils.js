@@ -310,10 +310,17 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
       for (let attempt = 1; attempt <= XP_VERIFY_RETRIES; attempt++) {
         try {
           const data = await invokeVerified()
-          const newTotalXP = data?.new_total_xp ?? finalXP
-          console.log(`✅ XP awarded via verified Edge Function. Total: ${newTotalXP}`)
-          notifyXPRefresh()
-          return newTotalXP
+      const newTotalXP = data?.new_total_xp ?? finalXP
+      console.log(`✅ XP awarded via verified Edge Function. Total: ${newTotalXP}`)
+      // Check referral milestones after XP is awarded
+      try {
+        const { checkAndProcessReferralMilestones } = await import('./referralUtils.js')
+        await checkAndProcessReferralMilestones(walletAddress, newTotalXP)
+      } catch (e) {
+        console.error('Referral milestone check failed:', e)
+      }
+      notifyXPRefresh()
+      return newTotalXP
         } catch (e) {
           lastErr = e
           const msg = (e?.message || '').toLowerCase()
@@ -352,6 +359,13 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
     }
     const newTotalXP = data?.new_total_xp ?? finalXP
     console.log(`✅ XP awarded via RPC. Total: ${newTotalXP}`)
+    // Check referral milestones after XP is awarded
+    try {
+      const { checkAndProcessReferralMilestones } = await import('./referralUtils.js')
+      await checkAndProcessReferralMilestones(walletAddress, newTotalXP)
+    } catch (e) {
+      console.error('Referral milestone check failed:', e)
+    }
     notifyXPRefresh()
     return newTotalXP
   } catch (error) {

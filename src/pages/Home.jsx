@@ -5,6 +5,11 @@ import { useRainbowKitSwitchChain } from '../hooks/useRainbowKitSwitchChain'
 import { getLeaderboard } from '../utils/xpUtils'
 import { useX402Payment } from '../hooks/useX402Payment'
 import { useTransactions } from '../hooks/useTransactions'
+import {
+  readReferralFromURL,
+  applyReferralCode,
+  hasUsedReferral,
+} from '../utils/referralUtils'
 import EmbedMeta from '../components/EmbedMeta'
 import TwitterShareButton from '../components/TwitterShareButton'
 import DailyQuestSystem from '../components/DailyQuestSystem'
@@ -19,7 +24,7 @@ const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Search, Shield, Trash2, St
 
 const Home = () => {
   const location = useLocation()
-  const { isConnected } = useAccount()
+  const { isConnected, address } = useAccount()
   const chainId = useChainId()
   const { switchChain } = useRainbowKitSwitchChain()
 
@@ -31,6 +36,48 @@ const Home = () => {
       if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
     }
   }, [location.state?.scrollTo])
+
+  // Auto-apply referral code from URL (?ref=CODE)
+  const [referralAppliedHome, setReferralAppliedHome] = useState(false)
+  const [referralToast, setReferralToast] = useState(null)
+  useEffect(() => {
+    const autoApply = async () => {
+      if (!isConnected || !address || referralAppliedHome) return
+      const code = readReferralFromURL()
+      if (!code) return
+      try {
+        const used = await hasUsedReferral(address)
+        if (used) {
+          const url = new URL(window.location.href)
+          url.searchParams.delete('ref')
+          window.history.replaceState({}, '', url)
+          return
+        }
+        const result = await applyReferralCode(address, code)
+        if (result?.success) {
+          setReferralAppliedHome(true)
+          setReferralToast({ type: 'success', text: 'Referral code applied! Complete your first transaction to unlock 500 XP.' })
+          const url = new URL(window.location.href)
+          url.searchParams.delete('ref')
+          window.history.replaceState({}, '', url)
+        } else {
+          setReferralToast({ type: 'error', text: result?.error || 'Referral code could not be applied' })
+        }
+      } catch (e) {
+        console.error('Auto-apply referral error:', e)
+        setReferralToast({ type: 'error', text: 'Referral code error' })
+      }
+    }
+    autoApply()
+  }, [isConnected, address, referralAppliedHome])
+
+  // Dismiss referral toast
+  useEffect(() => {
+    if (!referralToast) return
+    const t = setTimeout(() => setReferralToast(null), 6000)
+    return () => clearTimeout(t)
+  }, [referralToast])
+
   const { openModal: openFastDeployModal } = useFastDeployModal()
   
   // x402 Payment hook - uses x402-fetch (handles wallet UI automatically)
@@ -729,6 +776,37 @@ const Home = () => {
       />
       
 
+
+      {/* Referral toast notification */}
+      {referralToast && (
+        <div style={{
+          position: 'fixed',
+          top: '16px',
+          left: '16px',
+          right: '16px',
+          zIndex: 9999,
+          display: 'flex',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+        }}>
+          <div style={{
+            padding: '12px 20px',
+            borderRadius: '12px',
+            fontSize: '14px',
+            fontWeight: '600',
+            background: referralToast.type === 'success' ? 'rgba(34,197,94,0.92)' : 'rgba(239,68,68,0.92)',
+            color: '#fff',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+            backdropFilter: 'blur(8px)',
+            animation: 'slideInDown 0.35s ease',
+            pointerEvents: 'auto',
+            maxWidth: '420px',
+            textAlign: 'center',
+          }}>
+            {referralToast.text}
+          </div>
+        </div>
+      )}
 
       <div className="welcome-section">
         <div className="card" style={isCompactMode ? { padding: '12px', marginBottom: '8px' } : {}}>

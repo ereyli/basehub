@@ -4,13 +4,21 @@ import { useAccount, useReadContract } from 'wagmi'
 import { 
   User, ArrowLeft, Zap, Repeat, Calendar, Trophy, TrendingUp, 
   Award, Target, CheckCircle, Clock, BarChart3, Activity,
-  Gamepad2, Coins, Layers, MessageSquare, RefreshCw, Medal, Sparkles
+  Gamepad2, Coins, Layers, MessageSquare, RefreshCw, Medal, Sparkles,
+  Users, Gift, Copy, ExternalLink
 } from 'lucide-react'
 import { getXP, calcLevel } from '../utils/xpUtils'
 import { useQuestSystem } from '../hooks/useQuestSystem'
 import { useSupabase } from '../hooks/useSupabase'
 import BackButton from '../components/BackButton'
 import { EARLY_ACCESS_CONFIG, EARLY_ACCESS_ABI } from '../config/earlyAccessNFT'
+import {
+  getOrCreateReferralCode,
+  getReferralStats,
+  applyReferralCode,
+  hasUsedReferral,
+  buildReferralUrl,
+} from '../utils/referralUtils'
 
 const Profile = () => {
   const navigate = useNavigate()
@@ -31,6 +39,14 @@ const Profile = () => {
     gnUsed: 0,
     totalVolume: 0
   })
+
+  // Referral system state
+  const [referralCode, setReferralCode] = useState('')
+  const [referralStats, setReferralStats] = useState(null)
+  const [referralInput, setReferralInput] = useState('')
+  const [referralMessage, setReferralMessage] = useState(null)
+  const [hasReferral, setHasReferral] = useState(false)
+  const [referralLoading, setReferralLoading] = useState(false)
   
   // Get Early Access NFT balance - always call hook but disable when conditions not met
   const shouldFetchNFTBalance = !!address && !!EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS && !!isConnected
@@ -173,6 +189,22 @@ const Profile = () => {
 
           // Quest progress is loaded automatically by useQuestSystem hook
         }
+
+        // Load referral data
+        try {
+          if (address) {
+            const [code, stats, used] = await Promise.all([
+              getOrCreateReferralCode(address),
+              getReferralStats(address),
+              hasUsedReferral(address),
+            ])
+            if (code) setReferralCode(code)
+            if (stats) setReferralStats(stats)
+            setHasReferral(used)
+          }
+        } catch (refErr) {
+          console.error('Error loading referral data:', refErr)
+        }
       } catch (error) {
         console.error('Error loading user data:', error)
       } finally {
@@ -260,7 +292,9 @@ const Profile = () => {
       'SWAP_MILESTONE_1K': 'Swap $1K',
       'SWAP_MILESTONE_10K': 'Swap $10K',
       'SWAP_MILESTONE_100K': 'Swap $100K',
-      'SWAP_MILESTONE_1M': 'Swap $1M'
+      'SWAP_MILESTONE_1M': 'Swap $1M',
+      'REFERRAL_SIGNUP': 'Referral Bonus',
+      'REFERRAL_MILESTONE': 'Referral Milestone'
     }
     return types[type] || type
   }
@@ -276,6 +310,58 @@ const Profile = () => {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  // Apply referral code
+  const handleApplyReferral = async () => {
+    if (!referralInput.trim() || !address) return
+    setReferralLoading(true)
+    setReferralMessage(null)
+    try {
+      const result = await applyReferralCode(address, referralInput.trim())
+      if (result?.success) {
+        setReferralMessage({ type: 'success', text: 'Referral code applied! You and the referrer earned 500 XP.' })
+        setHasReferral(true)
+        setReferralInput('')
+        // Refresh XP and stats
+        const xp = await getXP(address)
+        setTotalXP(xp)
+        setLevel(calcLevel(xp))
+        const newStats = await getReferralStats(address)
+        if (newStats) setReferralStats(newStats)
+      } else {
+        setReferralMessage({ type: 'error', text: result?.error || 'Failed to apply referral code' })
+      }
+    } catch (e) {
+      setReferralMessage({ type: 'error', text: 'Something went wrong' })
+    } finally {
+      setReferralLoading(false)
+    }
+  }
+
+  // Copy referral code to clipboard
+  const handleCopyCode = async () => {
+    if (!referralCode) return
+    try {
+      await navigator.clipboard.writeText(referralCode)
+      setReferralMessage({ type: 'success', text: 'Referral code copied!' })
+      setTimeout(() => setReferralMessage(null), 2500)
+    } catch (_) {
+      setReferralMessage({ type: 'error', text: 'Could not copy' })
+    }
+  }
+
+  // Copy referral link to clipboard
+  const handleCopyLink = async () => {
+    const url = buildReferralUrl(referralCode)
+    if (!url) return
+    try {
+      await navigator.clipboard.writeText(url)
+      setReferralMessage({ type: 'success', text: 'Referral link copied!' })
+      setTimeout(() => setReferralMessage(null), 2500)
+    } catch (_) {
+      setReferralMessage({ type: 'error', text: 'Could not copy' })
+    }
   }
 
   // Inject CSS animations
@@ -580,6 +666,171 @@ const Profile = () => {
                 </div>
               </div>
             )}
+
+            {/* Referral System */}
+            <div style={styles.section}>
+              <div style={styles.sectionHeader}>
+                <h2 style={styles.sectionTitle}>
+                  <Users size={20} style={{ color: '#60a5fa', marginRight: '8px' }} />
+                  Referral Program
+                </h2>
+                {referralStats?.total_referrals > 0 && (
+                  <div style={styles.questProgress}>
+                    {referralStats.total_referrals} Ref{referralStats.total_referrals > 1 ? 's' : ''}
+                  </div>
+                )}
+              </div>
+
+              {/* Referral code card */}
+              <div style={referralStyles.codeCard}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                  <div style={referralStyles.codeBadge}>
+                    <Gift size={18} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '13px', color: '#9ca3af', fontWeight: '500' }}>Your Referral Code</div>
+                    <div style={{ fontSize: '22px', fontWeight: '800', color: '#ffffff', letterSpacing: '2px', fontFamily: 'monospace' }}>
+                      {referralCode || '...'}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button onClick={handleCopyCode} style={referralStyles.actionBtn}>
+                    <Copy size={14} /> Copy Code
+                  </button>
+                  <button onClick={handleCopyLink} style={referralStyles.actionBtnSecondary}>
+                    <ExternalLink size={14} /> Copy Link
+                  </button>
+                </div>
+
+                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '10px', lineHeight: '1.5' }}>
+                  Share your code. Both you and your friend earn <strong style={{ color: '#60a5fa' }}>500 XP</strong> when they sign up.
+                  You also earn <strong style={{ color: '#60a5fa' }}>10 XP</strong> for every 1,000 XP they earn — forever.
+                </p>
+              </div>
+
+              {/* Apply referral code input (only if not already used) */}
+              {!hasReferral && (
+                <div style={{ marginTop: '16px', padding: '14px', background: 'rgba(30,41,59,0.4)', borderRadius: '12px', border: '1px solid rgba(59,130,246,0.15)' }}>
+                  <div style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '8px', fontWeight: '600' }}>
+                    Have a referral code?
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="text"
+                      placeholder="Enter code (e.g. AB12CD34)"
+                      value={referralInput}
+                      onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
+                      maxLength={12}
+                      style={{
+                        flex: 1,
+                        background: 'rgba(15,23,42,0.6)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        color: '#e2e8f0',
+                        borderRadius: '10px',
+                        padding: '10px 12px',
+                        fontSize: '14px',
+                        fontFamily: 'monospace',
+                        outline: 'none',
+                      }}
+                    />
+                    <button
+                      onClick={handleApplyReferral}
+                      disabled={referralLoading || !referralInput.trim()}
+                      style={{
+                        padding: '10px 16px',
+                        background: referralLoading || !referralInput.trim() ? 'rgba(59,130,246,0.3)' : 'rgba(59,130,246,0.2)',
+                        border: '1px solid rgba(59,130,246,0.4)',
+                        color: '#93c5fd',
+                        borderRadius: '10px',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        cursor: referralLoading || !referralInput.trim() ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {referralLoading ? '...' : 'Apply'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Status message */}
+              {referralMessage && (
+                <div style={{
+                  marginTop: '12px',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  background: referralMessage.type === 'success' ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
+                  color: referralMessage.type === 'success' ? '#86efac' : '#fca5a5',
+                  border: `1px solid ${referralMessage.type === 'success' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                }}>
+                  {referralMessage.text}
+                </div>
+              )}
+
+              {/* Referral stats summary */}
+              {referralStats && (
+                <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px' }}>
+                  <div style={referralStyles.miniStat}>
+                    <div style={referralStyles.miniStatValue}>{referralStats.total_referrals || 0}</div>
+                    <div style={referralStyles.miniStatLabel}>Referrals</div>
+                  </div>
+                  <div style={referralStyles.miniStat}>
+                    <div style={referralStyles.miniStatValue}>{(referralStats.total_referral_xp_earned || 0).toLocaleString()}</div>
+                    <div style={referralStyles.miniStatLabel}>XP Earned</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Referred users list */}
+                {referralStats?.referrals && referralStats.referrals.length > 0 && (
+                <div style={{ marginTop: '16px' }}>
+                  <div style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '8px', fontWeight: '600' }}>
+                    Your Referrals
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {referralStats.referrals.map((ref, idx) => (
+                      <div key={idx} style={referralStyles.refRow}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                          <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(59,130,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#60a5fa', fontSize: '12px', fontWeight: '700', flexShrink: 0 }}>
+                            {idx + 1}
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: '13px', color: '#e2e8f0', fontWeight: '600', fontFamily: 'monospace' }}>
+                              {ref.wallet_address?.slice(0, 6)}...{ref.wallet_address?.slice(-4)}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              {ref.signup_rewarded === false ? (
+                                <span style={{ color: '#fbbf24', fontWeight: '600' }}>⏳ Pending first tx</span>
+                              ) : (
+                                <span>{ref.milestones || 0} milestone{ref.milestones !== 1 ? 's' : ''}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          {ref.signup_rewarded === false ? (
+                            <div style={{ fontSize: '12px', color: '#fbbf24', fontWeight: '600' }}>
+                              +500 XP soon
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: '13px', color: '#22c55e', fontWeight: '700' }}>
+                              +{(ref.referrer_xp_earned || 0).toLocaleString()} XP
+                            </div>
+                          )}
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>
+                            {formatDate(ref.created_at)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Recent Transactions */}
             {recentTransactions.length > 0 && (
@@ -1086,6 +1337,82 @@ const styles = {
     borderRadius: '8px',
     border: '1px solid rgba(59, 130, 246, 0.2)'
   }
+}
+
+const referralStyles = {
+  codeCard: {
+    padding: '16px',
+    background: 'linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(37,99,235,0.08) 100%)',
+    borderRadius: '14px',
+    border: '1px solid rgba(59,130,246,0.25)',
+  },
+  codeBadge: {
+    width: '40px',
+    height: '40px',
+    borderRadius: '10px',
+    background: 'rgba(59,130,246,0.2)',
+    border: '1px solid rgba(59,130,246,0.4)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#93c5fd',
+    flexShrink: 0,
+  },
+  actionBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 14px',
+    background: 'rgba(59,130,246,0.2)',
+    border: '1px solid rgba(59,130,246,0.4)',
+    color: '#93c5fd',
+    borderRadius: '8px',
+    fontSize: '12px',
+    fontWeight: '700',
+    cursor: 'pointer',
+  },
+  actionBtnSecondary: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 14px',
+    background: 'rgba(30,41,59,0.6)',
+    border: '1px solid rgba(148,163,184,0.2)',
+    color: '#94a3b8',
+    borderRadius: '8px',
+    fontSize: '12px',
+    fontWeight: '700',
+    cursor: 'pointer',
+  },
+  miniStat: {
+    padding: '12px',
+    background: 'rgba(30,41,59,0.6)',
+    borderRadius: '10px',
+    border: '1px solid rgba(59,130,246,0.15)',
+    textAlign: 'center',
+  },
+  miniStatValue: {
+    fontSize: '20px',
+    fontWeight: '800',
+    color: '#ffffff',
+  },
+  miniStatLabel: {
+    fontSize: '11px',
+    color: '#64748b',
+    fontWeight: '600',
+    marginTop: '4px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+  },
+  refRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '10px 12px',
+    background: 'rgba(30,41,59,0.4)',
+    borderRadius: '10px',
+    border: '1px solid rgba(59,130,246,0.1)',
+  },
 }
 
 export default Profile
