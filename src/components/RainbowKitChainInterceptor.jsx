@@ -27,17 +27,10 @@ export const RainbowKitChainInterceptor = () => {
   const isMobile = typeof window !== 'undefined' && 
     (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(window.navigator?.userAgent || '') ||
      (window.navigator?.maxTouchPoints && window.navigator.maxTouchPoints > 2))
-
-  // Only run on desktop web, not in Farcaster or mobile browsers
-  if (!isWeb || isMobile) {
-    if (isMobile) {
-      console.warn('⚠️ RainbowKitChainInterceptor disabled for mobile browsers to prevent crashes.')
-    }
-    return null
-  }
+  const shouldRunInterceptor = isWeb && !isMobile
 
   useEffect(() => {
-    if (!isConnected || typeof window.ethereum === 'undefined') {
+    if (!shouldRunInterceptor || !isConnected || typeof window.ethereum === 'undefined') {
       return
     }
 
@@ -76,11 +69,11 @@ export const RainbowKitChainInterceptor = () => {
         }
       }
     }
-  }, [isConnected, chainId, switchToNetwork, isWeb])
+  }, [isConnected, chainId, switchToNetwork, shouldRunInterceptor])
 
   // Also intercept wagmi's switchChain calls - Safely wrapped
   useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.ethereum === 'undefined') {
+    if (!shouldRunInterceptor || typeof window === 'undefined' || typeof window.ethereum === 'undefined') {
       return
     }
 
@@ -154,7 +147,7 @@ export const RainbowKitChainInterceptor = () => {
       console.error('❌ Failed to setup request interceptor:', error)
       // Don't throw - let the app continue without interceptor
     }
-  }, [switchToNetwork, isWeb])
+  }, [switchToNetwork, shouldRunInterceptor])
 
   return null // This component doesn't render anything
 }

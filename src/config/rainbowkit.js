@@ -1,7 +1,43 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit'
+import { createConnector } from 'wagmi'
 import { base } from 'wagmi/chains'
+import { coinbaseWallet as coinbaseConnector } from 'wagmi/connectors'
+import {
+  injectedWallet,
+  metaMaskWallet,
+  rainbowWallet,
+  walletConnectWallet,
+} from '@rainbow-me/rainbowkit/wallets'
 import { defineChain } from 'viem'
 import { NETWORKS } from './networks'
+
+const APP_NAME = 'BaseHub'
+const REOWN_PROJECT_ID = import.meta.env.VITE_REOWN_PROJECT_ID || '21fef48091f12692cad574a6f7753643'
+
+const baseAccountWallet = ({ appName, appIcon }) => ({
+  id: 'baseAccount',
+  name: 'Base Account',
+  shortName: 'Base',
+  rdns: 'org.base.account',
+  iconUrl: '/base-logo.jpg',
+  iconBackground: '#0052FF',
+  installed: true,
+  createConnector: (walletDetails) => {
+    const connector = coinbaseConnector({
+      appName,
+      appLogoUrl: appIcon,
+      preference: {
+        options: 'smartWalletOnly',
+        attribution: { auto: true },
+      },
+    })
+
+    return createConnector((config) => ({
+      ...connector(config),
+      ...walletDetails,
+    }))
+  },
+})
 
 // InkChain chain definition for RainbowKit
 const inkChain = defineChain({
@@ -145,9 +181,19 @@ const robinhoodTestnet = defineChain({
 
 // RainbowKit configuration for web users only
 export const rainbowkitConfig = getDefaultConfig({
-  appName: 'BaseHub',
-  projectId: '21fef48091f12692cad574a6f7753643', // Temporary project ID - replace with your own
+  appName: APP_NAME,
+  projectId: REOWN_PROJECT_ID,
   chains: [base, inkChain, soneium, katana, megaeth, tempo, arcRestnet, robinhoodTestnet],
+  wallets: [
+    {
+      groupName: 'Recommended',
+      wallets: [baseAccountWallet, injectedWallet],
+    },
+    {
+      groupName: 'Popular',
+      wallets: [metaMaskWallet, rainbowWallet, walletConnectWallet],
+    },
+  ],
   ssr: false, // Client-side rendering
 })
 

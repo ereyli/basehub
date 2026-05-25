@@ -8,7 +8,6 @@ import '@rainbow-me/rainbowkit/styles.css'
 import { FarcasterProvider, useFarcaster } from './contexts/FarcasterContext'
 import { config } from './config/wagmi'
 import { rainbowkitConfig, shouldUseRainbowKit, isLocalDevHostname } from './config/rainbowkit'
-import { isLikelyBaseApp } from './utils/xpUtils'
 import FarcasterBottomNav from './components/FarcasterBottomNav'
 import HomeScrollManager from './components/HomeScrollManager'
 import ScrollToTop from './components/ScrollToTop'
@@ -461,18 +460,16 @@ function WebAppContent() {
   )
 }
 
-// Miniapp layout = sadece Farcaster (iframe/URL) veya Base app (WebView). Mobil tarayıcı (Chrome/Safari) web layout alır.
+// Miniapp layout = sadece Farcaster/Warpcast. Base App artık standart web wallet akışını kullanır.
 function getUseMiniappLayout() {
   if (typeof window === 'undefined') return false
   if (isLocalDevHostname()) return false
-  const isIframeOrFarcasterUrl =
+  return (
     window.location !== window.parent.location ||
     window.parent !== window ||
     window.location.href.includes('farcaster.xyz') ||
     window.location.href.includes('warpcast.com')
-  if (isIframeOrFarcasterUrl) return true
-  // Base app: basehub.fun WebView, iframe yok – UA ile tespit et (mobil tarayıcı bu koşula düşmez)
-  return isLikelyBaseApp()
+  )
 }
 
 // Main App component with providers

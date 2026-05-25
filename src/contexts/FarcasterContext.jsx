@@ -62,7 +62,6 @@ export const FarcasterProvider = ({ children }) => {
             const context = await sdk.context
             const isBaseApp = context?.client?.clientFid === BASE_APP_CLIENT_FID
             setMiniappDetectionFromSDK(true, isBaseApp)
-            if (!actuallyInFarcaster) setIsInFarcaster(true) // Base app (basehub.fun in WebView): treat as miniapp so ready()/context work
             console.log('🔍 SDK miniapp detection:', { inMiniApp, isBaseApp, clientFid: context?.client?.clientFid })
           } else {
             setMiniappDetectionFromSDK(false, false)
