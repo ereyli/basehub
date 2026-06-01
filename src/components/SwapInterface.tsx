@@ -4081,7 +4081,7 @@ const styles: Record<string, React.CSSProperties> = {
     paddingRight: '8px',
     // Custom scrollbar styles
     scrollbarWidth: 'thin' as const,
-    scrollbarColor: 'rgba(59, 130, 246, 0.3) rgba(30, 41, 59, 0.1)'
+    scrollbarColor: 'rgba(148, 163, 184, 0.28) transparent'
   },
   sectionTitle: {
     fontSize: '12px',

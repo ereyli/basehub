@@ -93,10 +93,10 @@ button:active {
   transform: scale(0.98);
 }
 
-/* Custom scrollbar - Uniswap style */
+/* Slim glass scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -104,18 +104,24 @@ button:active {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 3px;
+  background-color: rgba(148, 163, 184, 0.22);
+  background-clip: content-box;
+  border: 2px solid transparent;
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #444;
+  background-color: rgba(96, 165, 250, 0.38);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* Firefox scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #333 transparent;
+  scrollbar-color: rgba(148, 163, 184, 0.28) transparent;
 }
 
 /* Mobile Responsive Styles */
@@ -141,4 +147,3 @@ button:active {
     font-size: 16px; /* Prevents zoom on iOS */
   }
 }
-
