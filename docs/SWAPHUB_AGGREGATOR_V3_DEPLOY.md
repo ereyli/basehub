@@ -14,7 +14,11 @@ Do not use this previous Safe deployment; it has an address decoding validation 
 0x2bc0D802889dE33823495D42e9A7E85285F5a047
 ```
 
-Redeploy the fixed `SwapAggregatorV3Safe.sol`, then update `VITE_SWAP_AGGREGATOR_ADDRESS` to the new deployment.
+Current fixed Safe deployment:
+
+```bash
+0x1bBF38869bD581693aeB8E1cdD0B3C2e6a5fBe5A
+```
 
 ## Post-Deploy Router Allowlist
 
@@ -46,7 +50,7 @@ Selector allowlist:
 After deploy, set:
 
 ```bash
-VITE_SWAP_AGGREGATOR_ADDRESS=0xYourFixedSafeAggregator
+VITE_SWAP_AGGREGATOR_ADDRESS=0x1bBF38869bD581693aeB8E1cdD0B3C2e6a5fBe5A
 ```
 
 Then rebuild/redeploy the frontend.
