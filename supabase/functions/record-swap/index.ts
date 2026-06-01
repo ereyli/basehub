@@ -14,7 +14,6 @@ const BASE_RPC_URLS = [
 
 const SWAPHUB_AGGREGATOR_V2 = "0xbf579e68ba69de03ccec14476eb8d765ec558257"
 const SWAPHUB_AGGREGATOR_V3 = "0xb1b00880fe88fba62ddb4ed329bcb3ff42ca9570"
-const SWAPHUB_AGGREGATORS = new Set([SWAPHUB_AGGREGATOR_V2, SWAPHUB_AGGREGATOR_V3])
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 const WETH_ADDRESS = "0x4200000000000000000000000000000000000006"
 const USDC_ADDRESS = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
@@ -108,6 +107,14 @@ async function getTransaction(txHash: string): Promise<RpcTransaction | null> {
 function normalizeAddress(addr: string): string {
   if (!addr || typeof addr !== "string") return ""
   return addr.toLowerCase().trim()
+}
+
+function getSwaphubAggregators(): Set<string> {
+  const configured = (Deno.env.get("SWAPHUB_AGGREGATOR_ADDRESSES") || "")
+    .split(",")
+    .map(normalizeAddress)
+    .filter(Boolean)
+  return new Set([SWAPHUB_AGGREGATOR_V2, SWAPHUB_AGGREGATOR_V3, ...configured])
 }
 
 function decodeAddressWord(word: string): string {
@@ -372,7 +379,7 @@ Deno.serve(async (req) => {
     }
 
     const txTo = normalizeAddress(tx.to || receipt.to || "")
-    if (!SWAPHUB_AGGREGATORS.has(txTo)) {
+    if (!getSwaphubAggregators().has(txTo)) {
       return new Response(JSON.stringify({ error: "Transaction is not a SwapHub swap" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
