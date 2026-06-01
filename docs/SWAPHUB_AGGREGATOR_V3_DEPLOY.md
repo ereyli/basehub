@@ -1,12 +1,18 @@
-# SwapHub Aggregator V3 Deploy Notes
+# SwapHub Aggregator V3 Safe Deploy Notes
 
 ## Constructor
 
-Deploy `contracts/SwapAggregatorV3.sol` on Base mainnet with:
+Deploy `contracts/SwapAggregatorV3Safe.sol` on Base mainnet with:
 
 - `_weth`: `0x4200000000000000000000000000000000000006`
-- `_feeBps`: current SwapHub fee in basis points, for example `30` for `0.30%` or `50` for `0.50%`
-- `_feeRecipient`: BaseHub fee wallet
+- `_feeBps`: `50`
+- `_feeRecipient`: `0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe`
+
+Current deployed Safe aggregator:
+
+```bash
+0x2bc0D802889dE33823495D42e9A7E85285F5a047
+```
 
 ## Post-Deploy Router Allowlist
 
@@ -17,19 +23,28 @@ Call `setRouter(router, true)` for each router:
 - PancakeSwap V3 Router: `0x1b81D678ffb9C0263b24A97847620C99d213eB14`
 - Aerodrome Router: `0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43`
 
-Call `setRouterSelector(router, selector, true)`:
+Call `setRouterSelector(router, selector, routeKind, true)`.
 
-- Uniswap V3 `exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))`: `0x04e45aaf`
-- Uniswap V2 `swapExactTokensForTokens(uint256,uint256,address[],address,uint256)`: `0x38ed1739`
-- PancakeSwap V3 `exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))`: `0x414bf389`
-- Aerodrome `swapExactTokensForTokens(uint256,uint256,(address,address,bool,address)[],address,uint256)`: `0xcac88ea9`
+Route kind values:
+
+- `1`: Uniswap V3 exactInputSingle
+- `2`: PancakeSwap V3 exactInputSingle
+- `3`: Uniswap V2 swapExactTokensForTokens
+- `4`: Aerodrome swapExactTokensForTokens
+
+Selector allowlist:
+
+- Uniswap V3 `exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))`: `0x04e45aaf`, routeKind `1`
+- Uniswap V2 `swapExactTokensForTokens(uint256,uint256,address[],address,uint256)`: `0x38ed1739`, routeKind `3`
+- PancakeSwap V3 `exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))`: `0x414bf389`, routeKind `2`
+- Aerodrome `swapExactTokensForTokens(uint256,uint256,(address,address,bool,address)[],address,uint256)`: `0xcac88ea9`, routeKind `4`
 
 ## Frontend Env
 
 After deploy, set:
 
 ```bash
-VITE_SWAP_AGGREGATOR_ADDRESS=0xYourDeployedAggregatorV3
+VITE_SWAP_AGGREGATOR_ADDRESS=0x2bc0D802889dE33823495D42e9A7E85285F5a047
 ```
 
 Then rebuild/redeploy the frontend.
