@@ -1796,6 +1796,39 @@ export default function SwapInterface() {
     return `${formatNumber(parseFloat(formatUnits(netAmount, tokenOut.decimals)))} ${tokenOut.symbol}`;
   };
 
+  const getErrorText = (error: any) => {
+    return [
+      error?.shortMessage,
+      error?.message,
+      error?.details,
+      error?.cause?.shortMessage,
+      error?.cause?.message,
+      error?.cause?.details
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+  };
+
+  const isAllowanceOrBalanceError = (message: string) => {
+    return message.includes('insufficient allowance') ||
+      message.includes('erc20insufficientallowance') ||
+      message.includes('transfer amount exceeds allowance') ||
+      message.includes('stf') ||
+      message.includes('safetransferfrom') ||
+      message.includes('insufficient balance') ||
+      message.includes('erc20insufficientbalance');
+  };
+
+  const isSlippageError = (message: string) => {
+    return message.includes('insufficientoutput') ||
+      message.includes('too little received') ||
+      message.includes('amountoutminimum') ||
+      message.includes('minimum output') ||
+      message.includes('insufficient output') ||
+      message.includes('output amount');
+  };
+
   const getRouteDeltaLabel = (plan: SwapRoutePlan) => {
     const best = allRoutePlans[0]?.rawQuote;
     if (!best || plan.rawQuote === best) return 'Best';
@@ -1932,6 +1965,22 @@ export default function SwapInterface() {
       setErrorMessage(`Invalid input amount: ${error.message || 'Number format error'}`);
       setTransactionStep('idle');
       return;
+    }
+
+    if (!tokenIn.isNative && !isWrapOperation) {
+      try {
+        const freshAllowanceResult = await refetchAllowance();
+        const freshAllowance = freshAllowanceResult.data ?? allowance ?? 0n;
+        const allowanceBigInt = typeof freshAllowance === 'bigint' ? freshAllowance : BigInt(freshAllowance.toString());
+        if (allowanceBigInt < amountInWei) {
+          setNeedsApproval(true);
+          setTransactionStep('idle');
+          setErrorMessage(`Please approve ${tokenIn.symbol} for the new SwapHub aggregator first.`);
+          return;
+        }
+      } catch (allowanceError) {
+        console.warn('Could not refresh allowance before swap:', allowanceError);
+      }
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -2120,9 +2169,13 @@ export default function SwapInterface() {
           txConfig.gas = withBuffer > GAS_FALLBACK ? withBuffer : GAS_FALLBACK;
           console.log('⛽ Gas estimated:', estimated.toString(), '+20% →', txConfig.gas.toString());
         } catch (gasErr: any) {
-          const msg = (gasErr?.message || gasErr?.shortMessage || '').toLowerCase();
-          const isSlippageRelated = msg.includes('too little received') || msg.includes('amount') || msg.includes('minimum') || msg.includes('stf') || msg.includes('invariant');
-          if (isSlippageRelated && slippage < 5) {
+          const msg = getErrorText(gasErr);
+          if (isAllowanceOrBalanceError(msg)) {
+            setNeedsApproval(!inputIsNativeETH);
+            setErrorMessage(inputIsNativeETH
+              ? 'Insufficient ETH balance for this swap.'
+              : `Approval or balance is not enough for ${tokenIn.symbol}. Approve ${tokenIn.symbol} again, then try the swap.`);
+          } else if (isSlippageError(msg) && slippage < 5) {
             setErrorMessage(`Swap will fail: price moved beyond ${slippage}% slippage. Try increasing slippage to 3-5% for this token.`);
           } else {
             setErrorMessage('Swap simulation failed. The transaction would revert on-chain. Try increasing slippage or reducing amount.');
@@ -2241,12 +2294,15 @@ export default function SwapInterface() {
       setTransactionStep('idle');
       setIsConfirmingPrice(false);
 
-      const errMsg = (error.shortMessage || error.message || '').toLowerCase();
+      const errMsg = getErrorText(error);
       if (error.code === 4001 || errMsg.includes('user rejected') || errMsg.includes('rejected') || errMsg.includes('denied')) {
         setErrorMessage('Transaction rejected');
-      } else if (errMsg.includes('insufficient funds') || errMsg.includes('insufficient balance')) {
-        setErrorMessage('Insufficient balance');
-      } else if (errMsg.includes('too little received') || errMsg.includes('stf') || errMsg.includes('invariant') || errMsg.includes('output amount')) {
+      } else if (isAllowanceOrBalanceError(errMsg) || errMsg.includes('insufficient funds')) {
+        setNeedsApproval(!tokenIn.isNative);
+        setErrorMessage(tokenIn.isNative
+          ? 'Insufficient ETH balance'
+          : `Approval or balance is not enough for ${tokenIn.symbol}. Approve ${tokenIn.symbol} again, then try the swap.`);
+      } else if (isSlippageError(errMsg)) {
         setErrorMessage(`Swap reverted: price moved beyond ${slippage}% slippage. Increase slippage to 3-5% for volatile tokens.`);
       } else if (errMsg.includes('nonce')) {
         setErrorMessage('Nonce error - Please try again');
