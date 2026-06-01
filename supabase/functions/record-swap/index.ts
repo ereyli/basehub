@@ -12,7 +12,9 @@ const BASE_RPC_URLS = [
   "https://base-rpc.publicnode.com",
 ]
 
-const SWAPHUB_AGGREGATOR = "0xbf579e68ba69de03ccec14476eb8d765ec558257"
+const SWAPHUB_AGGREGATOR_V2 = "0xbf579e68ba69de03ccec14476eb8d765ec558257"
+const SWAPHUB_AGGREGATOR_V3 = "0xb1b00880fe88fba62ddb4ed329bcb3ff42ca9570"
+const SWAPHUB_AGGREGATORS = new Set([SWAPHUB_AGGREGATOR_V2, SWAPHUB_AGGREGATOR_V3])
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 const WETH_ADDRESS = "0x4200000000000000000000000000000000000006"
 const USDC_ADDRESS = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
@@ -20,6 +22,7 @@ const USDBC_ADDRESS = "0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca"
 const DAI_ADDRESS = "0x50c5725949a6f0c72e6c4a641f24049a917db0cb"
 const SWAP_V2_SELECTOR = "0x83b82a53"
 const SWAP_V3_SELECTOR = "0x6b9262dc"
+const EXECUTE_SWAP_SELECTOR = "0x557e9206"
 const ERC20_TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 const DEFAULT_ETH_USD = 3500
 const MAX_VERIFIED_SWAP_USD = 1000
@@ -141,6 +144,15 @@ function parseAggregatorSwapCall(input?: string): ParsedSwapCall | null {
       selector,
       tokenIn: decodeAddressWord(getCallWord(input, 0)),
       tokenOut: decodeAddressWord(getCallWord(input, 1)),
+      amountIn: decodeUintWord(getCallWord(input, 3)),
+    }
+  }
+
+  if (selector === EXECUTE_SWAP_SELECTOR) {
+    return {
+      selector,
+      tokenIn: decodeAddressWord(getCallWord(input, 1)),
+      tokenOut: decodeAddressWord(getCallWord(input, 2)),
       amountIn: decodeUintWord(getCallWord(input, 3)),
     }
   }
@@ -360,7 +372,7 @@ Deno.serve(async (req) => {
     }
 
     const txTo = normalizeAddress(tx.to || receipt.to || "")
-    if (txTo !== SWAPHUB_AGGREGATOR) {
+    if (!SWAPHUB_AGGREGATORS.has(txTo)) {
       return new Response(JSON.stringify({ error: "Transaction is not a SwapHub swap" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

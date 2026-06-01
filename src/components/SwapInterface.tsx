@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useBalance, useChainId } from 'wagmi';
-import { parseUnits, formatUnits, maxUint256, createPublicClient, http, fallback } from 'viem';
+import { parseUnits, formatUnits, maxUint256, createPublicClient, http, fallback, encodeFunctionData } from 'viem';
 import { base } from 'wagmi/chains';
 import { DEFAULT_TOKENS, POPULAR_TOKENS, MEME_TOKENS, FEE_TIERS, searchTokens, getAllTokens, saveCustomToken, removeCustomToken, getTokenByAddress, BASE_CHAIN_ID, type AppToken } from '../config/tokens';
 import { Token } from '@uniswap/sdk-core';
@@ -110,7 +110,7 @@ function calculateUsdValue(
 // Smart number formatting - reduces unnecessary decimals
 function formatNumber(value: number, maxDecimals: number = 4): string {
   if (value === 0) return '0';
-  if (value < 0.0001) return value.toExponential(2);
+  if (!Number.isFinite(value)) return '0';
   
   // For values >= 1, use max 2 decimals
   if (value >= 1) {
@@ -119,35 +119,10 @@ function formatNumber(value: number, maxDecimals: number = 4): string {
     return parseFloat(formatted).toString();
   }
   
-  // For values < 1, find first significant digit and limit decimals
-  // Start with maxDecimals, but remove trailing zeros
-  let formatted = value.toFixed(maxDecimals);
-  // Remove trailing zeros
-  formatted = parseFloat(formatted).toString();
-  
-  // If still has too many decimals, limit to reasonable amount
-  const parts = formatted.split('.');
-  if (parts[1] && parts[1].length > 4) {
-    // Find first non-zero decimal position
-    const str = value.toString();
-    const dotIndex = str.indexOf('.');
-    if (dotIndex !== -1) {
-      const decimals = str.substring(dotIndex + 1);
-      let firstNonZero = -1;
-      for (let i = 0; i < decimals.length; i++) {
-        if (decimals[i] !== '0') {
-          firstNonZero = i;
-          break;
-        }
-      }
-      // Show first non-zero + 3 more decimals, max 4 total
-      const decimalsToShow = Math.min(firstNonZero + 3, 4);
-      formatted = value.toFixed(decimalsToShow);
-      formatted = parseFloat(formatted).toString();
-    }
-  }
-  
-  return formatted;
+  // Keep crypto amounts readable; never show scientific notation in the UI.
+  const decimalsToShow = value >= 0.01 ? maxDecimals : value >= 0.0001 ? 6 : 8;
+  const formatted = value.toFixed(decimalsToShow).replace(/\.?0+$/, '');
+  return formatted === '0' && value > 0 ? value.toFixed(8).replace(/\.?0+$/, '') : formatted;
 }
 
 // Helper function to check if image URL is valid (using Image object)
@@ -519,35 +494,28 @@ const QUOTER_V2_ADDRESS = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a';
 const UNISWAP_V2_ROUTER = '0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24';
 const UNISWAP_V2_FACTORY = '0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6';
 
-// OUR SWAP AGGREGATOR V2 (Native ETH Support + Output-Fee Model + Deadline Protection)
-const SWAP_AGGREGATOR = '0xbf579e68ba69de03ccec14476eb8d765ec558257';
+// Additional Base DEX routers/quoters
+const PANCAKESWAP_V3_ROUTER = '0x1b81D678ffb9C0263b24A97847620C99d213eB14';
+const PANCAKESWAP_V3_QUOTER = '0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997';
+const AERODROME_ROUTER = '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43';
+const AERODROME_FACTORY = '0x420DD381b31aEf6683db6B902084cB0FFECe40Da';
 
-// Aggregator V2 ABI - supports native ETH (address(0))
-// Both swapV3 and swapV2 now have deadline parameter for MEV protection
+// OUR SWAP AGGREGATOR V3 (set VITE_SWAP_AGGREGATOR_ADDRESS after deployment)
+const SWAP_AGGREGATOR = (import.meta.env.VITE_SWAP_AGGREGATOR_ADDRESS || '0x0000000000000000000000000000000000000000') as `0x${string}`;
+
+// Aggregator V3 ABI - generic allowlisted router execution
 const AGGREGATOR_ABI = [
   {
     inputs: [
-      { name: 'tokenIn', type: 'address' },
-      { name: 'tokenOut', type: 'address' },
-      { name: 'poolFee', type: 'uint24' },
-      { name: 'amountIn', type: 'uint256' },
-      { name: 'amountOutMinimum', type: 'uint256' },
-      { name: 'deadline', type: 'uint256' }
-    ],
-    name: 'swapV3',
-    outputs: [{ name: 'amountOut', type: 'uint256' }],
-    stateMutability: 'payable',
-    type: 'function'
-  },
-  {
-    inputs: [
+      { name: 'router', type: 'address' },
       { name: 'tokenIn', type: 'address' },
       { name: 'tokenOut', type: 'address' },
       { name: 'amountIn', type: 'uint256' },
       { name: 'amountOutMinimum', type: 'uint256' },
-      { name: 'deadline', type: 'uint256' }
+      { name: 'routerCalldata', type: 'bytes' },
+      { name: 'dexId', type: 'bytes32' }
     ],
-    name: 'swapV2',
+    name: 'executeSwap',
     outputs: [{ name: 'amountOut', type: 'uint256' }],
     stateMutability: 'payable',
     type: 'function'
@@ -576,7 +544,23 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 
 // Protocol type for swap routing
-type SwapProtocol = 'v3' | 'v2';
+type SwapProtocol = 'uniswap-v3' | 'uniswap-v2' | 'pancakeswap-v3' | 'aerodrome';
+
+type SwapRoutePlan = {
+  protocol: SwapProtocol;
+  label: string;
+  router: `0x${string}`;
+  rawQuote: bigint;
+  routerCalldata: `0x${string}`;
+  bestFeeTier?: number;
+};
+
+const DEX_IDS: Record<SwapProtocol, `0x${string}`> = {
+  'uniswap-v3': '0x554e49535741505f563300000000000000000000000000000000000000000000',
+  'uniswap-v2': '0x554e49535741505f563200000000000000000000000000000000000000000000',
+  'pancakeswap-v3': '0x50414e43414b455f563300000000000000000000000000000000000000000000',
+  aerodrome: '0x4145524f44524f4d450000000000000000000000000000000000000000000000'
+};
 
 const QUOTER_ABI = [
   {
@@ -651,6 +635,99 @@ const V2_ROUTER_ABI = [
       { name: 'deadline', type: 'uint256' }
     ],
     name: 'swapExactTokensForETH',
+    outputs: [{ name: 'amounts', type: 'uint256[]' }],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  }
+];
+
+const UNISWAP_V3_ROUTER_ABI = [
+  {
+    inputs: [
+      {
+        components: [
+          { name: 'tokenIn', type: 'address' },
+          { name: 'tokenOut', type: 'address' },
+          { name: 'fee', type: 'uint24' },
+          { name: 'recipient', type: 'address' },
+          { name: 'amountIn', type: 'uint256' },
+          { name: 'amountOutMinimum', type: 'uint256' },
+          { name: 'sqrtPriceLimitX96', type: 'uint160' }
+        ],
+        name: 'params',
+        type: 'tuple'
+      }
+    ],
+    name: 'exactInputSingle',
+    outputs: [{ name: 'amountOut', type: 'uint256' }],
+    stateMutability: 'payable',
+    type: 'function'
+  }
+];
+
+const PANCAKESWAP_V3_ROUTER_ABI = [
+  {
+    inputs: [
+      {
+        components: [
+          { name: 'tokenIn', type: 'address' },
+          { name: 'tokenOut', type: 'address' },
+          { name: 'fee', type: 'uint24' },
+          { name: 'recipient', type: 'address' },
+          { name: 'deadline', type: 'uint256' },
+          { name: 'amountIn', type: 'uint256' },
+          { name: 'amountOutMinimum', type: 'uint256' },
+          { name: 'sqrtPriceLimitX96', type: 'uint160' }
+        ],
+        name: 'params',
+        type: 'tuple'
+      }
+    ],
+    name: 'exactInputSingle',
+    outputs: [{ name: 'amountOut', type: 'uint256' }],
+    stateMutability: 'payable',
+    type: 'function'
+  }
+];
+
+const AERODROME_ROUTER_ABI = [
+  {
+    inputs: [
+      { name: 'amountIn', type: 'uint256' },
+      {
+        components: [
+          { name: 'from', type: 'address' },
+          { name: 'to', type: 'address' },
+          { name: 'stable', type: 'bool' },
+          { name: 'factory', type: 'address' }
+        ],
+        name: 'routes',
+        type: 'tuple[]'
+      }
+    ],
+    name: 'getAmountsOut',
+    outputs: [{ name: 'amounts', type: 'uint256[]' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [
+      { name: 'amountIn', type: 'uint256' },
+      { name: 'amountOutMin', type: 'uint256' },
+      {
+        components: [
+          { name: 'from', type: 'address' },
+          { name: 'to', type: 'address' },
+          { name: 'stable', type: 'bool' },
+          { name: 'factory', type: 'address' }
+        ],
+        name: 'routes',
+        type: 'tuple[]'
+      },
+      { name: 'to', type: 'address' },
+      { name: 'deadline', type: 'uint256' }
+    ],
+    name: 'swapExactTokensForTokens',
     outputs: [{ name: 'amounts', type: 'uint256[]' }],
     stateMutability: 'nonpayable',
     type: 'function'
@@ -756,6 +833,8 @@ export default function SwapInterface() {
     amountOut: string;
     bestProtocol: SwapProtocol;
     bestV3Fee: number;
+    bestRoutePlan: SwapRoutePlan | null;
+    routePlans: SwapRoutePlan[];
     priceImpact: string;
     v3Available: boolean;
     v2Available: boolean;
@@ -825,7 +904,9 @@ export default function SwapInterface() {
   const [customTokenError, setCustomTokenError] = useState<string | null>(null);
   const [foundToken, setFoundToken] = useState<AppToken | null>(null);
   const [showImportWarning, setShowImportWarning] = useState(false);
-  const [selectedProtocol, setSelectedProtocol] = useState<SwapProtocol>('v3');
+  const [selectedProtocol, setSelectedProtocol] = useState<SwapProtocol>('uniswap-v3');
+  const [selectedRoutePlan, setSelectedRoutePlan] = useState<SwapRoutePlan | null>(null);
+  const [allRoutePlans, setAllRoutePlans] = useState<SwapRoutePlan[]>([]);
   const [v2Available, setV2Available] = useState(false);
   const [v3Available, setV3Available] = useState(false);
   const [noLiquidityError, setNoLiquidityError] = useState(false);
@@ -1335,40 +1416,227 @@ export default function SwapInterface() {
     }
   };
 
+  const getProtocolLabel = (protocol: SwapProtocol) => {
+    switch (protocol) {
+      case 'uniswap-v3': return 'Uniswap V3';
+      case 'uniswap-v2': return 'Uniswap V2';
+      case 'pancakeswap-v3': return 'PancakeSwap V3';
+      case 'aerodrome': return 'Aerodrome';
+      default: return 'DEX';
+    }
+  };
+
+  const buildUniswapV3Calldata = (
+    tokenInAddr: string,
+    tokenOutAddr: string,
+    amountInWei: bigint,
+    fee: number
+  ) => encodeFunctionData({
+    abi: UNISWAP_V3_ROUTER_ABI,
+    functionName: 'exactInputSingle',
+    args: [{
+      tokenIn: tokenInAddr as `0x${string}`,
+      tokenOut: tokenOutAddr as `0x${string}`,
+      fee,
+      recipient: SWAP_AGGREGATOR,
+      amountIn: amountInWei,
+      amountOutMinimum: 0n,
+      sqrtPriceLimitX96: 0n
+    }]
+  });
+
+  const buildPancakeV3Calldata = (
+    tokenInAddr: string,
+    tokenOutAddr: string,
+    amountInWei: bigint,
+    fee: number,
+    deadline: bigint
+  ) => encodeFunctionData({
+    abi: PANCAKESWAP_V3_ROUTER_ABI,
+    functionName: 'exactInputSingle',
+    args: [{
+      tokenIn: tokenInAddr as `0x${string}`,
+      tokenOut: tokenOutAddr as `0x${string}`,
+      fee,
+      recipient: SWAP_AGGREGATOR,
+      deadline,
+      amountIn: amountInWei,
+      amountOutMinimum: 0n,
+      sqrtPriceLimitX96: 0n
+    }]
+  });
+
+  const buildUniswapV2Calldata = (
+    tokenInAddr: string,
+    tokenOutAddr: string,
+    amountInWei: bigint,
+    deadline: bigint
+  ) => encodeFunctionData({
+    abi: V2_ROUTER_ABI,
+    functionName: 'swapExactTokensForTokens',
+    args: [
+      amountInWei,
+      0n,
+      [tokenInAddr as `0x${string}`, tokenOutAddr as `0x${string}`],
+      SWAP_AGGREGATOR,
+      deadline
+    ]
+  });
+
+  const buildAerodromeCalldata = (
+    tokenInAddr: string,
+    tokenOutAddr: string,
+    amountInWei: bigint,
+    stable: boolean,
+    deadline: bigint
+  ) => encodeFunctionData({
+    abi: AERODROME_ROUTER_ABI,
+    functionName: 'swapExactTokensForTokens',
+    args: [
+      amountInWei,
+      0n,
+      [{ from: tokenInAddr as `0x${string}`, to: tokenOutAddr as `0x${string}`, stable, factory: AERODROME_FACTORY as `0x${string}` }],
+      SWAP_AGGREGATOR,
+      deadline
+    ]
+  });
+
+  const quotePancakeV3 = async (
+    client: typeof swapClient,
+    tokenInAddr: string,
+    tokenOutAddr: string,
+    amountInWei: bigint,
+    feeTiers: number[]
+  ): Promise<QuoteResult<{ quote: bigint; fee: number }>> => {
+    try {
+      const results = await Promise.allSettled(
+        feeTiers.map((fee) =>
+          client.simulateContract({
+            address: PANCAKESWAP_V3_QUOTER as `0x${string}`,
+            abi: QUOTER_ABI,
+            functionName: 'quoteExactInputSingle',
+            args: [{ tokenIn: tokenInAddr as `0x${string}`, tokenOut: tokenOutAddr as `0x${string}`, amountIn: amountInWei, fee, sqrtPriceLimitX96: 0n }]
+          }).then(({ result }) => ({ quote: result[0] as bigint, fee }))
+        )
+      );
+      let best: { quote: bigint; fee: number } | null = null;
+      for (const r of results) {
+        if (r.status === 'fulfilled' && r.value.quote > 0n && (!best || r.value.quote > best.quote)) {
+          best = r.value;
+        }
+      }
+      return best ? { data: best, rpcError: false } : { data: null, rpcError: false };
+    } catch (err: any) {
+      return { data: null, rpcError: isTransientRpcError(err) };
+    }
+  };
+
+  const quoteAerodrome = async (
+    client: typeof swapClient,
+    tokenInAddr: string,
+    tokenOutAddr: string,
+    amountInWei: bigint
+  ): Promise<QuoteResult<{ quote: bigint; stable: boolean }>> => {
+    try {
+      const routes = [false, true];
+      const results = await Promise.allSettled(
+        routes.map((stable) =>
+          client.readContract({
+            address: AERODROME_ROUTER as `0x${string}`,
+            abi: AERODROME_ROUTER_ABI,
+            functionName: 'getAmountsOut',
+            args: [amountInWei, [{ from: tokenInAddr as `0x${string}`, to: tokenOutAddr as `0x${string}`, stable, factory: AERODROME_FACTORY as `0x${string}` }]]
+          }).then((amounts) => ({ quote: (amounts as bigint[])[1], stable }))
+        )
+      );
+      let best: { quote: bigint; stable: boolean } | null = null;
+      for (const r of results) {
+        if (r.status === 'fulfilled' && r.value.quote > 0n && (!best || r.value.quote > best.quote)) {
+          best = r.value;
+        }
+      }
+      return best ? { data: best, rpcError: false } : { data: null, rpcError: false };
+    } catch (err: any) {
+      return { data: null, rpcError: isTransientRpcError(err) };
+    }
+  };
+
   // Fetch fresh quote (no cache) for swap execution - used when user clicks swap
   const getFreshQuote = async (
     amountInWei: bigint,
     tokenInAddr: string,
     tokenOutAddr: string,
     tokenOutDecimals: number
-  ): Promise<{ formatted: string; bestProtocol: SwapProtocol; bestFeeTier: number } | null> => {
+  ): Promise<{ formatted: string; bestProtocol: SwapProtocol; bestFeeTier: number; routePlan: SwapRoutePlan; routePlans: SwapRoutePlan[] } | null> => {
     if (!swapClient) return null;
     const feeTiersToTry = [FEE_TIERS.LOWEST, FEE_TIERS.LOW, FEE_TIERS.MEDIUM];
+    const pancakeFeeTiers = [100, 500, 2500, 10000];
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
 
-    const [v3Res, v2Res] = await Promise.all([
+    const [v3Res, v2Res, pancakeRes, aerodromeRes] = await Promise.all([
       multicallV3Quotes(swapClient, tokenInAddr, tokenOutAddr, amountInWei, feeTiersToTry),
-      multicallV2Quote(swapClient, tokenInAddr, tokenOutAddr, amountInWei)
+      multicallV2Quote(swapClient, tokenInAddr, tokenOutAddr, amountInWei),
+      quotePancakeV3(swapClient, tokenInAddr, tokenOutAddr, amountInWei, pancakeFeeTiers),
+      quoteAerodrome(swapClient, tokenInAddr, tokenOutAddr, amountInWei)
     ]);
-    const v3Quote = v3Res.data?.quote ?? null;
-    const bestV3Fee = v3Res.data?.fee ?? FEE_TIERS.LOW;
-    const v2Quote = v2Res.data ?? null;
-    let bestQuote: bigint = BigInt(0);
-    let bestProtocol: SwapProtocol = 'v3';
-    if (v3Quote !== null && v2Quote !== null) {
-      if (v2Quote > v3Quote) { bestQuote = v2Quote; bestProtocol = 'v2'; }
-      else { bestQuote = v3Quote; bestProtocol = 'v3'; }
-    } else if (v3Quote !== null) { bestQuote = v3Quote; bestProtocol = 'v3'; }
-    else if (v2Quote !== null) { bestQuote = v2Quote; bestProtocol = 'v2'; }
-    else return null;
+    const plans: SwapRoutePlan[] = [];
+    if (v3Res.data?.quote) {
+      plans.push({
+        protocol: 'uniswap-v3',
+        label: 'Uniswap V3',
+        router: SWAP_ROUTER_02 as `0x${string}`,
+        rawQuote: v3Res.data.quote,
+        bestFeeTier: v3Res.data.fee,
+        routerCalldata: buildUniswapV3Calldata(tokenInAddr, tokenOutAddr, amountInWei, v3Res.data.fee)
+      });
+    }
+    if (v2Res.data) {
+      plans.push({
+        protocol: 'uniswap-v2',
+        label: 'Uniswap V2',
+        router: UNISWAP_V2_ROUTER as `0x${string}`,
+        rawQuote: v2Res.data,
+        routerCalldata: buildUniswapV2Calldata(tokenInAddr, tokenOutAddr, amountInWei, deadline)
+      });
+    }
+    if (pancakeRes.data?.quote) {
+      plans.push({
+        protocol: 'pancakeswap-v3',
+        label: 'PancakeSwap V3',
+        router: PANCAKESWAP_V3_ROUTER as `0x${string}`,
+        rawQuote: pancakeRes.data.quote,
+        bestFeeTier: pancakeRes.data.fee,
+        routerCalldata: buildPancakeV3Calldata(tokenInAddr, tokenOutAddr, amountInWei, pancakeRes.data.fee, deadline)
+      });
+    }
+    if (aerodromeRes.data?.quote) {
+      plans.push({
+        protocol: 'aerodrome',
+        label: `Aerodrome ${aerodromeRes.data.stable ? 'Stable' : 'Volatile'}`,
+        router: AERODROME_ROUTER as `0x${string}`,
+        rawQuote: aerodromeRes.data.quote,
+        routerCalldata: buildAerodromeCalldata(tokenInAddr, tokenOutAddr, amountInWei, aerodromeRes.data.stable, deadline)
+      });
+    }
+
+    const sortedPlans = plans.sort((a, b) => (a.rawQuote > b.rawQuote ? -1 : a.rawQuote < b.rawQuote ? 1 : 0));
+    const bestPlan = sortedPlans[0];
+    if (!bestPlan) return null;
 
     const feeBps = protocolFeeBps ? Number(protocolFeeBps) : 0;
     const feeMultiplier = BigInt(10000) - BigInt(feeBps);
-    const userReceivesWei = (bestQuote * feeMultiplier) / BigInt(10000);
+    const userReceivesWei = (bestPlan.rawQuote * feeMultiplier) / BigInt(10000);
     const formatted = formatUnits(userReceivesWei, tokenOutDecimals);
-    return { formatted, bestProtocol, bestFeeTier: bestProtocol === 'v3' ? bestV3Fee : FEE_TIERS.LOW };
+    return {
+      formatted,
+      bestProtocol: bestPlan.protocol,
+      bestFeeTier: bestPlan.bestFeeTier ?? FEE_TIERS.LOW,
+      routePlan: bestPlan,
+      routePlans: sortedPlans
+    };
   };
 
-  // Fetch quote from both Uniswap V3 and V2 in parallel, use best available
+  // Fetch quote from supported Base DEXes in parallel, use best available
   useEffect(() => {
     const MAX_RPC_AUTO_RETRIES = 2;
 
@@ -1387,7 +1655,9 @@ export default function SwapInterface() {
         setPriceImpact('0');
         setNoLiquidityError(false);
         setIsLoadingQuote(false);
-        setSelectedProtocol('v3'); // Use v3 for display purposes
+        setSelectedProtocol('uniswap-v3'); // Use v3 for display purposes
+        setSelectedRoutePlan(null);
+        setAllRoutePlans([]);
         setV3Available(true);
         setV2Available(false);
         return;
@@ -1409,6 +1679,8 @@ export default function SwapInterface() {
         setAmountOut(c.amountOut);
         setPriceImpact(c.priceImpact);
         setSelectedProtocol(c.bestProtocol);
+        setSelectedRoutePlan(c.bestRoutePlan);
+        setAllRoutePlans(c.routePlans || []);
         setSelectedFeeTier(c.bestV3Fee);
         setV3Available(c.v3Available);
         setV2Available(c.v2Available);
@@ -1421,43 +1693,26 @@ export default function SwapInterface() {
       setIsLoadingQuote(true);
       setNoLiquidityError(false);
       if (rpcRetry === 0) {
-        console.log('🔄 Fetching quotes from Uniswap V3 and V2 (multicall)...');
+        console.log('🔄 Fetching quotes from Aerodrome, Uniswap and PancakeSwap...');
         console.log('   Input:', amountIn, tokenIn.symbol, '→', tokenOut.symbol);
       } else {
         console.log(`🔄 Auto-retry ${rpcRetry}/${MAX_RPC_AUTO_RETRIES} for quote...`);
       }
 
-      const feeTiersToTry = [FEE_TIERS.LOWEST, FEE_TIERS.LOW, FEE_TIERS.MEDIUM];
-
-      // V3 + V2 via multicall (batched RPC): 1 call for all V3 fee tiers, 1-2 calls for V2
-      const [v3Res, v2Res] = await Promise.all([
-        multicallV3Quotes(swapClient, tokenInAddr, tokenOutAddr, amountInWei, feeTiersToTry),
-        multicallV2Quote(swapClient, tokenInAddr, tokenOutAddr, amountInWei)
-      ]);
+      const freshQuote = await getFreshQuote(amountInWei, tokenInAddr, tokenOutAddr, tokenOut.decimals);
 
       if (currentRequestId !== quoteRequestIdRef.current) return;
 
-      const v3Quote = v3Res.data?.quote ?? null;
-      const bestV3Fee = v3Res.data?.fee ?? selectedFeeTier;
-      const v2Quote = v2Res.data ?? null;
-
-      if (v3Quote) console.log('✅ V3 Quote:', formatUnits(v3Quote, tokenOut.decimals), tokenOut.symbol, `(${bestV3Fee / 10000}% fee)`);
-      if (v2Quote) console.log('✅ V2 Quote:', formatUnits(v2Quote, tokenOut.decimals), tokenOut.symbol);
-
-      // Both returned null - distinguish real "no pool" from transient RPC failure
-      if (v3Quote === null && v2Quote === null) {
-        const anyRpcError = v3Res.rpcError || v2Res.rpcError;
-        if (anyRpcError && rpcRetry < MAX_RPC_AUTO_RETRIES) {
+      if (!freshQuote) {
+        if (rpcRetry < MAX_RPC_AUTO_RETRIES) {
           const wait = 2000 * (rpcRetry + 1);
-          console.log(`⚠️ Both quotes failed due to RPC errors — auto-retry in ${wait}ms (${rpcRetry + 1}/${MAX_RPC_AUTO_RETRIES})...`);
+          console.log(`⚠️ No route yet — auto-retry in ${wait}ms (${rpcRetry + 1}/${MAX_RPC_AUTO_RETRIES})...`);
           setTimeout(() => {
-            if (quoteRequestIdRef.current === currentRequestId) {
-              fetchQuote(rpcRetry + 1);
-            }
+            if (quoteRequestIdRef.current === currentRequestId) fetchQuote(rpcRetry + 1);
           }, wait);
           return;
         }
-        console.log('❌ No liquidity in V3 or V2');
+        console.log('❌ No liquidity across supported Base DEXes');
         setAmountOut('0');
         setPriceImpact('0');
         setNoLiquidityError(true);
@@ -1465,34 +1720,15 @@ export default function SwapInterface() {
         return;
       }
 
-      setV3Available(!!v3Quote);
-      setV2Available(!!v2Quote);
-      if (v3Quote) setSelectedFeeTier(bestV3Fee);
-
-      let bestQuote: bigint = BigInt(0);
-      let bestProtocol: SwapProtocol = 'v3';
-
-      if (v3Quote !== null && v2Quote !== null) {
-        if (v2Quote > v3Quote) {
-          bestQuote = v2Quote;
-          bestProtocol = 'v2';
-          console.log('🏆 Best: V2 (better rate)');
-        } else {
-          bestQuote = v3Quote;
-          bestProtocol = 'v3';
-          console.log('🏆 Best: V3 (better rate)');
-        }
-      } else if (v3Quote !== null) {
-        bestQuote = v3Quote;
-        bestProtocol = 'v3';
-        console.log('🏆 Using V3 (only available)');
-      } else {
-        bestQuote = v2Quote!;
-        bestProtocol = 'v2';
-        console.log('🏆 Using V2 (only available)');
-      }
-
+      const bestQuote = freshQuote.routePlan.rawQuote;
+      const bestProtocol = freshQuote.bestProtocol;
+      const bestV3Fee = freshQuote.bestFeeTier;
+      setV3Available(bestProtocol === 'uniswap-v3');
+      setV2Available(bestProtocol === 'uniswap-v2');
+      setSelectedFeeTier(bestV3Fee);
       setSelectedProtocol(bestProtocol);
+      setSelectedRoutePlan(freshQuote.routePlan);
+      setAllRoutePlans(freshQuote.routePlans);
 
       const feeBps = protocolFeeBps ? Number(protocolFeeBps) : 0;
       const feeBpsBigInt = BigInt(feeBps);
@@ -1504,7 +1740,7 @@ export default function SwapInterface() {
       const feeFormatted = formatUnits(feeAmountWei, tokenOut.decimals);
       console.log('💵 Raw output:', formatUnits(bestQuote, tokenOut.decimals), tokenOut.symbol);
       console.log('💰 Protocol fee:', feeFormatted, tokenOut.symbol, `(${feeBps / 100}% = ${feeBps} bps)`);
-      console.log('✨ User receives:', formatted, tokenOut.symbol, `via ${bestProtocol.toUpperCase()}`);
+      console.log('✨ User receives:', formatted, tokenOut.symbol, `via ${freshQuote.routePlan.label}`);
 
       const inputUsdStr = calculateUsdValue(amountIn, tokenIn, formatted, tokenOut, ethPriceUsd);
       const outputUsdStr = calculateUsdValue(formatted, tokenOut, amountIn, tokenIn, ethPriceUsd);
@@ -1516,7 +1752,7 @@ export default function SwapInterface() {
         calculatedImpact = Math.abs((inputUsd - outputUsd) / inputUsd * 100);
         if (calculatedImpact < 0.01) calculatedImpact = 0.01;
       } else {
-        calculatedImpact = bestProtocol === 'v3' ? 0.1 : 0.5;
+        calculatedImpact = bestProtocol.includes('v3') ? 0.1 : 0.5;
       }
       const priceImpactStr = calculatedImpact.toFixed(2);
       setPriceImpact(priceImpactStr);
@@ -1529,10 +1765,12 @@ export default function SwapInterface() {
         key: cacheKey,
         amountOut: formatted,
         bestProtocol,
+        bestRoutePlan: freshQuote.routePlan,
+        routePlans: freshQuote.routePlans,
         bestV3Fee,
         priceImpact: priceImpactStr,
-        v3Available: !!v3Quote,
-        v2Available: !!v2Quote,
+        v3Available: bestProtocol === 'uniswap-v3',
+        v2Available: bestProtocol === 'uniswap-v2',
         timestamp: Date.now()
       };
     };
@@ -1547,6 +1785,8 @@ export default function SwapInterface() {
     setNeedsApproval(true); // Will be recalculated by useEffect
     setErrorMessage(null);
     setAmountOut('0');
+    setAllRoutePlans([]);
+    setSelectedRoutePlan(null);
     // Refetch allowance for the new tokenIn
     setTimeout(() => refetchAllowance(), 100);
   };
@@ -1556,6 +1796,23 @@ export default function SwapInterface() {
     setTokenOut(tokenIn);
     setAmountIn('');
     resetSwapState();
+  };
+
+  const formatRouteNetOutput = (plan: SwapRoutePlan) => {
+    const feeBps = protocolFeeBps ? Number(protocolFeeBps) : 0;
+    const feeMultiplier = 10000n - BigInt(feeBps);
+    const netAmount = (plan.rawQuote * feeMultiplier) / 10000n;
+    return `${formatNumber(parseFloat(formatUnits(netAmount, tokenOut.decimals)))} ${tokenOut.symbol}`;
+  };
+
+  const getRouteDeltaLabel = (plan: SwapRoutePlan) => {
+    const best = allRoutePlans[0]?.rawQuote;
+    if (!best || plan.rawQuote === best) return 'Best';
+    const bestNumber = parseFloat(formatUnits(best, tokenOut.decimals));
+    const routeNumber = parseFloat(formatUnits(plan.rawQuote, tokenOut.decimals));
+    if (!bestNumber || !routeNumber) return '';
+    const diff = ((bestNumber - routeNumber) / bestNumber) * 100;
+    return `-${diff.toFixed(diff < 0.1 ? 2 : 1)}%`;
   };
 
   // Handle token selection with proper state reset
@@ -1798,8 +2055,6 @@ export default function SwapInterface() {
       console.log('   finalMinAmountOut:', finalMinAmountOut.toString());
       console.log('   finalMinAmountOut (formatted):', formatUnits(finalMinAmountOut, tokenOut.decimals));
       
-      const deadline = BigInt(Math.floor(Date.now() / 1000) + 300); // 5 minutes
-
       // Native ETH uses address(0) in our aggregator
       const inputIsNativeETH = tokenIn.isNative === true;
       const outputIsNativeETH = tokenOut.isNative === true;
@@ -1808,9 +2063,10 @@ export default function SwapInterface() {
       const tokenInAddr = inputIsNativeETH ? ZERO_ADDRESS : tokenIn.address;
       const tokenOutAddr = outputIsNativeETH ? ZERO_ADDRESS : tokenOut.address;
 
-      console.log('📋 Aggregator V2 Swap Parameters:');
+      console.log('📋 Aggregator V3 Swap Parameters:');
       console.log('   Aggregator Contract:', SWAP_AGGREGATOR);
-      console.log('   Protocol:', swapProtocol.toUpperCase());
+      console.log('   Route:', freshQuote.routePlan.label);
+      console.log('   Router:', freshQuote.routePlan.router);
       console.log('   User Address:', address);
       console.log('   Token In:', tokenIn.symbol, inputIsNativeETH ? '(Native ETH → 0x0)' : `→ ${tokenInAddr}`);
       console.log('   Token Out:', tokenOut.symbol, outputIsNativeETH ? '(Native ETH → 0x0)' : `→ ${tokenOutAddr}`);
@@ -1820,55 +2076,36 @@ export default function SwapInterface() {
       console.log('   Protocol Fee:', protocolFeeBps ? `${Number(protocolFeeBps) / 100}%` : 'Loading...');
       console.log('   Input is Native ETH:', inputIsNativeETH);
       console.log('   Output is Native ETH:', outputIsNativeETH);
-      if (swapProtocol === 'v3') {
+      if (freshQuote.routePlan.bestFeeTier) {
         console.log('   Fee Tier:', swapFeeTier, `(${swapFeeTier / 10000}%)`);
       }
 
       // ═══════════════════════════════════════════════════════════════
-      // ALL SWAPS GO THROUGH AGGREGATOR V2 (Including Native ETH!)
+      // ALL SWAPS GO THROUGH AGGREGATOR V3 (Including Native ETH!)
       // ═══════════════════════════════════════════════════════════════
       
       let txConfig: any;
 
-      const GAS_FALLBACK = BigInt(500000);
+      const GAS_FALLBACK = BigInt(700000);
       const GAS_BUFFER_BPS = 120n; // 20% buffer = 120/100
 
-      if (swapProtocol === 'v2') {
-        // V2 Swap via Aggregator
-        console.log('🔶 Using Aggregator swapV2');
-        txConfig = {
-          address: SWAP_AGGREGATOR as `0x${string}`,
-          abi: AGGREGATOR_ABI,
-          functionName: 'swapV2',
-          args: [
-            tokenInAddr,    // tokenIn (address(0) for ETH)
-            tokenOutAddr,   // tokenOut (address(0) for ETH)
-            amountInWei,    // amountIn
-            finalMinAmountOut,   // amountOutMinimum
-            deadline        // deadline
-          ],
-          chainId: base.id,
-          gas: GAS_FALLBACK
-        };
-      } else {
-        // V3 Swap via Aggregator (now has deadline for MEV protection)
-        console.log('🔷 Using Aggregator swapV3');
-        txConfig = {
-          address: SWAP_AGGREGATOR as `0x${string}`,
-          abi: AGGREGATOR_ABI,
-          functionName: 'swapV3',
-          args: [
-            tokenInAddr,      // tokenIn (address(0) for ETH)
-            tokenOutAddr,     // tokenOut (address(0) for ETH)
-            swapFeeTier,      // poolFee (from fresh quote)
-            amountInWei,      // amountIn
-            finalMinAmountOut,     // amountOutMinimum
-            deadline          // deadline (5 minutes)
-          ],
-          chainId: base.id,
-          gas: GAS_FALLBACK
-        };
-      }
+      console.log('🔀 Using Aggregator executeSwap');
+      txConfig = {
+        address: SWAP_AGGREGATOR as `0x${string}`,
+        abi: AGGREGATOR_ABI,
+        functionName: 'executeSwap',
+        args: [
+          freshQuote.routePlan.router,
+          tokenInAddr,
+          tokenOutAddr,
+          amountInWei,
+          finalMinAmountOut,
+          freshQuote.routePlan.routerCalldata,
+          DEX_IDS[freshQuote.routePlan.protocol]
+        ],
+        chainId: base.id,
+        gas: GAS_FALLBACK
+      };
 
       // Add msg.value for native ETH input
       if (inputIsNativeETH) {
@@ -1905,7 +2142,7 @@ export default function SwapInterface() {
         }
       }
 
-      console.log('📤 Sending swap via Aggregator V2...');
+      console.log('📤 Sending swap via Aggregator V3...');
       console.log('   Function:', txConfig.functionName);
       console.log('   Args:', txConfig.args.map((a: any) => a.toString()));
       console.log('   Value:', txConfig.value?.toString() || '0');
@@ -2529,18 +2766,7 @@ export default function SwapInterface() {
         {/* Protocol Badge */}
         {parseFloat(amountOut) > 0 && !noLiquidityError && (
           <div style={styles.protocolBadge}>
-            via Uniswap {selectedProtocol.toUpperCase()}
-            {v3Available && v2Available && (
-              <span style={styles.protocolOptions}>
-                {' '}• 
-                <button 
-                  onClick={() => setSelectedProtocol(selectedProtocol === 'v3' ? 'v2' : 'v3')}
-                  style={styles.switchProtocolBtn}
-                >
-                  Switch to {selectedProtocol === 'v3' ? 'V2' : 'V3'}
-                </button>
-              </span>
-            )}
+            Best route via {selectedRoutePlan?.label || getProtocolLabel(selectedProtocol)}
           </div>
         )}
 
@@ -2674,6 +2900,29 @@ export default function SwapInterface() {
         {/* Info */}
         {amountOut !== '0' && !isPending && !isConfirming && (
           <div style={styles.infoBox}>
+            {allRoutePlans.length > 0 && (
+              <div style={styles.routeQuotes}>
+                <div style={styles.routeQuotesHeader}>
+                  <span>DEX quotes</span>
+                  <span>Estimated output</span>
+                </div>
+                {allRoutePlans.map((plan) => {
+                  const isBest = selectedRoutePlan?.protocol === plan.protocol && selectedRoutePlan?.router === plan.router;
+                  return (
+                    <div key={`${plan.protocol}-${plan.label}`} style={{ ...styles.routeQuoteRow, ...(isBest ? styles.routeQuoteRowBest : {}) }}>
+                      <span style={styles.routeQuoteDex}>
+                        {plan.label}
+                        {isBest && <span style={styles.routeBestBadge}>Best</span>}
+                      </span>
+                      <span style={styles.routeQuoteAmount}>
+                        {formatRouteNetOutput(plan)}
+                        {!isBest && <span style={styles.routeDelta}>{getRouteDeltaLabel(plan)}</span>}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             <div style={getStyle(styles.infoRow, mobileOverrides.infoRow)}>
               <span>Minimum received:</span>
               <span>{formatNumber(parseFloat(amountOut) * (1 - slippage / 100))} {tokenOut.symbol}</span>
@@ -4124,6 +4373,72 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: '4px'
+  },
+  routeQuotes: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '6px',
+    paddingBottom: '12px',
+    marginBottom: '12px',
+    borderBottom: '1px solid rgba(255,255,255,0.08)'
+  },
+  routeQuotesHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    color: '#7f8797',
+    fontSize: '12px',
+    fontWeight: '600',
+    letterSpacing: 0,
+    textTransform: 'uppercase' as const
+  },
+  routeQuoteRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '12px',
+    minHeight: '32px',
+    padding: '7px 9px',
+    borderRadius: '8px',
+    background: 'rgba(255,255,255,0.025)',
+    border: '1px solid rgba(255,255,255,0.045)',
+    color: '#cbd5e1',
+    fontSize: '13px'
+  },
+  routeQuoteRowBest: {
+    background: 'rgba(59,130,246,0.12)',
+    border: '1px solid rgba(96,165,250,0.28)'
+  },
+  routeQuoteDex: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    minWidth: 0,
+    whiteSpace: 'nowrap' as const
+  },
+  routeBestBadge: {
+    padding: '2px 6px',
+    borderRadius: '999px',
+    background: 'rgba(74,222,128,0.16)',
+    color: '#4ade80',
+    fontSize: '11px',
+    fontWeight: '700'
+  },
+  routeQuoteAmount: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: '6px',
+    minWidth: 0,
+    textAlign: 'right' as const,
+    color: '#f8fafc',
+    fontWeight: '600',
+    whiteSpace: 'nowrap' as const
+  },
+  routeDelta: {
+    color: '#f59e0b',
+    fontSize: '11px',
+    fontWeight: '700'
   },
   protocolOptions: {
     color: '#9ca3af'

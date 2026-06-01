@@ -254,7 +254,7 @@ export default function SwapHub() {
         <div style={styles.header}>
           <h1 style={styles.title}>SwapHub DEX Aggregator</h1>
           <p style={styles.subtitle}>
-            Best rates across Uniswap V2 & V3 on Base Chain
+            Best rates across Aerodrome, Uniswap and PancakeSwap on Base
           </p>
         </div>
 
@@ -406,4 +406,3 @@ export default function SwapHub() {
     </div>
   );
 }
-
