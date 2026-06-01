@@ -323,7 +323,7 @@ contract SwapAggregatorV3Safe is Ownable, ReentrancyGuard {
     function _addressAt(bytes calldata data, uint256 offset) internal pure returns (address value) {
         if (data.length < offset + 32) revert InvalidCalldata();
         assembly {
-            value := shr(96, calldataload(add(data.offset, offset)))
+            value := calldataload(add(data.offset, offset))
         }
     }
 

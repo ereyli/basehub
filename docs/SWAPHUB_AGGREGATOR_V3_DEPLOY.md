@@ -8,11 +8,13 @@ Deploy `contracts/SwapAggregatorV3Safe.sol` on Base mainnet with:
 - `_feeBps`: `50`
 - `_feeRecipient`: `0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe`
 
-Current deployed Safe aggregator:
+Do not use this previous Safe deployment; it has an address decoding validation bug and rejects valid routes with `InvalidPath()`:
 
 ```bash
 0x2bc0D802889dE33823495D42e9A7E85285F5a047
 ```
+
+Redeploy the fixed `SwapAggregatorV3Safe.sol`, then update `VITE_SWAP_AGGREGATOR_ADDRESS` to the new deployment.
 
 ## Post-Deploy Router Allowlist
 
@@ -44,7 +46,7 @@ Selector allowlist:
 After deploy, set:
 
 ```bash
-VITE_SWAP_AGGREGATOR_ADDRESS=0x2bc0D802889dE33823495D42e9A7E85285F5a047
+VITE_SWAP_AGGREGATOR_ADDRESS=0xYourFixedSafeAggregator
 ```
 
 Then rebuild/redeploy the frontend.
