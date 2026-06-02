@@ -8,6 +8,7 @@ import { Token } from '@uniswap/sdk-core';
 import StatsPanel from './StatsPanel';
 import swaphubLogo from '../assets/swaphub-logo.png';
 import { recordSwapTransaction } from '../utils/xpUtils';
+import { buildSplitRouteFromChunkQuotes, type SplitChunkQuote, type SplitRouteResult } from '../utils/splitRouteEngine';
 import { useQuestSystem } from '../hooks/useQuestSystem';
 import { NETWORKS } from '../config/networks';
 import { DATA_SUFFIX } from '../config/wagmi';
@@ -500,23 +501,37 @@ const PANCAKESWAP_V3_QUOTER = '0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997';
 const AERODROME_ROUTER = '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43';
 const AERODROME_FACTORY = '0x420DD381b31aEf6683db6B902084cB0FFECe40Da';
 
-// OUR SWAP AGGREGATOR V3 (VITE_SWAP_AGGREGATOR_ADDRESS can override this per environment)
-const DEFAULT_SWAP_AGGREGATOR = '0x1bBF38869bD581693aeB8E1cdD0B3C2e6a5fBe5A';
+// OUR SWAP AGGREGATOR V4 (VITE_SWAP_AGGREGATOR_ADDRESS can override this per environment)
+const DEFAULT_SWAP_AGGREGATOR = '0x645A71B8E06c1979e0F140B1ceA68ffa5efBC497';
 const SWAP_AGGREGATOR = (import.meta.env.VITE_SWAP_AGGREGATOR_ADDRESS || DEFAULT_SWAP_AGGREGATOR) as `0x${string}`;
+const DEFAULT_SWAP_AGGREGATOR_ADAPTER = '0xCB8409EE16c10c1460f1Fd07a27AC3D7b882dA5A';
+const SWAP_AGGREGATOR_ADAPTER = (import.meta.env.VITE_SWAP_AGGREGATOR_ADAPTER_ADDRESS || DEFAULT_SWAP_AGGREGATOR_ADAPTER) as `0x${string}`;
+const ENABLE_SPLIT_ROUTE_PREVIEW = import.meta.env.VITE_ENABLE_SPLIT_ROUTE_PREVIEW === 'true';
+const SPLIT_QUOTE_CHUNKS = 4;
 
-// Aggregator V3 ABI - generic allowlisted router execution
+// Aggregator V4 ABI - split-route execution through allowlisted adapters
 const AGGREGATOR_ABI = [
   {
     inputs: [
-      { name: 'router', type: 'address' },
       { name: 'tokenIn', type: 'address' },
       { name: 'tokenOut', type: 'address' },
       { name: 'amountIn', type: 'uint256' },
       { name: 'amountOutMinimum', type: 'uint256' },
-      { name: 'routerCalldata', type: 'bytes' },
-      { name: 'dexId', type: 'bytes32' }
+      {
+        name: 'steps',
+        type: 'tuple[]',
+        components: [
+          { name: 'adapter', type: 'address' },
+          { name: 'router', type: 'address' },
+          { name: 'tokenIn', type: 'address' },
+          { name: 'tokenOut', type: 'address' },
+          { name: 'amountIn', type: 'uint256' },
+          { name: 'routerCalldata', type: 'bytes' },
+          { name: 'dexId', type: 'bytes32' }
+        ]
+      }
     ],
-    name: 'executeSwap',
+    name: 'executeSplit',
     outputs: [{ name: 'amountOut', type: 'uint256' }],
     stateMutability: 'payable',
     type: 'function'
@@ -545,6 +560,8 @@ type SwapRoutePlan = {
   routerCalldata: `0x${string}`;
   bestFeeTier?: number;
 };
+
+type SplitRoutePreview = SplitRouteResult<SwapProtocol>;
 
 const DEX_IDS: Record<SwapProtocol, `0x${string}`> = {
   'uniswap-v3': '0x554e49535741505f563300000000000000000000000000000000000000000000',
@@ -826,6 +843,7 @@ export default function SwapInterface() {
     bestV3Fee: number;
     bestRoutePlan: SwapRoutePlan | null;
     routePlans: SwapRoutePlan[];
+    splitRoutePreview: SplitRoutePreview | null;
     priceImpact: string;
     v3Available: boolean;
     v2Available: boolean;
@@ -898,6 +916,7 @@ export default function SwapInterface() {
   const [selectedProtocol, setSelectedProtocol] = useState<SwapProtocol>('uniswap-v3');
   const [selectedRoutePlan, setSelectedRoutePlan] = useState<SwapRoutePlan | null>(null);
   const [allRoutePlans, setAllRoutePlans] = useState<SwapRoutePlan[]>([]);
+  const [splitRoutePreview, setSplitRoutePreview] = useState<SplitRoutePreview | null>(null);
   const [v2Available, setV2Available] = useState(false);
   const [v3Available, setV3Available] = useState(false);
   const [noLiquidityError, setNoLiquidityError] = useState(false);
@@ -1552,6 +1571,78 @@ export default function SwapInterface() {
     }
   };
 
+  const getSplitRoutePreview = async (
+    amountInWei: bigint,
+    tokenInAddr: string,
+    tokenOutAddr: string,
+    fullAmountPlans: SwapRoutePlan[]
+  ): Promise<SplitRoutePreview | null> => {
+    if (!ENABLE_SPLIT_ROUTE_PREVIEW || !swapClient || fullAmountPlans.length < 2 || amountInWei < BigInt(SPLIT_QUOTE_CHUNKS)) {
+      return null;
+    }
+
+    const feeTiersToTry = [FEE_TIERS.LOWEST, FEE_TIERS.LOW, FEE_TIERS.MEDIUM];
+    const pancakeFeeTiers = [100, 500, 2500, 10000];
+    const chunkQuotes: SplitChunkQuote<SwapProtocol>[] = [];
+    const baseChunk = amountInWei / BigInt(SPLIT_QUOTE_CHUNKS);
+    let allocated = 0n;
+
+    for (let chunkIndex = 0; chunkIndex < SPLIT_QUOTE_CHUNKS; chunkIndex++) {
+      const chunkAmount = chunkIndex === SPLIT_QUOTE_CHUNKS - 1 ? amountInWei - allocated : baseChunk;
+      allocated += chunkAmount;
+      if (chunkAmount <= 0n) continue;
+
+      const [v3Res, v2Res, pancakeRes, aerodromeRes] = await Promise.all([
+        multicallV3Quotes(swapClient, tokenInAddr, tokenOutAddr, chunkAmount, feeTiersToTry),
+        multicallV2Quote(swapClient, tokenInAddr, tokenOutAddr, chunkAmount),
+        quotePancakeV3(swapClient, tokenInAddr, tokenOutAddr, chunkAmount, pancakeFeeTiers),
+        quoteAerodrome(swapClient, tokenInAddr, tokenOutAddr, chunkAmount)
+      ]);
+
+      if (v3Res.data?.quote) {
+        chunkQuotes.push({
+          chunkIndex,
+          amountIn: chunkAmount,
+          candidate: { protocol: 'uniswap-v3', label: 'Uniswap V3', rawQuote: fullAmountPlans.find((plan) => plan.protocol === 'uniswap-v3')?.rawQuote ?? 0n },
+          rawQuote: v3Res.data.quote
+        });
+      }
+      if (v2Res.data) {
+        chunkQuotes.push({
+          chunkIndex,
+          amountIn: chunkAmount,
+          candidate: { protocol: 'uniswap-v2', label: 'Uniswap V2', rawQuote: fullAmountPlans.find((plan) => plan.protocol === 'uniswap-v2')?.rawQuote ?? 0n },
+          rawQuote: v2Res.data
+        });
+      }
+      if (pancakeRes.data?.quote) {
+        chunkQuotes.push({
+          chunkIndex,
+          amountIn: chunkAmount,
+          candidate: { protocol: 'pancakeswap-v3', label: 'PancakeSwap V3', rawQuote: fullAmountPlans.find((plan) => plan.protocol === 'pancakeswap-v3')?.rawQuote ?? 0n },
+          rawQuote: pancakeRes.data.quote
+        });
+      }
+      if (aerodromeRes.data?.quote) {
+        const aerodromePlan = fullAmountPlans.find((plan) => plan.protocol === 'aerodrome');
+        chunkQuotes.push({
+          chunkIndex,
+          amountIn: chunkAmount,
+          candidate: { protocol: 'aerodrome', label: aerodromePlan?.label ?? `Aerodrome ${aerodromeRes.data.stable ? 'Stable' : 'Volatile'}`, rawQuote: aerodromePlan?.rawQuote ?? 0n },
+          rawQuote: aerodromeRes.data.quote
+        });
+      }
+    }
+
+    const fullAmountCandidates = fullAmountPlans.map((plan) => ({
+      protocol: plan.protocol,
+      label: plan.label,
+      rawQuote: plan.rawQuote
+    }));
+    const feeBps = protocolFeeBps ? Number(protocolFeeBps) : 0;
+    return buildSplitRouteFromChunkQuotes(fullAmountCandidates, chunkQuotes, amountInWei, feeBps);
+  };
+
   // Fetch fresh quote (no cache) for swap execution - used when user clicks swap
   const getFreshQuote = async (
     amountInWei: bigint,
@@ -1636,6 +1727,7 @@ export default function SwapInterface() {
         setAmountOut('0');
         setPriceImpact('0');
         setNoLiquidityError(false);
+        setSplitRoutePreview(null);
         return;
       }
 
@@ -1649,6 +1741,7 @@ export default function SwapInterface() {
         setSelectedProtocol('uniswap-v3'); // Use v3 for display purposes
         setSelectedRoutePlan(null);
         setAllRoutePlans([]);
+        setSplitRoutePreview(null);
         setV3Available(true);
         setV2Available(false);
         return;
@@ -1672,6 +1765,7 @@ export default function SwapInterface() {
         setSelectedProtocol(c.bestProtocol);
         setSelectedRoutePlan(c.bestRoutePlan);
         setAllRoutePlans(c.routePlans || []);
+        setSplitRoutePreview(c.splitRoutePreview || null);
         setSelectedFeeTier(c.bestV3Fee);
         setV3Available(c.v3Available);
         setV2Available(c.v2Available);
@@ -1707,6 +1801,7 @@ export default function SwapInterface() {
         setAmountOut('0');
         setPriceImpact('0');
         setNoLiquidityError(true);
+        setSplitRoutePreview(null);
         setIsLoadingQuote(false);
         return;
       }
@@ -1720,6 +1815,19 @@ export default function SwapInterface() {
       setSelectedProtocol(bestProtocol);
       setSelectedRoutePlan(freshQuote.routePlan);
       setAllRoutePlans(freshQuote.routePlans);
+      const splitPreview = await getSplitRoutePreview(amountInWei, tokenInAddr, tokenOutAddr, freshQuote.routePlans);
+      if (currentRequestId !== quoteRequestIdRef.current) return;
+      setSplitRoutePreview(splitPreview);
+      if (splitPreview) {
+        console.log(
+          '🧭 Split route preview:',
+          splitPreview.parts.map((part) => `${part.shareBps / 100}% ${part.candidate.label}`).join(' + '),
+          '=>',
+          formatUnits(splitPreview.netOutput, tokenOut.decimals),
+          tokenOut.symbol,
+          `(+${(splitPreview.improvementBps / 100).toFixed(2)}%)`
+        );
+      }
 
       const feeBps = protocolFeeBps ? Number(protocolFeeBps) : 0;
       const feeBpsBigInt = BigInt(feeBps);
@@ -1758,6 +1866,7 @@ export default function SwapInterface() {
         bestProtocol,
         bestRoutePlan: freshQuote.routePlan,
         routePlans: freshQuote.routePlans,
+        splitRoutePreview: splitPreview,
         bestV3Fee,
         priceImpact: priceImpactStr,
         v3Available: bestProtocol === 'uniswap-v3',
@@ -1777,6 +1886,7 @@ export default function SwapInterface() {
     setErrorMessage(null);
     setAmountOut('0');
     setAllRoutePlans([]);
+    setSplitRoutePreview(null);
     setSelectedRoutePlan(null);
     // Refetch allowance for the new tokenIn
     setTimeout(() => refetchAllowance(), 100);
@@ -1794,6 +1904,12 @@ export default function SwapInterface() {
     const feeMultiplier = 10000n - BigInt(feeBps);
     const netAmount = (plan.rawQuote * feeMultiplier) / 10000n;
     return `${formatNumber(parseFloat(formatUnits(netAmount, tokenOut.decimals)))} ${tokenOut.symbol}`;
+  };
+
+  const formatSplitRouteParts = (preview: SplitRoutePreview) => {
+    return preview.parts
+      .map((part) => `${formatNumber(part.shareBps / 100, 2)}% ${part.candidate.label}`)
+      .join(' + ');
   };
 
   const getErrorText = (error: any) => {
@@ -2032,10 +2148,10 @@ export default function SwapInterface() {
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // NORMAL SWAP via AGGREGATOR V2
+    // NORMAL SWAP via AGGREGATOR V4
     // ═══════════════════════════════════════════════════════════════
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🚀 SWAP via AGGREGATOR V2 (Native ETH Support!)');
+    console.log('🚀 SWAP via AGGREGATOR V4 (Adapter-validated routes)');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     try {
@@ -2103,8 +2219,9 @@ export default function SwapInterface() {
       const tokenInAddr = inputIsNativeETH ? ZERO_ADDRESS : tokenIn.address;
       const tokenOutAddr = outputIsNativeETH ? ZERO_ADDRESS : tokenOut.address;
 
-      console.log('📋 Aggregator V3 Swap Parameters:');
+      console.log('📋 Aggregator V4 Swap Parameters:');
       console.log('   Aggregator Contract:', SWAP_AGGREGATOR);
+      console.log('   Adapter Contract:', SWAP_AGGREGATOR_ADAPTER);
       console.log('   Route:', freshQuote.routePlan.label);
       console.log('   Router:', freshQuote.routePlan.router);
       console.log('   User Address:', address);
@@ -2121,27 +2238,35 @@ export default function SwapInterface() {
       }
 
       // ═══════════════════════════════════════════════════════════════
-      // ALL SWAPS GO THROUGH AGGREGATOR V3 (Including Native ETH!)
+      // ALL SWAPS GO THROUGH AGGREGATOR V4 executeSplit (Including Native ETH!)
       // ═══════════════════════════════════════════════════════════════
       
       let txConfig: any;
 
-      const GAS_FALLBACK = BigInt(700000);
+      const GAS_FALLBACK = BigInt(900000);
       const GAS_BUFFER_BPS = 120n; // 20% buffer = 120/100
 
-      console.log('🔀 Using Aggregator executeSwap');
+      const routeSteps = [{
+        adapter: SWAP_AGGREGATOR_ADAPTER,
+        router: freshQuote.routePlan.router,
+        tokenIn: tokenInAddr,
+        tokenOut: tokenOutAddr,
+        amountIn: amountInWei,
+        routerCalldata: freshQuote.routePlan.routerCalldata,
+        dexId: DEX_IDS[freshQuote.routePlan.protocol]
+      }];
+
+      console.log('🔀 Using Aggregator V4 executeSplit');
       txConfig = {
         address: SWAP_AGGREGATOR as `0x${string}`,
         abi: AGGREGATOR_ABI,
-        functionName: 'executeSwap',
+        functionName: 'executeSplit',
         args: [
-          freshQuote.routePlan.router,
           tokenInAddr,
           tokenOutAddr,
           amountInWei,
           finalMinAmountOut,
-          freshQuote.routePlan.routerCalldata,
-          DEX_IDS[freshQuote.routePlan.protocol]
+          routeSteps
         ],
         chainId: base.id,
         gas: GAS_FALLBACK
@@ -2186,7 +2311,7 @@ export default function SwapInterface() {
         }
       }
 
-      console.log('📤 Sending swap via Aggregator V3...');
+      console.log('📤 Sending swap via Aggregator V4...');
       console.log('   Function:', txConfig.functionName);
       console.log('   Args:', txConfig.args.map((a: any) => a.toString()));
       console.log('   Value:', txConfig.value?.toString() || '0');
@@ -2968,6 +3093,18 @@ export default function SwapInterface() {
                     </div>
                   );
                 })}
+                {ENABLE_SPLIT_ROUTE_PREVIEW && splitRoutePreview && (
+                  <div style={{ ...styles.routeQuoteRow, ...styles.splitRouteRow }}>
+                    <span style={styles.routeQuoteDex}>
+                      Split route
+                      <span style={styles.routeBestBadge}>+{(splitRoutePreview.improvementBps / 100).toFixed(2)}%</span>
+                    </span>
+                    <span style={styles.routeQuoteAmount}>
+                      {formatNumber(parseFloat(formatUnits(splitRoutePreview.netOutput, tokenOut.decimals)))} {tokenOut.symbol}
+                    </span>
+                    <span style={styles.splitRouteParts}>{formatSplitRouteParts(splitRoutePreview)}</span>
+                  </div>
+                )}
               </div>
             )}
             <div style={getStyle(styles.infoRow, mobileOverrides.infoRow)}>
@@ -4456,6 +4593,12 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(59,130,246,0.12)',
     border: '1px solid rgba(96,165,250,0.28)'
   },
+  splitRouteRow: {
+    flexWrap: 'wrap' as const,
+    alignItems: 'flex-start',
+    background: 'rgba(34,197,94,0.1)',
+    border: '1px solid rgba(74,222,128,0.24)'
+  },
   routeQuoteDex: {
     display: 'flex',
     alignItems: 'center',
@@ -4486,6 +4629,12 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#f59e0b',
     fontSize: '11px',
     fontWeight: '700'
+  },
+  splitRouteParts: {
+    flexBasis: '100%',
+    color: '#9ca3af',
+    fontSize: '11px',
+    lineHeight: '16px'
   },
   protocolOptions: {
     color: '#9ca3af'

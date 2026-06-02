@@ -16,11 +16,13 @@ const SWAPHUB_AGGREGATOR_V2 = "0xbf579e68ba69de03ccec14476eb8d765ec558257"
 const SWAPHUB_AGGREGATOR_V3_LEGACY = "0xb1b00880fe88fba62ddb4ed329bcb3ff42ca9570"
 const SWAPHUB_AGGREGATOR_V3_SAFE_BUGGY = "0x2bc0d802889de33823495d42e9a7e85285f5a047"
 const SWAPHUB_AGGREGATOR_V3_SAFE = "0x1bbf38869bd581693aeb8e1cdd0b3c2e6a5fbe5a"
+const SWAPHUB_AGGREGATOR_V4 = "0x645a71b8e06c1979e0f140b1cea68ffa5efbc497"
 const SWAPHUB_AGGREGATORS = new Set([
   SWAPHUB_AGGREGATOR_V2,
   SWAPHUB_AGGREGATOR_V3_LEGACY,
   SWAPHUB_AGGREGATOR_V3_SAFE_BUGGY,
   SWAPHUB_AGGREGATOR_V3_SAFE,
+  SWAPHUB_AGGREGATOR_V4,
 ])
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 const WETH_ADDRESS = "0x4200000000000000000000000000000000000006"
@@ -30,6 +32,7 @@ const DAI_ADDRESS = "0x50c5725949a6f0c72e6c4a641f24049a917db0cb"
 const SWAP_V2_SELECTOR = "0x83b82a53"
 const SWAP_V3_SELECTOR = "0x6b9262dc"
 const EXECUTE_SWAP_SELECTOR = "0x557e9206"
+const EXECUTE_SPLIT_SELECTOR = "0xb0d2a724"
 const ERC20_TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 const DEFAULT_ETH_USD = 3500
 const MAX_VERIFIED_SWAP_USD = 1000
@@ -161,6 +164,15 @@ function parseAggregatorSwapCall(input?: string): ParsedSwapCall | null {
       tokenIn: decodeAddressWord(getCallWord(input, 1)),
       tokenOut: decodeAddressWord(getCallWord(input, 2)),
       amountIn: decodeUintWord(getCallWord(input, 3)),
+    }
+  }
+
+  if (selector === EXECUTE_SPLIT_SELECTOR) {
+    return {
+      selector,
+      tokenIn: decodeAddressWord(getCallWord(input, 0)),
+      tokenOut: decodeAddressWord(getCallWord(input, 1)),
+      amountIn: decodeUintWord(getCallWord(input, 2)),
     }
   }
 
