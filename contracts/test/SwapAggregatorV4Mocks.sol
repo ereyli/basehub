@@ -97,6 +97,21 @@ contract MockDexRouter {
         uint160 sqrtPriceLimitX96;
     }
 
+    struct UniV3ExactInputParams {
+        bytes path;
+        address recipient;
+        uint256 amountIn;
+        uint256 amountOutMinimum;
+    }
+
+    struct PancakeV3ExactInputParams {
+        bytes path;
+        address recipient;
+        uint256 deadline;
+        uint256 amountIn;
+        uint256 amountOutMinimum;
+    }
+
     struct AerodromeRoute {
         address from;
         address to;
@@ -125,6 +140,20 @@ contract MockDexRouter {
 
     function exactInputSingle(PancakeV3ExactInputSingleParams calldata params) external payable returns (uint256 amountOut) {
         amountOut = _swap(params.tokenIn, params.tokenOut, params.amountIn, params.recipient);
+        require(amountOut >= params.amountOutMinimum, "MIN_OUT");
+    }
+
+    function exactInput(UniV3ExactInputParams calldata params) external payable returns (uint256 amountOut) {
+        address tokenIn = _pathAddressAt(params.path, 0);
+        address tokenOut = _pathAddressAt(params.path, params.path.length - 20);
+        amountOut = _swap(tokenIn, tokenOut, params.amountIn, params.recipient);
+        require(amountOut >= params.amountOutMinimum, "MIN_OUT");
+    }
+
+    function exactInput(PancakeV3ExactInputParams calldata params) external payable returns (uint256 amountOut) {
+        address tokenIn = _pathAddressAt(params.path, 0);
+        address tokenOut = _pathAddressAt(params.path, params.path.length - 20);
+        amountOut = _swap(tokenIn, tokenOut, params.amountIn, params.recipient);
         require(amountOut >= params.amountOutMinimum, "MIN_OUT");
     }
 
@@ -168,6 +197,13 @@ contract MockDexRouter {
             IWETHLike(weth).deposit{value: amountOut}();
         }
         require(MockERC20(tokenOut).transfer(recipient, amountOut), "TRANSFER_OUT");
+    }
+
+    function _pathAddressAt(bytes calldata path, uint256 offset) internal pure returns (address token) {
+        require(path.length >= offset + 20, "PATH");
+        assembly {
+            token := shr(96, calldataload(add(path.offset, offset)))
+        }
     }
 
     receive() external payable {}

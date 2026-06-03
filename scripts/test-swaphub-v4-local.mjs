@@ -6,6 +6,7 @@ import solc from 'solc'
 import {
   createPublicClient,
   createWalletClient,
+  encodePacked,
   encodeFunctionData,
   getContract,
   http,
@@ -72,6 +73,31 @@ const PANCAKE_V3_ROUTER_ABI = [{
     { name: 'amountIn', type: 'uint256' },
     { name: 'amountOutMinimum', type: 'uint256' },
     { name: 'sqrtPriceLimitX96', type: 'uint160' }
+  ] }],
+  outputs: [{ name: 'amountOut', type: 'uint256' }]
+}]
+const UNI_V3_EXACT_INPUT_ABI = [{
+  name: 'exactInput',
+  type: 'function',
+  stateMutability: 'payable',
+  inputs: [{ name: 'params', type: 'tuple', components: [
+    { name: 'path', type: 'bytes' },
+    { name: 'recipient', type: 'address' },
+    { name: 'amountIn', type: 'uint256' },
+    { name: 'amountOutMinimum', type: 'uint256' }
+  ] }],
+  outputs: [{ name: 'amountOut', type: 'uint256' }]
+}]
+const PANCAKE_V3_EXACT_INPUT_ABI = [{
+  name: 'exactInput',
+  type: 'function',
+  stateMutability: 'payable',
+  inputs: [{ name: 'params', type: 'tuple', components: [
+    { name: 'path', type: 'bytes' },
+    { name: 'recipient', type: 'address' },
+    { name: 'deadline', type: 'uint256' },
+    { name: 'amountIn', type: 'uint256' },
+    { name: 'amountOutMinimum', type: 'uint256' }
   ] }],
   outputs: [{ name: 'amountOut', type: 'uint256' }]
 }]
@@ -195,7 +221,7 @@ async function deployStack() {
   const tokenOut = await deploy(tokenSource, 'MockERC20', ['Mock ETH', 'mETH', 18])
   const routerA = await deploy(tokenSource, 'MockDexRouter')
   const routerB = await deploy(tokenSource, 'MockDexRouter')
-  const adapter = await deploy(v4Source, 'BaseHubDexAdapterV1')
+  const adapter = await deploy(v4Source, 'BaseHubDexAdapterV2')
   const aggregator = await deploy(v4Source, 'SwapAggregatorV4', [weth.address, 50, feeRecipient.address])
 
   await write(aggregator, 'setAdapter', [adapter.address, true])
@@ -207,10 +233,14 @@ async function deployStack() {
   await write(adapter, 'setRouterSelector', [routerA.address, '0x414bf389', 2, true])
   await write(adapter, 'setRouterSelector', [routerA.address, '0x38ed1739', 3, true])
   await write(adapter, 'setRouterSelector', [routerA.address, '0xcac88ea9', 4, true])
+  await write(adapter, 'setRouterSelector', [routerA.address, '0xb858183f', 5, true])
+  await write(adapter, 'setRouterSelector', [routerA.address, '0xc04b8d59', 6, true])
   await write(adapter, 'setRouterSelector', [routerB.address, '0x04e45aaf', 1, true])
   await write(adapter, 'setRouterSelector', [routerB.address, '0x414bf389', 2, true])
   await write(adapter, 'setRouterSelector', [routerB.address, '0x38ed1739', 3, true])
   await write(adapter, 'setRouterSelector', [routerB.address, '0xcac88ea9', 4, true])
+  await write(adapter, 'setRouterSelector', [routerB.address, '0xb858183f', 5, true])
+  await write(adapter, 'setRouterSelector', [routerB.address, '0xc04b8d59', 6, true])
 
   return { weth, tokenIn, tokenOut, routerA, routerB, adapter, aggregator }
 }
@@ -229,6 +259,37 @@ function pancakeStep({ adapter, router, tokenIn, tokenOut, aggregator, amount })
     abi: PANCAKE_V3_ROUTER_ABI,
     functionName: 'exactInputSingle',
     args: [{ tokenIn, tokenOut, fee: 2500, recipient: aggregator.address, deadline: 9999999999n, amountIn: amount, amountOutMinimum: 0n, sqrtPriceLimitX96: 0n }]
+  })
+  return [adapter.address, router.address, tokenIn, tokenOut, amount, calldata, DEX_PANCAKE]
+}
+
+function v3Path(tokens, fees) {
+  assert.equal(tokens.length, fees.length + 1, 'V3 path requires one more token than fee')
+  const packedTypes = []
+  const packedValues = []
+  for (let i = 0; i < fees.length; i++) {
+    packedTypes.push('address', 'uint24')
+    packedValues.push(tokens[i], fees[i])
+  }
+  packedTypes.push('address')
+  packedValues.push(tokens[tokens.length - 1])
+  return encodePacked(packedTypes, packedValues)
+}
+
+function uniV3MultiHopStep({ adapter, router, tokenIn, tokenOut, aggregator, amount, path }) {
+  const calldata = encodeFunctionData({
+    abi: UNI_V3_EXACT_INPUT_ABI,
+    functionName: 'exactInput',
+    args: [{ path, recipient: aggregator.address, amountIn: amount, amountOutMinimum: 0n }]
+  })
+  return [adapter.address, router.address, tokenIn, tokenOut, amount, calldata, DEX_UNIV3]
+}
+
+function pancakeV3MultiHopStep({ adapter, router, tokenIn, tokenOut, aggregator, amount, path }) {
+  const calldata = encodeFunctionData({
+    abi: PANCAKE_V3_EXACT_INPUT_ABI,
+    functionName: 'exactInput',
+    args: [{ path, recipient: aggregator.address, deadline: 9999999999n, amountIn: amount, amountOutMinimum: 0n }]
   })
   return [adapter.address, router.address, tokenIn, tokenOut, amount, calldata, DEX_PANCAKE]
 }
@@ -294,6 +355,91 @@ async function testPancakeAndAerodrome() {
   await write(s.aggregator, 'executeSplit', [s.tokenIn.address, s.tokenOut.address, amountIn, userOut, [stepA, stepB]], userClient)
   assert.equal(await s.tokenOut.read.balanceOf([user.address]), userOut)
   console.log('ok - Pancake V3 and Aerodrome calldata shapes execute through adapter')
+}
+
+async function testUniswapV2MultiHopPath() {
+  const s = await deployStack()
+  const middle = await deploy(tokenSource, 'MockERC20', ['Mock Middle', 'mMID', 18])
+  await write(s.routerA, 'setRate', [s.tokenIn.address, s.tokenOut.address, 4n, 1n])
+
+  const amount = parseEther('25')
+  const raw = parseEther('100')
+  const userOut = raw - (raw * 50n) / 10_000n
+  await write(s.tokenIn, 'mint', [user.address, amount])
+  await write(s.tokenOut, 'mint', [s.routerA.address, parseEther('200')])
+  await write(s.tokenIn, 'approve', [s.aggregator.address, amount], userClient)
+
+  const step = v2Step({
+    adapter: s.adapter,
+    router: s.routerA,
+    tokenIn: s.tokenIn.address,
+    tokenOut: s.tokenOut.address,
+    aggregator: s.aggregator,
+    amount,
+    path: [s.tokenIn.address, middle.address, s.tokenOut.address]
+  })
+
+  await write(s.aggregator, 'executeSplit', [s.tokenIn.address, s.tokenOut.address, amount, userOut, [step]], userClient)
+  assert.equal(await s.tokenOut.read.balanceOf([user.address]), userOut)
+  console.log('ok - Uniswap V2 multi-hop path executes through adapter')
+}
+
+async function testV3MultiHopPaths() {
+  const s = await deployStack()
+  const middle = await deploy(tokenSource, 'MockERC20', ['Mock Middle', 'mMID', 18])
+  await write(s.routerA, 'setRate', [s.tokenIn.address, s.tokenOut.address, 9n, 1n])
+  await write(s.routerB, 'setRate', [s.tokenIn.address, s.tokenOut.address, 11n, 1n])
+
+  const uniAmount = parseEther('10')
+  const pancakeAmount = parseEther('20')
+  const totalAmount = uniAmount + pancakeAmount
+  const raw = parseEther('310')
+  const userOut = raw - (raw * 50n) / 10_000n
+  await write(s.tokenIn, 'mint', [user.address, totalAmount])
+  await write(s.tokenOut, 'mint', [s.routerA.address, parseEther('1000')])
+  await write(s.tokenOut, 'mint', [s.routerB.address, parseEther('1000')])
+  await write(s.tokenIn, 'approve', [s.aggregator.address, totalAmount], userClient)
+
+  const uniPath = v3Path([s.tokenIn.address, middle.address, s.tokenOut.address], [500, 3000])
+  const pancakePath = v3Path([s.tokenIn.address, middle.address, s.tokenOut.address], [100, 2500])
+  const stepA = uniV3MultiHopStep({ adapter: s.adapter, router: s.routerA, tokenIn: s.tokenIn.address, tokenOut: s.tokenOut.address, aggregator: s.aggregator, amount: uniAmount, path: uniPath })
+  const stepB = pancakeV3MultiHopStep({ adapter: s.adapter, router: s.routerB, tokenIn: s.tokenIn.address, tokenOut: s.tokenOut.address, aggregator: s.aggregator, amount: pancakeAmount, path: pancakePath })
+
+  await write(s.aggregator, 'executeSplit', [s.tokenIn.address, s.tokenOut.address, totalAmount, userOut, [stepA, stepB]], userClient)
+  assert.equal(await s.tokenOut.read.balanceOf([user.address]), userOut)
+  console.log('ok - Uniswap V3 and Pancake V3 multi-hop paths execute through adapter')
+}
+
+async function testAerodromeMultiRoute() {
+  const s = await deployStack()
+  const middle = await deploy(tokenSource, 'MockERC20', ['Mock Middle', 'mMID', 18])
+  await write(s.routerA, 'setRate', [s.tokenIn.address, s.tokenOut.address, 6n, 1n])
+
+  const amount = parseEther('12')
+  const raw = parseEther('72')
+  const userOut = raw - (raw * 50n) / 10_000n
+  await write(s.tokenIn, 'mint', [user.address, amount])
+  await write(s.tokenOut, 'mint', [s.routerA.address, parseEther('100')])
+  await write(s.tokenIn, 'approve', [s.aggregator.address, amount], userClient)
+
+  const calldata = encodeFunctionData({
+    abi: s.routerA.abi,
+    functionName: 'swapExactTokensForTokens',
+    args: [
+      amount,
+      0n,
+      [
+        { from: s.tokenIn.address, to: middle.address, stable: false, factory: s.routerA.address },
+        { from: middle.address, to: s.tokenOut.address, stable: false, factory: s.routerA.address }
+      ],
+      s.aggregator.address,
+      9999999999n
+    ]
+  })
+  const step = [s.adapter.address, s.routerA.address, s.tokenIn.address, s.tokenOut.address, amount, calldata, DEX_AERO]
+  await write(s.aggregator, 'executeSplit', [s.tokenIn.address, s.tokenOut.address, amount, userOut, [step]], userClient)
+  assert.equal(await s.tokenOut.read.balanceOf([user.address]), userOut)
+  console.log('ok - Aerodrome multi-route path executes through adapter')
 }
 
 async function testEthInput() {
@@ -374,6 +520,21 @@ async function testNegativeValidation() {
   await expectRevert('adapter rejects wrong V2 path', () =>
     write(s.aggregator, 'executeSplit', [s.tokenIn.address, s.tokenOut.address, parseEther('5'), 1n, [badPathStep]], userClient)
   )
+
+  const middle = await deploy(tokenSource, 'MockERC20', ['Mock Middle', 'mMID', 18])
+  const badV3Path = v3Path([s.tokenOut.address, middle.address, s.tokenIn.address], [500, 3000])
+  const badV3Step = uniV3MultiHopStep({
+    adapter: s.adapter,
+    router: s.routerA,
+    tokenIn: s.tokenIn.address,
+    tokenOut: s.tokenOut.address,
+    aggregator: s.aggregator,
+    amount: parseEther('5'),
+    path: badV3Path
+  })
+  await expectRevert('adapter rejects wrong V3 multi-hop path', () =>
+    write(s.aggregator, 'executeSplit', [s.tokenIn.address, s.tokenOut.address, parseEther('5'), 1n, [badV3Step]], userClient)
+  )
 }
 
 async function main() {
@@ -386,6 +547,9 @@ async function main() {
   console.log('Running SwapAggregatorV4 local test suite...')
   await testSplitRoute()
   await testPancakeAndAerodrome()
+  await testUniswapV2MultiHopPath()
+  await testV3MultiHopPaths()
+  await testAerodromeMultiRoute()
   await testEthInput()
   await testEthOutput()
   await testNegativeValidation()

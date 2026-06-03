@@ -383,3 +383,240 @@ contract BaseHubDexAdapterV1 is Ownable, IRouteAdapter {
         }
     }
 }
+
+/**
+ * @title BaseHubDexAdapterV2
+ * @notice Validator adapter with multi-hop calldata support for current BaseHub DEX families.
+ * @dev This adapter can be allowlisted in the existing SwapAggregatorV4 without redeploying
+ *      the core aggregator. Future DEX families should be added as new RouteKind values or
+ *      as separate adapters that implement IRouteAdapter.
+ */
+contract BaseHubDexAdapterV2 is Ownable, IRouteAdapter {
+    enum RouteKind {
+        Unknown,
+        UniV3ExactInputSingle,
+        PancakeV3ExactInputSingle,
+        UniV2SwapExactTokensForTokens,
+        AerodromeSwapExactTokensForTokens,
+        UniV3ExactInput,
+        PancakeV3ExactInput
+    }
+
+    mapping(address => bool) public allowedRouters;
+    mapping(address => mapping(bytes4 => RouteKind)) public routeKinds;
+
+    bytes4 public constant UNI_V3_EXACT_INPUT_SINGLE = 0x04e45aaf;
+    bytes4 public constant PANCAKE_V3_EXACT_INPUT_SINGLE = 0x414bf389;
+    bytes4 public constant UNI_V2_SWAP_EXACT_TOKENS_FOR_TOKENS = 0x38ed1739;
+    bytes4 public constant AERODROME_SWAP_EXACT_TOKENS_FOR_TOKENS = 0xcac88ea9;
+    bytes4 public constant UNI_V3_EXACT_INPUT = 0xb858183f;
+    bytes4 public constant PANCAKE_V3_EXACT_INPUT = 0xc04b8d59;
+
+    event RouterUpdated(address indexed router, bool allowed);
+    event RouterSelectorUpdated(address indexed router, bytes4 indexed selector, RouteKind routeKind, bool allowed);
+
+    error InvalidAddress();
+    error InvalidRouter();
+    error InvalidSelector();
+    error InvalidRouteKind();
+    error InvalidCalldata();
+    error InvalidRecipient();
+    error InvalidPath();
+    error InvalidRouterAmount();
+
+    constructor() Ownable(msg.sender) {}
+
+    function setRouter(address router, bool allowed) external onlyOwner {
+        if (router == address(0)) revert InvalidAddress();
+        allowedRouters[router] = allowed;
+        emit RouterUpdated(router, allowed);
+    }
+
+    function setRouterSelector(
+        address router,
+        bytes4 selector,
+        RouteKind routeKind,
+        bool allowed
+    ) external onlyOwner {
+        if (router == address(0) || selector == bytes4(0)) revert InvalidAddress();
+        if (allowed && routeKind == RouteKind.Unknown) revert InvalidRouteKind();
+        routeKinds[router][selector] = allowed ? routeKind : RouteKind.Unknown;
+        emit RouterSelectorUpdated(router, selector, routeKind, allowed);
+    }
+
+    function validateStep(address aggregator, address weth, RouteStep calldata step) external view {
+        if (!allowedRouters[step.router]) revert InvalidRouter();
+        bytes4 selector = _selector(step.routerCalldata);
+        RouteKind kind = routeKinds[step.router][selector];
+        if (kind == RouteKind.Unknown) revert InvalidSelector();
+
+        address actualTokenIn = step.tokenIn == address(0) ? weth : step.tokenIn;
+        address actualTokenOut = step.tokenOut == address(0) ? weth : step.tokenOut;
+
+        if (kind == RouteKind.UniV3ExactInputSingle) {
+            _validateUniV3Single(aggregator, actualTokenIn, actualTokenOut, step.amountIn, step.routerCalldata);
+        } else if (kind == RouteKind.PancakeV3ExactInputSingle) {
+            _validatePancakeV3Single(aggregator, actualTokenIn, actualTokenOut, step.amountIn, step.routerCalldata);
+        } else if (kind == RouteKind.UniV2SwapExactTokensForTokens) {
+            _validateUniV2(aggregator, actualTokenIn, actualTokenOut, step.amountIn, step.routerCalldata);
+        } else if (kind == RouteKind.AerodromeSwapExactTokensForTokens) {
+            _validateAerodrome(aggregator, actualTokenIn, actualTokenOut, step.amountIn, step.routerCalldata);
+        } else if (kind == RouteKind.UniV3ExactInput) {
+            _validateUniV3MultiHop(aggregator, actualTokenIn, actualTokenOut, step.amountIn, step.routerCalldata);
+        } else if (kind == RouteKind.PancakeV3ExactInput) {
+            _validatePancakeV3MultiHop(aggregator, actualTokenIn, actualTokenOut, step.amountIn, step.routerCalldata);
+        } else {
+            revert InvalidRouteKind();
+        }
+    }
+
+    function _validateUniV3Single(
+        address aggregator,
+        address actualTokenIn,
+        address actualTokenOut,
+        uint256 amountIn,
+        bytes calldata data
+    ) internal pure {
+        if (data.length != 4 + 32 * 7) revert InvalidCalldata();
+        if (_addressAt(data, 4) != actualTokenIn) revert InvalidPath();
+        if (_addressAt(data, 36) != actualTokenOut) revert InvalidPath();
+        if (_addressAt(data, 100) != aggregator) revert InvalidRecipient();
+        if (_uintAt(data, 132) != amountIn) revert InvalidRouterAmount();
+        if (_uintAt(data, 164) != 0) revert InvalidCalldata();
+    }
+
+    function _validatePancakeV3Single(
+        address aggregator,
+        address actualTokenIn,
+        address actualTokenOut,
+        uint256 amountIn,
+        bytes calldata data
+    ) internal pure {
+        if (data.length != 4 + 32 * 8) revert InvalidCalldata();
+        if (_addressAt(data, 4) != actualTokenIn) revert InvalidPath();
+        if (_addressAt(data, 36) != actualTokenOut) revert InvalidPath();
+        if (_addressAt(data, 100) != aggregator) revert InvalidRecipient();
+        if (_uintAt(data, 164) != amountIn) revert InvalidRouterAmount();
+        if (_uintAt(data, 196) != 0) revert InvalidCalldata();
+    }
+
+    function _validateUniV2(
+        address aggregator,
+        address actualTokenIn,
+        address actualTokenOut,
+        uint256 amountIn,
+        bytes calldata data
+    ) internal pure {
+        if (_uintAt(data, 4) != amountIn) revert InvalidRouterAmount();
+        if (_uintAt(data, 36) != 0) revert InvalidCalldata();
+        if (_addressAt(data, 100) != aggregator) revert InvalidRecipient();
+
+        uint256 pathOffset = _uintAt(data, 68);
+        uint256 pathStart = 4 + pathOffset;
+        uint256 pathLength = _uintAt(data, pathStart);
+        if (pathLength < 2) revert InvalidPath();
+        if (_addressAt(data, pathStart + 32) != actualTokenIn) revert InvalidPath();
+        if (_addressAt(data, pathStart + 32 * pathLength) != actualTokenOut) revert InvalidPath();
+    }
+
+    function _validateAerodrome(
+        address aggregator,
+        address actualTokenIn,
+        address actualTokenOut,
+        uint256 amountIn,
+        bytes calldata data
+    ) internal pure {
+        if (_uintAt(data, 4) != amountIn) revert InvalidRouterAmount();
+        if (_uintAt(data, 36) != 0) revert InvalidCalldata();
+        if (_addressAt(data, 100) != aggregator) revert InvalidRecipient();
+
+        uint256 routesOffset = _uintAt(data, 68);
+        uint256 routesStart = 4 + routesOffset;
+        uint256 routesLength = _uintAt(data, routesStart);
+        if (routesLength < 1) revert InvalidPath();
+        if (_addressAt(data, routesStart + 32) != actualTokenIn) revert InvalidPath();
+
+        uint256 lastRouteStart = routesStart + 32 + (routesLength - 1) * 128;
+        if (_addressAt(data, lastRouteStart + 32) != actualTokenOut) revert InvalidPath();
+
+        for (uint256 i = 0; i + 1 < routesLength; i++) {
+            uint256 currentRouteStart = routesStart + 32 + i * 128;
+            uint256 nextRouteStart = currentRouteStart + 128;
+            if (_addressAt(data, currentRouteStart + 32) != _addressAt(data, nextRouteStart)) revert InvalidPath();
+        }
+    }
+
+    function _validateUniV3MultiHop(
+        address aggregator,
+        address actualTokenIn,
+        address actualTokenOut,
+        uint256 amountIn,
+        bytes calldata data
+    ) internal pure {
+        if (_uintAt(data, 4) != 32) revert InvalidCalldata();
+        uint256 paramsStart = 36;
+        if (_addressAt(data, paramsStart + 32) != aggregator) revert InvalidRecipient();
+        if (_uintAt(data, paramsStart + 64) != amountIn) revert InvalidRouterAmount();
+        if (_uintAt(data, paramsStart + 96) != 0) revert InvalidCalldata();
+        _validateV3Path(data, paramsStart, actualTokenIn, actualTokenOut);
+    }
+
+    function _validatePancakeV3MultiHop(
+        address aggregator,
+        address actualTokenIn,
+        address actualTokenOut,
+        uint256 amountIn,
+        bytes calldata data
+    ) internal pure {
+        if (_uintAt(data, 4) != 32) revert InvalidCalldata();
+        uint256 paramsStart = 36;
+        if (_addressAt(data, paramsStart + 32) != aggregator) revert InvalidRecipient();
+        if (_uintAt(data, paramsStart + 96) != amountIn) revert InvalidRouterAmount();
+        if (_uintAt(data, paramsStart + 128) != 0) revert InvalidCalldata();
+        _validateV3Path(data, paramsStart, actualTokenIn, actualTokenOut);
+    }
+
+    function _validateV3Path(
+        bytes calldata data,
+        uint256 paramsStart,
+        address actualTokenIn,
+        address actualTokenOut
+    ) internal pure {
+        uint256 pathOffset = _uintAt(data, paramsStart);
+        uint256 pathStart = paramsStart + pathOffset;
+        uint256 pathLength = _uintAt(data, pathStart);
+        if (pathLength < 43 || (pathLength - 20) % 23 != 0) revert InvalidPath();
+
+        uint256 pathDataStart = pathStart + 32;
+        if (_pathAddressAt(data, pathDataStart) != actualTokenIn) revert InvalidPath();
+        if (_pathAddressAt(data, pathDataStart + pathLength - 20) != actualTokenOut) revert InvalidPath();
+    }
+
+    function _selector(bytes calldata data) internal pure returns (bytes4 selector) {
+        if (data.length < 4) revert InvalidSelector();
+        assembly {
+            selector := calldataload(data.offset)
+        }
+    }
+
+    function _addressAt(bytes calldata data, uint256 offset) internal pure returns (address value) {
+        if (data.length < offset + 32) revert InvalidCalldata();
+        assembly {
+            value := calldataload(add(data.offset, offset))
+        }
+    }
+
+    function _pathAddressAt(bytes calldata data, uint256 offset) internal pure returns (address value) {
+        if (data.length < offset + 20) revert InvalidCalldata();
+        assembly {
+            value := shr(96, calldataload(add(data.offset, offset)))
+        }
+    }
+
+    function _uintAt(bytes calldata data, uint256 offset) internal pure returns (uint256 value) {
+        if (data.length < offset + 32) revert InvalidCalldata();
+        assembly {
+            value := calldataload(add(data.offset, offset))
+        }
+    }
+}

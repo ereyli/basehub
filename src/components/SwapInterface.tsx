@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useBalance, useChainId } from 'wagmi';
-import { parseUnits, formatUnits, maxUint256, createPublicClient, http, fallback, encodeFunctionData } from 'viem';
+import { parseUnits, formatUnits, maxUint256, createPublicClient, http, fallback, encodeFunctionData, encodePacked } from 'viem';
 import { base } from 'wagmi/chains';
 import { DEFAULT_TOKENS, POPULAR_TOKENS, MEME_TOKENS, FEE_TIERS, searchTokens, getAllTokens, saveCustomToken, removeCustomToken, getTokenByAddress, BASE_CHAIN_ID, type AppToken } from '../config/tokens';
 import { Token } from '@uniswap/sdk-core';
 import StatsPanel from './StatsPanel';
 import swaphubLogo from '../assets/swaphub-logo.png';
 import { recordSwapTransaction } from '../utils/xpUtils';
-import { buildSplitRouteFromChunkQuotes, type SplitChunkQuote, type SplitRouteResult } from '../utils/splitRouteEngine';
+import { calculateNetOutput, type SplitRouteResult } from '../utils/splitRouteEngine';
 import { useQuestSystem } from '../hooks/useQuestSystem';
 import { NETWORKS } from '../config/networks';
 import { DATA_SUFFIX } from '../config/wagmi';
@@ -506,8 +506,21 @@ const DEFAULT_SWAP_AGGREGATOR = '0x645A71B8E06c1979e0F140B1ceA68ffa5efBC497';
 const SWAP_AGGREGATOR = (import.meta.env.VITE_SWAP_AGGREGATOR_ADDRESS || DEFAULT_SWAP_AGGREGATOR) as `0x${string}`;
 const DEFAULT_SWAP_AGGREGATOR_ADAPTER = '0xCB8409EE16c10c1460f1Fd07a27AC3D7b882dA5A';
 const SWAP_AGGREGATOR_ADAPTER = (import.meta.env.VITE_SWAP_AGGREGATOR_ADAPTER_ADDRESS || DEFAULT_SWAP_AGGREGATOR_ADAPTER) as `0x${string}`;
-const ENABLE_SPLIT_ROUTE_PREVIEW = import.meta.env.VITE_ENABLE_SPLIT_ROUTE_PREVIEW === 'true';
+const DEFAULT_PROTOCOL_FEE_BPS = 50;
+const ENABLE_SPLIT_ROUTE_PREVIEW = import.meta.env.VITE_ENABLE_SPLIT_ROUTE_PREVIEW !== 'false';
 const SPLIT_QUOTE_CHUNKS = 4;
+const SPLIT_ALLOCATION_UNITS = 10;
+const SPLIT_MIN_INPUT_USD = 25;
+const GAS_ADJUSTED_ROUTE_SCORING = import.meta.env.VITE_GAS_ADJUSTED_ROUTE_SCORING !== 'false';
+const MULTI_HOP_ROUTE_PREVIEW = import.meta.env.VITE_MULTI_HOP_ROUTE_PREVIEW !== 'false';
+const ENABLE_ADAPTER_V2_MULTI_HOP = import.meta.env.VITE_ENABLE_ADAPTER_V2_MULTI_HOP === 'true';
+const GAS_ESTIMATE_UNITS = {
+  'uniswap-v3': 185_000n,
+  'uniswap-v2': 165_000n,
+  'pancakeswap-v3': 190_000n,
+  aerodrome: 175_000n
+} as const;
+const MULTI_HOP_GAS_PER_EXTRA_HOP = 55_000n;
 
 // Aggregator V4 ABI - split-route execution through allowlisted adapters
 const AGGREGATOR_ABI = [
@@ -559,6 +572,11 @@ type SwapRoutePlan = {
   rawQuote: bigint;
   routerCalldata: `0x${string}`;
   bestFeeTier?: number;
+  path?: `0x${string}`[];
+  estimatedGasUnits?: bigint;
+  gasCostInOutputToken?: bigint;
+  gasAdjustedQuote?: bigint;
+  hopCount?: number;
 };
 
 type SplitRoutePreview = SplitRouteResult<SwapProtocol>;
@@ -590,6 +608,24 @@ const QUOTER_ABI = [
       { name: 'amountOut', type: 'uint256' },
       { name: 'sqrtPriceX96After', type: 'uint160' },
       { name: 'initializedTicksCrossed', type: 'uint32' },
+      { name: 'gasEstimate', type: 'uint256' }
+    ],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  }
+];
+
+const V3_QUOTER_EXACT_INPUT_ABI = [
+  {
+    inputs: [
+      { name: 'path', type: 'bytes' },
+      { name: 'amountIn', type: 'uint256' }
+    ],
+    name: 'quoteExactInput',
+    outputs: [
+      { name: 'amountOut', type: 'uint256' },
+      { name: 'sqrtPriceX96AfterList', type: 'uint160[]' },
+      { name: 'initializedTicksCrossedList', type: 'uint32[]' },
       { name: 'gasEstimate', type: 'uint256' }
     ],
     stateMutability: 'nonpayable',
@@ -673,6 +709,27 @@ const UNISWAP_V3_ROUTER_ABI = [
   }
 ];
 
+const UNISWAP_V3_EXACT_INPUT_ROUTER_ABI = [
+  {
+    inputs: [
+      {
+        components: [
+          { name: 'path', type: 'bytes' },
+          { name: 'recipient', type: 'address' },
+          { name: 'amountIn', type: 'uint256' },
+          { name: 'amountOutMinimum', type: 'uint256' }
+        ],
+        name: 'params',
+        type: 'tuple'
+      }
+    ],
+    name: 'exactInput',
+    outputs: [{ name: 'amountOut', type: 'uint256' }],
+    stateMutability: 'payable',
+    type: 'function'
+  }
+];
+
 const PANCAKESWAP_V3_ROUTER_ABI = [
   {
     inputs: [
@@ -692,6 +749,28 @@ const PANCAKESWAP_V3_ROUTER_ABI = [
       }
     ],
     name: 'exactInputSingle',
+    outputs: [{ name: 'amountOut', type: 'uint256' }],
+    stateMutability: 'payable',
+    type: 'function'
+  }
+];
+
+const PANCAKESWAP_V3_EXACT_INPUT_ROUTER_ABI = [
+  {
+    inputs: [
+      {
+        components: [
+          { name: 'path', type: 'bytes' },
+          { name: 'recipient', type: 'address' },
+          { name: 'deadline', type: 'uint256' },
+          { name: 'amountIn', type: 'uint256' },
+          { name: 'amountOutMinimum', type: 'uint256' }
+        ],
+        name: 'params',
+        type: 'tuple'
+      }
+    ],
+    name: 'exactInput',
     outputs: [{ name: 'amountOut', type: 'uint256' }],
     stateMutability: 'payable',
     type: 'function'
@@ -849,6 +928,7 @@ export default function SwapInterface() {
     v2Available: boolean;
     timestamp: number;
   } | null>(null);
+  const gasPriceCacheRef = useRef<{ value: bigint; timestamp: number } | null>(null);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -960,6 +1040,9 @@ export default function SwapInterface() {
     abi: AGGREGATOR_ABI,
     functionName: 'feeBps'
   });
+  const getProtocolFeeBps = () => {
+    return typeof protocolFeeBps === 'bigint' ? Number(protocolFeeBps) : DEFAULT_PROTOCOL_FEE_BPS;
+  };
 
   // Load custom tokens from localStorage on mount and refresh logos
   useEffect(() => {
@@ -1350,80 +1433,89 @@ export default function SwapInterface() {
     }
   };
 
-  // Multicall-based V2 quote: getPair then getAmountsOut
-  const multicallV2Quote = async (
+  const quoteUniswapV2Path = async (
     client: typeof swapClient,
-    tokenInAddr: string,
-    tokenOutAddr: string,
+    path: `0x${string}`[],
     amountInWei: bigint,
     attempt: number = 0
   ): Promise<QuoteResult<bigint>> => {
     const MAX_RETRIES = 2;
+    if (path.length < 2) return { data: null, rpcError: false };
     try {
-      const [pairResult] = await client.multicall({
-        contracts: [{
-          address: UNISWAP_V2_FACTORY as `0x${string}`,
-          abi: V2_FACTORY_ABI,
-          functionName: 'getPair',
-          args: [tokenInAddr as `0x${string}`, tokenOutAddr as `0x${string}`]
-        }],
-        allowFailure: true
+      const amounts = await client.readContract({
+        address: UNISWAP_V2_ROUTER as `0x${string}`,
+        abi: V2_ROUTER_ABI,
+        functionName: 'getAmountsOut',
+        args: [amountInWei, path]
       });
-
-      // getPair failed at multicall level — could be RPC issue; try direct readContract
-      if (pairResult.status !== 'success') {
-        try {
-          const pairAddr = await client.readContract({
-            address: UNISWAP_V2_FACTORY as `0x${string}`,
-            abi: V2_FACTORY_ABI,
-            functionName: 'getPair',
-            args: [tokenInAddr as `0x${string}`, tokenOutAddr as `0x${string}`]
-          });
-          if (!pairAddr || pairAddr === '0x0000000000000000000000000000000000000000') return { data: null, rpcError: false };
-          const amounts = await client.readContract({
-            address: UNISWAP_V2_ROUTER as `0x${string}`,
-            abi: V2_ROUTER_ABI,
-            functionName: 'getAmountsOut',
-            args: [amountInWei, [tokenInAddr as `0x${string}`, tokenOutAddr as `0x${string}`]]
-          });
-          return amounts ? { data: (amounts as bigint[])[1], rpcError: false } : { data: null, rpcError: false };
-        } catch (directErr: any) {
-          if (isTransientRpcError(directErr) && attempt < MAX_RETRIES) {
-            const wait = 2000 * (attempt + 1);
-            console.log(`⏳ V2 direct RPC error, retry in ${wait}ms...`);
-            await new Promise(r => setTimeout(r, wait));
-            return multicallV2Quote(client, tokenInAddr, tokenOutAddr, amountInWei, attempt + 1);
-          }
-          return { data: null, rpcError: isTransientRpcError(directErr) };
-        }
-      }
-
-      if (!pairResult.result || pairResult.result === '0x0000000000000000000000000000000000000000') {
-        return { data: null, rpcError: false };
-      }
-
-      const [amountsResult] = await client.multicall({
-        contracts: [{
-          address: UNISWAP_V2_ROUTER as `0x${string}`,
-          abi: V2_ROUTER_ABI,
-          functionName: 'getAmountsOut',
-          args: [amountInWei, [tokenInAddr as `0x${string}`, tokenOutAddr as `0x${string}`]]
-        }],
-        allowFailure: true
-      });
-      if (amountsResult.status === 'success' && amountsResult.result) {
-        return { data: (amountsResult.result as bigint[])[1], rpcError: false };
-      }
-      return { data: null, rpcError: false };
+      const output = (amounts as bigint[])[path.length - 1];
+      return output > 0n ? { data: output, rpcError: false } : { data: null, rpcError: false };
     } catch (err: any) {
       if (isTransientRpcError(err) && attempt < MAX_RETRIES) {
         const wait = (err?.message || '').toLowerCase().includes('429') ? 3000 * (attempt + 1) : 1500 * (attempt + 1);
-        console.log(`⏳ V2 multicall RPC error, retry ${attempt + 1}/${MAX_RETRIES} in ${wait}ms...`);
+        console.log(`⏳ V2 path quote RPC error, retry ${attempt + 1}/${MAX_RETRIES} in ${wait}ms...`);
         await new Promise(r => setTimeout(r, wait));
-        return multicallV2Quote(client, tokenInAddr, tokenOutAddr, amountInWei, attempt + 1);
+        return quoteUniswapV2Path(client, path, amountInWei, attempt + 1);
       }
-      return { data: null, rpcError: true };
+      return { data: null, rpcError: isTransientRpcError(err) };
     }
+  };
+
+  const getUniswapV2CandidatePaths = (tokenInAddr: string, tokenOutAddr: string): `0x${string}`[][] => {
+    const direct = [tokenInAddr as `0x${string}`, tokenOutAddr as `0x${string}`];
+    if (!MULTI_HOP_ROUTE_PREVIEW) return [direct];
+
+    const bases = [
+      WETH_ADDRESS,
+      DEFAULT_TOKENS.USDC.address,
+      DEFAULT_TOKENS.USDbC.address
+    ];
+    const seen = new Set<string>();
+    const paths: `0x${string}`[][] = [];
+    const pushPath = (path: `0x${string}`[]) => {
+      const key = path.map((item) => item.toLowerCase()).join('-');
+      if (seen.has(key)) return;
+      seen.add(key);
+      paths.push(path);
+    };
+
+    pushPath(direct);
+    for (const middle of bases) {
+      if (normalizeAddress(middle) === normalizeAddress(tokenInAddr) || normalizeAddress(middle) === normalizeAddress(tokenOutAddr)) continue;
+      pushPath([tokenInAddr as `0x${string}`, middle as `0x${string}`, tokenOutAddr as `0x${string}`]);
+    }
+    return paths;
+  };
+
+  const quoteUniswapV2Paths = async (
+    client: typeof swapClient,
+    tokenInAddr: string,
+    tokenOutAddr: string,
+    amountInWei: bigint
+  ): Promise<QuoteResult<{ quote: bigint; path: `0x${string}`[] }>> => {
+    const paths = getUniswapV2CandidatePaths(tokenInAddr, tokenOutAddr);
+    const results = await Promise.allSettled(paths.map((path) =>
+      quoteUniswapV2Path(client, path, amountInWei).then((result) => ({ ...result, path }))
+    ));
+
+    let best: { quote: bigint; path: `0x${string}`[] } | null = null;
+    let sawRpcError = false;
+    for (const result of results) {
+      if (result.status !== 'fulfilled') {
+        if (isTransientRpcError(result.reason)) sawRpcError = true;
+        continue;
+      }
+      if (result.value.rpcError) {
+        sawRpcError = true;
+        continue;
+      }
+      const quote = result.value.data;
+      if (quote && (!best || quote > best.quote)) {
+        best = { quote, path: result.value.path };
+      }
+    }
+
+    return best ? { data: best, rpcError: false } : { data: null, rpcError: sawRpcError };
   };
 
   const getProtocolLabel = (protocol: SwapProtocol) => {
@@ -1434,6 +1526,141 @@ export default function SwapInterface() {
       case 'aerodrome': return 'Aerodrome';
       default: return 'DEX';
     }
+  };
+
+  const normalizeAddress = (value?: string) => value?.toLowerCase() ?? '';
+
+  const getKnownTokenByQuoteAddress = (addressValue: string) => {
+    const normalized = normalizeAddress(addressValue);
+    return Object.values(DEFAULT_TOKENS).find((token) => normalizeAddress(token.address) === normalized);
+  };
+
+  const isStableQuoteToken = (token?: AppToken | null) => {
+    return !!token && ['USDC', 'USDT', 'USDbC', 'DAI'].includes(token.symbol);
+  };
+
+  const getTokenUsdValueFromWei = (amountWei: bigint, token?: AppToken | null) => {
+    if (!token || amountWei <= 0n) return 0;
+    const amount = parseFloat(formatUnits(amountWei, token.decimals));
+    if (!Number.isFinite(amount) || amount <= 0) return 0;
+    if (token.symbol === 'ETH' || token.symbol === 'WETH' || token.symbol === 'cbETH') return amount * ethPriceUsd;
+    if (isStableQuoteToken(token)) return amount;
+    return 0;
+  };
+
+  const getCachedGasPrice = async (client: typeof swapClient) => {
+    const cached = gasPriceCacheRef.current;
+    if (cached && Date.now() - cached.timestamp < 10_000) return cached.value;
+    const value = await client.getGasPrice();
+    gasPriceCacheRef.current = { value, timestamp: Date.now() };
+    return value;
+  };
+
+  const estimateGasCostInOutputToken = async (
+    client: typeof swapClient,
+    gasPrice: bigint,
+    estimatedGasUnits: bigint,
+    rawQuote: bigint,
+    amountInWei: bigint,
+    tokenInAddr: string,
+    tokenOutAddr: string
+  ) => {
+    if (!GAS_ADJUSTED_ROUTE_SCORING || !client || estimatedGasUnits <= 0n || rawQuote <= 0n) return 0n;
+    try {
+      const gasCostWei = gasPrice * estimatedGasUnits;
+      const tokenOutMeta = getKnownTokenByQuoteAddress(tokenOutAddr);
+
+      if (normalizeAddress(tokenOutAddr) === normalizeAddress(WETH_ADDRESS) || tokenOutMeta?.symbol === 'ETH' || tokenOutMeta?.symbol === 'WETH') {
+        return gasCostWei;
+      }
+
+      const gasUsd = parseFloat(formatUnits(gasCostWei, 18)) * ethPriceUsd;
+      if (!Number.isFinite(gasUsd) || gasUsd <= 0) return 0n;
+
+      if (isStableQuoteToken(tokenOutMeta)) {
+        return parseUnits(gasUsd.toFixed(Math.min(tokenOutMeta.decimals, 6)), tokenOutMeta.decimals);
+      }
+
+      const tokenInMeta = getKnownTokenByQuoteAddress(tokenInAddr);
+      const inputUsd = getTokenUsdValueFromWei(amountInWei, tokenInMeta);
+      const outputAmount = parseFloat(formatUnits(rawQuote, tokenOutMeta?.decimals ?? tokenOut.decimals));
+      if (!inputUsd || !outputAmount || !Number.isFinite(outputAmount) || outputAmount <= 0) return 0n;
+
+      const outputTokenUsd = inputUsd / outputAmount;
+      if (!Number.isFinite(outputTokenUsd) || outputTokenUsd <= 0) return 0n;
+      const gasOutputAmount = gasUsd / outputTokenUsd;
+      if (!Number.isFinite(gasOutputAmount) || gasOutputAmount <= 0) return 0n;
+      return parseUnits(gasOutputAmount.toFixed(Math.min(tokenOutMeta?.decimals ?? tokenOut.decimals, 12)), tokenOutMeta?.decimals ?? tokenOut.decimals);
+    } catch {
+      return 0n;
+    }
+  };
+
+  const withGasAdjustedScore = async (
+    plans: SwapRoutePlan[],
+    amountInWei: bigint,
+    tokenInAddr: string,
+    tokenOutAddr: string
+  ): Promise<SwapRoutePlan[]> => {
+    if (!GAS_ADJUSTED_ROUTE_SCORING || !swapClient || plans.length === 0) {
+      return plans.map((plan) => ({ ...plan, gasAdjustedQuote: plan.rawQuote, gasCostInOutputToken: 0n }));
+    }
+
+    const gasPrice = await getCachedGasPrice(swapClient);
+    return Promise.all(plans.map(async (plan) => {
+      const estimatedGasUnits = plan.estimatedGasUnits ?? GAS_ESTIMATE_UNITS[plan.protocol];
+      const gasCostInOutputToken = await estimateGasCostInOutputToken(
+        swapClient,
+        gasPrice,
+        estimatedGasUnits,
+        plan.rawQuote,
+        amountInWei,
+        tokenInAddr,
+        tokenOutAddr
+      );
+      return {
+        ...plan,
+        estimatedGasUnits,
+        gasCostInOutputToken,
+        gasAdjustedQuote: plan.rawQuote > gasCostInOutputToken ? plan.rawQuote - gasCostInOutputToken : 0n
+      };
+    }));
+  };
+
+  const sortRoutePlans = (plans: SwapRoutePlan[]) => {
+    return [...plans].sort((a, b) => {
+      const aScore = GAS_ADJUSTED_ROUTE_SCORING ? (a.gasAdjustedQuote ?? a.rawQuote) : a.rawQuote;
+      const bScore = GAS_ADJUSTED_ROUTE_SCORING ? (b.gasAdjustedQuote ?? b.rawQuote) : b.rawQuote;
+      if (aScore !== bScore) return aScore > bScore ? -1 : 1;
+      return a.rawQuote > b.rawQuote ? -1 : a.rawQuote < b.rawQuote ? 1 : 0;
+    });
+  };
+
+  const getMultiHopBaseAddresses = (tokenInAddr: string, tokenOutAddr: string) => {
+    const bases = [
+      WETH_ADDRESS,
+      DEFAULT_TOKENS.USDC.address,
+      DEFAULT_TOKENS.USDbC.address
+    ];
+    return bases.filter((middle, index, list) => {
+      const normalized = normalizeAddress(middle);
+      return normalized !== normalizeAddress(tokenInAddr)
+        && normalized !== normalizeAddress(tokenOutAddr)
+        && list.findIndex((item) => normalizeAddress(item) === normalized) === index;
+    }) as `0x${string}`[];
+  };
+
+  const buildV3Path = (tokens: `0x${string}`[], fees: number[]) => {
+    if (tokens.length !== fees.length + 1) return null;
+    const types: ('address' | 'uint24')[] = [];
+    const values: (`0x${string}` | number)[] = [];
+    for (let i = 0; i < fees.length; i++) {
+      types.push('address', 'uint24');
+      values.push(tokens[i], fees[i]);
+    }
+    types.push('address');
+    values.push(tokens[tokens.length - 1]);
+    return encodePacked(types, values);
   };
 
   const buildUniswapV3Calldata = (
@@ -1452,6 +1679,20 @@ export default function SwapInterface() {
       amountIn: amountInWei,
       amountOutMinimum: 0n,
       sqrtPriceLimitX96: 0n
+    }]
+  });
+
+  const buildUniswapV3ExactInputCalldata = (
+    path: `0x${string}`,
+    amountInWei: bigint
+  ) => encodeFunctionData({
+    abi: UNISWAP_V3_EXACT_INPUT_ROUTER_ABI,
+    functionName: 'exactInput',
+    args: [{
+      path,
+      recipient: SWAP_AGGREGATOR,
+      amountIn: amountInWei,
+      amountOutMinimum: 0n
     }]
   });
 
@@ -1476,9 +1717,24 @@ export default function SwapInterface() {
     }]
   });
 
+  const buildPancakeV3ExactInputCalldata = (
+    path: `0x${string}`,
+    amountInWei: bigint,
+    deadline: bigint
+  ) => encodeFunctionData({
+    abi: PANCAKESWAP_V3_EXACT_INPUT_ROUTER_ABI,
+    functionName: 'exactInput',
+    args: [{
+      path,
+      recipient: SWAP_AGGREGATOR,
+      deadline,
+      amountIn: amountInWei,
+      amountOutMinimum: 0n
+    }]
+  });
+
   const buildUniswapV2Calldata = (
-    tokenInAddr: string,
-    tokenOutAddr: string,
+    path: `0x${string}`[],
     amountInWei: bigint,
     deadline: bigint
   ) => encodeFunctionData({
@@ -1487,17 +1743,15 @@ export default function SwapInterface() {
     args: [
       amountInWei,
       0n,
-      [tokenInAddr as `0x${string}`, tokenOutAddr as `0x${string}`],
+      path,
       SWAP_AGGREGATOR,
       deadline
     ]
   });
 
   const buildAerodromeCalldata = (
-    tokenInAddr: string,
-    tokenOutAddr: string,
+    routes: { from: `0x${string}`; to: `0x${string}`; stable: boolean; factory: `0x${string}` }[],
     amountInWei: bigint,
-    stable: boolean,
     deadline: bigint
   ) => encodeFunctionData({
     abi: AERODROME_ROUTER_ABI,
@@ -1505,7 +1759,7 @@ export default function SwapInterface() {
     args: [
       amountInWei,
       0n,
-      [{ from: tokenInAddr as `0x${string}`, to: tokenOutAddr as `0x${string}`, stable, factory: AERODROME_FACTORY as `0x${string}` }],
+      routes,
       SWAP_AGGREGATOR,
       deadline
     ]
@@ -1541,6 +1795,51 @@ export default function SwapInterface() {
     }
   };
 
+  const quoteV3ExactInputPaths = async (
+    client: typeof swapClient,
+    quoter: `0x${string}`,
+    tokenInAddr: string,
+    tokenOutAddr: string,
+    amountInWei: bigint,
+    feePairs: number[][],
+    protocolLabel: string
+  ): Promise<QuoteResult<{ quote: bigint; path: `0x${string}`; fees: number[] }>> => {
+    if (!ENABLE_ADAPTER_V2_MULTI_HOP || !MULTI_HOP_ROUTE_PREVIEW) return { data: null, rpcError: false };
+    try {
+      const middleTokens = getMultiHopBaseAddresses(tokenInAddr, tokenOutAddr);
+      const candidatePaths = middleTokens.flatMap((middle) =>
+        feePairs.map((fees) => {
+          const path = buildV3Path([tokenInAddr as `0x${string}`, middle, tokenOutAddr as `0x${string}`], fees);
+          return path ? { path, fees } : null;
+        }).filter(Boolean) as { path: `0x${string}`; fees: number[] }[]
+      );
+      if (candidatePaths.length === 0) return { data: null, rpcError: false };
+
+      const results = await Promise.allSettled(candidatePaths.map((candidate) =>
+        client.simulateContract({
+          address: quoter,
+          abi: V3_QUOTER_EXACT_INPUT_ABI,
+          functionName: 'quoteExactInput',
+          args: [candidate.path, amountInWei]
+        }).then(({ result }) => ({ quote: result[0] as bigint, path: candidate.path, fees: candidate.fees }))
+      ));
+
+      let best: { quote: bigint; path: `0x${string}`; fees: number[] } | null = null;
+      let sawRpcError = false;
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          if (result.value.quote > 0n && (!best || result.value.quote > best.quote)) best = result.value;
+        } else if (isTransientRpcError(result.reason)) {
+          sawRpcError = true;
+        }
+      }
+      return best ? { data: best, rpcError: false } : { data: null, rpcError: sawRpcError };
+    } catch (err: any) {
+      console.warn(`⚠️ ${protocolLabel} multi-hop quote failed:`, err?.shortMessage || err?.message);
+      return { data: null, rpcError: isTransientRpcError(err) };
+    }
+  };
+
   const quoteAerodrome = async (
     client: typeof swapClient,
     tokenInAddr: string,
@@ -1571,76 +1870,286 @@ export default function SwapInterface() {
     }
   };
 
+  const getAerodromeCandidateRoutes = (tokenInAddr: string, tokenOutAddr: string) => {
+    const direct = [false, true].map((stable) => ({
+      routes: [{ from: tokenInAddr as `0x${string}`, to: tokenOutAddr as `0x${string}`, stable, factory: AERODROME_FACTORY as `0x${string}` }],
+      label: stable ? 'Stable' : 'Volatile',
+      hopCount: 1
+    }));
+    if (!ENABLE_ADAPTER_V2_MULTI_HOP || !MULTI_HOP_ROUTE_PREVIEW) return direct;
+
+    const multiHop = getMultiHopBaseAddresses(tokenInAddr, tokenOutAddr).flatMap((middle) => {
+      const variants: { stableA: boolean; stableB: boolean; label: string }[] = [
+        { stableA: false, stableB: false, label: 'Volatile 2-hop' },
+        { stableA: true, stableB: true, label: 'Stable 2-hop' },
+        { stableA: false, stableB: true, label: 'Mixed 2-hop' },
+        { stableA: true, stableB: false, label: 'Mixed 2-hop' }
+      ];
+      return variants.map((variant) => ({
+        routes: [
+          { from: tokenInAddr as `0x${string}`, to: middle, stable: variant.stableA, factory: AERODROME_FACTORY as `0x${string}` },
+          { from: middle, to: tokenOutAddr as `0x${string}`, stable: variant.stableB, factory: AERODROME_FACTORY as `0x${string}` }
+        ],
+        label: variant.label,
+        hopCount: 2
+      }));
+    });
+
+    return [...direct, ...multiHop];
+  };
+
+  const quoteAerodromeRoutes = async (
+    client: typeof swapClient,
+    tokenInAddr: string,
+    tokenOutAddr: string,
+    amountInWei: bigint
+  ): Promise<QuoteResult<{ quote: bigint; routes: { from: `0x${string}`; to: `0x${string}`; stable: boolean; factory: `0x${string}` }[]; label: string; hopCount: number }>> => {
+    try {
+      const candidates = getAerodromeCandidateRoutes(tokenInAddr, tokenOutAddr);
+      const results = await Promise.allSettled(
+        candidates.map((candidate) =>
+          client.readContract({
+            address: AERODROME_ROUTER as `0x${string}`,
+            abi: AERODROME_ROUTER_ABI,
+            functionName: 'getAmountsOut',
+            args: [amountInWei, candidate.routes]
+          }).then((amounts) => ({
+            quote: (amounts as bigint[])[candidate.routes.length],
+            routes: candidate.routes,
+            label: candidate.label,
+            hopCount: candidate.hopCount
+          }))
+        )
+      );
+      let best: { quote: bigint; routes: { from: `0x${string}`; to: `0x${string}`; stable: boolean; factory: `0x${string}` }[]; label: string; hopCount: number } | null = null;
+      let sawRpcError = false;
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          if (result.value.quote > 0n && (!best || result.value.quote > best.quote)) best = result.value;
+        } else if (isTransientRpcError(result.reason)) {
+          sawRpcError = true;
+        }
+      }
+      return best ? { data: best, rpcError: false } : { data: null, rpcError: sawRpcError };
+    } catch (err: any) {
+      return { data: null, rpcError: isTransientRpcError(err) };
+    }
+  };
+
+  const getRoutePlansForAmount = async (
+    amountInWei: bigint,
+    tokenInAddr: string,
+    tokenOutAddr: string
+  ): Promise<SwapRoutePlan[]> => {
+    if (!swapClient || amountInWei <= 0n) return [];
+    const feeTiersToTry = [FEE_TIERS.LOWEST, FEE_TIERS.LOW, FEE_TIERS.MEDIUM];
+    const pancakeFeeTiers = [100, 500, 2500, 10000];
+    const v3MultiHopFeePairs = [[FEE_TIERS.LOW, FEE_TIERS.LOW], [FEE_TIERS.LOW, FEE_TIERS.MEDIUM], [FEE_TIERS.MEDIUM, FEE_TIERS.LOW]];
+    const pancakeMultiHopFeePairs = [[500, 500], [500, 2500], [2500, 500]];
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
+
+    const [v3Res, v3MultiRes, v2Res, pancakeRes, pancakeMultiRes, aerodromeRes] = await Promise.all([
+      multicallV3Quotes(swapClient, tokenInAddr, tokenOutAddr, amountInWei, feeTiersToTry),
+      quoteV3ExactInputPaths(swapClient, QUOTER_V2_ADDRESS as `0x${string}`, tokenInAddr, tokenOutAddr, amountInWei, v3MultiHopFeePairs, 'Uniswap V3'),
+      quoteUniswapV2Paths(swapClient, tokenInAddr, tokenOutAddr, amountInWei),
+      quotePancakeV3(swapClient, tokenInAddr, tokenOutAddr, amountInWei, pancakeFeeTiers),
+      quoteV3ExactInputPaths(swapClient, PANCAKESWAP_V3_QUOTER as `0x${string}`, tokenInAddr, tokenOutAddr, amountInWei, pancakeMultiHopFeePairs, 'PancakeSwap V3'),
+      quoteAerodromeRoutes(swapClient, tokenInAddr, tokenOutAddr, amountInWei)
+    ]);
+
+    const plans: SwapRoutePlan[] = [];
+    if (v3Res.data?.quote) {
+      plans.push({
+        protocol: 'uniswap-v3',
+        label: 'Uniswap V3',
+        router: SWAP_ROUTER_02 as `0x${string}`,
+        rawQuote: v3Res.data.quote,
+        bestFeeTier: v3Res.data.fee,
+        routerCalldata: buildUniswapV3Calldata(tokenInAddr, tokenOutAddr, amountInWei, v3Res.data.fee),
+        estimatedGasUnits: GAS_ESTIMATE_UNITS['uniswap-v3'],
+        hopCount: 1
+      });
+    }
+    if (v3MultiRes.data?.quote) {
+      plans.push({
+        protocol: 'uniswap-v3',
+        label: 'Uniswap V3 2-hop',
+        router: SWAP_ROUTER_02 as `0x${string}`,
+        rawQuote: v3MultiRes.data.quote,
+        bestFeeTier: v3MultiRes.data.fees[0],
+        routerCalldata: buildUniswapV3ExactInputCalldata(v3MultiRes.data.path, amountInWei),
+        estimatedGasUnits: GAS_ESTIMATE_UNITS['uniswap-v3'] + MULTI_HOP_GAS_PER_EXTRA_HOP,
+        hopCount: 2
+      });
+    }
+    if (v2Res.data) {
+      const v2Path = v2Res.data.path;
+      const isMultiHop = v2Path.length > 2;
+      plans.push({
+        protocol: 'uniswap-v2',
+        label: isMultiHop ? `Uniswap V2 ${v2Path.length - 1}-hop` : 'Uniswap V2',
+        router: UNISWAP_V2_ROUTER as `0x${string}`,
+        rawQuote: v2Res.data.quote,
+        routerCalldata: buildUniswapV2Calldata(v2Path, amountInWei, deadline),
+        path: v2Path,
+        estimatedGasUnits: GAS_ESTIMATE_UNITS['uniswap-v2'] + (BigInt(Math.max(v2Path.length - 2, 0)) * MULTI_HOP_GAS_PER_EXTRA_HOP),
+        hopCount: v2Path.length - 1
+      });
+    }
+    if (pancakeRes.data?.quote) {
+      plans.push({
+        protocol: 'pancakeswap-v3',
+        label: 'PancakeSwap V3',
+        router: PANCAKESWAP_V3_ROUTER as `0x${string}`,
+        rawQuote: pancakeRes.data.quote,
+        bestFeeTier: pancakeRes.data.fee,
+        routerCalldata: buildPancakeV3Calldata(tokenInAddr, tokenOutAddr, amountInWei, pancakeRes.data.fee, deadline),
+        estimatedGasUnits: GAS_ESTIMATE_UNITS['pancakeswap-v3'],
+        hopCount: 1
+      });
+    }
+    if (pancakeMultiRes.data?.quote) {
+      plans.push({
+        protocol: 'pancakeswap-v3',
+        label: 'PancakeSwap V3 2-hop',
+        router: PANCAKESWAP_V3_ROUTER as `0x${string}`,
+        rawQuote: pancakeMultiRes.data.quote,
+        bestFeeTier: pancakeMultiRes.data.fees[0],
+        routerCalldata: buildPancakeV3ExactInputCalldata(pancakeMultiRes.data.path, amountInWei, deadline),
+        estimatedGasUnits: GAS_ESTIMATE_UNITS['pancakeswap-v3'] + MULTI_HOP_GAS_PER_EXTRA_HOP,
+        hopCount: 2
+      });
+    }
+    if (aerodromeRes.data?.quote) {
+      plans.push({
+        protocol: 'aerodrome',
+        label: `Aerodrome ${aerodromeRes.data.label}`,
+        router: AERODROME_ROUTER as `0x${string}`,
+        rawQuote: aerodromeRes.data.quote,
+        routerCalldata: buildAerodromeCalldata(aerodromeRes.data.routes, amountInWei, deadline),
+        estimatedGasUnits: GAS_ESTIMATE_UNITS.aerodrome + (BigInt(Math.max(aerodromeRes.data.hopCount - 1, 0)) * MULTI_HOP_GAS_PER_EXTRA_HOP),
+        hopCount: aerodromeRes.data.hopCount
+      });
+    }
+
+    const scoredPlans = await withGasAdjustedScore(plans, amountInWei, tokenInAddr, tokenOutAddr);
+    return sortRoutePlans(scoredPlans);
+  };
+
   const getSplitRoutePreview = async (
     amountInWei: bigint,
     tokenInAddr: string,
     tokenOutAddr: string,
     fullAmountPlans: SwapRoutePlan[]
   ): Promise<SplitRoutePreview | null> => {
-    if (!ENABLE_SPLIT_ROUTE_PREVIEW || !swapClient || fullAmountPlans.length < 2 || amountInWei < BigInt(SPLIT_QUOTE_CHUNKS)) {
+    if (!ENABLE_SPLIT_ROUTE_PREVIEW || !swapClient || fullAmountPlans.length < 2 || amountInWei < BigInt(SPLIT_ALLOCATION_UNITS)) {
       return null;
     }
+    const tokenInMeta = getKnownTokenByQuoteAddress(tokenInAddr);
+    const inputUsd = getTokenUsdValueFromWei(amountInWei, tokenInMeta);
+    if (inputUsd > 0 && inputUsd < SPLIT_MIN_INPUT_USD) return null;
 
-    const feeTiersToTry = [FEE_TIERS.LOWEST, FEE_TIERS.LOW, FEE_TIERS.MEDIUM];
-    const pancakeFeeTiers = [100, 500, 2500, 10000];
-    const chunkQuotes: SplitChunkQuote<SwapProtocol>[] = [];
-    const baseChunk = amountInWei / BigInt(SPLIT_QUOTE_CHUNKS);
-    let allocated = 0n;
+    const candidates = fullAmountPlans.slice(0, 4);
+    const bestSingleRawOutput = candidates[0]?.rawQuote ?? 0n;
+    if (bestSingleRawOutput <= 0n) return null;
 
-    for (let chunkIndex = 0; chunkIndex < SPLIT_QUOTE_CHUNKS; chunkIndex++) {
-      const chunkAmount = chunkIndex === SPLIT_QUOTE_CHUNKS - 1 ? amountInWei - allocated : baseChunk;
-      allocated += chunkAmount;
-      if (chunkAmount <= 0n) continue;
+    const allocations: number[][] = [];
+    const buildAllocations = (index: number, remaining: number, current: number[]) => {
+      if (index === candidates.length - 1) {
+        allocations.push([...current, remaining]);
+        return;
+      }
+      for (let units = 0; units <= remaining; units++) {
+        current.push(units);
+        buildAllocations(index + 1, remaining - units, current);
+        current.pop();
+      }
+    };
+    buildAllocations(0, SPLIT_ALLOCATION_UNITS, []);
 
-      const [v3Res, v2Res, pancakeRes, aerodromeRes] = await Promise.all([
-        multicallV3Quotes(swapClient, tokenInAddr, tokenOutAddr, chunkAmount, feeTiersToTry),
-        multicallV2Quote(swapClient, tokenInAddr, tokenOutAddr, chunkAmount),
-        quotePancakeV3(swapClient, tokenInAddr, tokenOutAddr, chunkAmount, pancakeFeeTiers),
-        quoteAerodrome(swapClient, tokenInAddr, tokenOutAddr, chunkAmount)
-      ]);
+    let bestSplit: {
+      parts: SplitRoutePreview['parts'];
+      rawOutput: bigint;
+    } | null = null;
+    const planCache = new Map<string, Promise<SwapRoutePlan[]>>();
+    const getCachedPlans = (partAmount: bigint) => {
+      const key = partAmount.toString();
+      const cached = planCache.get(key);
+      if (cached) return cached;
+      const promise = getRoutePlansForAmount(partAmount, tokenInAddr, tokenOutAddr);
+      planCache.set(key, promise);
+      return promise;
+    };
 
-      if (v3Res.data?.quote) {
-        chunkQuotes.push({
-          chunkIndex,
-          amountIn: chunkAmount,
-          candidate: { protocol: 'uniswap-v3', label: 'Uniswap V3', rawQuote: fullAmountPlans.find((plan) => plan.protocol === 'uniswap-v3')?.rawQuote ?? 0n },
-          rawQuote: v3Res.data.quote
+    const possiblePartAmounts = Array.from({ length: SPLIT_ALLOCATION_UNITS - 1 }, (_, index) => {
+      const units = index + 1;
+      return (amountInWei * BigInt(units)) / BigInt(SPLIT_ALLOCATION_UNITS);
+    }).filter((partAmount, index, list) => partAmount > 0n && list.findIndex((item) => item === partAmount) === index);
+    await Promise.allSettled(possiblePartAmounts.map((partAmount) => getCachedPlans(partAmount)));
+
+    for (const allocation of allocations) {
+      const activeIndexes = allocation
+        .map((units, index) => ({ units, index }))
+        .filter((entry) => entry.units > 0);
+      if (activeIndexes.length < 2) continue;
+
+      let allocatedInput = 0n;
+      let rawOutput = 0n;
+      const parts: SplitRoutePreview['parts'] = [];
+      let allocationFailed = false;
+
+      for (let i = 0; i < activeIndexes.length; i++) {
+        const { units, index } = activeIndexes[i];
+        const candidate = candidates[index];
+        const partAmount = i === activeIndexes.length - 1
+          ? amountInWei - allocatedInput
+          : (amountInWei * BigInt(units)) / BigInt(SPLIT_ALLOCATION_UNITS);
+        allocatedInput += partAmount;
+        if (partAmount <= 0n) {
+          allocationFailed = true;
+          break;
+        }
+
+        const partPlans = await getCachedPlans(partAmount);
+        const partPlan = partPlans.find((plan) => plan.protocol === candidate.protocol && plan.label === candidate.label)
+          ?? partPlans.find((plan) => plan.protocol === candidate.protocol);
+        if (!partPlan || partPlan.rawQuote <= 0n) {
+          allocationFailed = true;
+          break;
+        }
+
+        rawOutput += partPlan.rawQuote;
+        parts.push({
+          candidate: {
+            protocol: partPlan.protocol,
+            label: partPlan.label,
+            rawQuote: candidate.rawQuote
+          },
+          amountIn: partAmount,
+          estimatedRawOut: partPlan.rawQuote,
+          shareBps: Number((partAmount * 10_000n) / amountInWei)
         });
       }
-      if (v2Res.data) {
-        chunkQuotes.push({
-          chunkIndex,
-          amountIn: chunkAmount,
-          candidate: { protocol: 'uniswap-v2', label: 'Uniswap V2', rawQuote: fullAmountPlans.find((plan) => plan.protocol === 'uniswap-v2')?.rawQuote ?? 0n },
-          rawQuote: v2Res.data
-        });
-      }
-      if (pancakeRes.data?.quote) {
-        chunkQuotes.push({
-          chunkIndex,
-          amountIn: chunkAmount,
-          candidate: { protocol: 'pancakeswap-v3', label: 'PancakeSwap V3', rawQuote: fullAmountPlans.find((plan) => plan.protocol === 'pancakeswap-v3')?.rawQuote ?? 0n },
-          rawQuote: pancakeRes.data.quote
-        });
-      }
-      if (aerodromeRes.data?.quote) {
-        const aerodromePlan = fullAmountPlans.find((plan) => plan.protocol === 'aerodrome');
-        chunkQuotes.push({
-          chunkIndex,
-          amountIn: chunkAmount,
-          candidate: { protocol: 'aerodrome', label: aerodromePlan?.label ?? `Aerodrome ${aerodromeRes.data.stable ? 'Stable' : 'Volatile'}`, rawQuote: aerodromePlan?.rawQuote ?? 0n },
-          rawQuote: aerodromeRes.data.quote
-        });
+
+      if (allocationFailed || allocatedInput !== amountInWei || rawOutput <= bestSingleRawOutput) continue;
+      if (!bestSplit || rawOutput > bestSplit.rawOutput) {
+        bestSplit = { parts, rawOutput };
       }
     }
 
-    const fullAmountCandidates = fullAmountPlans.map((plan) => ({
-      protocol: plan.protocol,
-      label: plan.label,
-      rawQuote: plan.rawQuote
-    }));
-    const feeBps = protocolFeeBps ? Number(protocolFeeBps) : 0;
-    return buildSplitRouteFromChunkQuotes(fullAmountCandidates, chunkQuotes, amountInWei, feeBps);
+    if (!bestSplit || bestSplit.parts.length < 2) return null;
+    const improvementBps = Number(((bestSplit.rawOutput - bestSingleRawOutput) * 10_000n) / bestSingleRawOutput);
+    if (improvementBps < 1) return null;
+    const feeBps = getProtocolFeeBps();
+    const { netOutput, feeAmount } = calculateNetOutput(bestSplit.rawOutput, feeBps);
+    return {
+      parts: bestSplit.parts.sort((a, b) => (a.estimatedRawOut > b.estimatedRawOut ? -1 : a.estimatedRawOut < b.estimatedRawOut ? 1 : 0)),
+      rawOutput: bestSplit.rawOutput,
+      netOutput,
+      feeAmount,
+      improvementBps,
+      bestSingleRawOutput
+    };
   };
 
   // Fetch fresh quote (no cache) for swap execution - used when user clicks swap
@@ -1651,61 +2160,11 @@ export default function SwapInterface() {
     tokenOutDecimals: number
   ): Promise<{ formatted: string; bestProtocol: SwapProtocol; bestFeeTier: number; routePlan: SwapRoutePlan; routePlans: SwapRoutePlan[] } | null> => {
     if (!swapClient) return null;
-    const feeTiersToTry = [FEE_TIERS.LOWEST, FEE_TIERS.LOW, FEE_TIERS.MEDIUM];
-    const pancakeFeeTiers = [100, 500, 2500, 10000];
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
-
-    const [v3Res, v2Res, pancakeRes, aerodromeRes] = await Promise.all([
-      multicallV3Quotes(swapClient, tokenInAddr, tokenOutAddr, amountInWei, feeTiersToTry),
-      multicallV2Quote(swapClient, tokenInAddr, tokenOutAddr, amountInWei),
-      quotePancakeV3(swapClient, tokenInAddr, tokenOutAddr, amountInWei, pancakeFeeTiers),
-      quoteAerodrome(swapClient, tokenInAddr, tokenOutAddr, amountInWei)
-    ]);
-    const plans: SwapRoutePlan[] = [];
-    if (v3Res.data?.quote) {
-      plans.push({
-        protocol: 'uniswap-v3',
-        label: 'Uniswap V3',
-        router: SWAP_ROUTER_02 as `0x${string}`,
-        rawQuote: v3Res.data.quote,
-        bestFeeTier: v3Res.data.fee,
-        routerCalldata: buildUniswapV3Calldata(tokenInAddr, tokenOutAddr, amountInWei, v3Res.data.fee)
-      });
-    }
-    if (v2Res.data) {
-      plans.push({
-        protocol: 'uniswap-v2',
-        label: 'Uniswap V2',
-        router: UNISWAP_V2_ROUTER as `0x${string}`,
-        rawQuote: v2Res.data,
-        routerCalldata: buildUniswapV2Calldata(tokenInAddr, tokenOutAddr, amountInWei, deadline)
-      });
-    }
-    if (pancakeRes.data?.quote) {
-      plans.push({
-        protocol: 'pancakeswap-v3',
-        label: 'PancakeSwap V3',
-        router: PANCAKESWAP_V3_ROUTER as `0x${string}`,
-        rawQuote: pancakeRes.data.quote,
-        bestFeeTier: pancakeRes.data.fee,
-        routerCalldata: buildPancakeV3Calldata(tokenInAddr, tokenOutAddr, amountInWei, pancakeRes.data.fee, deadline)
-      });
-    }
-    if (aerodromeRes.data?.quote) {
-      plans.push({
-        protocol: 'aerodrome',
-        label: `Aerodrome ${aerodromeRes.data.stable ? 'Stable' : 'Volatile'}`,
-        router: AERODROME_ROUTER as `0x${string}`,
-        rawQuote: aerodromeRes.data.quote,
-        routerCalldata: buildAerodromeCalldata(tokenInAddr, tokenOutAddr, amountInWei, aerodromeRes.data.stable, deadline)
-      });
-    }
-
-    const sortedPlans = plans.sort((a, b) => (a.rawQuote > b.rawQuote ? -1 : a.rawQuote < b.rawQuote ? 1 : 0));
+    const sortedPlans = await getRoutePlansForAmount(amountInWei, tokenInAddr, tokenOutAddr);
     const bestPlan = sortedPlans[0];
     if (!bestPlan) return null;
 
-    const feeBps = protocolFeeBps ? Number(protocolFeeBps) : 0;
+    const feeBps = getProtocolFeeBps();
     const feeMultiplier = BigInt(10000) - BigInt(feeBps);
     const userReceivesWei = (bestPlan.rawQuote * feeMultiplier) / BigInt(10000);
     const formatted = formatUnits(userReceivesWei, tokenOutDecimals);
@@ -1815,21 +2274,9 @@ export default function SwapInterface() {
       setSelectedProtocol(bestProtocol);
       setSelectedRoutePlan(freshQuote.routePlan);
       setAllRoutePlans(freshQuote.routePlans);
-      const splitPreview = await getSplitRoutePreview(amountInWei, tokenInAddr, tokenOutAddr, freshQuote.routePlans);
-      if (currentRequestId !== quoteRequestIdRef.current) return;
-      setSplitRoutePreview(splitPreview);
-      if (splitPreview) {
-        console.log(
-          '🧭 Split route preview:',
-          splitPreview.parts.map((part) => `${part.shareBps / 100}% ${part.candidate.label}`).join(' + '),
-          '=>',
-          formatUnits(splitPreview.netOutput, tokenOut.decimals),
-          tokenOut.symbol,
-          `(+${(splitPreview.improvementBps / 100).toFixed(2)}%)`
-        );
-      }
+      setSplitRoutePreview(null);
 
-      const feeBps = protocolFeeBps ? Number(protocolFeeBps) : 0;
+      const feeBps = getProtocolFeeBps();
       const feeBpsBigInt = BigInt(feeBps);
       const feeMultiplier = BigInt(10000) - feeBpsBigInt;
       const userReceivesWei = (bestQuote * feeMultiplier) / BigInt(10000);
@@ -1866,6 +2313,26 @@ export default function SwapInterface() {
         bestProtocol,
         bestRoutePlan: freshQuote.routePlan,
         routePlans: freshQuote.routePlans,
+        splitRoutePreview: null,
+        bestV3Fee,
+        priceImpact: priceImpactStr,
+        v3Available: bestProtocol === 'uniswap-v3',
+        v2Available: bestProtocol === 'uniswap-v2',
+        timestamp: Date.now()
+      };
+
+      const splitPreview = await getSplitRoutePreview(amountInWei, tokenInAddr, tokenOutAddr, freshQuote.routePlans);
+      if (currentRequestId !== quoteRequestIdRef.current || !splitPreview) return;
+
+      const splitFormatted = formatUnits(splitPreview.netOutput, tokenOut.decimals);
+      setSplitRoutePreview(splitPreview);
+      setAmountOut(splitFormatted);
+      quoteCacheRef.current = {
+        key: cacheKey,
+        amountOut: splitFormatted,
+        bestProtocol,
+        bestRoutePlan: freshQuote.routePlan,
+        routePlans: freshQuote.routePlans,
         splitRoutePreview: splitPreview,
         bestV3Fee,
         priceImpact: priceImpactStr,
@@ -1873,6 +2340,14 @@ export default function SwapInterface() {
         v2Available: bestProtocol === 'uniswap-v2',
         timestamp: Date.now()
       };
+      console.log(
+        '🧭 Split route preview:',
+        splitPreview.parts.map((part) => `${part.shareBps / 100}% ${part.candidate.label}`).join(' + '),
+        '=>',
+        splitFormatted,
+        tokenOut.symbol,
+        `(+${(splitPreview.improvementBps / 100).toFixed(2)}%)`
+      );
     };
 
     const timer = setTimeout(fetchQuote, 400);
@@ -1900,7 +2375,7 @@ export default function SwapInterface() {
   };
 
   const formatRouteNetOutput = (plan: SwapRoutePlan) => {
-    const feeBps = protocolFeeBps ? Number(protocolFeeBps) : 0;
+    const feeBps = getProtocolFeeBps();
     const feeMultiplier = 10000n - BigInt(feeBps);
     const netAmount = (plan.rawQuote * feeMultiplier) / 10000n;
     return `${formatNumber(parseFloat(formatUnits(netAmount, tokenOut.decimals)))} ${tokenOut.symbol}`;
@@ -1910,6 +2385,29 @@ export default function SwapInterface() {
     return preview.parts
       .map((part) => `${formatNumber(part.shareBps / 100, 2)}% ${part.candidate.label}`)
       .join(' + ');
+  };
+
+  const getRouteHopLabel = (plan: SwapRoutePlan) => {
+    if (!plan.hopCount || plan.hopCount <= 1) return 'Direct';
+    return `${plan.hopCount} hops`;
+  };
+
+  const getRoutePathLabel = (plan: SwapRoutePlan) => {
+    if (plan.path && plan.path.length > 1) {
+      return plan.path
+        .map((addressValue) => getKnownTokenByQuoteAddress(addressValue)?.symbol || shortAddress(addressValue))
+        .join(' → ');
+    }
+    if (plan.hopCount && plan.hopCount > 1) return `${tokenIn.symbol} → … → ${tokenOut.symbol}`;
+    return `${tokenIn.symbol} → ${tokenOut.symbol}`;
+  };
+
+  const getSplitSummaryParts = (preview: SplitRoutePreview) => {
+    return preview.parts.map((part) => ({
+      label: part.candidate.label,
+      share: `${formatNumber(part.shareBps / 100, 0)}%`,
+      output: `${formatNumber(parseFloat(formatUnits(part.estimatedRawOut, tokenOut.decimals)))} ${tokenOut.symbol}`
+    }));
   };
 
   const getErrorText = (error: any) => {
@@ -1946,10 +2444,13 @@ export default function SwapInterface() {
   };
 
   const getRouteDeltaLabel = (plan: SwapRoutePlan) => {
-    const best = allRoutePlans[0]?.rawQuote;
-    if (!best || plan.rawQuote === best) return 'Best';
-    const bestNumber = parseFloat(formatUnits(best, tokenOut.decimals));
-    const routeNumber = parseFloat(formatUnits(plan.rawQuote, tokenOut.decimals));
+    const bestPlan = allRoutePlans[0];
+    if (!bestPlan) return '';
+    const bestScore = GAS_ADJUSTED_ROUTE_SCORING ? (bestPlan.gasAdjustedQuote ?? bestPlan.rawQuote) : bestPlan.rawQuote;
+    const routeScore = GAS_ADJUSTED_ROUTE_SCORING ? (plan.gasAdjustedQuote ?? plan.rawQuote) : plan.rawQuote;
+    if (routeScore === bestScore) return 'Best';
+    const bestNumber = parseFloat(formatUnits(bestScore, tokenOut.decimals));
+    const routeNumber = parseFloat(formatUnits(routeScore, tokenOut.decimals));
     if (!bestNumber || !routeNumber) return '';
     const diff = ((bestNumber - routeNumber) / bestNumber) * 100;
     return `-${diff.toFixed(diff < 0.1 ? 2 : 1)}%`;
@@ -2166,50 +2667,12 @@ export default function SwapInterface() {
         setTransactionStep('idle');
         return;
       }
-      const amountOutNormalizedForSwap = freshQuote.formatted;
-      const swapProtocol = freshQuote.bestProtocol;
-      const swapFeeTier = freshQuote.bestFeeTier;
-
-      let amountOutWei: bigint;
-      try {
-        amountOutWei = parseUnits(amountOutNormalizedForSwap, tokenOut.decimals);
-        // Check if output amount is too small
-        if (amountOutWei === BigInt(0)) {
-          setErrorMessage('Output amount is too small');
-          setTransactionStep('idle');
-          return;
-        }
-      } catch (error: any) {
-        console.error('❌ Failed to parse amountOut:', error);
-        setErrorMessage(`Invalid output amount: ${error.message || 'Number format error'}`);
-        setTransactionStep('idle');
-        return;
-      }
-      
       // Apply slippage to get minAmountOut
       // Use BigInt arithmetic to avoid precision loss for small amounts
       // slippage is in percentage (e.g., 0.5 means 0.5%)
       // multiplier = (10000 - slippage * 100) / 10000 (to avoid floating point issues)
       const slippageBps = BigInt(Math.round(slippage * 100)); // Convert to basis points (0.5% = 50 bps)
       const slippageMultiplier = BigInt(10000) - slippageBps; // e.g., 10000 - 50 = 9950
-      const minAmountOut = (amountOutWei * slippageMultiplier) / BigInt(10000);
-      
-      console.log('🔢 Min Amount Out Calculation:');
-      console.log('   amountOutWei:', amountOutWei.toString());
-      console.log('   slippageBps:', slippageBps.toString());
-      console.log('   slippageMultiplier:', slippageMultiplier.toString());
-      console.log('   minAmountOut (before check):', minAmountOut.toString());
-      
-      // Ensure minimum output is reasonable
-      // minAmountOut should never be less than the slippage-adjusted amount
-      // If minAmountOut is somehow less than slippage tolerance allows, use minAmountOut directly
-      // (This should not happen with correct slippage calculation, but acts as a safety check)
-      // For very small amounts, ensure at least 1 wei minimum
-      const minUnit = BigInt(1);
-      const finalMinAmountOut = minAmountOut > minUnit ? minAmountOut : minUnit;
-      
-      console.log('   finalMinAmountOut:', finalMinAmountOut.toString());
-      console.log('   finalMinAmountOut (formatted):', formatUnits(finalMinAmountOut, tokenOut.decimals));
       
       // Native ETH uses address(0) in our aggregator
       const inputIsNativeETH = tokenIn.isNative === true;
@@ -2222,20 +2685,14 @@ export default function SwapInterface() {
       console.log('📋 Aggregator V4 Swap Parameters:');
       console.log('   Aggregator Contract:', SWAP_AGGREGATOR);
       console.log('   Adapter Contract:', SWAP_AGGREGATOR_ADAPTER);
-      console.log('   Route:', freshQuote.routePlan.label);
-      console.log('   Router:', freshQuote.routePlan.router);
       console.log('   User Address:', address);
       console.log('   Token In:', tokenIn.symbol, inputIsNativeETH ? '(Native ETH → 0x0)' : `→ ${tokenInAddr}`);
       console.log('   Token Out:', tokenOut.symbol, outputIsNativeETH ? '(Native ETH → 0x0)' : `→ ${tokenOutAddr}`);
       console.log('   Amount In (wei):', amountInWei.toString());
-      console.log('   Min Amount Out (wei):', finalMinAmountOut.toString());
       console.log('   Slippage:', slippage, '%');
-      console.log('   Protocol Fee:', protocolFeeBps ? `${Number(protocolFeeBps) / 100}%` : 'Loading...');
+      console.log('   Protocol Fee:', `${getProtocolFeeBps() / 100}%`);
       console.log('   Input is Native ETH:', inputIsNativeETH);
       console.log('   Output is Native ETH:', outputIsNativeETH);
-      if (freshQuote.routePlan.bestFeeTier) {
-        console.log('   Fee Tier:', swapFeeTier, `(${swapFeeTier / 10000}%)`);
-      }
 
       // ═══════════════════════════════════════════════════════════════
       // ALL SWAPS GO THROUGH AGGREGATOR V4 executeSplit (Including Native ETH!)
@@ -2245,55 +2702,137 @@ export default function SwapInterface() {
 
       const GAS_FALLBACK = BigInt(900000);
       const GAS_BUFFER_BPS = 120n; // 20% buffer = 120/100
+      const feeBps = BigInt(getProtocolFeeBps());
+      const candidatePlans = freshQuote.routePlans.length > 0 ? freshQuote.routePlans : [freshQuote.routePlan];
+      let selectedExecutionPlan: SwapRoutePlan | null = null;
+      let selectedExecutionLabel = '';
+      let selectedUserOutWei = 0n;
+      let selectedMinAmountOut = 0n;
+      let lastGasError: any = null;
 
-      const routeSteps = [{
-        adapter: SWAP_AGGREGATOR_ADAPTER,
-        router: freshQuote.routePlan.router,
-        tokenIn: tokenInAddr,
-        tokenOut: tokenOutAddr,
-        amountIn: amountInWei,
-        routerCalldata: freshQuote.routePlan.routerCalldata,
-        dexId: DEX_IDS[freshQuote.routePlan.protocol]
-      }];
-
-      console.log('🔀 Using Aggregator V4 executeSplit');
-      txConfig = {
-        address: SWAP_AGGREGATOR as `0x${string}`,
-        abi: AGGREGATOR_ABI,
-        functionName: 'executeSplit',
-        args: [
-          tokenInAddr,
-          tokenOutAddr,
-          amountInWei,
-          finalMinAmountOut,
-          routeSteps
-        ],
-        chainId: base.id,
-        gas: GAS_FALLBACK
+      const buildTxConfigForSteps = (steps: any[], minAmountOutWei: bigint) => {
+        const config: any = {
+          address: SWAP_AGGREGATOR as `0x${string}`,
+          abi: AGGREGATOR_ABI,
+          functionName: 'executeSplit',
+          args: [
+            tokenInAddr,
+            tokenOutAddr,
+            amountInWei,
+            minAmountOutWei,
+            steps
+          ],
+          chainId: base.id,
+          gas: GAS_FALLBACK
+        };
+        if (inputIsNativeETH) config.value = amountInWei;
+        return config;
       };
 
-      // Add msg.value for native ETH input
-      if (inputIsNativeETH) {
-        txConfig.value = amountInWei;
-        console.log('💰 Adding msg.value for native ETH:', amountInWei.toString());
+      const buildSingleRouteStep = (plan: SwapRoutePlan, stepAmountIn: bigint = amountInWei) => ({
+        adapter: SWAP_AGGREGATOR_ADAPTER,
+        router: plan.router,
+        tokenIn: tokenInAddr,
+        tokenOut: tokenOutAddr,
+        amountIn: stepAmountIn,
+        routerCalldata: plan.routerCalldata,
+        dexId: DEX_IDS[plan.protocol]
+      });
+
+      const buildTxConfigForPlan = (plan: SwapRoutePlan, minAmountOutWei: bigint) => {
+        return buildTxConfigForSteps([buildSingleRouteStep(plan)], minAmountOutWei);
+      };
+
+      const buildExecutableSplit = async (preview: SplitRoutePreview) => {
+        const steps: any[] = [];
+        let rawOutput = 0n;
+        let totalInput = 0n;
+
+        for (const part of preview.parts) {
+          const partPlans = await getRoutePlansForAmount(part.amountIn, quoteTokenInAddr, quoteTokenOutAddr);
+          const partPlan = partPlans.find((plan) => plan.protocol === part.candidate.protocol && plan.label === part.candidate.label)
+            ?? partPlans.find((plan) => plan.protocol === part.candidate.protocol);
+          if (!partPlan) return null;
+          steps.push(buildSingleRouteStep(partPlan, part.amountIn));
+          rawOutput += partPlan.rawQuote;
+          totalInput += part.amountIn;
+        }
+
+        if (steps.length < 2 || totalInput !== amountInWei || rawOutput <= 0n) return null;
+        const userOutWei = (rawOutput * (10_000n - feeBps)) / 10_000n;
+        const minAmountOut = (userOutWei * slippageMultiplier) / 10_000n;
+        return {
+          steps,
+          userOutWei,
+          minAmountOutWei: minAmountOut > 1n ? minAmountOut : 1n,
+          label: `Split route: ${preview.parts.map((part) => `${formatNumber(part.shareBps / 100, 2)}% ${part.candidate.label}`).join(' + ')}`
+        };
+      };
+
+      const freshSplitPreview = await getSplitRoutePreview(amountInWei, quoteTokenInAddr, quoteTokenOutAddr, freshQuote.routePlans);
+      const splitExecution = freshSplitPreview ? await buildExecutableSplit(freshSplitPreview) : null;
+
+      if (splitExecution && swapClient && address) {
+        const splitConfig = buildTxConfigForSteps(splitExecution.steps, splitExecution.minAmountOutWei);
+        try {
+          const estimated = await swapClient.estimateContractGas({
+            address: splitConfig.address,
+            abi: splitConfig.abi,
+            functionName: splitConfig.functionName,
+            args: splitConfig.args,
+            value: splitConfig.value,
+            account: address as `0x${string}`
+          });
+          const withBuffer = (estimated * GAS_BUFFER_BPS) / 100n;
+          splitConfig.gas = withBuffer > GAS_FALLBACK ? withBuffer : GAS_FALLBACK;
+          txConfig = splitConfig;
+          selectedExecutionPlan = freshQuote.routePlan;
+          selectedExecutionLabel = splitExecution.label;
+          selectedUserOutWei = splitExecution.userOutWei;
+          selectedMinAmountOut = splitExecution.minAmountOutWei;
+          console.log('⛽ Split route gas estimated:', estimated.toString(), '+20% →', txConfig.gas.toString());
+        } catch (gasErr: any) {
+          lastGasError = gasErr;
+          console.warn('⚠️ Split route simulation failed, falling back to single-route execution:', gasErr?.shortMessage || gasErr?.message);
+        }
       }
 
       // Dynamic gas estimation + 20% buffer
       // If estimation reverts the swap would also revert on-chain, so warn user
-      if (swapClient && address) {
-        try {
-          const estimated = await swapClient.estimateContractGas({
-            address: txConfig.address,
-            abi: txConfig.abi,
-            functionName: txConfig.functionName,
-            args: txConfig.args,
-            value: txConfig.value,
-            account: address as `0x${string}`
-          });
-          const withBuffer = (estimated * GAS_BUFFER_BPS) / 100n;
-          txConfig.gas = withBuffer > GAS_FALLBACK ? withBuffer : GAS_FALLBACK;
-          console.log('⛽ Gas estimated:', estimated.toString(), '+20% →', txConfig.gas.toString());
-        } catch (gasErr: any) {
+      if (!txConfig && swapClient && address) {
+        for (const plan of candidatePlans) {
+          const userOutWei = (plan.rawQuote * (10_000n - feeBps)) / 10_000n;
+          if (userOutWei <= 0n) continue;
+          const minAmountOut = (userOutWei * slippageMultiplier) / 10_000n;
+          const finalMinAmountOut = minAmountOut > 1n ? minAmountOut : 1n;
+          const candidateConfig = buildTxConfigForPlan(plan, finalMinAmountOut);
+
+          try {
+            const estimated = await swapClient.estimateContractGas({
+              address: candidateConfig.address,
+              abi: candidateConfig.abi,
+              functionName: candidateConfig.functionName,
+              args: candidateConfig.args,
+              value: candidateConfig.value,
+              account: address as `0x${string}`
+            });
+            const withBuffer = (estimated * GAS_BUFFER_BPS) / 100n;
+            candidateConfig.gas = withBuffer > GAS_FALLBACK ? withBuffer : GAS_FALLBACK;
+            txConfig = candidateConfig;
+            selectedExecutionPlan = plan;
+            selectedExecutionLabel = plan.label;
+            selectedUserOutWei = userOutWei;
+            selectedMinAmountOut = finalMinAmountOut;
+            console.log('⛽ Gas estimated:', estimated.toString(), '+20% →', txConfig.gas.toString());
+            break;
+          } catch (gasErr: any) {
+            lastGasError = gasErr;
+            console.warn(`⚠️ Route simulation failed for ${plan.label}:`, gasErr?.shortMessage || gasErr?.message);
+          }
+        }
+
+        if (!txConfig || !selectedExecutionPlan) {
+          const gasErr = lastGasError;
           const msg = getErrorText(gasErr);
           if (isAllowanceOrBalanceError(msg)) {
             setNeedsApproval(!inputIsNativeETH);
@@ -2309,6 +2848,34 @@ export default function SwapInterface() {
           setTransactionStep('idle');
           return;
         }
+      } else {
+        const plan = freshQuote.routePlan;
+        const userOutWei = (plan.rawQuote * (10_000n - feeBps)) / 10_000n;
+        const minAmountOut = (userOutWei * slippageMultiplier) / 10_000n;
+        txConfig = buildTxConfigForPlan(plan, minAmountOut > 1n ? minAmountOut : 1n);
+        selectedExecutionPlan = plan;
+        selectedExecutionLabel = plan.label;
+        selectedUserOutWei = userOutWei;
+        selectedMinAmountOut = minAmountOut > 1n ? minAmountOut : 1n;
+      }
+
+      if (!selectedExecutionPlan) {
+        setErrorMessage('Could not select an executable route. Try again.');
+        setTransactionStep('idle');
+        return;
+      }
+
+      const amountOutNormalizedForSwap = formatUnits(selectedUserOutWei, tokenOut.decimals);
+      console.log('🔀 Using Aggregator V4 executeSplit');
+      console.log('   Route:', selectedExecutionLabel || selectedExecutionPlan.label);
+      console.log('   Router:', selectedExecutionPlan.router);
+      console.log('   User output (wei):', selectedUserOutWei.toString());
+      console.log('   Min output (wei):', selectedMinAmountOut.toString());
+      if (selectedExecutionPlan.bestFeeTier) {
+        console.log('   Fee Tier:', selectedExecutionPlan.bestFeeTier, `(${selectedExecutionPlan.bestFeeTier / 10000}%)`);
+      }
+      if (inputIsNativeETH) {
+        console.log('💰 Adding msg.value for native ETH:', amountInWei.toString());
       }
 
       console.log('📤 Sending swap via Aggregator V4...');
@@ -2938,7 +3505,9 @@ export default function SwapInterface() {
         {/* Protocol Badge */}
         {parseFloat(amountOut) > 0 && !noLiquidityError && (
           <div style={styles.protocolBadge}>
-            Best route via {selectedRoutePlan?.label || getProtocolLabel(selectedProtocol)}
+            {splitRoutePreview
+              ? `Split route: ${formatSplitRouteParts(splitRoutePreview)}`
+              : `100% via ${selectedRoutePlan?.label || getProtocolLabel(selectedProtocol)}`}
           </div>
         )}
 
@@ -3074,35 +3643,69 @@ export default function SwapInterface() {
           <div style={styles.infoBox}>
             {allRoutePlans.length > 0 && (
               <div style={styles.routeQuotes}>
-                <div style={styles.routeQuotesHeader}>
-                  <span>DEX quotes</span>
-                  <span>Estimated output</span>
+                <div style={styles.routePanelHeader}>
+                  <span>{splitRoutePreview ? 'Optimized route' : 'Best route'}</span>
+                  <span>{splitRoutePreview ? `+${(splitRoutePreview.improvementBps / 100).toFixed(2)}%` : 'Gas adjusted'}</span>
                 </div>
-                {allRoutePlans.map((plan) => {
-                  const isBest = selectedRoutePlan?.protocol === plan.protocol && selectedRoutePlan?.router === plan.router;
+
+                <div style={styles.bestRouteCard}>
+                  <div style={styles.bestRouteTop}>
+                    <div style={styles.bestRouteTitleBlock}>
+                      <span style={styles.bestRouteLabel}>
+                        {splitRoutePreview ? 'Split route' : (selectedRoutePlan?.label || getProtocolLabel(selectedProtocol))}
+                      </span>
+                      <span style={styles.bestRoutePath}>
+                        {splitRoutePreview ? formatSplitRouteParts(splitRoutePreview) : (selectedRoutePlan ? getRoutePathLabel(selectedRoutePlan) : `${tokenIn.symbol} → ${tokenOut.symbol}`)}
+                      </span>
+                    </div>
+                    <div style={styles.bestRouteOutputBlock}>
+                      <span style={styles.bestRouteOutput}>{formatNumber(parseFloat(amountOut))} {tokenOut.symbol}</span>
+                      <span style={styles.bestRouteMeta}>{splitRoutePreview ? 'after fee' : getRouteHopLabel(selectedRoutePlan || allRoutePlans[0])}</span>
+                    </div>
+                  </div>
+
+                  {splitRoutePreview ? (
+                    <div style={styles.routeAllocationGrid}>
+                      {getSplitSummaryParts(splitRoutePreview).map((part) => (
+                        <div key={`${part.label}-${part.share}`} style={styles.routeAllocationItem}>
+                          <span style={styles.routeSharePill}>{part.share}</span>
+                          <span style={styles.routeAllocationDex}>{part.label}</span>
+                          <span style={styles.routeAllocationOut}>{part.output}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : selectedRoutePlan ? (
+                    <div style={styles.routeChipRow}>
+                      <span style={styles.routeChip}>{getRouteHopLabel(selectedRoutePlan)}</span>
+                      <span style={styles.routeChip}>{getRoutePathLabel(selectedRoutePlan)}</span>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div style={styles.routeQuotesHeader}>
+                  <span>Market check</span>
+                  <span>{allRoutePlans.length} routes</span>
+                </div>
+                {allRoutePlans.slice(0, 4).map((plan) => {
+                  const isBest = selectedRoutePlan?.label === plan.label
+                    && selectedRoutePlan?.router === plan.router
+                    && selectedRoutePlan?.routerCalldata === plan.routerCalldata;
                   return (
-                    <div key={`${plan.protocol}-${plan.label}`} style={{ ...styles.routeQuoteRow, ...(isBest ? styles.routeQuoteRowBest : {}) }}>
+                    <div key={`${plan.protocol}-${plan.label}-${plan.routerCalldata.slice(0, 18)}`} style={{ ...styles.routeQuoteRow, ...(isBest ? styles.routeQuoteRowBest : {}) }}>
                       <span style={styles.routeQuoteDex}>
-                        {plan.label}
-                        {isBest && <span style={styles.routeBestBadge}>Best</span>}
+                        <span style={styles.routeDexName}>{plan.label}</span>
+                        <span style={styles.routeHopBadge}>{getRouteHopLabel(plan)}</span>
                       </span>
                       <span style={styles.routeQuoteAmount}>
                         {formatRouteNetOutput(plan)}
-                        {!isBest && <span style={styles.routeDelta}>{getRouteDeltaLabel(plan)}</span>}
+                        {isBest ? <span style={styles.routeBestBadge}>Best</span> : <span style={styles.routeDelta}>{getRouteDeltaLabel(plan)}</span>}
                       </span>
                     </div>
                   );
                 })}
-                {ENABLE_SPLIT_ROUTE_PREVIEW && splitRoutePreview && (
-                  <div style={{ ...styles.routeQuoteRow, ...styles.splitRouteRow }}>
-                    <span style={styles.routeQuoteDex}>
-                      Split route
-                      <span style={styles.routeBestBadge}>+{(splitRoutePreview.improvementBps / 100).toFixed(2)}%</span>
-                    </span>
-                    <span style={styles.routeQuoteAmount}>
-                      {formatNumber(parseFloat(formatUnits(splitRoutePreview.netOutput, tokenOut.decimals)))} {tokenOut.symbol}
-                    </span>
-                    <span style={styles.splitRouteParts}>{formatSplitRouteParts(splitRoutePreview)}</span>
+                {allRoutePlans.length > 4 && (
+                  <div style={styles.routeMoreNote}>
+                    +{allRoutePlans.length - 4} more checked routes hidden for readability
                   </div>
                 )}
               </div>
@@ -3128,10 +3731,10 @@ export default function SwapInterface() {
                 {slippage}% ⚙️
               </button>
             </div>
-            {typeof protocolFeeBps === 'bigint' && Number(protocolFeeBps) > 0 && (
+            {getProtocolFeeBps() > 0 && (
               <div style={getStyle(styles.infoRow, mobileOverrides.infoRow)}>
                 <span>Protocol Fee:</span>
-                <span style={{ color: '#666' }}>{Number(protocolFeeBps) / 100}%</span>
+                <span style={{ color: '#666' }}>{getProtocolFeeBps() / 100}%</span>
               </div>
             )}
           </div>
@@ -4561,10 +5164,130 @@ const styles: Record<string, React.CSSProperties> = {
   routeQuotes: {
     display: 'flex',
     flexDirection: 'column' as const,
-    gap: '6px',
+    gap: '8px',
     paddingBottom: '12px',
     marginBottom: '12px',
     borderBottom: '1px solid rgba(255,255,255,0.08)'
+  },
+  routePanelHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    color: '#9ca3af',
+    fontSize: '12px',
+    fontWeight: '700',
+    letterSpacing: 0,
+    textTransform: 'uppercase' as const
+  },
+  bestRouteCard: {
+    padding: '12px',
+    borderRadius: '8px',
+    background: 'rgba(59, 130, 246, 0.1)',
+    border: '1px solid rgba(96, 165, 250, 0.28)'
+  },
+  bestRouteTop: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '12px',
+    alignItems: 'flex-start'
+  },
+  bestRouteTitleBlock: {
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '4px'
+  },
+  bestRouteLabel: {
+    color: '#f8fafc',
+    fontSize: '14px',
+    fontWeight: '700',
+    lineHeight: '18px'
+  },
+  bestRoutePath: {
+    color: '#94a3b8',
+    fontSize: '12px',
+    lineHeight: '16px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap' as const,
+    maxWidth: '320px'
+  },
+  bestRouteOutputBlock: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'flex-end',
+    gap: '3px',
+    flexShrink: 0
+  },
+  bestRouteOutput: {
+    color: '#ffffff',
+    fontSize: '14px',
+    fontWeight: '800',
+    lineHeight: '18px',
+    whiteSpace: 'nowrap' as const
+  },
+  bestRouteMeta: {
+    color: '#7f8797',
+    fontSize: '11px',
+    fontWeight: '600'
+  },
+  routeAllocationGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))',
+    gap: '6px',
+    marginTop: '10px'
+  },
+  routeAllocationItem: {
+    display: 'grid',
+    gridTemplateColumns: '42px minmax(0, 1fr)',
+    gridTemplateRows: 'auto auto',
+    columnGap: '8px',
+    rowGap: '2px',
+    alignItems: 'center',
+    padding: '7px 8px',
+    borderRadius: '8px',
+    background: 'rgba(15, 23, 42, 0.42)',
+    border: '1px solid rgba(148, 163, 184, 0.12)'
+  },
+  routeSharePill: {
+    gridRow: '1 / span 2',
+    padding: '3px 6px',
+    borderRadius: '999px',
+    background: 'rgba(34, 197, 94, 0.16)',
+    color: '#4ade80',
+    fontSize: '11px',
+    fontWeight: '800',
+    textAlign: 'center' as const
+  },
+  routeAllocationDex: {
+    color: '#e5e7eb',
+    fontSize: '12px',
+    fontWeight: '700',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap' as const
+  },
+  routeAllocationOut: {
+    color: '#94a3b8',
+    fontSize: '11px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap' as const
+  },
+  routeChipRow: {
+    display: 'flex',
+    gap: '6px',
+    flexWrap: 'wrap' as const,
+    marginTop: '10px'
+  },
+  routeChip: {
+    padding: '4px 8px',
+    borderRadius: '999px',
+    background: 'rgba(15, 23, 42, 0.45)',
+    border: '1px solid rgba(148, 163, 184, 0.14)',
+    color: '#cbd5e1',
+    fontSize: '11px',
+    fontWeight: '700'
   },
   routeQuotesHeader: {
     display: 'flex',
@@ -4581,17 +5304,17 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: '12px',
-    minHeight: '32px',
-    padding: '7px 9px',
+    minHeight: '30px',
+    padding: '6px 8px',
     borderRadius: '8px',
     background: 'rgba(255,255,255,0.025)',
     border: '1px solid rgba(255,255,255,0.045)',
     color: '#cbd5e1',
-    fontSize: '13px'
+    fontSize: '12px'
   },
   routeQuoteRowBest: {
-    background: 'rgba(59,130,246,0.12)',
-    border: '1px solid rgba(96,165,250,0.28)'
+    background: 'rgba(59,130,246,0.08)',
+    border: '1px solid rgba(96,165,250,0.2)'
   },
   splitRouteRow: {
     flexWrap: 'wrap' as const,
@@ -4606,12 +5329,27 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: 0,
     whiteSpace: 'nowrap' as const
   },
-  routeBestBadge: {
+  routeDexName: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap' as const,
+    maxWidth: '190px'
+  },
+  routeHopBadge: {
     padding: '2px 6px',
+    borderRadius: '999px',
+    background: 'rgba(148, 163, 184, 0.1)',
+    color: '#94a3b8',
+    fontSize: '10px',
+    fontWeight: '800',
+    flexShrink: 0
+  },
+  routeBestBadge: {
+    padding: '2px 5px',
     borderRadius: '999px',
     background: 'rgba(74,222,128,0.16)',
     color: '#4ade80',
-    fontSize: '11px',
+    fontSize: '10px',
     fontWeight: '700'
   },
   routeQuoteAmount: {
@@ -4623,12 +5361,20 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'right' as const,
     color: '#f8fafc',
     fontWeight: '600',
+    fontSize: '12px',
     whiteSpace: 'nowrap' as const
   },
   routeDelta: {
     color: '#f59e0b',
-    fontSize: '11px',
+    fontSize: '10px',
     fontWeight: '700'
+  },
+  routeMoreNote: {
+    color: '#7f8797',
+    fontSize: '11px',
+    lineHeight: '16px',
+    textAlign: 'center' as const,
+    padding: '2px 0'
   },
   splitRouteParts: {
     flexBasis: '100%',
