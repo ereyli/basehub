@@ -62,6 +62,7 @@ const createMockQueryBuilder = () => {
     limit: () => terminal,
     in: () => terminal,
     eq: () => chain,
+    gte: () => chain,
     maybeSingle: async () => ({ data: null, error: null }),
     single: async () => ({ data: null, error: null }),
     then: terminal.then.bind(terminal),

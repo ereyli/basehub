@@ -3,8 +3,10 @@ import { useAccount, useReadContract } from 'wagmi';
 import { formatUnits } from 'viem';
 import { base } from 'wagmi/chains';
 import { getSwapVolumeForWallet, SWAP_VOLUME_TIERS, SWAP_PER_100_XP, SWAP_VOLUME_BAR_MAX_USD } from '../utils/xpUtils';
+import { supabase, TABLES } from '../config/supabase';
 
 const SWAP_AGGREGATOR = '0xbf579e68ba69de03ccec14476eb8d765ec558257';
+const SWAPHUB_V4_STATS_START_ISO = import.meta.env.VITE_SWAPHUB_V4_STATS_START_ISO || '2026-06-03T00:00:00.000Z';
 
 const AGGREGATOR_ABI = [
   {
@@ -83,6 +85,11 @@ interface StatsPanelProps {
 export default function StatsPanel({ isMobile = false }: StatsPanelProps) {
   const { address } = useAccount();
   const [userVolume, setUserVolume] = useState<{ totalVolumeUSD: number; per100BlocksAwarded: number; awardedTiers: string[] }>({ totalVolumeUSD: 0, per100BlocksAwarded: 0, awardedTiers: [] });
+  const [swapHubDelta, setSwapHubDelta] = useState({
+    swaps: 0,
+    uniqueUsers: 0,
+    volumeUSD: 0
+  });
 
   const refreshUserVolume = () => {
     if (!address) return;
@@ -100,12 +107,51 @@ export default function StatsPanel({ isMobile = false }: StatsPanelProps) {
   useEffect(() => {
     const onSwapRecorded = () => {
       refreshUserVolume();
+      refreshSwapHubDelta();
       setTimeout(refreshUserVolume, 1500);
       setTimeout(refreshUserVolume, 4000);
+      setTimeout(refreshSwapHubDelta, 1500);
+      setTimeout(refreshSwapHubDelta, 4000);
     };
     window.addEventListener('basehub-swap-recorded', onSwapRecorded);
     return () => window.removeEventListener('basehub-swap-recorded', onSwapRecorded);
   }, [address]);
+
+  const refreshSwapHubDelta = async () => {
+    try {
+      if (!supabase?.from) return;
+      const { data, error } = await supabase
+        .from(TABLES.SWAPHUB_SWAPS)
+        .select('wallet_address, amount_usd, created_at')
+        .gte('created_at', SWAPHUB_V4_STATS_START_ISO)
+        .limit(10000);
+
+      if (error || !Array.isArray(data)) {
+        if (error) console.warn('SwapHub stats delta load failed:', error);
+        return;
+      }
+
+      const unique = new Set<string>();
+      const volumeUSD = data.reduce((sum, row: any) => {
+        const wallet = String(row?.wallet_address || '').toLowerCase();
+        if (wallet) unique.add(wallet);
+        const amount = Number(row?.amount_usd || 0);
+        return Number.isFinite(amount) && amount > 0 ? sum + amount : sum;
+      }, 0);
+
+      setSwapHubDelta({
+        swaps: data.length,
+        uniqueUsers: unique.size,
+        volumeUSD
+      });
+    } catch (error) {
+      console.warn('SwapHub stats delta load failed:', error);
+    }
+  };
+
+  useEffect(() => {
+    refreshSwapHubDelta();
+  }, []);
 
   const { data: stats, refetch } = useReadContract({
     address: SWAP_AGGREGATOR as `0x${string}`,
@@ -125,20 +171,26 @@ export default function StatsPanel({ isMobile = false }: StatsPanelProps) {
   useEffect(() => {
     const interval = setInterval(() => {
       refetch();
+      refreshSwapHubDelta();
     }, 30000);
     return () => clearInterval(interval);
   }, [refetch]);
 
   // Extract values safely (default to 0 if stats is null)
-  const totalSwaps = stats ? Number(stats[0]) : 0;
+  const legacyTotalSwaps = stats ? Number(stats[0]) : 0;
   const totalFeesCollected = stats ? stats[1] : BigInt(0);
-  const uniqueUsers = stats ? Number(stats[2]) : 0;
+  const legacyUniqueUsers = stats ? Number(stats[2]) : 0;
   const v2Swaps = stats ? Number(stats[3]) : 0;
   const v3Swaps = stats ? Number(stats[4]) : 0;
   const totalVolumeETH = stats ? stats[5] : BigInt(0);
 
-  const volumeETH = parseFloat(formatUnits(totalVolumeETH, 18));
+  const legacyVolumeETH = parseFloat(formatUnits(totalVolumeETH, 18));
+  const deltaVolumeETH = swapHubDelta.volumeUSD / ETH_PRICE_USD;
+  const volumeETH = legacyVolumeETH + deltaVolumeETH;
   const volumeUSD = volumeETH * ETH_PRICE_USD;
+  const totalSwaps = legacyTotalSwaps + swapHubDelta.swaps;
+  const uniqueUsers = legacyUniqueUsers + swapHubDelta.uniqueUsers;
+  const v4Swaps = swapHubDelta.swaps;
   
   // Calculate fees correctly: Fee is taken from OUTPUT tokens
   // totalVolumeETH includes both input and output ETH volume
@@ -150,13 +202,15 @@ export default function StatsPanel({ isMobile = false }: StatsPanelProps) {
   
   // Contract's totalFeesCollected might be wrong due to mixing different token decimals
   // (USDC 6 decimals, ETH 18 decimals, etc.)
-  const rawFeesETH = parseFloat(formatUnits(totalFeesCollected, 18));
+  const rawLegacyFeesETH = parseFloat(formatUnits(totalFeesCollected, 18));
+  const deltaFeesETH = deltaVolumeETH * 0.005;
+  const rawFeesETH = rawLegacyFeesETH + deltaFeesETH;
   
   // Use calculated fee if contract value is unreasonable
   // (more than volume, negative, or NaN)
   const feesETH = (rawFeesETH > volumeETH || rawFeesETH < 0 || isNaN(rawFeesETH)) 
-    ? estimatedFeesETH 
-    : Math.min(rawFeesETH, estimatedFeesETH);
+    ? estimatedFeesETH
+    : Math.min(rawFeesETH, estimatedFeesETH + deltaFeesETH);
 
   // Generate chart data based on actual value showing growth over time
   // Since we don't have historical data, we simulate growth from 0 to current value
@@ -324,6 +378,10 @@ export default function StatsPanel({ isMobile = false }: StatsPanelProps) {
       backgroundColor: 'rgba(76, 110, 245, 0.12)',
       color: '#4c6ef5'
     },
+    v4Badge: {
+      backgroundColor: 'rgba(34, 197, 94, 0.12)',
+      color: '#22c55e'
+    },
     protocolText: {
       fontSize: '13px',
       color: 'rgba(255, 255, 255, 0.5)',
@@ -483,9 +541,14 @@ export default function StatsPanel({ isMobile = false }: StatsPanelProps) {
           <span style={styles.protocolText}>{Number(v3Swaps).toLocaleString()} swaps</span>
         </div>
         <div style={styles.protocolItem}>
+          <span style={{ ...styles.protocolBadge, ...styles.v4Badge }}>V4+</span>
+          <span style={styles.protocolText}>{Number(v4Swaps).toLocaleString()} swaps</span>
+        </div>
+        <div style={styles.protocolItem}>
           <span style={styles.protocolText}>
             V2: {totalSwaps > 0 ? ((Number(v2Swaps) / Number(totalSwaps)) * 100).toFixed(1) : 0}% | 
-            V3: {totalSwaps > 0 ? ((Number(v3Swaps) / Number(totalSwaps)) * 100).toFixed(1) : 0}%
+            V3: {totalSwaps > 0 ? ((Number(v3Swaps) / Number(totalSwaps)) * 100).toFixed(1) : 0}% |
+            V4+: {totalSwaps > 0 ? ((Number(v4Swaps) / Number(totalSwaps)) * 100).toFixed(1) : 0}%
           </span>
         </div>
       </div>
@@ -719,4 +782,3 @@ export default function StatsPanel({ isMobile = false }: StatsPanelProps) {
     </div>
   );
 }
-
