@@ -47,6 +47,17 @@ body {
   background: transparent;
 }
 
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
 /* Disable zoom on mobile browsers to prevent crashes */
 @media (max-width: 768px) {
   html, body, #root, .App, .web-app, .farcaster-app {
