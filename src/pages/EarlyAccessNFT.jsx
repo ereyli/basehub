@@ -412,7 +412,7 @@ const EarlyAccessNFT = () => {
                 : isLoading ? 'Minting...'
                 : totalMinted >= maxSupply ? 'Sold Out'
                 : mintingEnabled === false ? 'Minting Disabled'
-                : !isOnBase ? 'Switch to Base & Mint'
+                : !isOnBase ? 'Switch to Base'
                 : 'Mint Early Access Pass'}
             </button>
 
@@ -437,7 +437,7 @@ const EarlyAccessNFT = () => {
                 </div>
                 {hash && (
                   <a
-                    href={getTransactionExplorerUrl(chainId, hash)}
+                    href={getTransactionExplorerUrl(NETWORKS.BASE.chainId, hash)}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: accentLight, textDecoration: 'none', fontSize: '0.85rem', fontWeight: 500 }}

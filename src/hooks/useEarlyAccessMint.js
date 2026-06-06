@@ -4,12 +4,13 @@ import { parseEther } from 'viem'
 import { useNetworkCheck } from './useNetworkCheck'
 import { EARLY_ACCESS_CONFIG, EARLY_ACCESS_ABI } from '../config/earlyAccessNFT'
 import { DATA_SUFFIX } from '../config/wagmi'
+import { NETWORKS } from '../config/networks'
 import { addXP } from '../utils/xpUtils'
 
 export const useEarlyAccessMint = () => {
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
-  const { isCorrectNetwork, switchToBaseNetwork } = useNetworkCheck()
+  const { switchToBaseNetwork } = useNetworkCheck()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   
@@ -18,9 +19,12 @@ export const useEarlyAccessMint = () => {
   const lastErrorRef = useRef(null)
 
   const contractAddress = EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS
+  const baseChainId = NETWORKS.BASE.chainId
+  const isOnBase = chainId === baseChainId
 
   // Read contract data
   const { data: totalMinted, refetch: refetchTotalMinted } = useReadContract({
+    chainId: baseChainId,
     address: contractAddress || undefined,
     abi: EARLY_ACCESS_ABI,
     functionName: 'totalMinted',
@@ -31,6 +35,7 @@ export const useEarlyAccessMint = () => {
   })
 
   const { data: uniqueMinters, refetch: refetchUniqueMinters } = useReadContract({
+    chainId: baseChainId,
     address: contractAddress || undefined,
     abi: EARLY_ACCESS_ABI,
     functionName: 'uniqueMinters',
@@ -41,6 +46,7 @@ export const useEarlyAccessMint = () => {
   })
 
   const { data: maxSupply } = useReadContract({
+    chainId: baseChainId,
     address: contractAddress || undefined,
     abi: EARLY_ACCESS_ABI,
     functionName: 'MAX_SUPPLY',
@@ -50,6 +56,7 @@ export const useEarlyAccessMint = () => {
   })
 
   const { data: mintPrice } = useReadContract({
+    chainId: baseChainId,
     address: contractAddress || undefined,
     abi: EARLY_ACCESS_ABI,
     functionName: 'MINT_PRICE',
@@ -59,6 +66,7 @@ export const useEarlyAccessMint = () => {
   })
 
   const { data: mintingEnabled } = useReadContract({
+    chainId: baseChainId,
     address: contractAddress || undefined,
     abi: EARLY_ACCESS_ABI,
     functionName: 'mintingEnabled',
@@ -69,6 +77,7 @@ export const useEarlyAccessMint = () => {
   })
 
   const { data: userHasMinted } = useReadContract({
+    chainId: baseChainId,
     address: contractAddress || undefined,
     abi: EARLY_ACCESS_ABI,
     functionName: 'hasMinted',
@@ -79,6 +88,7 @@ export const useEarlyAccessMint = () => {
   })
 
   const { data: userMintCount } = useReadContract({
+    chainId: baseChainId,
     address: contractAddress || undefined,
     abi: EARLY_ACCESS_ABI,
     functionName: 'mintCount',
@@ -90,6 +100,7 @@ export const useEarlyAccessMint = () => {
 
   const { writeContractAsync, data: hash, isPending } = useWriteContract()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    chainId: baseChainId,
     hash,
   })
 
@@ -106,9 +117,9 @@ export const useEarlyAccessMint = () => {
       throw new Error('Contract not deployed yet. Please check configuration.')
     }
 
-    if (!isCorrectNetwork) {
+    if (!isOnBase) {
       await switchToBaseNetwork()
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      throw new Error('Please switch to Base network and mint again.')
     }
 
     setIsLoading(true)
@@ -128,6 +139,7 @@ export const useEarlyAccessMint = () => {
       const price = mintPrice || parseEther(EARLY_ACCESS_CONFIG.MINT_PRICE)
 
       await writeContractAsync({
+        chainId: baseChainId,
         address: contractAddress,
         abi: EARLY_ACCESS_ABI,
         functionName: 'mint',
@@ -159,7 +171,7 @@ export const useEarlyAccessMint = () => {
       const awardXP = async () => {
         try {
           console.log('🎉 Awarding 3000 XP for Early Access NFT minting!')
-          await addXP(address, 3000, 'Early Access NFT Mint', chainId ?? 8453, false, hash)
+          await addXP(address, 3000, 'Early Access NFT Mint', baseChainId, false, hash)
           
           console.log('✅ XP awarded and transaction recorded!')
         } catch (error) {
@@ -193,6 +205,7 @@ export const useEarlyAccessMint = () => {
     mintingEnabled: mintingEnabled ?? true,
     userHasMinted: userHasMinted ?? false,
     userMintCount: userMintCount ? Number(userMintCount) : 0,
+    isOnBase,
     isSuccess,
     hash
   }
