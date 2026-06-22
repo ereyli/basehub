@@ -1,8 +1,8 @@
-// Hook for x402 payment using x402-fetch
-// x402-fetch automatically handles wallet UI and payment flow
+// Hook for x402 payment using the shared builder-code x402 fetch helper
+// The helper handles wallet payment flow and Base Builder Code attribution.
 import { useState, useEffect } from 'react'
 import { useWalletClient, useAccount, useChainId } from 'wagmi'
-import { wrapFetchWithPayment } from 'x402-fetch'
+import { createX402FetchWithBuilderCode } from '../utils/x402BuilderCode'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { config } from '../config/wagmi'
 import { isInFarcaster } from '../config/wagmi'
@@ -23,7 +23,7 @@ export const useX402Payment = () => {
     setIsFarcaster(isInFarcaster())
   }, [])
 
-  // Make x402 payment - x402-fetch handles wallet UI automatically
+  // Make x402 payment - helper handles wallet UI automatically
   const makePayment = async () => {
     // In Farcaster, check if wallet is connected via wagmi
     if (isFarcaster) {
@@ -57,14 +57,14 @@ export const useX402Payment = () => {
       console.log('Wallet client available:', !!walletClient)
       console.log('Wallet client type:', walletClient?.constructor?.name || 'Unknown')
       
-      // x402-fetch automatically:
+      // x402 helper automatically:
       // 1. Makes initial request
       // 2. Receives 402 Payment Required
       // 3. Shows wallet UI to user (automatically handled)
       // 4. Creates payment transaction
       // 5. Retries request with X-PAYMENT header
       
-      // x402-fetch automatically reads payment requirements from 402 response
+      // x402 helper automatically reads payment requirements from 402 response
       // We only need to specify maxValue (optional, defaults to 0.1 USDC)
       // 0.1 USDC = 100000 base units (6 decimals)
       const MAX_PAYMENT_AMOUNT = BigInt(100000) // 0.1 USDC max
@@ -75,11 +75,11 @@ export const useX402Payment = () => {
       })
       
       // wrapFetchWithPayment signature: (fetch, walletClient, maxValue?)
-      // x402-fetch will automatically:
+      // x402 helper will automatically:
       // 1. Read payment requirements from 402 response
       // 2. Extract token address and network from response
       // 3. Create payment transaction using wallet client
-      const fetchWithPayment = wrapFetchWithPayment(
+      const fetchWithPayment = createX402FetchWithBuilderCode(
         fetch,
         walletClient,
         MAX_PAYMENT_AMOUNT // Max allowed payment amount (safety check)
@@ -91,7 +91,7 @@ export const useX402Payment = () => {
       let transactionHash = null
       
       try {
-        // x402-fetch sends the transaction and retries the request
+        // x402 helper sends the payment header and retries the request
         // If it's in Farcaster, we may need to wait longer for transaction confirmation
         response = await fetchWithPayment('/api/x402-payment', {
           method: 'POST',
@@ -101,7 +101,7 @@ export const useX402Payment = () => {
         })
         
         // Try to extract transaction hash from response headers (if available)
-        // x402-fetch may include transaction info in headers
+        // x402 may include transaction info in headers
         const txHashHeader = response.headers.get('X-TRANSACTION-HASH') || 
                             response.headers.get('x-transaction-hash')
         if (txHashHeader) {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAccount, useWalletClient } from 'wagmi';
-import { wrapFetchWithPayment } from 'x402-fetch';
+import { createX402FetchWithBuilderCode } from '../utils/x402BuilderCode';
 
 const X402PaymentButton = () => {
   const { address, isConnected } = useAccount();
@@ -39,7 +39,7 @@ const X402PaymentButton = () => {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://basehub.fun';
       
       // Create wrapped fetch function with payment support
-      const fetchWithPayment = wrapFetchWithPayment(
+      const fetchWithPayment = createX402FetchWithBuilderCode(
         fetch,
         walletClient,
         BigInt(100000), // 0.1 USDC in base units (6 decimals: 0.1 * 10^6)
@@ -195,4 +195,3 @@ const X402PaymentButton = () => {
 };
 
 export default X402PaymentButton;
-

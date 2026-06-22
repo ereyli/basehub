@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAccount, useWalletClient } from 'wagmi'
 import { useSupabase } from './useSupabase'
 import { getNFTCount, addXP } from '../utils/xpUtils'
-import { wrapFetchWithPayment } from 'x402-fetch'
+import { createX402FetchWithBuilderCode } from '../utils/x402BuilderCode'
 import { NFT_LUCK_SEGMENTS } from '../config/nftLuckSegments'
 
 // Same pool as NFT Wheel (`src/config/nftLuckSegments.js`)
@@ -142,7 +142,7 @@ export const useNFTPlinko = () => {
       throw new Error('Wallet not connected. Please connect your wallet first.')
     }
 
-    const fetchWithPayment = wrapFetchWithPayment(fetch, walletClient, SPIN_COST_AMOUNT)
+    const fetchWithPayment = createX402FetchWithBuilderCode(fetch, walletClient, SPIN_COST_AMOUNT)
 
     const response = await fetchWithPayment(PLINKO_X402_PAYMENT_PATH, {
       method: 'POST',

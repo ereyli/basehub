@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, Bot, CheckCircle2, Copy, ExternalLink, Play, Power, RefreshCw, Send, Trash2, Zap, Clock, Target, MessageSquare, Activity, ChevronRight, Shield, Sparkles } from 'lucide-react'
 import { formatEther, parseEther } from 'viem'
 import { useAccount, useWalletClient } from 'wagmi'
-import { wrapFetchWithPayment } from 'x402-fetch'
+import { createX402FetchWithBuilderCode } from '../utils/x402BuilderCode'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
 import { NETWORKS } from '../config/networks'
@@ -2050,7 +2050,7 @@ export default function AgentMode() {
     setError(null)
     try {
       const endpoint = agentAccess.isPassHolder ? '/api/x402-agent-access-pass' : '/api/x402-agent-access'
-      const fetchWithPayment = wrapFetchWithPayment(
+      const fetchWithPayment = createX402FetchWithBuilderCode(
         fetch,
         paymentWalletClient,
         BigInt(16000000) // 16 USDC max guard; standard price is 15 USDC.

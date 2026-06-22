@@ -4,20 +4,14 @@ import { defineChain, fallback, http as viemHttp } from 'viem'
 import { injected, metaMask } from 'wagmi/connectors'
 import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector'
 import { NETWORKS } from './networks'
+import { BUILDER_CODE_CAPABILITIES, DATA_SUFFIX } from './builderCode'
+export { BASE_BUILDER_CODE, BUILDER_CODE_CAPABILITIES, DATA_SUFFIX } from './builderCode'
 
 // Base Builder Code – ERC-8021 attribution (base.dev → Settings → Builder Code).
 // Base app / Farcaster miniapp users mostly use smart contract wallets (Base Account etc.).
 // - writeContract / writeContractAsync: dataSuffix: DATA_SUFFIX is passed on every call → suffix appended to tx data for attribution.
 // - EIP-5792 sendCalls (batch): capabilities: BUILDER_CODE_CAPABILITIES must be passed.
 // Schema 0: codesHex + codesLength(1) + schemaId(0) + ercMarker(16 bytes). Inline to avoid ox package resolution on Vercel.
-// Human-readable Builder Code: bc_rd8s0npa (base.dev → Settings → Builder Code)
-export const DATA_SUFFIX = '0x62635f72643873306e70610b0080218021802180218021802180218021'
-
-/** EIP-5792 sendCalls capabilities – Builder Code attribution for smart wallets. sendCalls({ calls, capabilities: BUILDER_CODE_CAPABILITIES }). */
-export const BUILDER_CODE_CAPABILITIES = {
-  dataSuffix: { value: DATA_SUFFIX, optional: true },
-}
-
 // InkChain chain definition
 const inkChain = defineChain({
   id: NETWORKS.INKCHAIN.chainId,

@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { useWalletClient, useChainId, useSwitchChain } from 'wagmi'
-import { wrapFetchWithPayment } from 'x402-fetch'
+import { createX402FetchWithBuilderCode } from '../utils/x402BuilderCode'
 import { NETWORKS } from '../config/networks'
 
 export const useFeaturedProfiles = () => {
@@ -48,7 +48,7 @@ export const useFeaturedProfiles = () => {
         throw new Error('Invalid subscription type')
       }
 
-      const fetchWithPayment = wrapFetchWithPayment(
+      const fetchWithPayment = createX402FetchWithBuilderCode(
         fetch,
         walletClient,
         selectedPricing.maxPayment
@@ -326,4 +326,3 @@ export const useFeaturedProfiles = () => {
     error,
   }
 }
-

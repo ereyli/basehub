@@ -1,7 +1,7 @@
 // Hook for Allowance Cleaner using x402 payment
 import { useState } from 'react'
 import { useWalletClient, useAccount, useWriteContract, useReadContract, useChainId, useSwitchChain } from 'wagmi'
-import { wrapFetchWithPayment } from 'x402-fetch'
+import { createX402FetchWithBuilderCode } from '../utils/x402BuilderCode'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { config, DATA_SUFFIX } from '../config/wagmi'
 import { addXP } from '../utils/xpUtils'
@@ -134,7 +134,7 @@ export const useAllowanceCleaner = () => {
       // x402 payment: 0.1 USDC = 100000 base units (6 decimals)
       const MAX_PAYMENT_AMOUNT = BigInt(100000) // 0.1 USDC max
 
-      const fetchWithPayment = wrapFetchWithPayment(
+      const fetchWithPayment = createX402FetchWithBuilderCode(
         fetch,
         walletClient,
         MAX_PAYMENT_AMOUNT
@@ -404,4 +404,3 @@ export const useAllowanceCleaner = () => {
     isConnected: !!walletClient,
   }
 }
-

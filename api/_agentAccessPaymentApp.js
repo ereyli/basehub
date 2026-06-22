@@ -1,7 +1,6 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { paymentMiddleware } from 'x402-hono'
-import { facilitator } from '@coinbase/x402'
+import { createX402PaymentMiddleware, createX402Route } from './_x402BuilderCode.js'
 import {
   AGENT_ACCESS_PASS_PRICE_USDC,
   AGENT_ACCESS_PRICE_USDC,
@@ -13,11 +12,6 @@ import {
 
 const RECEIVING_ADDRESS = process.env.X402_RECEIVING_ADDRESS || '0x0000000000000000000000000000000000000000'
 const NETWORK = process.env.X402_NETWORK || 'base'
-
-function getFacilitatorConfig() {
-  if (process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET) return facilitator
-  return { url: 'https://x402.org/facilitator' }
-}
 
 function getPaymentHash(c) {
   return (
@@ -47,8 +41,8 @@ export function createAgentAccessPaymentApp({ discounted = false } = {}) {
     cors({
       origin: '*',
       allowMethods: ['GET', 'POST', 'OPTIONS'],
-      allowHeaders: ['Content-Type', 'Authorization', 'X-PAYMENT'],
-      exposeHeaders: ['X-PAYMENT-RESPONSE', 'X-PAYMENT-TX-HASH', 'X-TRANSACTION-HASH'],
+      allowHeaders: ['Content-Type', 'Authorization', 'X-PAYMENT', 'PAYMENT-SIGNATURE'],
+      exposeHeaders: ['X-PAYMENT-RESPONSE', 'PAYMENT-RESPONSE', 'PAYMENT-REQUIRED', 'X-PAYMENT-TX-HASH', 'X-TRANSACTION-HASH'],
       maxAge: 86400,
     })
   )
@@ -65,23 +59,17 @@ export function createAgentAccessPaymentApp({ discounted = false } = {}) {
   )
 
   app.use(
-    paymentMiddleware(
-      RECEIVING_ADDRESS,
-      {
-        'POST /': {
-          price: `$${price}`,
-          network: NETWORK,
-          config: {
-            description: discounted
-              ? `BaseHub Agent Mode access with Early Access Pass discount - ${priceLabel}`
-              : `BaseHub Agent Mode access - ${priceLabel}`,
-            mimeType: 'application/json',
-            maxTimeoutSeconds: 600,
-          },
-        },
-      },
-      getFacilitatorConfig()
-    )
+    createX402PaymentMiddleware({
+      'POST /': createX402Route({
+        price: `$${price}`,
+        network: NETWORK,
+        payTo: RECEIVING_ADDRESS,
+        description: discounted
+          ? `BaseHub Agent Mode access with Early Access Pass discount - ${priceLabel}`
+          : `BaseHub Agent Mode access - ${priceLabel}`,
+        maxTimeoutSeconds: 600,
+      }),
+    })
   )
 
   app.post('/', async (c) => {

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAccount, useWalletClient } from 'wagmi'
 import { useSupabase } from './useSupabase'
 import { getNFTCount, addXP } from '../utils/xpUtils'
-import { wrapFetchWithPayment } from 'x402-fetch'
+import { createX402FetchWithBuilderCode } from '../utils/x402BuilderCode'
 import { NFT_LUCK_SEGMENTS as WHEEL_SEGMENTS } from '../config/nftLuckSegments'
 
 // Visual order for the wheel (224K jackpot at top, then clockwise)
@@ -177,7 +177,7 @@ export const useNFTWheel = () => {
 
     console.log('🎰 Starting x402 payment for wheel spin...')
     
-    const fetchWithPayment = wrapFetchWithPayment(
+    const fetchWithPayment = createX402FetchWithBuilderCode(
       fetch,
       walletClient,
       SPIN_COST_AMOUNT

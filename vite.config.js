@@ -43,7 +43,7 @@ export default defineConfig(({ mode }) => {
           'vendor-wagmi': ['wagmi', 'viem', '@tanstack/react-query'],
           'vendor-web3': ['ethers', '@rainbow-me/rainbowkit'],
           'vendor-farcaster': ['@farcaster/miniapp-sdk', '@farcaster/miniapp-wagmi-connector'],
-          'vendor-x402': ['x402-fetch', 'x402-hono', '@coinbase/x402'],
+          'vendor-x402': ['@x402/fetch', '@x402/hono', '@x402/evm', '@x402/extensions', '@coinbase/x402'],
         },
       },
     },

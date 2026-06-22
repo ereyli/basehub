@@ -4,9 +4,7 @@
 
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { paymentMiddleware } from 'x402-hono'
-// Facilitator import for mainnet
-import { facilitator } from '@coinbase/x402'
+import { createX402PaymentMiddleware, createX402Route, getFacilitatorConfig } from './_x402BuilderCode.js'
 
 const app = new Hono()
 
@@ -28,7 +26,7 @@ let facilitatorConfig
 // For testnet: use { url: "https://x402.org/facilitator" }
 if (process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET) {
   // Use CDP facilitator for mainnet
-  facilitatorConfig = facilitator
+  facilitatorConfig = getFacilitatorConfig()
   console.log('✅ Using CDP facilitator for Base mainnet')
   console.log('✅ CDP API keys found:', {
     keyId: process.env.CDP_API_KEY_ID ? 'Set' : 'Missing',
@@ -36,7 +34,7 @@ if (process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET) {
   })
 } else {
   // Use testnet facilitator when no CDP keys (will cause errors on mainnet)
-  facilitatorConfig = { url: 'https://x402.org/facilitator' }
+  facilitatorConfig = getFacilitatorConfig()
   console.log('⚠️  WARNING: No CDP API keys found!')
   console.log('⚠️  NETWORK is "base" (mainnet) but using testnet facilitator')
   console.log('⚠️  Payments will FAIL on mainnet!')
@@ -47,8 +45,8 @@ if (process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET) {
 app.use('/*', cors({
   origin: '*',
   allowMethods: ['GET', 'POST', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'X-PAYMENT'],
-  exposeHeaders: ['X-PAYMENT-RESPONSE'],
+  allowHeaders: ['Content-Type', 'Authorization', 'X-PAYMENT', 'PAYMENT-SIGNATURE'],
+  exposeHeaders: ['X-PAYMENT-RESPONSE', 'PAYMENT-RESPONSE', 'PAYMENT-REQUIRED'],
   maxAge: 86400,
 }))
 
@@ -79,26 +77,17 @@ app.get('/test', (c) => {
 // If settlement fails, middleware will override route handler's response with 402
 // Route configuration format: "METHOD /path" or "/path" (matches any method)
 app.use(
-  paymentMiddleware(
-    RECEIVING_ADDRESS, // your receiving wallet address
+  createX402PaymentMiddleware(
     {
-      // Route configurations for protected endpoints
-      // Following working example format: "METHOD /path"
-      // Match POST requests to root path
-      'POST /': {
-        price: PRICE, // '$0.10'
-        network: NETWORK, // 'base' for mainnet
-        config: {
-          description: 'BaseHub x402 Payment - Pay 0.1 USDC',
-          mimeType: 'application/json',
-          // Increase timeout for settlement verification (default is 60 seconds)
-          // Settlement may take time to verify on-chain transaction
-          // Farcaster transactions may take longer, so we set a higher timeout
-          maxTimeoutSeconds: 600, // 10 minutes (increased for Farcaster compatibility)
-        },
-      },
+      'POST /': createX402Route({
+        price: PRICE,
+        network: NETWORK,
+        payTo: RECEIVING_ADDRESS,
+        description: 'BaseHub x402 Payment - Pay 0.1 USDC',
+        maxTimeoutSeconds: 600,
+      }),
     },
-    facilitatorConfig // facilitator configuration (CDP facilitator for mainnet)
+    facilitatorConfig
   )
 )
 

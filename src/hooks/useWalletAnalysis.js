@@ -1,7 +1,7 @@
 // Hook for wallet analysis using x402 payment
 import { useState } from 'react'
 import { useWalletClient, useAccount, useChainId, useSwitchChain } from 'wagmi'
-import { wrapFetchWithPayment } from 'x402-fetch'
+import { createX402FetchWithBuilderCode } from '../utils/x402BuilderCode'
 import { addXP } from '../utils/xpUtils'
 import { useQuestSystem } from './useQuestSystem'
 import { NETWORKS } from '../config/networks'
@@ -52,7 +52,7 @@ export const useWalletAnalysis = () => {
       // x402 payment: 0.40 USDC = 400000 base units (6 decimals)
       const MAX_PAYMENT_AMOUNT = BigInt(400000) // 0.40 USDC max
 
-      const fetchWithPayment = wrapFetchWithPayment(
+      const fetchWithPayment = createX402FetchWithBuilderCode(
         fetch,
         walletClient,
         MAX_PAYMENT_AMOUNT
@@ -182,4 +182,3 @@ export const useWalletAnalysis = () => {
     isConnected: !!walletClient,
   }
 }
-

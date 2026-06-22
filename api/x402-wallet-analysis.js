@@ -4,8 +4,7 @@
 
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { paymentMiddleware } from 'x402-hono'
-import { facilitator } from '@coinbase/x402'
+import { createX402PaymentMiddleware, createX402Route, getFacilitatorConfig } from './_x402BuilderCode.js'
 
 const app = new Hono()
 
@@ -49,10 +48,10 @@ if (BASESCAN_API_KEY) {
 // Configure facilitator
 let facilitatorConfig
 if (process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET) {
-  facilitatorConfig = facilitator
+  facilitatorConfig = getFacilitatorConfig()
   console.log('✅ Using CDP facilitator for Base mainnet')
 } else {
-  facilitatorConfig = { url: 'https://x402.org/facilitator' }
+  facilitatorConfig = getFacilitatorConfig()
   console.log('⚠️  WARNING: No CDP API keys found!')
 }
 
@@ -62,8 +61,8 @@ if (process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET) {
 app.use('/*', cors({
   origin: '*',
   allowMethods: ['GET', 'POST', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'X-PAYMENT'],
-  exposeHeaders: ['X-PAYMENT-RESPONSE'],
+  allowHeaders: ['Content-Type', 'Authorization', 'X-PAYMENT', 'PAYMENT-SIGNATURE'],
+  exposeHeaders: ['X-PAYMENT-RESPONSE', 'PAYMENT-RESPONSE', 'PAYMENT-REQUIRED'],
   maxAge: 86400,
 }))
 
@@ -84,18 +83,15 @@ app.get('/', (c) => {
 // Apply x402 payment middleware (Base network)
 // ==========================================
 app.use(
-  paymentMiddleware(
-    RECEIVING_ADDRESS,
+  createX402PaymentMiddleware(
     {
-      'POST /': {
+      'POST /': createX402Route({
         price: PRICE,
         network: NETWORK,
-        config: {
-          description: 'BaseHub Wallet Analysis - Pay 0.40 USDC on Base',
-          mimeType: 'application/json',
-          maxTimeoutSeconds: 600,
-        },
-      },
+        payTo: RECEIVING_ADDRESS,
+        description: 'BaseHub Wallet Analysis - Pay 0.40 USDC on Base',
+        maxTimeoutSeconds: 600,
+      }),
     },
     facilitatorConfig
   )

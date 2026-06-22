@@ -3,10 +3,9 @@
 // Payment: Variable USDC on Base via x402 (0.2 daily, 1.0 weekly, 6.0 monthly)
 
 import { Hono } from 'hono'
-import { paymentMiddleware } from 'x402-hono'
-import { facilitator } from '@coinbase/x402'
 import { cors } from 'hono/cors'
 import { createClient } from '@supabase/supabase-js'
+import { createX402PaymentMiddleware, createX402Route, getFacilitatorConfig } from './_x402BuilderCode.js'
 
 const app = new Hono()
 
@@ -55,10 +54,10 @@ const supabase = supabaseUrl && supabaseKey
 // Configure facilitator
 let facilitatorConfig
 if (process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET) {
-  facilitatorConfig = facilitator
+  facilitatorConfig = getFacilitatorConfig()
   console.log('✅ Using CDP facilitator for Base mainnet')
 } else {
-  facilitatorConfig = { url: 'https://x402.org/facilitator' }
+  facilitatorConfig = getFacilitatorConfig()
   console.log('⚠️  WARNING: No CDP API keys found!')
 }
 
@@ -68,8 +67,8 @@ if (process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET) {
 app.use('/*', cors({
   origin: '*',
   allowMethods: ['GET', 'POST', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'X-PAYMENT'],
-  exposeHeaders: ['X-PAYMENT-RESPONSE'],
+  allowHeaders: ['Content-Type', 'Authorization', 'X-PAYMENT', 'PAYMENT-SIGNATURE'],
+  exposeHeaders: ['X-PAYMENT-RESPONSE', 'PAYMENT-RESPONSE', 'PAYMENT-REQUIRED'],
   maxAge: 86400,
 }))
 
@@ -86,26 +85,18 @@ app.get('/', (c) => {
 })
 
 // ==========================================
-// Payment middleware - Dynamic pricing based on query parameter
+// Payment middleware
 // ==========================================
-// Note: x402-hono middleware doesn't support dynamic pricing from query params
-// So we'll use the maximum price (monthly) and verify the amount in the handler
-// OR we can create separate middleware for each subscription type
-
-// Apply middleware for all POST requests (will use maximum price)
 app.use(
-  paymentMiddleware(
-    RECEIVING_ADDRESS,
+  createX402PaymentMiddleware(
     {
-      'POST /': {
-        price: PRICING.daily.price, // '$0.20' - daily price
+      'POST /': createX402Route({
+        price: PRICING.daily.price,
         network: NETWORK,
-        config: {
-          description: 'BaseHub Featured Profile Registration - Daily',
-          mimeType: 'application/json',
-          maxTimeoutSeconds: 600,
-        },
-      },
+        payTo: RECEIVING_ADDRESS,
+        description: 'BaseHub Featured Profile Registration - Daily',
+        maxTimeoutSeconds: 600,
+      }),
     },
     facilitatorConfig
   )
