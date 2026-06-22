@@ -26,7 +26,7 @@ export const NAV_SECTIONS = {
   agent: ['agent-mode'],
   nft: ['early-access', 'nft-launchpad', 'nft-launchpad-explore', 'prediction-arena', 'nft-plinko'],
   analysis: ['wallet-analysis', 'contract-security', 'allowance-cleaner'],
-  deploy: ['deploy', 'deploy-erc721', 'deploy-erc1155'],
+  deploy: ['deploy', 'deploy-erc721', 'deploy-erc1155', 'deploy-erc8004'],
   social: ['featured-profiles'],
   dex: ['swap'],
 }
@@ -63,6 +63,7 @@ const CAST_SHARE = {
   'deploy': 'Deploy your own ERC20 token on BaseHub. No code – multi-chain in one click.',
   'deploy-erc721': 'Deploy your own NFT collection (ERC721) on BaseHub. Base, Ink, Soneium and more.',
   'deploy-erc1155': 'Deploy multi-token contracts (ERC1155) on BaseHub. One contract, many assets.',
+  'deploy-erc8004': 'Register a trustless ERC-8004 AI agent identity on BaseHub and earn 5,000 XP.',
   'nft-launchpad': 'Create and mint NFT collections on BaseHub. Upload art or generate with AI, deploy on Base and more.',
   'nft-launchpad-explore': 'Browse and mint from NFT collections launched on BaseHub. Base, Ink, Soneium, MegaETH.',
 }
@@ -87,6 +88,7 @@ const PRODUCTS_ALL = [
   { id: 'deploy', path: '/deploy', label: 'Deploy Token', title: 'Deploy Token', description: 'Create your own ERC20 token', castShareText: CAST_SHARE['deploy'], category: CATEGORIES.DEPLOY, color: '#f59e0b', icon: 'Coins', iconImage: '/crypto-logos/basahub logo/ERC20.png', xpReward: '850 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'katana', 'megaeth', 'tempo', 'arc-restnet', 'robinhood-testnet'] },
   { id: 'deploy-erc721', path: '/deploy-erc721', label: 'ERC721', title: 'Deploy ERC721', description: 'Deploy your own NFT contract', castShareText: CAST_SHARE['deploy-erc721'], category: CATEGORIES.DEPLOY, color: '#06b6d4', icon: 'Package', iconImage: '/crypto-logos/basahub logo/ERC-721.png', xpReward: '850 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'katana', 'megaeth', 'tempo', 'arc-restnet', 'robinhood-testnet'] },
   { id: 'deploy-erc1155', path: '/deploy-erc1155', label: 'ERC1155', title: 'Deploy ERC1155', description: 'Deploy multi-token contract', category: CATEGORIES.DEPLOY, color: '#8b5cf6', icon: 'Factory', iconImage: '/crypto-logos/basahub logo/ERC-1155.png', xpReward: '850 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'katana', 'megaeth', 'tempo', 'arc-restnet', 'robinhood-testnet'] },
+  { id: 'deploy-erc8004', path: '/deploy-erc8004', label: 'ERC-8004', title: 'Deploy ERC-8004 Agent', description: 'Register a trustless AI agent identity', castShareText: CAST_SHARE['deploy-erc8004'], category: CATEGORIES.DEPLOY, color: '#22c55e', icon: 'Bot', xpReward: '5000 XP', bonusXP: 'New', networks: ['base'] },
   { id: 'nft-launchpad', path: '/nft-launchpad', label: 'NFT Launchpad', title: 'NFT Launchpad', description: 'Create your own NFT collection. Upload art or generate with AI, then deploy on Base, Ink, Soneium, MegaETH or Tempo.', castShareText: CAST_SHARE['nft-launchpad'], category: CATEGORIES.NFT, color: '#3b82f6', icon: 'Package', xpReward: '2000 XP', bonusXP: '200 XP per mint', networks: ['base', 'ink', 'soneium', 'megaeth', 'tempo'], isX402: true, holderDiscount: 'Pass: 0.0005 ETH deploy (Base)' },
   { id: 'nft-launchpad-explore', path: '/nft-launchpad?tab=explore', label: 'Launched NFTs', title: 'Launched Collections', description: 'Browse and mint from NFT collections launched on Base, Ink, Soneium, MegaETH or Tempo', castShareText: CAST_SHARE['nft-launchpad-explore'], category: CATEGORIES.NFT, color: '#10b981', icon: 'LayoutGrid', xpReward: '200 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'megaeth', 'tempo'] },
 ]

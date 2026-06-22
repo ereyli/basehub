@@ -14,6 +14,12 @@
     "deploy:testnet": "hardhat run scripts/deploy.js --network baseSepolia",
     "deploy:mainnet": "hardhat run scripts/deploy.js --network base",
     "deploy:local": "hardhat run scripts/deploy.js --network hardhat",
+    "compile:erc8004": "hardhat compile --config hardhat.config.erc8004.cjs",
+    "deploy:erc8004-base": "hardhat run scripts/deploy-erc8004-registrar.cjs --config hardhat.config.erc8004.cjs --network base",
+    "deploy:erc8004-sepolia": "hardhat run scripts/deploy-erc8004-registrar.cjs --config hardhat.config.erc8004.cjs --network baseSepolia",
+    "compile:erc8004:standalone": "COMPILE_ONLY=true node scripts/deploy-erc8004-registrar-standalone.mjs",
+    "deploy:erc8004-base:standalone": "ERC8004_NETWORK=base node scripts/deploy-erc8004-registrar-standalone.mjs",
+    "deploy:erc8004-sepolia:standalone": "ERC8004_NETWORK=baseSepolia node scripts/deploy-erc8004-registrar-standalone.mjs",
     "deploy:nft-ink": "hardhat run scripts/deploy-nft-collection-deployer-no-early-access.js --config hardhat.config.cjs --network ink",
     "deploy:nft-soneium": "hardhat run scripts/deploy-nft-collection-deployer-no-early-access.js --config hardhat.config.cjs --network soneium"
   },

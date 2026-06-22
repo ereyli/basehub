@@ -761,6 +761,7 @@ const Home = () => {
   const showGamingSection = games.some(g => ['flip', 'dice', 'slot', 'lucky'].includes(g.id))
   const showGuildSection = games.some(g => g.id === 'base-guild-companion')
   const showAgentSection = games.some(g => g.id === 'agent-mode')
+  const showNewFeaturesSection = games.some(g => g.id === 'deploy-erc8004')
 
   return (
     <div className="home" style={{ 
@@ -1170,6 +1171,37 @@ const Home = () => {
               </div>
               )}
 
+              {/* New Features */}
+              {showNewFeaturesSection && (
+              <div id="new-features" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(34, 197, 94, 0.16)` }}>
+                <div style={compactStyles.categoryHeader}>
+                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)', color: '#22c55e' }}>
+                    <Sparkles size={compactStyles.iconSize} />
+                  </div>
+                  <h2 style={compactStyles.categoryTitle}>NEW</h2>
+                  <span style={{
+                    padding: '3px 10px',
+                    background: 'rgba(34, 197, 94, 0.10)',
+                    border: '1px solid rgba(34, 197, 94, 0.25)',
+                    borderRadius: '20px',
+                    color: '#86efac',
+                    fontSize: '10px',
+                    fontWeight: '700',
+                    letterSpacing: '0.5px',
+                    fontFamily: 'Poppins, sans-serif'
+                  }}>
+                    5000 XP
+                  </span>
+                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['deploy-erc8004']))}
+                </div>
+                <div style={compactStyles.cardGrid}>
+                  {games.filter(g => g.id === 'deploy-erc8004').map((game) =>
+                    renderCompactCard(game, null, game.path, 'new-features')
+                  )}
+                </div>
+              </div>
+              )}
+
               {/* 3. DEX Aggregator Category */}
               {showDexSection && (
               <div id="dex" style={compactStyles.categoryContainer}>
@@ -1362,7 +1394,7 @@ const Home = () => {
                   }}>
                     MULTI-CHAIN
                   </span>
-                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['deploy', 'deploy-erc721', 'deploy-erc1155']))}
+                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['deploy', 'deploy-erc721', 'deploy-erc1155', 'deploy-erc8004']))}
                 </div>
                 <div style={{ ...compactStyles.cardGrid, gridTemplateColumns: isCompactMode ? undefined : 'minmax(0, 1fr)' }}>
                   <Link
@@ -1450,8 +1482,8 @@ const Home = () => {
                       </div>
                     </div>
                   </button>
-                  {games.filter(g => ['deploy', 'deploy-nft', 'deploy-erc721', 'deploy-erc1155'].includes(g.id)).sort((a, b) => {
-                    const order = ['deploy', 'deploy-nft', 'deploy-erc721', 'deploy-erc1155'];
+                  {games.filter(g => ['deploy', 'deploy-nft', 'deploy-erc721', 'deploy-erc1155', 'deploy-erc8004'].includes(g.id)).sort((a, b) => {
+                    const order = ['deploy-erc8004', 'deploy', 'deploy-nft', 'deploy-erc721', 'deploy-erc1155'];
                     return order.indexOf(a.id) - order.indexOf(b.id);
                   }).map((game) =>
                     renderCompactCard(game, null, game.path, 'deploy')
