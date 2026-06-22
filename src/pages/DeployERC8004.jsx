@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAccount, useChainId } from 'wagmi'
 import { useNavigate } from 'react-router-dom'
-import { Bot, CheckCircle, ExternalLink, Image as ImageIcon, Network, Upload, Zap } from 'lucide-react'
+import { Bot, CheckCircle, ExternalLink, Image as ImageIcon, Network, Upload, Users, Zap } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
@@ -14,7 +14,14 @@ const DeployERC8004 = () => {
   const { isConnected } = useAccount()
   const chainId = useChainId()
   const navigate = useNavigate()
-  const { deployERC8004Agent, completeERC8004Registration, isLoading, error } = useDeployERC8004()
+  const {
+    deployERC8004Agent,
+    completeERC8004Registration,
+    refreshERC8004Stats,
+    agentStats,
+    isLoading,
+    error,
+  } = useDeployERC8004()
   const [deployResult, setDeployResult] = useState(null)
   const [formData, setFormData] = useState({
     name: '',
@@ -50,6 +57,7 @@ const DeployERC8004 = () => {
     try {
       const result = await deployERC8004Agent({ ...formData, imageFile })
       setDeployResult(result)
+      refreshERC8004Stats()
     } catch (deployError) {
       console.error('ERC-8004 deploy failed:', deployError)
     }
@@ -68,6 +76,7 @@ const DeployERC8004 = () => {
         ...prev,
         ...completion,
       }))
+      refreshERC8004Stats()
     } catch (completeError) {
       console.error('ERC-8004 registration completion failed:', completeError)
     }
@@ -77,6 +86,12 @@ const DeployERC8004 = () => {
     if (!value) return ''
     return `${String(value).slice(0, 6)}...${String(value).slice(-4)}`
   }
+
+  const agentCountLabel = agentStats.isLoading && agentStats.totalRegistered == null
+    ? 'Loading...'
+    : agentStats.totalRegistered == null
+      ? 'Unavailable'
+      : agentStats.totalRegistered.toLocaleString()
 
   const pageStyles = {
     shell: {
@@ -133,7 +148,7 @@ const DeployERC8004 = () => {
     },
     statRow: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+      gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
       gap: '10px',
       marginTop: '22px',
     },
@@ -253,7 +268,14 @@ const DeployERC8004 = () => {
                   </div>
                 </div>
 
-                <div style={pageStyles.statRow}>
+                <div className="erc8004-stat-row" style={pageStyles.statRow}>
+                  <div style={{ ...pageStyles.stat, borderColor: 'rgba(34, 197, 94, 0.22)', background: 'rgba(34, 197, 94, 0.07)' }}>
+                    <span style={pageStyles.statLabel}>BaseHub Agents</span>
+                    <span style={{ ...pageStyles.statValue, color: '#86efac', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <Users size={15} />
+                      {agentCountLabel}
+                    </span>
+                  </div>
                   <div style={pageStyles.stat}>
                     <span style={pageStyles.statLabel}>Reward</span>
                     <span style={pageStyles.statValue}>{ERC8004_AGENT_XP_REWARD.toLocaleString()} XP</span>
@@ -387,6 +409,9 @@ const DeployERC8004 = () => {
                   @media (max-width: 860px) {
                     .erc8004-hero {
                       grid-template-columns: 1fr !important;
+                    }
+                    .erc8004-stat-row {
+                      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
                     }
                   }
                   @media (max-width: 860px) {

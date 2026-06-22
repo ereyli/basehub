@@ -6,6 +6,10 @@ export const ERC8004_IDENTITY_REGISTRY = {
   [NETWORKS.BASE.chainId]: '0x8004A169FB4a3325136EB29fA0ceB6D2e539a432',
 }
 
+export const ERC8004_REGISTRAR_DEPLOY_BLOCK = {
+  [NETWORKS.BASE.chainId]: 47670327n,
+}
+
 export const BASEHUB_ERC8004_REGISTRAR_ABI = [
   {
     inputs: [{ internalType: 'string', name: 'agentURI', type: 'string' }],

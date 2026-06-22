@@ -1,14 +1,17 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAccount, useChainId, usePublicClient, useWalletClient, useWriteContract } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
-import { formatEther, parseEventLogs } from 'viem'
+import { createPublicClient, formatEther, http, parseAbiItem, parseEventLogs } from 'viem'
+import { base } from 'wagmi/chains'
 import { config, DATA_SUFFIX } from '../config/wagmi'
+import { NETWORKS } from '../config/networks'
 import { addXP } from '../utils/xpUtils'
 import { uploadMetadataToIPFS, uploadToIPFS } from '../utils/pinata'
 import {
   BASEHUB_ERC8004_REGISTRAR_ABI,
   ERC8004_AGENT_XP_REWARD,
   ERC8004_IDENTITY_REGISTRY_ABI,
+  ERC8004_REGISTRAR_DEPLOY_BLOCK,
   getERC8004IdentityRegistry,
   getERC8004RegistrarAddress,
 } from '../config/erc8004'
@@ -42,6 +45,21 @@ function createAgentRegistration({ name, description, image, services, x402Suppo
   }
 }
 
+const baseStatsClient = createPublicClient({
+  chain: base,
+  transport: http('https://mainnet.base.org', {
+    timeout: 12000,
+    retryCount: 2,
+    retryDelay: 800,
+  }),
+})
+
+const agentRegisteredEvent = parseAbiItem(
+  'event AgentRegistered(address indexed user, uint256 indexed agentId, string agentURI, uint256 feePaid)'
+)
+
+const LOG_BLOCK_CHUNK_SIZE = 9500n
+
 export function useDeployERC8004() {
   const { address } = useAccount()
   const chainId = useChainId()
@@ -50,6 +68,68 @@ export function useDeployERC8004() {
   const { writeContractAsync } = useWriteContract()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [agentStats, setAgentStats] = useState({
+    totalRegistered: null,
+    isLoading: false,
+    error: null,
+    lastUpdated: null,
+  })
+
+  const refreshERC8004Stats = useCallback(async () => {
+    const baseChainId = NETWORKS.BASE.chainId
+    const registrarAddress = getERC8004RegistrarAddress(baseChainId)
+    if (!registrarAddress) {
+      setAgentStats({
+        totalRegistered: null,
+        isLoading: false,
+        error: 'Registrar not configured',
+        lastUpdated: null,
+      })
+      return null
+    }
+
+    setAgentStats(prev => ({ ...prev, isLoading: true, error: null }))
+    try {
+      const latestBlock = await baseStatsClient.getBlockNumber()
+      const firstBlock = ERC8004_REGISTRAR_DEPLOY_BLOCK[baseChainId] || 0n
+      let fromBlock = firstBlock
+      let totalRegistered = 0
+
+      while (fromBlock <= latestBlock) {
+        const toBlock = fromBlock + LOG_BLOCK_CHUNK_SIZE > latestBlock
+          ? latestBlock
+          : fromBlock + LOG_BLOCK_CHUNK_SIZE
+        const logs = await baseStatsClient.getLogs({
+          address: registrarAddress,
+          event: agentRegisteredEvent,
+          fromBlock,
+          toBlock,
+        })
+        totalRegistered += logs.length
+        fromBlock = toBlock + 1n
+      }
+
+      setAgentStats({
+        totalRegistered,
+        isLoading: false,
+        error: null,
+        lastUpdated: Date.now(),
+      })
+      return totalRegistered
+    } catch (statsError) {
+      console.warn('Could not load ERC-8004 agent stats:', statsError)
+      setAgentStats(prev => ({
+        ...prev,
+        isLoading: false,
+        error: 'Could not load agent count',
+      }))
+      return null
+    }
+  }, [])
+
+  useEffect(() => {
+    refreshERC8004Stats()
+  }, [refreshERC8004Stats])
 
   const deployERC8004Agent = async ({ name, description, serviceEndpoints, imageFile, x402Support }) => {
     if (!address) throw new Error('Wallet not connected')
@@ -207,5 +287,12 @@ export function useDeployERC8004() {
     }
   }
 
-  return { deployERC8004Agent, completeERC8004Registration, isLoading, error }
+  return {
+    deployERC8004Agent,
+    completeERC8004Registration,
+    refreshERC8004Stats,
+    agentStats,
+    isLoading,
+    error,
+  }
 }
