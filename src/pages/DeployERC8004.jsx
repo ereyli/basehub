@@ -17,6 +17,7 @@ const DeployERC8004 = () => {
   const {
     deployERC8004Agent,
     completeERC8004Registration,
+    awardERC8004XP,
     refreshERC8004Stats,
     agentStats,
     isLoading,
@@ -79,6 +80,27 @@ const DeployERC8004 = () => {
       refreshERC8004Stats()
     } catch (completeError) {
       console.error('ERC-8004 registration completion failed:', completeError)
+    }
+  }
+
+  const handleRetryXP = async () => {
+    if (!deployResult?.metadataTxHash || deployResult.xpAwarded) return
+
+    try {
+      const xpResult = await awardERC8004XP({ txHash: deployResult.metadataTxHash })
+      setDeployResult(prev => ({
+        ...prev,
+        ...xpResult,
+        xpError: null,
+      }))
+    } catch (xpError) {
+      console.error('ERC-8004 XP retry failed:', xpError)
+      setDeployResult(prev => ({
+        ...prev,
+        xpAwarded: false,
+        xpEarned: 0,
+        xpError: xpError.message || 'XP could not be saved. Please retry XP.',
+      }))
     }
   }
 
@@ -511,8 +533,20 @@ const DeployERC8004 = () => {
                 )}
                 <div className="detail-item">
                   <strong>XP Earned:</strong>
-                  <div className="status-message" style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', borderLeft: '3px solid #34d399', color: '#34d399' }}>
-                    {deployResult.isComplete ? `+${deployResult.xpEarned.toLocaleString()} XP earned` : 'Complete Stage 2 to earn XP'}
+                  <div
+                    className="status-message"
+                    style={{
+                      background: deployResult.isComplete && !deployResult.xpAwarded ? 'rgba(245, 158, 11, 0.08)' : 'rgba(16, 185, 129, 0.08)',
+                      border: deployResult.isComplete && !deployResult.xpAwarded ? '1px solid rgba(245, 158, 11, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)',
+                      borderLeft: deployResult.isComplete && !deployResult.xpAwarded ? '3px solid #f59e0b' : '3px solid #34d399',
+                      color: deployResult.isComplete && !deployResult.xpAwarded ? '#fbbf24' : '#34d399',
+                    }}
+                  >
+                    {deployResult.isComplete
+                      ? deployResult.xpAwarded
+                        ? `+${Number(deployResult.xpEarned || ERC8004_AGENT_XP_REWARD).toLocaleString()} XP earned`
+                        : 'Registration complete. XP is pending.'
+                      : 'Complete Stage 2 to earn XP'}
                   </div>
                 </div>
               </div>
@@ -544,7 +578,39 @@ const DeployERC8004 = () => {
                 </div>
               )}
 
-              {deployResult.isComplete && (
+              {deployResult.isComplete && !deployResult.xpAwarded && (
+                <div style={{
+                  marginTop: '22px',
+                  padding: '18px',
+                  border: '1px solid rgba(245, 158, 11, 0.22)',
+                  background: 'rgba(245, 158, 11, 0.07)',
+                  borderRadius: '8px',
+                  textAlign: 'center',
+                }}>
+                  <div style={{ color: '#fbbf24', fontWeight: 900, fontSize: '15px', marginBottom: '8px' }}>
+                    XP is pending
+                  </div>
+                  <div style={{ color: '#94a3b8', fontSize: '13px', lineHeight: 1.5, marginBottom: '16px' }}>
+                    Your ERC-8004 registration is complete, but XP could not be saved yet. Retry only saves XP; it will not open another on-chain transaction.
+                  </div>
+                  {deployResult.xpError && (
+                    <div className="error-message" style={{ marginBottom: '14px' }}>
+                      {deployResult.xpError}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    className="deploy-button"
+                    onClick={handleRetryXP}
+                    disabled={isLoading}
+                    style={{ maxWidth: '420px', margin: '0 auto' }}
+                  >
+                    {isLoading ? 'Saving XP...' : 'Retry XP'}
+                  </button>
+                </div>
+              )}
+
+              {deployResult.isComplete && deployResult.xpAwarded && (
               <div style={{ marginTop: '20px', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
                 <ShareButton
                   title={`I registered ${formData.name || 'an ERC-8004 agent'} on BaseHub`}
@@ -555,7 +621,7 @@ const DeployERC8004 = () => {
               </div>
               )}
 
-              {deployResult.isComplete && (
+              {deployResult.isComplete && deployResult.xpAwarded && (
               <div className="success-actions">
                 <button onClick={() => setDeployResult(null)} className="deploy-another-button">
                   Register Another Agent

@@ -59,6 +59,7 @@ const agentRegisteredEvent = parseAbiItem(
 )
 
 const LOG_BLOCK_CHUNK_SIZE = 9500n
+const ERC8004_XP_GAME_TYPE = 'ERC8004 Agent Registration'
 
 export function useDeployERC8004() {
   const { address } = useAccount()
@@ -238,6 +239,30 @@ export function useDeployERC8004() {
     }
   }
 
+  const awardERC8004XP = async ({ txHash }) => {
+    if (!address) throw new Error('Wallet not connected')
+    if (!txHash) throw new Error('Missing ERC-8004 XP transaction hash')
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const totalXP = await addXP(address, ERC8004_AGENT_XP_REWARD, ERC8004_XP_GAME_TYPE, chainId, true, txHash)
+      return {
+        xpAwarded: true,
+        xpEarned: ERC8004_AGENT_XP_REWARD,
+        totalXP,
+      }
+    } catch (err) {
+      console.error('Failed to award ERC-8004 XP:', err)
+      const message = err.message || 'Registration completed, but XP could not be saved. Please retry XP.'
+      setError(message)
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const completeERC8004Registration = async ({ agentId, identityRegistry, finalMetadata }) => {
     if (!address) throw new Error('Wallet not connected')
     if (!agentId || !identityRegistry || !finalMetadata) throw new Error('Missing ERC-8004 registration details')
@@ -263,17 +288,34 @@ export function useDeployERC8004() {
         pollingInterval: 4000,
       })
 
+      let xpResult = {
+        xpAwarded: false,
+        xpEarned: 0,
+        xpError: null,
+      }
       try {
-        await addXP(address, ERC8004_AGENT_XP_REWARD, 'ERC8004 Agent Registration', chainId, false, metadataTxHash)
+        const totalXP = await addXP(address, ERC8004_AGENT_XP_REWARD, ERC8004_XP_GAME_TYPE, chainId, true, metadataTxHash)
+        xpResult = {
+          xpAwarded: true,
+          xpEarned: ERC8004_AGENT_XP_REWARD,
+          xpError: null,
+          totalXP,
+        }
       } catch (xpError) {
         console.error('Failed to award ERC-8004 XP:', xpError)
+        xpResult = {
+          xpAwarded: false,
+          xpEarned: 0,
+          xpError: xpError.message || 'XP could not be saved. Please retry XP.',
+        }
+        setError(xpResult.xpError)
       }
 
       return {
         metadataTxHash,
         agentURI: finalUri,
-        xpEarned: ERC8004_AGENT_XP_REWARD,
         isComplete: true,
+        ...xpResult,
       }
     } catch (err) {
       console.error('ERC-8004 registration completion failed:', err)
@@ -290,6 +332,7 @@ export function useDeployERC8004() {
   return {
     deployERC8004Agent,
     completeERC8004Registration,
+    awardERC8004XP,
     refreshERC8004Stats,
     agentStats,
     isLoading,
