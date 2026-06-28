@@ -18,7 +18,7 @@ set search_path to 'public'
 as $function$
 begin
   if p_game_type = 'B20 Deployment' then
-    return 2000;
+    return 5000;
   end if;
 
   if to_regprocedure('public.get_max_xp_for_game_type_basehub_b20_prev(text)') is not null then

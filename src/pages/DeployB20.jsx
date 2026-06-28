@@ -1,10 +1,14 @@
 import React, { useState } from 'react'
-import { Coins, Database, Lock, Rocket, ShieldCheck, Sparkles, Zap } from 'lucide-react'
+import { Coins, Database, ExternalLink, Lock, ShieldCheck, Sparkles, Zap } from 'lucide-react'
 import BackButton from '../components/BackButton'
 import EmbedMeta from '../components/EmbedMeta'
-import ShareButton from '../components/ShareButton'
-import { B20_DEPLOY_FEE_ETH } from '../config/b20'
-import { getFarcasterUniversalLink } from '../config/farcaster'
+import { B20_DEPLOY_FEE_ETH, B20_XP_REWARD } from '../config/b20'
+
+const B20_LOGO_SRC = '/crypto-logos/basahub logo/B20.svg'
+const B20_SHARE_URL = 'https://basehub.fun/deploy-b20'
+const B20_SHARE_TEXT = `B20 Launchpad - BaseHub
+Base-native B20 launches are coming to BaseHub.
+${B20_SHARE_URL}`
 
 const styles = {
   shell: {
@@ -41,6 +45,11 @@ const styles = {
     justifyContent: 'center',
     color: '#93c5fd',
     flexShrink: 0,
+  },
+  logoImage: {
+    width: '42px',
+    height: '42px',
+    display: 'block',
   },
   titleWrap: {
     display: 'flex',
@@ -82,6 +91,28 @@ const styles = {
     color: '#bfdbfe',
     fontSize: '12px',
     fontWeight: 800,
+    whiteSpace: 'nowrap',
+  },
+  heroActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+  },
+  xShareButton: {
+    minHeight: '38px',
+    border: '1px solid rgba(148, 163, 184, 0.24)',
+    borderRadius: '999px',
+    background: 'rgba(2, 6, 23, 0.48)',
+    color: '#e5e7eb',
+    padding: '0 14px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '12px',
+    fontWeight: 900,
+    cursor: 'pointer',
     whiteSpace: 'nowrap',
   },
   metrics: {
@@ -193,7 +224,7 @@ const styles = {
   },
   actionBar: {
     display: 'flex',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     gap: '14px',
     flexWrap: 'wrap',
@@ -227,6 +258,11 @@ const compactCss = `
 export default function DeployB20() {
   const [variant, setVariant] = useState('asset')
 
+  const openXShare = () => {
+    const intentUrl = `https://x.com/intent/post?text=${encodeURIComponent(B20_SHARE_TEXT)}`
+    window.open(intentUrl, '_blank', 'noopener,noreferrer')
+  }
+
   return (
     <div className="deploy-token-page">
       <style>{compactCss}</style>
@@ -244,16 +280,22 @@ export default function DeployB20() {
           <div style={styles.heroTop}>
             <div style={styles.titleWrap}>
               <div style={styles.mark}>
-                <Rocket size={30} />
+                <img src={B20_LOGO_SRC} alt="B20" style={styles.logoImage} />
               </div>
               <div>
                 <div style={styles.eyebrow}>Base Mainnet</div>
                 <h1 style={styles.title}>B20 Launchpad</h1>
               </div>
             </div>
-            <div style={styles.pill}>
-              <Lock size={15} />
-              Coming Soon
+            <div style={styles.heroActions}>
+              <button type="button" onClick={openXShare} style={styles.xShareButton}>
+                X Share
+                <ExternalLink size={14} />
+              </button>
+              <div style={styles.pill}>
+                <Lock size={15} />
+                Coming Soon
+              </div>
             </div>
           </div>
 
@@ -272,7 +314,7 @@ export default function DeployB20() {
             </div>
             <div style={styles.metric}>
               <div style={styles.metricLabel}><Sparkles size={15} /> Reward</div>
-              <div style={styles.metricValue}>2,000 XP</div>
+              <div style={styles.metricValue}>{B20_XP_REWARD.toLocaleString()} XP</div>
             </div>
           </div>
 
@@ -329,12 +371,6 @@ export default function DeployB20() {
               </div>
 
               <div style={styles.actionBar}>
-                <ShareButton
-                  title="B20 Launchpad - BaseHub"
-                  description="Base-native B20 launches are coming to BaseHub."
-                  gameType="deploy"
-                  customUrl={getFarcasterUniversalLink('/deploy-b20')}
-                />
                 <button type="button" style={styles.soonButton} disabled>
                   <Lock size={17} />
                   Coming Soon
@@ -350,7 +386,7 @@ export default function DeployB20() {
               <div style={styles.list}>
                 <div style={styles.listItem}><ShieldCheck size={16} color="#60a5fa" /> Atomic BaseHub fee wrapper prepared.</div>
                 <div style={styles.listItem}><ShieldCheck size={16} color="#60a5fa" /> Asset and stablecoin creation paths wired.</div>
-                <div style={styles.listItem}><ShieldCheck size={16} color="#60a5fa" /> XP reward path reserved for Base mainnet launches.</div>
+                <div style={styles.listItem}><ShieldCheck size={16} color="#60a5fa" /> Supabase deploy record and 5,000 XP reward path ready.</div>
                 <div style={styles.listItem}><ShieldCheck size={16} color="#60a5fa" /> Existing ERC20 deploy flow remains separate.</div>
               </div>
             </aside>
