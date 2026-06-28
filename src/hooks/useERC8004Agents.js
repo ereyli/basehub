@@ -4,18 +4,50 @@ const DEFAULT_LIMIT = 30
 const AGENTS_API_PATH = '/api/erc8004-agents'
 const VIEWS_API_PATH = '/api/erc8004-agent-views'
 
-function getApiBase() {
+function getApiBases() {
   if (typeof window === 'undefined') return ''
   const currentBase = window.location.origin.replace(/\/$/, '')
   const isLocalhost = /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname)
-  if (isLocalhost) return currentBase
-  return (import.meta.env?.VITE_API_URL || currentBase).trim().replace(/\/$/, '')
+  const envBase = (import.meta.env?.VITE_API_URL || '').trim().replace(/\/$/, '')
+  const bases = isLocalhost
+    ? [currentBase, envBase]
+    : [currentBase, envBase, 'https://www.basehub.fun']
+  return Array.from(new Set(bases.filter(Boolean)))
+}
+
+function buildApiUrl(base, path, params = {}) {
+  const url = new URL(path, `${base || window.location.origin}/`)
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, String(value))
+  })
+  return url
+}
+
+async function fetchJsonWithFallback(path, options = {}) {
+  const { params, ...fetchOptions } = options
+  const bases = getApiBases()
+  let lastError = null
+
+  for (const base of bases) {
+    try {
+      const response = await fetch(buildApiUrl(base, path, params).toString(), fetchOptions)
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(data?.detail || data?.error || `HTTP ${response.status}`)
+      }
+      return data
+    } catch (error) {
+      lastError = error
+    }
+  }
+
+  throw lastError || new Error('API request failed')
 }
 
 export async function recordERC8004AgentView(agent) {
   if (typeof window === 'undefined' || !agent?.agentId) return null
 
-  const response = await fetch(`${getApiBase()}${VIEWS_API_PATH}`, {
+  return fetchJsonWithFallback(VIEWS_API_PATH, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -29,12 +61,6 @@ export async function recordERC8004AgentView(agent) {
       referrer: window.location.href,
     }),
   })
-
-  const data = await response.json().catch(() => ({}))
-  if (!response.ok) {
-    throw new Error(data?.error || `View record HTTP ${response.status}`)
-  }
-  return data
 }
 
 export function useERC8004Agents({ limit = DEFAULT_LIMIT, page = 1, sort = 'newest', category = 'All', query = '' } = {}) {
@@ -54,21 +80,17 @@ export function useERC8004Agents({ limit = DEFAULT_LIMIT, page = 1, sort = 'newe
     setError(null)
 
     try {
-      const url = new URL(`${getApiBase()}${AGENTS_API_PATH}`)
-      url.searchParams.set('limit', String(limit))
-      url.searchParams.set('page', String(page))
-      url.searchParams.set('sort', sort)
-      if (category && category !== 'All') url.searchParams.set('category', category)
-      if (query.trim()) url.searchParams.set('q', query.trim())
-      if (sync) url.searchParams.set('sync', '1')
-
-      const response = await fetch(url.toString(), {
+      const data = await fetchJsonWithFallback(AGENTS_API_PATH, {
+        params: {
+          limit,
+          page,
+          sort,
+          category: category && category !== 'All' ? category : '',
+          q: query.trim(),
+          sync: sync ? '1' : '',
+        },
         headers: { Accept: 'application/json' },
       })
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) {
-        throw new Error(data?.detail || data?.error || `Agent directory HTTP ${response.status}`)
-      }
 
       setAgents(Array.isArray(data?.agents) ? data.agents : [])
       setTotalRegistered(Number(data?.totalRegistered || 0))
