@@ -59,7 +59,7 @@ const TermsOfService = () => {
             <li><strong style={{ color: '#e5e7eb' }}>Gaming:</strong> Blockchain-based games (GM/GN, Coin Flip, Dice Roll, Lucky Number, Slots)</li>
             <li><strong style={{ color: '#e5e7eb' }}>XP System:</strong> Experience points, levels, and leaderboards</li>
             <li><strong style={{ color: '#e5e7eb' }}>NFT Minting:</strong> AI-generated NFT creation and minting</li>
-            <li><strong style={{ color: '#e5e7eb' }}>Token Deployment:</strong> ERC20, ERC721, and ERC1155 token deployment</li>
+            <li><strong style={{ color: '#e5e7eb' }}>Token Deployment:</strong> ERC20, B20, ERC721, and ERC1155 token deployment</li>
             <li><strong style={{ color: '#e5e7eb' }}>Analysis Tools:</strong> Wallet analysis and contract security analysis</li>
             <li><strong style={{ color: '#e5e7eb' }}>Payment Services:</strong> x402 payment integration for premium features</li>
           </ul>

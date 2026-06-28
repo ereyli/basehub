@@ -160,6 +160,10 @@ export const CONTRACT_ADDRESSES = {
       typeof import.meta !== 'undefined' && import.meta.env?.VITE_ERC8004_REGISTRAR_BASE
         ? String(import.meta.env.VITE_ERC8004_REGISTRAR_BASE).trim()
         : '0x125467368441F5a8c5C1184b09E5BE95f8b7aE3C',
+    BASEHUB_B20_LAUNCHER:
+      typeof import.meta !== 'undefined' && import.meta.env?.VITE_B20_LAUNCHER_BASE
+        ? String(import.meta.env.VITE_B20_LAUNCHER_BASE).trim()
+        : '',
     BASEHUB_NFT_COLLECTION_DEPLOYER: '0x8b31312A6cD06839EFE768bD3D09bE785b83574A',
     PUMPHUB_FACTORY: '0xE7c2Fe007C65349C91B8ccAC3c5BE5a7f2FDaF21',
   },
