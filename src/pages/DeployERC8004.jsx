@@ -72,6 +72,7 @@ const DeployERC8004 = () => {
         agentId: deployResult.agentId,
         identityRegistry: deployResult.identityRegistry,
         finalMetadata: deployResult.finalMetadata,
+        registerTxHash: deployResult.registerTxHash,
       })
       setDeployResult(prev => ({
         ...prev,
@@ -271,6 +272,28 @@ const DeployERC8004 = () => {
                 <p style={pageStyles.subtitle}>
                   Register your AI agent in the ERC-8004 Identity Registry, attach service metadata, and earn BaseHub XP.
                 </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '18px' }}>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/agents')}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      border: '1px solid rgba(96, 165, 250, 0.35)',
+                      background: 'rgba(37, 99, 235, 0.16)',
+                      color: '#bfdbfe',
+                      borderRadius: '8px',
+                      padding: '10px 12px',
+                      fontSize: '13px',
+                      fontWeight: 900,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Users size={16} />
+                    Browse Agent Directory
+                  </button>
+                </div>
 
                 <div style={pageStyles.preview}>
                   <div style={pageStyles.avatar}>
@@ -531,6 +554,19 @@ const DeployERC8004 = () => {
                     {error}
                   </div>
                 )}
+                {deployResult.cacheWarning && (
+                  <div style={{
+                    border: '1px solid rgba(245, 158, 11, 0.22)',
+                    background: 'rgba(245, 158, 11, 0.08)',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    color: '#fbbf24',
+                    fontSize: '13px',
+                    fontWeight: 750,
+                  }}>
+                    Directory cache is pending. Your onchain registration is safe; refresh the directory in a moment.
+                  </div>
+                )}
                 <div className="detail-item">
                   <strong>XP Earned:</strong>
                   <div
@@ -625,6 +661,9 @@ const DeployERC8004 = () => {
               <div className="success-actions">
                 <button onClick={() => setDeployResult(null)} className="deploy-another-button">
                   Register Another Agent
+                </button>
+                <button onClick={() => navigate('/agents')} className="home-button">
+                  View Directory
                 </button>
                 <button onClick={() => navigate('/')} className="home-button">
                   Home

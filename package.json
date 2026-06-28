@@ -23,6 +23,8 @@
     "deploy:b20-launcher": "node scripts/deploy-b20-launcher.mjs",
     "backfill:erc8004-xp": "node scripts/backfill-erc8004-xp.mjs",
     "backfill:erc8004-xp:apply": "node scripts/backfill-erc8004-xp.mjs --apply",
+    "backfill:erc8004-agents": "node scripts/backfill-erc8004-agents.mjs",
+    "backfill:erc8004-agents:apply": "node scripts/backfill-erc8004-agents.mjs --apply",
     "deploy:nft-ink": "hardhat run scripts/deploy-nft-collection-deployer-no-early-access.js --config hardhat.config.cjs --network ink",
     "deploy:nft-soneium": "hardhat run scripts/deploy-nft-collection-deployer-no-early-access.js --config hardhat.config.cjs --network soneium"
   },

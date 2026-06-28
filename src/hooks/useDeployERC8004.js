@@ -1,17 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAccount, useChainId, usePublicClient, useWalletClient, useWriteContract } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
-import { createPublicClient, formatEther, http, parseAbiItem, parseEventLogs } from 'viem'
-import { base } from 'wagmi/chains'
+import { formatEther, parseEventLogs } from 'viem'
 import { config, DATA_SUFFIX } from '../config/wagmi'
-import { NETWORKS } from '../config/networks'
 import { addXP } from '../utils/xpUtils'
 import { uploadMetadataToIPFS, uploadToIPFS } from '../utils/pinata'
 import {
   BASEHUB_ERC8004_REGISTRAR_ABI,
   ERC8004_AGENT_XP_REWARD,
   ERC8004_IDENTITY_REGISTRY_ABI,
-  ERC8004_REGISTRAR_DEPLOY_BLOCK,
   getERC8004IdentityRegistry,
   getERC8004RegistrarAddress,
 } from '../config/erc8004'
@@ -45,21 +42,37 @@ function createAgentRegistration({ name, description, image, services, x402Suppo
   }
 }
 
-const baseStatsClient = createPublicClient({
-  chain: base,
-  transport: http('https://mainnet.base.org', {
-    timeout: 12000,
-    retryCount: 2,
-    retryDelay: 800,
-  }),
-})
-
-const agentRegisteredEvent = parseAbiItem(
-  'event AgentRegistered(address indexed user, uint256 indexed agentId, string agentURI, uint256 feePaid)'
-)
-
-const LOG_BLOCK_CHUNK_SIZE = 9500n
 const ERC8004_XP_GAME_TYPE = 'ERC8004 Agent Registration'
+const ERC8004_AGENTS_API_PATH = '/api/erc8004-agents'
+
+function getApiBase() {
+  if (typeof window === 'undefined') return ''
+  const currentBase = window.location.origin.replace(/\/$/, '')
+  const isLocalhost = /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname)
+  if (isLocalhost) return currentBase
+  return (import.meta.env?.VITE_API_URL || currentBase).trim().replace(/\/$/, '')
+}
+
+async function recordERC8004AgentCache({ txHash, metadataUri }) {
+  if (!txHash || typeof window === 'undefined') return null
+
+  const response = await fetch(`${getApiBase()}${ERC8004_AGENTS_API_PATH}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      txHash,
+      metadataUri,
+    }),
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    throw new Error(data?.detail || data?.error || `Agent cache HTTP ${response.status}`)
+  }
+  return data
+}
 
 export function useDeployERC8004() {
   const { address } = useAccount()
@@ -77,39 +90,14 @@ export function useDeployERC8004() {
   })
 
   const refreshERC8004Stats = useCallback(async () => {
-    const baseChainId = NETWORKS.BASE.chainId
-    const registrarAddress = getERC8004RegistrarAddress(baseChainId)
-    if (!registrarAddress) {
-      setAgentStats({
-        totalRegistered: null,
-        isLoading: false,
-        error: 'Registrar not configured',
-        lastUpdated: null,
-      })
-      return null
-    }
-
     setAgentStats(prev => ({ ...prev, isLoading: true, error: null }))
     try {
-      const latestBlock = await baseStatsClient.getBlockNumber()
-      const firstBlock = ERC8004_REGISTRAR_DEPLOY_BLOCK[baseChainId] || 0n
-      let fromBlock = firstBlock
-      let totalRegistered = 0
-
-      while (fromBlock <= latestBlock) {
-        const toBlock = fromBlock + LOG_BLOCK_CHUNK_SIZE > latestBlock
-          ? latestBlock
-          : fromBlock + LOG_BLOCK_CHUNK_SIZE
-        const logs = await baseStatsClient.getLogs({
-          address: registrarAddress,
-          event: agentRegisteredEvent,
-          fromBlock,
-          toBlock,
-        })
-        totalRegistered += logs.length
-        fromBlock = toBlock + 1n
-      }
-
+      const response = await fetch(`${getApiBase()}${ERC8004_AGENTS_API_PATH}?limit=1`, {
+        headers: { Accept: 'application/json' },
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data?.detail || data?.error || `Agent stats HTTP ${response.status}`)
+      const totalRegistered = Number(data?.totalRegistered || 0)
       setAgentStats({
         totalRegistered,
         isLoading: false,
@@ -207,6 +195,14 @@ export function useDeployERC8004() {
       }
       if (agentId == null) throw new Error('Agent registered, but agentId could not be read from the transaction logs.')
 
+      let cacheWarning = null
+      try {
+        await recordERC8004AgentCache({ txHash: registerTxHash, metadataUri: agentURI })
+      } catch (cacheError) {
+        cacheWarning = cacheError?.message || 'Agent cache could not be updated yet.'
+        console.warn('Could not cache ERC-8004 agent registration:', cacheError)
+      }
+
       return {
         agentId: agentId.toString(),
         identityRegistry,
@@ -226,6 +222,7 @@ export function useDeployERC8004() {
         fee: `${formatEther(feeWei)} ETH`,
         xpEarned: 0,
         isComplete: false,
+        cacheWarning,
       }
     } catch (err) {
       console.error('ERC-8004 deploy failed:', err)
@@ -263,7 +260,7 @@ export function useDeployERC8004() {
     }
   }
 
-  const completeERC8004Registration = async ({ agentId, identityRegistry, finalMetadata }) => {
+  const completeERC8004Registration = async ({ agentId, identityRegistry, finalMetadata, registerTxHash }) => {
     if (!address) throw new Error('Wallet not connected')
     if (!agentId || !identityRegistry || !finalMetadata) throw new Error('Missing ERC-8004 registration details')
 
@@ -287,6 +284,14 @@ export function useDeployERC8004() {
         confirmations: 1,
         pollingInterval: 4000,
       })
+
+      let cacheWarning = null
+      try {
+        await recordERC8004AgentCache({ txHash: registerTxHash, metadataUri: finalUri })
+      } catch (cacheError) {
+        cacheWarning = cacheError?.message || 'Agent cache could not be updated yet.'
+        console.warn('Could not update ERC-8004 agent cache:', cacheError)
+      }
 
       let xpResult = {
         xpAwarded: false,
@@ -315,6 +320,7 @@ export function useDeployERC8004() {
         metadataTxHash,
         agentURI: finalUri,
         isComplete: true,
+        cacheWarning,
         ...xpResult,
       }
     } catch (err) {

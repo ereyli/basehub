@@ -35,6 +35,7 @@ import DeployNFT from './pages/DeployNFT'
 import DeployERC721 from './pages/DeployERC721'
 import DeployERC1155 from './pages/DeployERC1155'
 import DeployERC8004 from './pages/DeployERC8004'
+import AgentDirectory from './pages/AgentDirectory'
 import DeployB20 from './pages/DeployB20'
 import AINFTLaunchpad from './pages/AINFTLaunchpad'
 import NFTLaunchpad from './pages/NFTLaunchpad'
@@ -350,6 +351,7 @@ function FarcasterAppContent() {
               <Route path="/deploy-erc721" element={<DeployERC721 />} />
               <Route path="/deploy-erc1155" element={<DeployERC1155 />} />
               <Route path="/deploy-erc8004" element={<DeployERC8004 />} />
+              <Route path="/agents" element={<AgentDirectory />} />
               <Route path="/deploy-b20" element={<DeployB20 />} />
               <Route path="/ai-nft" element={<AINFTLaunchpad />} />
               <Route path="/nft-launchpad" element={<NFTLaunchpad />} />
@@ -429,6 +431,7 @@ function WebAppContent() {
               <Route path="/deploy-erc721" element={<DeployERC721 />} />
               <Route path="/deploy-erc1155" element={<DeployERC1155 />} />
               <Route path="/deploy-erc8004" element={<DeployERC8004 />} />
+              <Route path="/agents" element={<AgentDirectory />} />
               <Route path="/deploy-b20" element={<DeployB20 />} />
               <Route path="/ai-nft" element={<AINFTLaunchpad />} />
               <Route path="/nft-launchpad" element={<NFTLaunchpad />} />
