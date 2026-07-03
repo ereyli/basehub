@@ -18,17 +18,33 @@ const RECEIVING_ADDRESS = '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
 const PRICE = '$0.40' // 0.40 USDC
 const PASS_PRICE = '$0.20' // 50% BaseHub Pass discount
 const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' // Base USDC
+
+function getConfiguredApiKey(...values) {
+  const invalidMarkers = ['your_', 'replace_', 'placeholder', 'example', 'changeme']
+  for (const value of values) {
+    const key = String(value || '').trim()
+    if (!key) continue
+    const normalized = key.toLowerCase()
+    if (invalidMarkers.some((marker) => normalized.includes(marker))) continue
+    return key
+  }
+  return ''
+}
+
 // Use env only – no fallback in repo (best practice for secrets)
 const API_KEYS = {
   // Etherscan API V2 uses one account key across supported chains.
-  ETHERSCAN: process.env.ETHERSCAN_API_KEY || process.env.BASESCAN_API_KEY || '',
-  ALCHEMY: process.env.ALCHEMY_API_KEY || '',
-  MORALIS: process.env.MORALIS_API_KEY || '',
+  ETHERSCAN: getConfiguredApiKey(process.env.ETHERSCAN_API_KEY, process.env.BASESCAN_API_KEY),
+  ALCHEMY: getConfiguredApiKey(process.env.ALCHEMY_API_KEY),
+  MORALIS: getConfiguredApiKey(process.env.MORALIS_API_KEY),
 }
 
 const BASE_RPC_URL = API_KEYS.ALCHEMY
   ? `https://base-mainnet.g.alchemy.com/v2/${API_KEYS.ALCHEMY}`
   : (process.env.BASE_RPC_URL || 'https://mainnet.base.org')
+const BASE_REPORT_CACHE_TTL_MS = 5 * 60 * 1000
+const BASE_REPORT_CACHE = new Map()
+const BASE_REPORT_IN_FLIGHT = new Map()
 
 // Supported networks for wallet analysis (all have free API access)
 const SUPPORTED_NETWORKS = {
@@ -53,11 +69,11 @@ const SUPPORTED_NETWORKS = {
 if (API_KEYS.ETHERSCAN) {
   console.log('✅ Etherscan API V2 key loaded from environment:', `${API_KEYS.ETHERSCAN.substring(0, 10)}...`)
 } else {
-  console.warn('⚠️ ETHERSCAN_API_KEY/BASESCAN_API_KEY not set – Base report will rely on indexed/RPC fallbacks')
+  console.warn('⚠️ ETHERSCAN_API_KEY/BASESCAN_API_KEY not set – non-Base wallet reports will be unavailable')
 }
 
-if (!API_KEYS.ALCHEMY && !API_KEYS.MORALIS) {
-  console.warn('⚠️ ALCHEMY_API_KEY or MORALIS_API_KEY recommended for rich Base wallet reports')
+if (!API_KEYS.ALCHEMY) {
+  console.warn('⚠️ ALCHEMY_API_KEY is required for Base wallet reports')
 }
 
 // Configure facilitator
@@ -191,6 +207,26 @@ function hideApiKeyInUrl(url, key) {
   return url.replace(key, 'API_KEY_HIDDEN')
 }
 
+function isNoIndexedDataMessage(message = '') {
+  const normalized = String(message).toLowerCase()
+  return normalized.includes('no transactions found') ||
+    normalized.includes('no records found') ||
+    normalized.includes('no token transfer events found')
+}
+
+function isProviderFailureMessage(message = '') {
+  const normalized = String(message).toLowerCase()
+  return normalized.includes('invalid api key') ||
+    normalized.includes('missing/invalid api key') ||
+    normalized.includes('unsupported chain') ||
+    normalized.includes('chainid') ||
+    normalized.includes('rate limit') ||
+    normalized.includes('too many requests') ||
+    normalized.includes('not configured') ||
+    normalized.includes('temporarily unavailable') ||
+    normalized.includes('not supported')
+}
+
 function safeNumber(value, fallback = 0) {
   const number = Number(value)
   return Number.isFinite(number) ? number : fallback
@@ -221,16 +257,58 @@ function formatCompactNumber(value, decimals = 1) {
   return number.toFixed(4)
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function getRetryDelayMs(response, attempt) {
+  const retryAfter = Number(response?.headers?.get?.('retry-after'))
+  if (Number.isFinite(retryAfter) && retryAfter > 0) {
+    return Math.min(retryAfter * 1000, 4000)
+  }
+  return Math.min(4000, (2 ** attempt) * 600 + Math.floor(Math.random() * 300))
+}
+
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value))
+}
+
 async function rpcCall(method, params = []) {
-  const response = await fetch(BASE_RPC_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method, params }),
-  })
-  if (!response.ok) throw new Error(`RPC error: ${response.status}`)
-  const data = await response.json()
-  if (data.error) throw new Error(data.error.message || 'RPC returned an error')
-  return data.result
+  const maxAttempts = API_KEYS.ALCHEMY ? 3 : 1
+  let lastError = null
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const response = await fetch(BASE_RPC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method, params }),
+    })
+
+    if (response.status === 429 && attempt < maxAttempts - 1) {
+      lastError = new Error(`RPC rate limited: ${response.status}`)
+      await sleep(getRetryDelayMs(response, attempt))
+      continue
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '')
+      throw new Error(`RPC error: ${response.status}${errorText ? ` ${errorText.slice(0, 180)}` : ''}`)
+    }
+
+    const data = await response.json()
+    if (data.error) {
+      if (data.error.code === 429 && attempt < maxAttempts - 1) {
+        lastError = new Error(data.error.message || 'RPC rate limited')
+        await sleep(getRetryDelayMs(response, attempt))
+        continue
+      }
+      throw new Error(data.error.message || 'RPC returned an error')
+    }
+
+    return data.result
+  }
+
+  throw lastError || new Error('RPC request failed')
 }
 
 async function fetchBaseNativeBalance(walletAddress) {
@@ -322,32 +400,20 @@ async function fetchAlchemyTransfers(walletAddress) {
 
   for (const direction of directions) {
     let pageKey = null
-    for (let page = 0; page < 3; page++) {
+    for (let page = 0; page < 2; page++) {
       const params = {
         fromBlock: '0x0',
         toBlock: 'latest',
         category: ['external', 'erc20', 'erc721', 'erc1155'],
         withMetadata: true,
         excludeZeroValue: false,
-        maxCount: '0x3e8',
+        maxCount: '0x1f4',
         [direction.key]: direction.value,
       }
       if (pageKey) params.pageKey = pageKey
 
-      const response = await fetch(BASE_RPC_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: `basehub-transfers-${direction.key}-${page}`,
-          method: 'alchemy_getAssetTransfers',
-          params: [params],
-        }),
-      })
-      if (!response.ok) throw new Error(`Alchemy transfers error: ${response.status}`)
-      const data = await response.json()
-      if (data.error) throw new Error(data.error.message || 'Alchemy transfers failed')
-      const batch = data.result?.transfers || []
+      const result = await rpcCall('alchemy_getAssetTransfers', [params])
+      const batch = result?.transfers || []
 
       batch.forEach((transfer) => {
         const fingerprint = `${transfer.hash}-${transfer.category}-${transfer.from}-${transfer.to}-${transfer.rawContract?.address || ''}-${transfer.rawContract?.value || transfer.value || ''}`
@@ -357,7 +423,7 @@ async function fetchAlchemyTransfers(walletAddress) {
         }
       })
 
-      pageKey = data.result?.pageKey
+      pageKey = result?.pageKey
       if (!pageKey) break
     }
   }
@@ -698,71 +764,85 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
 }
 
 async function performBaseWalletReport(walletAddress) {
+  const cacheKey = walletAddress.toLowerCase()
+  const cached = BASE_REPORT_CACHE.get(cacheKey)
+  if (cached && Date.now() - cached.createdAt < BASE_REPORT_CACHE_TTL_MS) {
+    console.log('✅ Base report served from short cache:', walletAddress)
+    return cloneJson(cached.report)
+  }
+
+  if (BASE_REPORT_IN_FLIGHT.has(cacheKey)) {
+    console.log('⏳ Joining in-flight Base report request:', walletAddress)
+    return cloneJson(await BASE_REPORT_IN_FLIGHT.get(cacheKey))
+  }
+
+  const reportPromise = buildBaseWalletReportFromAlchemy(walletAddress)
+    .then((report) => {
+      BASE_REPORT_CACHE.set(cacheKey, {
+        createdAt: Date.now(),
+        report: cloneJson(report),
+      })
+      return report
+    })
+    .finally(() => {
+      BASE_REPORT_IN_FLIGHT.delete(cacheKey)
+    })
+
+  BASE_REPORT_IN_FLIGHT.set(cacheKey, reportPromise)
+  return cloneJson(await reportPromise)
+}
+
+async function buildBaseWalletReportFromAlchemy(walletAddress) {
   console.log(`🔵 Starting professional Base report for: ${walletAddress}`)
   const dataSources = []
-  const nativeBalance = await fetchBaseNativeBalance(walletAddress)
+  const providerIssues = []
+  let successfulIndexerChecks = 0
 
+  if (!API_KEYS.ALCHEMY) {
+    throw new Error('Base Alchemy provider is not configured')
+  }
+
+  const nativeBalance = await fetchBaseNativeBalance(walletAddress)
   let normalTransactions = []
   let tokenTransfers = []
 
   try {
-    const [txList, tokenTxList] = await Promise.all([
-      fetchEtherscanAccountAction(8453, 'txlist', {
-        address: walletAddress,
-        startblock: '0',
-        endblock: '99999999',
-        sort: 'desc',
-      }),
-      fetchEtherscanAccountAction(8453, 'tokentx', {
-        address: walletAddress,
-        startblock: '0',
-        endblock: '99999999',
-        sort: 'desc',
-      }),
-    ])
-    normalTransactions = Array.isArray(txList) ? txList : []
-    tokenTransfers = Array.isArray(tokenTxList) ? tokenTxList : []
-    if (normalTransactions.length || tokenTransfers.length) dataSources.push('Etherscan V2')
-    console.log('✅ Base Etherscan data:', { tx: normalTransactions.length, tokenTx: tokenTransfers.length })
-  } catch (error) {
-    console.warn('⚠️ Base Etherscan V2 unavailable, using fallbacks:', error.message)
-  }
-
-  if (normalTransactions.length === 0 && tokenTransfers.length === 0) {
-    try {
-      const { transactions, source } = await fetchMoralisHistory(walletAddress)
-      if (transactions.length) {
-        normalTransactions = transactions.map(normalizeMoralisHistoryItem)
-        if (source) dataSources.push(source)
-        console.log('✅ Base Moralis data:', { tx: normalTransactions.length })
-      }
-    } catch (error) {
-      console.warn('⚠️ Moralis Base history unavailable:', error.message)
-    }
-  }
-
-  try {
     const { transfers, source } = await fetchAlchemyTransfers(walletAddress)
+    if (source) successfulIndexerChecks++
+    if (source && !dataSources.includes(source)) dataSources.push(source)
     if (transfers.length) {
       const normalized = transfers.map(normalizeAlchemyTransfer)
       tokenTransfers = [...tokenTransfers, ...normalized]
-      if (source && !dataSources.includes(source)) dataSources.push(source)
       console.log('✅ Base Alchemy transfers:', { transfers: transfers.length })
     }
   } catch (error) {
+    providerIssues.push(`Alchemy transfers: ${error.message}`)
     console.warn('⚠️ Alchemy Base transfers unavailable:', error.message)
   }
 
-  let tokenBalances = []
-  try {
-    tokenBalances = await fetchAlchemyTokenBalances(walletAddress)
-    if (tokenBalances.length && !dataSources.includes('Alchemy')) dataSources.push('Alchemy')
-  } catch (error) {
-    console.warn('⚠️ Alchemy token balances unavailable:', error.message)
+  const tokenBalances = []
+
+  const hasIndexedSignals = normalTransactions.length > 0 || tokenTransfers.length > 0 || tokenBalances.length > 0
+  const hasNativeBalance = parseFloat(nativeBalance || '0') > 0
+  const hasProviderFailure = providerIssues.some((issue) => isProviderFailureMessage(issue))
+
+  if (!hasIndexedSignals && !hasNativeBalance && successfulIndexerChecks === 0 && hasProviderFailure) {
+    const issueSummary = providerIssues.slice(0, 3).join(' | ')
+    throw new Error(`Base report data provider unavailable: ${issueSummary}`)
   }
 
   if (dataSources.length === 0) dataSources.push('Base RPC')
-  return buildBaseReport(walletAddress, nativeBalance, normalTransactions, tokenTransfers, tokenBalances, dataSources)
+  const report = buildBaseReport(walletAddress, nativeBalance, normalTransactions, tokenTransfers, tokenBalances, dataSources)
+  report.dataQuality = {
+    status: hasIndexedSignals ? 'indexed' : 'limited',
+    source: dataSources.join(', '),
+    note: hasIndexedSignals
+      ? 'Report generated from Base indexer/RPC data.'
+      : providerIssues.length
+        ? `Limited Base data. Provider notes: ${providerIssues.slice(0, 2).join(' | ')}`
+        : 'No indexed Base activity was found for this wallet.',
+  }
+  return report
 }
 
 // ==========================================
@@ -806,6 +886,12 @@ async function performWalletAnalysis(walletAddress, selectedNetwork = 'ethereum'
 
   console.log('🔑 API Key check:', API_KEYS.ETHERSCAN ? `Set (${API_KEYS.ETHERSCAN.substring(0, 10)}...)` : 'NOT SET')
 
+  if (!API_KEYS.ETHERSCAN) {
+    throw new Error('Etherscan API V2 key is not configured for non-Base wallet analysis')
+  }
+
+  const providerIssues = []
+
   try {
     // 1. Get native balance
     try {
@@ -833,6 +919,8 @@ async function performWalletAnalysis(walletAddress, selectedNetwork = 'ethereum'
           analysis.nativeBalance = formatEtherValue(balanceData.result)
           console.log('✅ Balance fetched successfully:', analysis.nativeBalance, network.currency)
         } else if (balanceData.status === '0') {
+          const message = `${balanceData.message || ''} ${balanceData.result || ''}`.trim()
+          if (isProviderFailureMessage(message)) providerIssues.push(`balance: ${message}`)
           console.error('❌ API error for balance:', balanceData.message, balanceData.result)
           analysis.nativeBalance = '0.0000'
         } else {
@@ -842,10 +930,12 @@ async function performWalletAnalysis(walletAddress, selectedNetwork = 'ethereum'
       } else {
         console.error('❌ Balance API HTTP error:', balanceResponse.status, balanceResponse.statusText)
         const errorText = await balanceResponse.text().catch(() => 'Could not read error body')
+        providerIssues.push(`balance: HTTP ${balanceResponse.status}`)
         console.error('❌ Balance API error body:', errorText.substring(0, 300))
         analysis.nativeBalance = '0.0000'
       }
     } catch (balanceError) {
+      providerIssues.push(`balance: ${balanceError.message || 'request failed'}`)
       console.error('❌ Exception fetching balance:', balanceError)
       analysis.nativeBalance = '0.0000'
     }
@@ -871,6 +961,7 @@ async function performWalletAnalysis(walletAddress, selectedNetwork = 'ethereum'
       }
       
       const txData = await txResponse.json()
+      const txMessage = `${txData.message || ''} ${typeof txData.result === 'string' ? txData.result : ''}`.trim()
       console.log('📊 Transaction API response:', {
         status: txData.status,
         message: txData.message,
@@ -880,6 +971,8 @@ async function performWalletAnalysis(walletAddress, selectedNetwork = 'ethereum'
       let transactions = []
       if (txData.status === '1' && txData.result && Array.isArray(txData.result)) {
         transactions = txData.result
+      } else if (txData.status === '0' && !isNoIndexedDataMessage(txMessage)) {
+        providerIssues.push(`transactions: ${txMessage || 'unavailable'}`)
       }
       
       if (transactions.length === 0) {
@@ -923,6 +1016,7 @@ async function performWalletAnalysis(walletAddress, selectedNetwork = 'ethereum'
         }
       }
     } catch (txError) {
+      providerIssues.push(`transactions: ${txError.message || 'request failed'}`)
       console.error('❌ Error fetching transactions:', txError)
     }
 
@@ -947,6 +1041,7 @@ async function performWalletAnalysis(walletAddress, selectedNetwork = 'ethereum'
       }
       
       const tokenTxData = await tokenTxResponse.json()
+      const tokenTxMessage = `${tokenTxData.message || ''} ${typeof tokenTxData.result === 'string' ? tokenTxData.result : ''}`.trim()
       console.log('📊 Token transfer API response:', {
         status: tokenTxData.status,
         message: tokenTxData.message,
@@ -956,6 +1051,8 @@ async function performWalletAnalysis(walletAddress, selectedNetwork = 'ethereum'
       let tokenTransfers = []
       if (tokenTxData.status === '1' && tokenTxData.result && Array.isArray(tokenTxData.result)) {
         tokenTransfers = tokenTxData.result
+      } else if (tokenTxData.status === '0' && !isNoIndexedDataMessage(tokenTxMessage)) {
+        providerIssues.push(`token transfers: ${tokenTxMessage || 'unavailable'}`)
       }
       
       if (tokenTransfers.length === 0) {
@@ -1023,6 +1120,7 @@ async function performWalletAnalysis(walletAddress, selectedNetwork = 'ethereum'
         }
       }
     } catch (tokenError) {
+      providerIssues.push(`token transfers: ${tokenError.message || 'request failed'}`)
       console.error('❌ Error fetching token transfers:', tokenError)
     }
 
@@ -1145,12 +1243,20 @@ async function performWalletAnalysis(walletAddress, selectedNetwork = 'ethereum'
     if (analysis.recommendations.length === 0) {
       analysis.recommendations.push('Maintain consistent organic usage and keep protocol interactions purposeful.')
     }
+
+    const hasReportSignals = analysis.totalTransactions > 0 || nativeBalance > 0 || analysis.tokenDiversity > 0
+    if (!hasReportSignals && providerIssues.length > 0) {
+      throw new Error(`${network.name} report data provider unavailable: ${providerIssues.slice(0, 3).join(' | ')}`)
+    }
+
     analysis.dataQuality = {
-      status: analysis.totalTransactions > 0 || nativeBalance > 0 || analysis.tokenDiversity > 0 ? 'indexed' : 'limited',
+      status: hasReportSignals ? 'indexed' : 'limited',
       source: 'Etherscan API V2',
-      note: analysis.totalTransactions > 0 || nativeBalance > 0 || analysis.tokenDiversity > 0
+      note: hasReportSignals
         ? 'Report generated from available account, transaction, and token transfer endpoints.'
-        : 'The selected network returned limited indexed activity for this wallet.',
+        : providerIssues.length
+          ? `Limited data. Provider notes: ${providerIssues.slice(0, 2).join(' | ')}`
+          : 'The selected network returned limited indexed activity for this wallet.',
     }
 
   } catch (error) {
@@ -1217,11 +1323,16 @@ async function handleWalletAnalysisRequest(c) {
     } catch (analysisError) {
       console.error('❌ Analysis error:', analysisError)
       console.error('Error stack:', analysisError.stack)
+      const message = analysisError.message || 'Unknown error occurred'
+      const isProviderError = message.includes('data provider unavailable') ||
+        message.includes('API V2 key is not configured') ||
+        message.includes('Analysis timeout')
       
       return c.json({
         error: 'Analysis failed',
-        message: analysisError.message || 'Unknown error occurred',
-      }, 500)
+        code: isProviderError ? 'WALLET_ANALYSIS_PROVIDER_UNAVAILABLE' : 'WALLET_ANALYSIS_FAILED',
+        message,
+      }, isProviderError ? 503 : 500)
     }
 
     console.log('✅ Wallet analysis completed:', {
