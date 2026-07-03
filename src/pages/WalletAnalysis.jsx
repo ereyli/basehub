@@ -53,9 +53,12 @@ export default function WalletAnalysis() {
     parts.push(`I checked my ${analysis.network || selectedNetwork} wallet on BaseHub.`)
     parts.push(`Score: ${analysis.walletScore}/100`)
     parts.push(`Tier: ${report.tier || analysis.activityLevel || 'n/a'}`)
-    parts.push(`Tx: ${metrics.totalTransactions || analysis.totalTransactions || 0}`)
+    const txText = metrics.totalTransactionsExact
+      ? (metrics.totalTransactions || analysis.totalTransactions || 0)
+      : `${metrics.indexedEventCount || metrics.totalTransactions || analysis.totalTransactions || 0}+ indexed events`
+    parts.push(`Tx: ${txText}`)
     if (analysis.reportType === 'base-airdrop-readiness') {
-      parts.push(`Active days: ${metrics.activeDays || 0}`)
+      parts.push(`${report.coverage?.sampled ? 'Sampled days' : 'Active days'}: ${metrics.activeDays || 0}`)
       parts.push(`Protocols: ${metrics.protocolDiversity || 0}`)
     } else {
       parts.push(`Active span: ${analysis.daysActive || 0} days`)
@@ -118,9 +121,12 @@ export default function WalletAnalysis() {
     barGradient.addColorStop(1, accent)
     drawCanvasRoundRect(ctx, barX, barY, Math.max(18, 410 * Math.min(100, score) / 100), 18, 9, barGradient)
 
+    const txCardValue = metrics.totalTransactionsExact
+      ? (metrics.totalTransactions || analysis.totalTransactions || 0)
+      : `${metrics.indexedEventCount || metrics.totalTransactions || analysis.totalTransactions || 0}+`
     const cards = [
-      ['Transactions', metrics.totalTransactions || analysis.totalTransactions || 0, '#22c55e'],
-      ['Active Days', metrics.activeDays || 0, '#38bdf8'],
+      [metrics.totalTransactionsExact ? 'Transactions' : 'Indexed Events', txCardValue, '#22c55e'],
+      [report.coverage?.sampled ? 'Sampled Days' : 'Active Days', metrics.activeDays || 0, '#38bdf8'],
       ['Protocols', metrics.protocolDiversity || 0, '#a78bfa'],
       ['Volume', report.display?.stableVolume || '$0.0000', '#f59e0b'],
       ['Recent 30d', `${metrics.recent30Tx || 0} tx`, '#fb7185'],
@@ -946,8 +952,19 @@ function BaseAirdropReport({ analysis, onShareX, onDownloadCard, shareStatus }) 
   const metrics = report.metrics || {}
   const score = report.score ?? analysis.walletScore ?? 0
   const color = score >= 80 ? '#10b981' : score >= 60 ? '#3b82f6' : score >= 40 ? '#f59e0b' : '#ef4444'
-  const lastActivity = report.timeline?.lastActivity ? new Date(report.timeline.lastActivity).toLocaleDateString() : 'No activity'
-  const firstActivity = report.timeline?.firstActivity ? new Date(report.timeline.firstActivity).toLocaleDateString() : 'No activity'
+  const formatVerifiedDate = (value, verified) => {
+    if (!value) return 'Verification unavailable'
+    return `${new Date(value).toLocaleDateString()}${verified ? '' : ' (sample)'}`
+  }
+  const lastActivity = formatVerifiedDate(report.timeline?.lastActivity, report.timeline?.lastActivityVerified)
+  const firstActivity = formatVerifiedDate(report.timeline?.firstActivity, report.timeline?.firstActivityVerified)
+  const transactionCount = metrics.totalTransactionsExact
+    ? (metrics.totalTransactions || 0).toLocaleString()
+    : `${(metrics.indexedEventCount || metrics.totalTransactions || 0).toLocaleString()}+`
+  const walletAge = metrics.walletAgeDays
+    ? `${metrics.walletAgeDays.toLocaleString()} days`
+    : 'Verification unavailable'
+  const isSampled = Boolean(report.coverage?.sampled)
 
   return (
     <div style={{
@@ -1124,8 +1141,8 @@ function BaseAirdropReport({ analysis, onShareX, onDownloadCard, shareStatus }) 
               gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
               gap: '10px',
             }}>
-              <ReportMetricCard icon={<Activity size={18} />} label="Transactions" value={metrics.totalTransactions || 0} color="#22c55e" />
-              <ReportMetricCard icon={<Calendar size={18} />} label="Active Days" value={metrics.activeDays || 0} color="#38bdf8" />
+              <ReportMetricCard icon={<Activity size={18} />} label={metrics.totalTransactionsExact ? 'Transactions' : 'Indexed Events'} value={transactionCount} color="#22c55e" />
+              <ReportMetricCard icon={<Calendar size={18} />} label={isSampled ? 'Sampled Days' : 'Active Days'} value={metrics.activeDays || 0} color="#38bdf8" />
               <ReportMetricCard icon={<Layers size={18} />} label="Protocols" value={metrics.protocolDiversity || 0} color="#a78bfa" />
               <ReportMetricCard icon={<TrendingUp size={18} />} label="Volume Signal" value={report.display?.stableVolume || '$0.0000'} color="#f59e0b" />
             </div>
@@ -1139,6 +1156,7 @@ function BaseAirdropReport({ analysis, onShareX, onDownloadCard, shareStatus }) 
         gap: '14px',
       }}>
         <ReportMetricCard icon={<Clock size={20} />} label="First Activity" value={firstActivity} color="#60a5fa" tall />
+        <ReportMetricCard icon={<Calendar size={20} />} label="Wallet Age" value={walletAge} color="#2dd4bf" tall />
         <ReportMetricCard icon={<Zap size={20} />} label="Last 30 Days" value={`${metrics.recent30Tx || 0} tx`} color="#fb7185" tall />
         <ReportMetricCard icon={<TrendingUp size={20} />} label="Native Moved" value={report.display?.nativeMoved || '0 ETH'} color="#34d399" tall />
         <ReportMetricCard icon={<Wallet size={20} />} label="Current Balance" value={`${parseFloat(analysis.nativeBalance || 0).toFixed(4)} ETH`} color="#818cf8" tall />
