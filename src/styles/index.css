@@ -3877,3 +3877,8 @@ select:focus {
   background: rgba(138, 43, 226, 0.35);
   transform: translateY(-1px);
 }
+
+.wallet-analysis-address-input::placeholder {
+  color: rgba(226, 232, 240, 0.72);
+  opacity: 1;
+}

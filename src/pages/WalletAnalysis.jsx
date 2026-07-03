@@ -32,6 +32,7 @@ export default function WalletAnalysis() {
   const [hasAnalyzed, setHasAnalyzed] = useState(false)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [shareStatus, setShareStatus] = useState('')
+  const [walletInputWarning, setWalletInputWarning] = useState('')
 
   useEffect(() => {
     if (!isLoading || !analysisProgress?.stageStartedAt) {
@@ -192,18 +193,19 @@ export default function WalletAnalysis() {
   }
 
   const handleAnalyze = async () => {
-    const addr = targetAddress.trim() || address
+    const addr = targetAddress.trim()
     if (!addr) {
-      alert('Please enter a wallet address or connect your wallet')
+      setWalletInputWarning('Enter the wallet address you want to analyze before starting x402 payment.')
       return
     }
 
     if (!/^0x[a-fA-F0-9]{40}$/.test(addr)) {
-      alert('Invalid wallet address format')
+      setWalletInputWarning('Invalid wallet address format. It must start with 0x and contain 42 characters.')
       return
     }
 
     try {
+      setWalletInputWarning('')
       setHasAnalyzed(false)
       setShareStatus('')
       await analyzeWallet(addr, selectedNetwork)
@@ -546,33 +548,61 @@ export default function WalletAnalysis() {
               alignItems: 'center',
             }}>
               <div style={{ flex: 1, minWidth: '250px' }}>
+                <div style={{
+                  color: '#f8fafc',
+                  fontSize: '13px',
+                  fontWeight: '800',
+                  marginBottom: '8px',
+                }}>
+                  Wallet address to analyze
+                </div>
                 <input
                   type="text"
-                  placeholder={address ? `Analyze your wallet (${address.slice(0, 6)}...${address.slice(-4)})` : "Enter wallet address (0x...)"}
+                  className="wallet-analysis-address-input"
+                  placeholder={address ? `Paste wallet address here, e.g. ${address.slice(0, 6)}...${address.slice(-4)}` : "Paste wallet address here (0x...)"}
                   value={targetAddress}
-                  onChange={(e) => setTargetAddress(e.target.value)}
+                  onChange={(e) => {
+                    setTargetAddress(e.target.value)
+                    if (walletInputWarning) setWalletInputWarning('')
+                  }}
                   style={{
                     width: '100%',
                     padding: '16px 20px',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    border: walletInputWarning ? '1px solid rgba(248, 113, 113, 0.7)' : '1px solid rgba(226, 232, 240, 0.28)',
                     borderRadius: '14px',
                     fontSize: '15px',
                     outline: 'none',
                     transition: 'all 0.3s',
-                    background: 'rgba(30, 41, 59, 0.6)',
+                    background: 'rgba(248, 250, 252, 0.1)',
                     fontFamily: "'SF Mono', Menlo, monospace",
-                    color: '#e2e8f0',
+                    color: '#f8fafc',
+                    boxShadow: walletInputWarning ? '0 0 0 3px rgba(248, 113, 113, 0.12)' : 'inset 0 1px 0 rgba(255,255,255,0.08)',
+                    caretColor: '#ffffff',
                   }}
                   onFocus={(e) => {
-                    e.target.style.borderColor = 'rgba(59, 130, 246, 0.4)'
-                    e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.08)'
+                    e.target.style.borderColor = walletInputWarning ? 'rgba(248, 113, 113, 0.8)' : 'rgba(226, 232, 240, 0.5)'
+                    e.target.style.boxShadow = walletInputWarning ? '0 0 0 3px rgba(248, 113, 113, 0.12)' : '0 0 0 3px rgba(226, 232, 240, 0.12)'
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'
-                    e.target.style.boxShadow = 'none'
+                    e.target.style.borderColor = walletInputWarning ? 'rgba(248, 113, 113, 0.7)' : 'rgba(226, 232, 240, 0.28)'
+                    e.target.style.boxShadow = walletInputWarning ? '0 0 0 3px rgba(248, 113, 113, 0.12)' : 'inset 0 1px 0 rgba(255,255,255,0.08)'
                   }}
                   disabled={isLoading}
                 />
+                {walletInputWarning && (
+                  <div style={{
+                    marginTop: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    color: '#fecaca',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                  }}>
+                    <AlertCircle size={15} />
+                    <span>{walletInputWarning}</span>
+                  </div>
+                )}
               </div>
               <button
                 onClick={handleAnalyze}
