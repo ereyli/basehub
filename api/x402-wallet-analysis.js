@@ -47,6 +47,7 @@ const BASE_NATIVE_RPC_URL = process.env.BASE_RPC_URL || 'https://mainnet.base.or
 const BASE_REPORT_CACHE_TTL_MS = 5 * 60 * 1000
 const BASE_REPORT_CACHE = new Map()
 const BASE_REPORT_IN_FLIGHT = new Map()
+const BASE_DETAIL_PAGE_SIZE = 1000
 const BASE_BLOCKSCOUT_API_URL = process.env.BASE_BLOCKSCOUT_API_URL || 'https://base.blockscout.com/api'
 const GOLDRUSH_API_BASE_URL = process.env.GOLDRUSH_API_BASE_URL || 'https://api.covalenthq.com/v1'
 
@@ -391,6 +392,51 @@ async function fetchBaseScanAnchor(action, walletAddress, sort = 'asc') {
   return normalizeExplorerEvent(Array.isArray(items) ? items[0] : null, 'BaseScan', action === 'tokentx' ? 'token' : 'native')
 }
 
+async function fetchBaseScanDetailedHistory(walletAddress) {
+  if (!API_KEYS.ETHERSCAN) {
+    return {
+      normalTransactions: [],
+      tokenTransfers: [],
+      source: null,
+      hasMore: false,
+      errors: ['Etherscan API key is not configured'],
+    }
+  }
+
+  const commonParams = {
+    address: walletAddress,
+    startblock: '0',
+    endblock: '99999999',
+    page: '1',
+    offset: String(BASE_DETAIL_PAGE_SIZE),
+    sort: 'desc',
+  }
+
+  const [txResult, tokenResult] = await Promise.allSettled([
+    fetchEtherscanAccountAction(8453, 'txlist', commonParams),
+    fetchEtherscanAccountAction(8453, 'tokentx', commonParams),
+  ])
+
+  const errors = []
+  const normalTransactions = txResult.status === 'fulfilled' && Array.isArray(txResult.value)
+    ? txResult.value.map((tx) => normalizeExplorerTransaction(tx, 'BaseScan'))
+    : []
+  const tokenTransfers = tokenResult.status === 'fulfilled' && Array.isArray(tokenResult.value)
+    ? tokenResult.value.map((tx) => normalizeExplorerTokenTransfer(tx, 'BaseScan', 'erc20'))
+    : []
+
+  if (txResult.status === 'rejected') errors.push(`BaseScan txlist: ${txResult.reason?.message || 'request failed'}`)
+  if (tokenResult.status === 'rejected') errors.push(`BaseScan tokentx: ${tokenResult.reason?.message || 'request failed'}`)
+
+  return {
+    normalTransactions,
+    tokenTransfers,
+    source: normalTransactions.length || tokenTransfers.length ? 'BaseScan' : null,
+    hasMore: normalTransactions.length >= BASE_DETAIL_PAGE_SIZE || tokenTransfers.length >= BASE_DETAIL_PAGE_SIZE,
+    errors,
+  }
+}
+
 function normalizeExplorerEvent(tx, source, kind) {
   const timestamp = safeNumber(tx?.timeStamp || tx?.timestamp || tx?.blockTimestamp, 0)
   if (!timestamp || !tx?.hash) return null
@@ -400,6 +446,43 @@ function normalizeExplorerEvent(tx, source, kind) {
     date: new Date(timestamp * 1000),
     source,
     kind,
+  }
+}
+
+function normalizeExplorerTransaction(tx, source) {
+  return {
+    hash: tx?.hash || tx?.tx_hash || tx?.transaction_hash,
+    timeStamp: tx?.timeStamp || tx?.timestamp || tx?.blockTimestamp || null,
+    from: tx?.from || tx?.from_address || '',
+    to: tx?.to || tx?.to_address || '',
+    value: tx?.value || '0',
+    gas: tx?.gas || tx?.gasLimit || '0',
+    gasUsed: tx?.gasUsed || tx?.gas_used || tx?.gas_used_by_transaction || '0',
+    gasPrice: tx?.gasPrice || tx?.gas_price || '0',
+    category: 'external',
+    contractAddress: tx?.contractAddress || '',
+    tokenSymbol: '',
+    tokenDecimal: '18',
+    source,
+  }
+}
+
+function normalizeExplorerTokenTransfer(tx, source, category = 'erc20') {
+  const rawTokenValue = tx?.value || tx?.token?.value || '0'
+  const decimals = tx?.tokenDecimal || tx?.tokenDecimals || tx?.token?.decimals || tx?.decimals || (category === 'erc20' ? '18' : '0')
+  const symbol = tx?.tokenSymbol || tx?.token?.symbol || tx?.symbol || (category === 'erc20' ? 'TOKEN' : 'NFT')
+  return {
+    hash: tx?.hash || tx?.tx_hash || tx?.transaction_hash,
+    timeStamp: tx?.timeStamp || tx?.timestamp || tx?.blockTimestamp || null,
+    from: tx?.from || tx?.from_address || '',
+    to: tx?.to || tx?.to_address || '',
+    value: '0',
+    category,
+    contractAddress: tx?.contractAddress || tx?.tokenAddress || tx?.token?.address || '',
+    tokenSymbol: symbol,
+    tokenDecimal: String(decimals),
+    tokenAmount: formatTokenAmount(rawTokenValue, safeNumber(decimals, category === 'erc20' ? 18 : 0), 6),
+    source,
   }
 }
 
@@ -465,7 +548,7 @@ async function fetchGoldRushActivitySummary(walletAddress) {
   }
 }
 
-async function fetchBlockscoutAccountAction(action, walletAddress, sort = 'asc') {
+async function fetchBlockscoutAccountAction(action, walletAddress, sort = 'asc', offset = 1) {
   const query = new URLSearchParams({
     module: 'account',
     action,
@@ -473,7 +556,7 @@ async function fetchBlockscoutAccountAction(action, walletAddress, sort = 'asc')
     startblock: '0',
     endblock: '99999999',
     page: '1',
-    offset: '1',
+    offset: String(offset),
     sort,
   })
   const response = await fetch(`${BASE_BLOCKSCOUT_API_URL}?${query.toString()}`, {
@@ -489,6 +572,32 @@ async function fetchBlockscoutAccountAction(action, walletAddress, sort = 'asc')
   if (isNoIndexedDataMessage(message)) return []
   if (data.message === 'OK' && Array.isArray(data.result)) return data.result
   throw new Error(message || `Blockscout ${action} unavailable`)
+}
+
+async function fetchBlockscoutDetailedHistory(walletAddress) {
+  const [txResult, tokenResult] = await Promise.allSettled([
+    fetchBlockscoutAccountAction('txlist', walletAddress, 'desc', BASE_DETAIL_PAGE_SIZE),
+    fetchBlockscoutAccountAction('tokentx', walletAddress, 'desc', BASE_DETAIL_PAGE_SIZE),
+  ])
+
+  const errors = []
+  const normalTransactions = txResult.status === 'fulfilled' && Array.isArray(txResult.value)
+    ? txResult.value.map((tx) => normalizeExplorerTransaction(tx, 'Blockscout'))
+    : []
+  const tokenTransfers = tokenResult.status === 'fulfilled' && Array.isArray(tokenResult.value)
+    ? tokenResult.value.map((tx) => normalizeExplorerTokenTransfer(tx, 'Blockscout', 'erc20'))
+    : []
+
+  if (txResult.status === 'rejected') errors.push(`Blockscout txlist: ${txResult.reason?.message || 'request failed'}`)
+  if (tokenResult.status === 'rejected') errors.push(`Blockscout tokentx: ${tokenResult.reason?.message || 'request failed'}`)
+
+  return {
+    normalTransactions,
+    tokenTransfers,
+    source: normalTransactions.length || tokenTransfers.length ? 'Blockscout' : null,
+    hasMore: normalTransactions.length >= BASE_DETAIL_PAGE_SIZE || tokenTransfers.length >= BASE_DETAIL_PAGE_SIZE,
+    errors,
+  }
 }
 
 async function fetchBaseVerifiedActivityAnchors(walletAddress) {
@@ -721,6 +830,35 @@ function normalizeMoralisHistoryItem(item) {
   }
 }
 
+function mergeUniqueEvents(existingEvents, newEvents, fallbackSource = '') {
+  const seen = new Set(existingEvents.map((event) => [
+    event.hash || '',
+    event.category || '',
+    String(event.contractAddress || '').toLowerCase(),
+    event.value || event.tokenAmount || '',
+  ].join(':')))
+
+  newEvents.forEach((event) => {
+    if (!event?.hash) return
+    const fingerprint = [
+      event.hash || '',
+      event.category || '',
+      String(event.contractAddress || '').toLowerCase(),
+      event.value || event.tokenAmount || '',
+    ].join(':')
+    if (seen.has(fingerprint)) return
+    seen.add(fingerprint)
+    existingEvents.push({
+      ...event,
+      source: event.source || fallbackSource,
+    })
+  })
+}
+
+function addUniqueSource(dataSources, source) {
+  if (source && !dataSources.includes(source)) dataSources.push(source)
+}
+
 function buildBaseReport(walletAddress, nativeBalance, normalTransactions, tokenTransfers, tokenBalances, dataSources, options = {}) {
   const activityAnchors = options.activityAnchors || {}
   const coverage = options.coverage || {}
@@ -753,6 +891,10 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
   const dayCounts = {}
   const weekCounts = {}
   const monthCounts = {}
+  const dayHashes = {}
+  const weekHashes = {}
+  const monthHashes = {}
+  const recent30Hashes = new Set()
   const protocolCounts = {}
   const categoryCounts = {}
   const tokenMap = new Map()
@@ -775,10 +917,20 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
     weekSeed.setUTCDate(weekSeed.getUTCDate() - weekSeed.getUTCDay())
     const week = weekSeed.toISOString().slice(0, 10)
 
-    dayCounts[day] = (dayCounts[day] || 0) + 1
-    weekCounts[week] = (weekCounts[week] || 0) + 1
-    monthCounts[month] = (monthCounts[month] || 0) + 1
-    if (now - event.date.getTime() <= 30 * 24 * 60 * 60 * 1000) recent30Tx++
+    const txKey = event.hash || `${event.timestamp}-${event.from}-${event.to}-${event.value}-${event.tokenSymbol}`
+    dayHashes[day] = dayHashes[day] || new Set()
+    weekHashes[week] = weekHashes[week] || new Set()
+    monthHashes[month] = monthHashes[month] || new Set()
+    dayHashes[day].add(txKey)
+    weekHashes[week].add(txKey)
+    monthHashes[month].add(txKey)
+    dayCounts[day] = dayHashes[day].size
+    weekCounts[week] = weekHashes[week].size
+    monthCounts[month] = monthHashes[month].size
+    if (now - event.date.getTime() <= 30 * 24 * 60 * 60 * 1000) {
+      recent30Hashes.add(txKey)
+      recent30Tx = recent30Hashes.size
+    }
 
     const tokenSymbol = event.tokenSymbol || event.token?.symbol || event.asset || ''
     const contractAddress = (event.contractAddress || '').toLowerCase()
@@ -1076,19 +1228,21 @@ async function buildBaseWalletReportFromAlchemy(walletAddress) {
   const providerIssues = []
 
   if (!API_KEYS.ALCHEMY) {
-    throw new Error('Base Alchemy provider is not configured')
+    providerIssues.push('Alchemy transfers: Base Alchemy provider is not configured')
   }
 
   const nativeBalance = await fetchBaseNativeBalance(walletAddress)
   let normalTransactions = []
   let tokenTransfers = []
-  let transferCoverage = { isComplete: false, hasMore: false }
+  let transferCoverage = { isComplete: true, hasMore: false }
   let activityAnchors = { verified: false, source: null, first: null, last: null, errors: [] }
 
   try {
-    const [alchemyResult, anchorsResult] = await Promise.allSettled([
-      fetchAlchemyTransfers(walletAddress),
+    const [alchemyResult, anchorsResult, baseScanDetailResult, blockscoutDetailResult] = await Promise.allSettled([
+      API_KEYS.ALCHEMY ? fetchAlchemyTransfers(walletAddress) : Promise.resolve({ transfers: [], source: null, hasMore: false }),
       fetchBaseVerifiedActivityAnchors(walletAddress),
+      fetchBaseScanDetailedHistory(walletAddress),
+      fetchBlockscoutDetailedHistory(walletAddress),
     ])
 
     if (anchorsResult.status === 'fulfilled') {
@@ -1098,7 +1252,7 @@ async function buildBaseWalletReportFromAlchemy(walletAddress) {
         .map((source) => source.trim())
         .filter(Boolean)
         .forEach((source) => {
-          if (!dataSources.includes(source)) dataSources.push(source)
+          addUniqueSource(dataSources, source)
         })
       if (activityAnchors.errors?.length) {
         console.warn('⚠️ Base activity anchor partial errors:', activityAnchors.errors.slice(0, 2).join(' | '))
@@ -1108,16 +1262,45 @@ async function buildBaseWalletReportFromAlchemy(walletAddress) {
       console.warn('⚠️ Blockscout Base activity anchors unavailable:', anchorsResult.reason?.message)
     }
 
+    const detailCandidates = []
+    if (baseScanDetailResult.status === 'fulfilled' && baseScanDetailResult.value) {
+      detailCandidates.push(baseScanDetailResult.value)
+    } else if (baseScanDetailResult.status === 'rejected') {
+      providerIssues.push(`BaseScan details: ${baseScanDetailResult.reason?.message || 'request failed'}`)
+    }
+    if (blockscoutDetailResult.status === 'fulfilled' && blockscoutDetailResult.value) {
+      detailCandidates.push(blockscoutDetailResult.value)
+    } else if (blockscoutDetailResult.status === 'rejected') {
+      providerIssues.push(`Blockscout details: ${blockscoutDetailResult.reason?.message || 'request failed'}`)
+    }
+
+    detailCandidates.forEach((detail) => {
+      if (detail.errors?.length) {
+        detail.errors.slice(0, 2).forEach((issue) => providerIssues.push(issue))
+      }
+      if (!detail.source) return
+      addUniqueSource(dataSources, detail.source)
+      mergeUniqueEvents(normalTransactions, detail.normalTransactions || [], detail.source)
+      mergeUniqueEvents(tokenTransfers, detail.tokenTransfers || [], detail.source)
+      transferCoverage = {
+        isComplete: transferCoverage.isComplete && !detail.hasMore,
+        hasMore: Boolean(transferCoverage.hasMore || detail.hasMore),
+      }
+    })
+
     if (alchemyResult.status === 'rejected') {
       throw alchemyResult.reason
     }
 
     const { transfers, source, hasMore } = alchemyResult.value
-    transferCoverage = { isComplete: !hasMore, hasMore: Boolean(hasMore) }
-    if (source && !dataSources.includes(source)) dataSources.push(source)
+    transferCoverage = {
+      isComplete: transferCoverage.isComplete && !hasMore,
+      hasMore: Boolean(transferCoverage.hasMore || hasMore),
+    }
+    addUniqueSource(dataSources, source)
     if (transfers.length) {
       const normalized = transfers.map(normalizeAlchemyTransfer)
-      tokenTransfers = [...tokenTransfers, ...normalized]
+      mergeUniqueEvents(tokenTransfers, normalized, source)
       console.log('✅ Base Alchemy transfers:', { transfers: transfers.length })
     }
   } catch (error) {
