@@ -39,9 +39,10 @@ const API_KEYS = {
   MORALIS: getConfiguredApiKey(process.env.MORALIS_API_KEY),
 }
 
-const BASE_RPC_URL = API_KEYS.ALCHEMY
-  ? `https://base-mainnet.g.alchemy.com/v2/${API_KEYS.ALCHEMY}`
-  : (process.env.BASE_RPC_URL || 'https://mainnet.base.org')
+const ALCHEMY_BASE_RPC_URL = API_KEYS.ALCHEMY
+  ? (process.env.ALCHEMY_BASE_RPC_URL || `https://base-mainnet.g.alchemy.com/v2/${API_KEYS.ALCHEMY}`)
+  : ''
+const BASE_NATIVE_RPC_URL = process.env.BASE_RPC_URL || 'https://mainnet.base.org'
 const BASE_REPORT_CACHE_TTL_MS = 5 * 60 * 1000
 const BASE_REPORT_CACHE = new Map()
 const BASE_REPORT_IN_FLIGHT = new Map()
@@ -273,12 +274,13 @@ function cloneJson(value) {
   return JSON.parse(JSON.stringify(value))
 }
 
-async function rpcCall(method, params = []) {
-  const maxAttempts = API_KEYS.ALCHEMY ? 3 : 1
+async function rpcCall(method, params = [], options = {}) {
+  const rpcUrl = options.rpcUrl || BASE_NATIVE_RPC_URL
+  const maxAttempts = Math.max(1, options.maxAttempts || 1)
   let lastError = null
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const response = await fetch(BASE_RPC_URL, {
+    const response = await fetch(rpcUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method, params }),
@@ -311,9 +313,20 @@ async function rpcCall(method, params = []) {
   throw lastError || new Error('RPC request failed')
 }
 
+async function alchemyRpcCall(method, params = []) {
+  if (!ALCHEMY_BASE_RPC_URL) throw new Error('Base Alchemy provider is not configured')
+  return rpcCall(method, params, {
+    rpcUrl: ALCHEMY_BASE_RPC_URL,
+    maxAttempts: 1,
+  })
+}
+
 async function fetchBaseNativeBalance(walletAddress) {
   try {
-    const balanceHex = await rpcCall('eth_getBalance', [walletAddress, 'latest'])
+    const balanceHex = await rpcCall('eth_getBalance', [walletAddress, 'latest'], {
+      rpcUrl: BASE_NATIVE_RPC_URL,
+      maxAttempts: 1,
+    })
     return formatTokenAmount(balanceHex, 18, 6)
   } catch (error) {
     console.warn('⚠️ Base native balance fallback failed:', error.message)
@@ -412,7 +425,7 @@ async function fetchAlchemyTransfers(walletAddress) {
       }
       if (pageKey) params.pageKey = pageKey
 
-      const result = await rpcCall('alchemy_getAssetTransfers', [params])
+      const result = await alchemyRpcCall('alchemy_getAssetTransfers', [params])
       const batch = result?.transfers || []
 
       batch.forEach((transfer) => {
@@ -448,14 +461,14 @@ async function fetchMoralisHistory(walletAddress) {
 
 async function fetchAlchemyTokenBalances(walletAddress) {
   if (!API_KEYS.ALCHEMY) return []
-  const balances = await rpcCall('alchemy_getTokenBalances', [walletAddress])
+  const balances = await alchemyRpcCall('alchemy_getTokenBalances', [walletAddress])
   const tokenBalances = (balances?.tokenBalances || [])
     .filter((token) => token.tokenBalance && token.tokenBalance !== '0x0')
     .slice(0, 12)
 
   return Promise.all(tokenBalances.map(async (token) => {
     try {
-      const metadata = await rpcCall('alchemy_getTokenMetadata', [token.contractAddress])
+      const metadata = await alchemyRpcCall('alchemy_getTokenMetadata', [token.contractAddress])
       const decimals = safeNumber(metadata?.decimals, 18)
       return {
         address: token.contractAddress.toLowerCase(),
@@ -796,7 +809,6 @@ async function buildBaseWalletReportFromAlchemy(walletAddress) {
   console.log(`🔵 Starting professional Base report for: ${walletAddress}`)
   const dataSources = []
   const providerIssues = []
-  let successfulIndexerChecks = 0
 
   if (!API_KEYS.ALCHEMY) {
     throw new Error('Base Alchemy provider is not configured')
@@ -808,7 +820,6 @@ async function buildBaseWalletReportFromAlchemy(walletAddress) {
 
   try {
     const { transfers, source } = await fetchAlchemyTransfers(walletAddress)
-    if (source) successfulIndexerChecks++
     if (source && !dataSources.includes(source)) dataSources.push(source)
     if (transfers.length) {
       const normalized = transfers.map(normalizeAlchemyTransfer)
@@ -823,10 +834,9 @@ async function buildBaseWalletReportFromAlchemy(walletAddress) {
   const tokenBalances = []
 
   const hasIndexedSignals = normalTransactions.length > 0 || tokenTransfers.length > 0 || tokenBalances.length > 0
-  const hasNativeBalance = parseFloat(nativeBalance || '0') > 0
   const hasProviderFailure = providerIssues.some((issue) => isProviderFailureMessage(issue))
 
-  if (!hasIndexedSignals && !hasNativeBalance && successfulIndexerChecks === 0 && hasProviderFailure) {
+  if (!hasIndexedSignals && hasProviderFailure) {
     const issueSummary = providerIssues.slice(0, 3).join(' | ')
     throw new Error(`Base report data provider unavailable: ${issueSummary}`)
   }
