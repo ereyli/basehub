@@ -267,6 +267,18 @@ function formatCompactNumber(value, decimals = 1) {
   return number.toFixed(4)
 }
 
+function normalizeGoldRushGasValue(value, decimals = 18) {
+  if (value === null || value === undefined || value === '') return null
+  const asString = String(value)
+  if (asString.includes('.')) {
+    const parsed = Number(asString)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  const formatted = formatTokenAmount(asString, decimals, 8)
+  const parsed = Number(formatted)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
@@ -420,7 +432,7 @@ async function fetchGoldRushActivitySummary(walletAddress) {
 
   const query = new URLSearchParams({
     'quote-currency': 'USD',
-    'with-gas': 'false',
+    'with-gas': 'true',
     key: API_KEYS.GOLDRUSH,
   })
   const url = `${GOLDRUSH_API_BASE_URL}/base-mainnet/address/${walletAddress}/transactions_summary/?${query.toString()}`
@@ -434,12 +446,20 @@ async function fetchGoldRushActivitySummary(walletAddress) {
   const data = await response.json()
   if (data.error) throw new Error(data.error_message || data.error_code || 'GoldRush summary unavailable')
   const item = data.data?.items?.[0]
-  if (!item) return { first: null, last: null, totalTransactions: null, source: 'GoldRush', errors: [] }
+  if (!item) return { first: null, last: null, totalTransactions: null, gasSpentEth: null, gasSpentUSD: null, source: 'GoldRush', errors: [] }
+
+  const gasSummary = item.gas_summary || {}
+  const gasDecimals = safeNumber(gasSummary.gas_metadata?.contract_decimals, 18)
+  const gasSpentEth = normalizeGoldRushGasValue(gasSummary.total_fees_paid, gasDecimals)
+  const gasSpentUSD = Number.isFinite(Number(gasSummary.total_gas_quote)) ? Number(gasSummary.total_gas_quote) : null
 
   return {
     first: normalizeIsoEvent(item.earliest_transaction, 'GoldRush', 'summary'),
     last: normalizeIsoEvent(item.latest_transaction, 'GoldRush', 'summary'),
     totalTransactions: Number.isFinite(Number(item.total_count)) ? Number(item.total_count) : null,
+    transferCount: Number.isFinite(Number(item.transfer_count)) ? Number(item.transfer_count) : null,
+    gasSpentEth,
+    gasSpentUSD,
     source: 'GoldRush',
     errors: [],
   }
@@ -522,6 +542,10 @@ async function fetchBaseVerifiedActivityAnchors(walletAddress) {
     ].filter(Boolean).join(', ') || null,
     exactTransactionCount: goldRush?.totalTransactions ?? null,
     exactTransactionCountSource: goldRush?.totalTransactions !== null && goldRush?.totalTransactions !== undefined ? 'GoldRush' : null,
+    transferCount: goldRush?.transferCount ?? null,
+    gasSpentEth: goldRush?.gasSpentEth ?? null,
+    gasSpentUSD: goldRush?.gasSpentUSD ?? null,
+    gasSummarySource: goldRush?.gasSpentEth !== null && goldRush?.gasSpentEth !== undefined ? 'GoldRush' : null,
     errors,
   }
 }
@@ -700,6 +724,8 @@ function normalizeMoralisHistoryItem(item) {
 function buildBaseReport(walletAddress, nativeBalance, normalTransactions, tokenTransfers, tokenBalances, dataSources, options = {}) {
   const activityAnchors = options.activityAnchors || {}
   const coverage = options.coverage || {}
+  const detailDataAvailable = options.detailDataAvailable !== false
+  const providerIssues = options.providerIssues || []
   const events = [...normalTransactions, ...tokenTransfers]
     .filter((event) => event && event.hash)
     .map((event) => ({
@@ -732,6 +758,8 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
   const tokenMap = new Map()
   let nativeMovedEth = 0
   let gasSpentEth = 0
+  let gasSpentUSD = Number.isFinite(Number(activityAnchors.gasSpentUSD)) ? Number(activityAnchors.gasSpentUSD) : null
+  let gasSpentAvailable = Number.isFinite(Number(activityAnchors.gasSpentEth))
   let stableVolumeUSD = 0
   let dexNativeVolumeEth = 0
   let nftEvents = 0
@@ -785,6 +813,7 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
     try {
       if (gasUsed !== '0' && gasPrice !== '0') {
         gasSpentEth += safeNumber(formatTokenAmount((BigInt(gasUsed) * BigInt(gasPrice)).toString(), 18, 8))
+        gasSpentAvailable = true
       }
     } catch (error) {
       // Some indexed providers omit gas fields.
@@ -797,6 +826,10 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
 
     if (event.category === 'erc721' || event.category === 'erc1155') nftEvents++
   })
+
+  if (gasSpentEth === 0 && Number.isFinite(Number(activityAnchors.gasSpentEth))) {
+    gasSpentEth = Number(activityAnchors.gasSpentEth)
+  }
 
   tokenBalances.forEach((token) => {
     const key = token.address || token.symbol
@@ -828,10 +861,18 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
   const tokenDiversity = tokenMap.size
 
   const txScore = Math.min(25, totalTransactions >= 250 ? 25 : totalTransactions >= 100 ? 21 : totalTransactions >= 50 ? 16 : totalTransactions >= 15 ? 10 : totalTransactions > 0 ? 5 : 0)
-  const consistencyScore = Math.min(25, (activeDays >= 60 ? 16 : activeDays >= 30 ? 12 : activeDays >= 10 ? 8 : activeDays > 0 ? 4 : 0) + (activeMonths >= 6 ? 9 : activeMonths >= 3 ? 6 : activeMonths >= 2 ? 4 : activeMonths > 0 ? 2 : 0))
-  const diversityScore = Math.min(25, (protocolDiversity >= 8 ? 12 : protocolDiversity >= 5 ? 9 : protocolDiversity >= 3 ? 6 : protocolDiversity > 0 ? 3 : 0) + (tokenDiversity >= 20 ? 8 : tokenDiversity >= 10 ? 6 : tokenDiversity >= 5 ? 4 : tokenDiversity > 0 ? 2 : 0) + (categoryDiversity >= 5 ? 5 : categoryDiversity >= 3 ? 3 : categoryDiversity > 1 ? 2 : 0))
-  const volumeScore = Math.min(15, (stableVolumeUSD >= 5000 ? 8 : stableVolumeUSD >= 1000 ? 6 : stableVolumeUSD >= 250 ? 4 : stableVolumeUSD > 0 ? 2 : 0) + (nativeMovedEth >= 5 ? 7 : nativeMovedEth >= 1 ? 5 : nativeMovedEth >= 0.1 ? 3 : nativeMovedEth > 0 ? 1 : 0))
-  const recencyScore = Math.min(10, recent30Tx >= 20 ? 10 : recent30Tx >= 10 ? 7 : recent30Tx >= 3 ? 5 : recent30Tx > 0 ? 3 : lastEvent ? 1 : 0)
+  const consistencyScore = detailDataAvailable
+    ? Math.min(25, (activeDays >= 60 ? 16 : activeDays >= 30 ? 12 : activeDays >= 10 ? 8 : activeDays > 0 ? 4 : 0) + (activeMonths >= 6 ? 9 : activeMonths >= 3 ? 6 : activeMonths >= 2 ? 4 : activeMonths > 0 ? 2 : 0))
+    : 0
+  const diversityScore = detailDataAvailable
+    ? Math.min(25, (protocolDiversity >= 8 ? 12 : protocolDiversity >= 5 ? 9 : protocolDiversity >= 3 ? 6 : protocolDiversity > 0 ? 3 : 0) + (tokenDiversity >= 20 ? 8 : tokenDiversity >= 10 ? 6 : tokenDiversity >= 5 ? 4 : tokenDiversity > 0 ? 2 : 0) + (categoryDiversity >= 5 ? 5 : categoryDiversity >= 3 ? 3 : categoryDiversity > 1 ? 2 : 0))
+    : 0
+  const volumeScore = detailDataAvailable
+    ? Math.min(15, (stableVolumeUSD >= 5000 ? 8 : stableVolumeUSD >= 1000 ? 6 : stableVolumeUSD >= 250 ? 4 : stableVolumeUSD > 0 ? 2 : 0) + (nativeMovedEth >= 5 ? 7 : nativeMovedEth >= 1 ? 5 : nativeMovedEth >= 0.1 ? 3 : nativeMovedEth > 0 ? 1 : 0))
+    : 0
+  const recencyScore = detailDataAvailable
+    ? Math.min(10, recent30Tx >= 20 ? 10 : recent30Tx >= 10 ? 7 : recent30Tx >= 3 ? 5 : recent30Tx > 0 ? 3 : lastEvent ? 1 : 0)
+    : 0
   const score = Math.min(100, txScore + consistencyScore + diversityScore + volumeScore + recencyScore)
 
   const tier = score >= 85 ? 'Power User' : score >= 70 ? 'Airdrop Hunter' : score >= 50 ? 'Active Builder' : score >= 30 ? 'Growing Wallet' : totalTransactions > 0 ? 'Early Base User' : 'Fresh Wallet'
@@ -863,26 +904,35 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
 
   const strengths = []
   if (totalTransactions >= 100) strengths.push('Strong transaction footprint on Base')
-  if (activeMonths >= 3) strengths.push('Activity is spread across multiple months')
-  if (protocolDiversity >= 4) strengths.push('Uses several protocol categories instead of one repeated action')
-  if (stableVolumeUSD > 0 || dexNativeVolumeEth > 0) strengths.push('Has measurable swap or stablecoin movement')
-  if (nftEvents > 0) strengths.push('Shows NFT or mint activity')
-  if (recent30Tx >= 3) strengths.push('Recent onchain activity is visible')
+  if (verifiedSpanDays >= 90) strengths.push('Wallet age is verified across multiple months')
+  if (detailDataAvailable && activeMonths >= 3) strengths.push('Activity is spread across multiple months')
+  if (detailDataAvailable && protocolDiversity >= 4) strengths.push('Uses several protocol categories instead of one repeated action')
+  if (detailDataAvailable && (stableVolumeUSD > 0 || dexNativeVolumeEth > 0)) strengths.push('Has measurable swap or stablecoin movement')
+  if (detailDataAvailable && nftEvents > 0) strengths.push('Shows NFT or mint activity')
+  if (detailDataAvailable && recent30Tx >= 3) strengths.push('Recent onchain activity is visible')
   if (strengths.length === 0 && totalTransactions > 0) strengths.push('Wallet has started building Base history')
 
   const gaps = []
   if (totalTransactions < 50) gaps.push('Transaction count is still light for a serious activity profile')
-  if (activeDays < 14) gaps.push('Activity is not yet spread across enough different days')
-  if (protocolDiversity < 4) gaps.push('Protocol diversity can be improved')
-  if (stableVolumeUSD === 0 && dexNativeVolumeEth === 0) gaps.push('No clear DEX or stablecoin volume detected from available data')
-  if (recent30Tx === 0 && totalTransactions > 0) gaps.push('Wallet looks inactive in the last 30 days')
-  if (dataSources.length < 2) gaps.push('Report confidence would improve with Alchemy/Moralis plus Etherscan data')
+  if (!detailDataAvailable) {
+    gaps.push('Detailed protocol, volume, and recency data could not be fetched from the enrichment provider.')
+  } else {
+    if (activeDays < 14) gaps.push('Activity is not yet spread across enough different days')
+    if (protocolDiversity < 4) gaps.push('Protocol diversity can be improved')
+    if (stableVolumeUSD === 0 && dexNativeVolumeEth === 0) gaps.push('No clear DEX or stablecoin volume detected from available data')
+    if (recent30Tx === 0 && totalTransactions > 0) gaps.push('Wallet looks inactive in the last 30 days')
+  }
+  if (dataSources.length < 2) gaps.push('Report confidence would improve with more verified data sources.')
 
   const nextActions = []
-  if (activeDays < 14) nextActions.push('Spread small real actions across more days instead of doing everything at once')
-  if (protocolDiversity < 4) nextActions.push('Add variety: one DEX swap, one mint/NFT action, one DeFi or bridge-related action')
-  if (stableVolumeUSD < 250) nextActions.push('Build modest stablecoin or swap volume with realistic transaction sizes')
-  if (recent30Tx < 3) nextActions.push('Refresh activity with a few recent Base interactions')
+  if (!detailDataAvailable) {
+    nextActions.push('Re-run later when enrichment data is available to review protocols, volume, and recent activity.')
+  } else {
+    if (activeDays < 14) nextActions.push('Spread small real actions across more days instead of doing everything at once')
+    if (protocolDiversity < 4) nextActions.push('Add variety: one DEX swap, one mint/NFT action, one DeFi or bridge-related action')
+    if (stableVolumeUSD < 250) nextActions.push('Build modest stablecoin or swap volume with realistic transaction sizes')
+    if (recent30Tx < 3) nextActions.push('Refresh activity with a few recent Base interactions')
+  }
   nextActions.push('Keep gas spend natural and avoid repetitive spam patterns')
 
   const mostActiveDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]
@@ -941,14 +991,17 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
         dexNativeVolumeEth: dexNativeVolumeEth.toFixed(6),
         stableVolumeUSD: stableVolumeUSD.toFixed(2),
         gasSpentEth: gasSpentEth.toFixed(6),
+        gasSpentUSD: gasSpentUSD !== null ? gasSpentUSD.toFixed(2) : null,
+        gasSpentAvailable,
+        gasSpentSource: activityAnchors.gasSummarySource || null,
         nftEvents,
       },
       scoreBreakdown: [
         { label: 'Transactions', value: txScore, max: 25 },
-        { label: 'Consistency', value: consistencyScore, max: 25 },
-        { label: 'Diversity', value: diversityScore, max: 25 },
-        { label: 'Volume', value: volumeScore, max: 15 },
-        { label: 'Recency', value: recencyScore, max: 10 },
+        { label: 'Consistency', value: consistencyScore, max: 25, unavailable: !detailDataAvailable },
+        { label: 'Diversity', value: diversityScore, max: 25, unavailable: !detailDataAvailable },
+        { label: 'Volume', value: volumeScore, max: 15, unavailable: !detailDataAvailable },
+        { label: 'Recency', value: recencyScore, max: 10, unavailable: !detailDataAvailable },
       ],
       topProtocols,
       topCategories,
@@ -969,14 +1022,20 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
         isComplete: Boolean(coverage.isComplete),
         hasMore: Boolean(coverage.hasMore),
         sampled: !coverage.isComplete,
+        detailDataAvailable,
+        unavailableMetrics: detailDataAvailable ? [] : ['activeDays', 'protocolDiversity', 'volume', 'recent30Tx', 'nativeMoved'],
+        providerIssues: providerIssues.slice(0, 4),
         note: coverage.isComplete
           ? 'Activity metrics are based on the full indexed response available to this report.'
-          : 'Activity counts are sampled from indexed transfer pages; exact wallet age is verified separately when available.',
+          : detailDataAvailable
+            ? 'Activity counts are sampled from indexed transfer pages; exact wallet age is verified separately when available.'
+            : 'Detailed activity enrichment was unavailable; verified timeline, wallet age, balance, and transaction summary are still shown when available.',
       },
       display: {
         stableVolume: `$${formatCompactNumber(stableVolumeUSD)}`,
         nativeMoved: `${formatCompactNumber(nativeMovedEth)} ETH`,
         gasSpent: `${formatCompactNumber(gasSpentEth)} ETH`,
+        gasSpentUSD: gasSpentUSD !== null ? `$${formatCompactNumber(gasSpentUSD)}` : null,
       },
     },
   }
@@ -1085,6 +1144,8 @@ async function buildBaseWalletReportFromAlchemy(walletAddress) {
   const report = buildBaseReport(walletAddress, nativeBalance, normalTransactions, tokenTransfers, tokenBalances, dataSources, {
     activityAnchors,
     coverage: transferCoverage,
+    detailDataAvailable: hasIndexedSignals,
+    providerIssues,
   })
   report.dataQuality = {
     status: hasIndexedSignals ? 'indexed' : 'limited',

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useWalletAnalysis } from '../hooks/useWalletAnalysis'
-import { Wallet, Activity, TrendingUp, Award, AlertCircle, Loader2, Calendar, BarChart3, Zap, Eye, CheckCircle2, XCircle, Layers, Compass, Clock, Target, Gauge, Download, Clipboard, Image as ImageIcon } from 'lucide-react'
+import { Wallet, Activity, TrendingUp, Award, AlertCircle, Loader2, Calendar, BarChart3, Zap, Eye, CheckCircle2, XCircle, Layers, Compass, Clock, Target, Gauge, Download, Clipboard, Image as ImageIcon, Receipt } from 'lucide-react'
 import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
 
@@ -53,13 +53,14 @@ export default function WalletAnalysis() {
     parts.push(`I checked my ${analysis.network || selectedNetwork} wallet on BaseHub.`)
     parts.push(`Score: ${analysis.walletScore}/100`)
     parts.push(`Tier: ${report.tier || analysis.activityLevel || 'n/a'}`)
+    const detailDataAvailable = report.coverage?.detailDataAvailable !== false
     const txText = metrics.totalTransactionsExact
       ? (metrics.totalTransactions || analysis.totalTransactions || 0)
       : `${metrics.indexedEventCount || metrics.totalTransactions || analysis.totalTransactions || 0}+ indexed events`
     parts.push(`Tx: ${txText}`)
     if (analysis.reportType === 'base-airdrop-readiness') {
-      parts.push(`${report.coverage?.sampled ? 'Sampled days' : 'Active days'}: ${metrics.activeDays || 0}`)
-      parts.push(`Protocols: ${metrics.protocolDiversity || 0}`)
+      parts.push(`${report.coverage?.sampled ? 'Sampled days' : 'Active days'}: ${detailDataAvailable ? (metrics.activeDays || 0) : 'Data unavailable'}`)
+      parts.push(`Protocols: ${detailDataAvailable ? (metrics.protocolDiversity || 0) : 'Data unavailable'}`)
     } else {
       parts.push(`Active span: ${analysis.daysActive || 0} days`)
       parts.push(`Token diversity: ${analysis.tokenDiversity || 0}`)
@@ -74,6 +75,8 @@ export default function WalletAnalysis() {
     const metrics = report.metrics || {}
     const score = report.score ?? analysis.walletScore ?? 0
     const tier = report.tier || analysis.activityLevel || 'Base Wallet'
+    const detailDataAvailable = report.coverage?.detailDataAvailable !== false
+    const unavailableText = 'Data unavailable'
     const canvas = document.createElement('canvas')
     canvas.width = 1200
     canvas.height = 675
@@ -124,13 +127,14 @@ export default function WalletAnalysis() {
     const txCardValue = metrics.totalTransactionsExact
       ? (metrics.totalTransactions || analysis.totalTransactions || 0)
       : `${metrics.indexedEventCount || metrics.totalTransactions || analysis.totalTransactions || 0}+`
+    const gasSpentCardValue = metrics.gasSpentAvailable ? (report.display?.gasSpent || '0.0000 ETH') : unavailableText
     const cards = [
       [metrics.totalTransactionsExact ? 'Transactions' : 'Indexed Events', txCardValue, '#22c55e'],
-      [report.coverage?.sampled ? 'Sampled Days' : 'Active Days', metrics.activeDays || 0, '#38bdf8'],
-      ['Protocols', metrics.protocolDiversity || 0, '#a78bfa'],
-      ['Volume', report.display?.stableVolume || '$0.0000', '#f59e0b'],
-      ['Recent 30d', `${metrics.recent30Tx || 0} tx`, '#fb7185'],
-      ['Native Moved', report.display?.nativeMoved || '0 ETH', '#34d399'],
+      [report.coverage?.sampled ? 'Sampled Days' : 'Active Days', detailDataAvailable ? (metrics.activeDays || 0) : unavailableText, '#38bdf8'],
+      ['Protocols', detailDataAvailable ? (metrics.protocolDiversity || 0) : unavailableText, '#a78bfa'],
+      ['Volume', detailDataAvailable ? (report.display?.stableVolume || '$0.0000') : unavailableText, '#f59e0b'],
+      ['Fees Spent', gasSpentCardValue, '#f97316'],
+      ['Native Moved', detailDataAvailable ? (report.display?.nativeMoved || '0 ETH') : unavailableText, '#34d399'],
     ]
     cards.forEach((card, index) => {
       const col = index % 2
@@ -965,6 +969,13 @@ function BaseAirdropReport({ analysis, onShareX, onDownloadCard, shareStatus }) 
     ? `${metrics.walletAgeDays.toLocaleString()} days`
     : 'Verification unavailable'
   const isSampled = Boolean(report.coverage?.sampled)
+  const detailDataAvailable = report.coverage?.detailDataAvailable !== false
+  const unavailableText = 'Data unavailable'
+  const gasSpentValue = metrics.gasSpentAvailable ? (report.display?.gasSpent || '0.0000 ETH') : unavailableText
+  const valueOrUnavailable = (value, suffix = '') => {
+    if (!detailDataAvailable) return unavailableText
+    return suffix ? `${value}${suffix}` : value
+  }
 
   return (
     <div style={{
@@ -1142,9 +1153,9 @@ function BaseAirdropReport({ analysis, onShareX, onDownloadCard, shareStatus }) 
               gap: '10px',
             }}>
               <ReportMetricCard icon={<Activity size={18} />} label={metrics.totalTransactionsExact ? 'Transactions' : 'Indexed Events'} value={transactionCount} color="#22c55e" />
-              <ReportMetricCard icon={<Calendar size={18} />} label={isSampled ? 'Sampled Days' : 'Active Days'} value={metrics.activeDays || 0} color="#38bdf8" />
-              <ReportMetricCard icon={<Layers size={18} />} label="Protocols" value={metrics.protocolDiversity || 0} color="#a78bfa" />
-              <ReportMetricCard icon={<TrendingUp size={18} />} label="Volume Signal" value={report.display?.stableVolume || '$0.0000'} color="#f59e0b" />
+              <ReportMetricCard icon={<Calendar size={18} />} label={isSampled ? 'Sampled Days' : 'Active Days'} value={valueOrUnavailable(metrics.activeDays || 0)} color="#38bdf8" />
+              <ReportMetricCard icon={<Layers size={18} />} label="Protocols" value={valueOrUnavailable(metrics.protocolDiversity || 0)} color="#a78bfa" />
+              <ReportMetricCard icon={<TrendingUp size={18} />} label="Volume Signal" value={detailDataAvailable ? (report.display?.stableVolume || '$0.0000') : unavailableText} color="#f59e0b" />
             </div>
           </div>
         </div>
@@ -1157,11 +1168,24 @@ function BaseAirdropReport({ analysis, onShareX, onDownloadCard, shareStatus }) 
       }}>
         <ReportMetricCard icon={<Clock size={20} />} label="First Activity" value={firstActivity} color="#60a5fa" tall />
         <ReportMetricCard icon={<Calendar size={20} />} label="Wallet Age" value={walletAge} color="#2dd4bf" tall />
-        <ReportMetricCard icon={<Zap size={20} />} label="Last 30 Days" value={`${metrics.recent30Tx || 0} tx`} color="#fb7185" tall />
-        <ReportMetricCard icon={<TrendingUp size={20} />} label="Native Moved" value={report.display?.nativeMoved || '0 ETH'} color="#34d399" tall />
+        <ReportMetricCard icon={<Zap size={20} />} label="Last 30 Days" value={detailDataAvailable ? `${metrics.recent30Tx || 0} tx` : unavailableText} color="#fb7185" tall />
+        <ReportMetricCard icon={<TrendingUp size={20} />} label="Native Moved" value={detailDataAvailable ? (report.display?.nativeMoved || '0 ETH') : unavailableText} color="#34d399" tall />
+        <ReportMetricCard icon={<Receipt size={20} />} label="Fees Spent" value={gasSpentValue} color="#f97316" tall />
         <ReportMetricCard icon={<Wallet size={20} />} label="Current Balance" value={`${parseFloat(analysis.nativeBalance || 0).toFixed(4)} ETH`} color="#818cf8" tall />
         <ReportMetricCard icon={<Award size={20} />} label="Last Activity" value={lastActivity} color="#fbbf24" tall />
       </div>
+
+      {!detailDataAvailable && (
+        <ReportPanel title="Unavailable Detail Data" icon={<AlertCircle size={20} />} accent="#f59e0b">
+          <InsightList
+            items={[
+              'Protocol footprint, sampled active days, volume, native movement, and 30-day activity could not be fetched from the enrichment provider.',
+              'Verified timeline, wallet age, fee summary, current balance, and transaction summary are still shown when explorer/indexer sources provide them.',
+            ]}
+            color="#f59e0b"
+          />
+        </ReportPanel>
+      )}
 
       <div style={{
         display: 'grid',
@@ -1426,6 +1450,7 @@ function NetworkWalletReport({ analysis, onShareX }) {
 }
 
 function ReportMetricCard({ icon, label, value, color, tall = false }) {
+  const isLongValue = String(value || '').length > 14
   return (
     <div style={{
       minHeight: tall ? '92px' : '76px',
@@ -1445,7 +1470,7 @@ function ReportMetricCard({ icon, label, value, color, tall = false }) {
       </div>
       <div style={{
         color: '#f8fafc',
-        fontSize: tall ? '20px' : '22px',
+        fontSize: isLongValue ? '16px' : tall ? '20px' : '22px',
         fontWeight: '900',
         lineHeight: 1.15,
         overflowWrap: 'anywhere',
@@ -1490,6 +1515,7 @@ function ReportPanel({ title, icon, accent, children }) {
 function ScoreBreakdownRow({ item, color }) {
   const pct = item.max ? Math.round((item.value / item.max) * 100) : 0
   const rowColor = getScoreBreakdownColor(item.label, color)
+  const unavailable = Boolean(item.unavailable)
   return (
     <div style={{ marginBottom: '12px' }}>
       <div style={{
@@ -1502,21 +1528,24 @@ function ScoreBreakdownRow({ item, color }) {
         fontWeight: '750',
       }}>
         <span>{item.label}</span>
-        <span>{item.value}/{item.max}</span>
+        <span>{unavailable ? 'Data unavailable' : `${item.value}/${item.max}`}</span>
       </div>
       <div style={{
         height: '10px',
         borderRadius: '999px',
-        background: 'rgba(148, 163, 184, 0.18)',
+        background: unavailable ? 'rgba(245, 158, 11, 0.12)' : 'rgba(148, 163, 184, 0.18)',
         overflow: 'hidden',
+        border: unavailable ? '1px dashed rgba(245, 158, 11, 0.35)' : 'none',
       }}>
-        <div style={{
-          width: `${Math.min(100, Math.max(0, pct))}%`,
-          height: '100%',
-          background: `linear-gradient(90deg, ${rowColor} 0%, ${rowColor}cc 100%)`,
-          borderRadius: '999px',
-          boxShadow: `0 0 18px ${rowColor}55`,
-        }} />
+        {!unavailable && (
+          <div style={{
+            width: `${Math.min(100, Math.max(0, pct))}%`,
+            height: '100%',
+            background: `linear-gradient(90deg, ${rowColor} 0%, ${rowColor}cc 100%)`,
+            borderRadius: '999px',
+            boxShadow: `0 0 18px ${rowColor}55`,
+          }} />
+        )}
       </div>
     </div>
   )
