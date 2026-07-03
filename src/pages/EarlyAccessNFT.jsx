@@ -71,9 +71,9 @@ const EarlyAccessNFT = () => {
       const earlyAccessUrl = getFarcasterUniversalLink('/early-access')
       const appLinks = `\n\n🌐 Web: https://basehub.fun/early-access\n🎭 Farcaster: ${earlyAccessUrl}`
       if (isAfterMint) {
-        castText = `🎉 Just minted my BaseHub Early Access Pass! 🚀\n\n✨ Unlock exclusive benefits:\n• Dynamic XP multiplier: (NFT Count + 1)x on ALL activities\n• 1 NFT = 2x, 2 NFTs = 3x, 10 NFTs = 11x!\n• Priority access to airdrops\n• Exclusive quests & rewards\n• Early feature access\n\n🔥 Only ${remainingSupply} passes left!\n\nJoin the BaseHub community and level up faster! 💎\n\n#BaseHub #BaseNetwork #NFT #EarlyAccess${appLinks}`
+        castText = `🎉 Just minted my BaseHub Early Access Pass! 🚀\n\n✨ Unlock exclusive benefits:\n• Dynamic XP multiplier: (NFT Count + 1)x on ALL activities\n• 1 NFT = 2x, 2 NFTs = 3x, 10 NFTs = 11x!\n• 50% x402 discount on analysis tools\n• Priority access to airdrops\n• Exclusive quests & rewards\n• Early feature access\n\n🔥 Only ${remainingSupply} passes left!\n\nJoin the BaseHub community and level up faster! 💎\n\n#BaseHub #BaseNetwork #NFT #EarlyAccess${appLinks}`
       } else {
-        castText = `🚀 BaseHub Early Access Pass is LIVE! 🎉\n\n✨ Exclusive benefits for holders:\n• Dynamic XP multiplier: (NFT Count + 1)x on ALL activities\n• 1 NFT = 2x, 2 NFTs = 3x, 10 NFTs = 11x!\n• Priority access to airdrops\n• Exclusive quests & rewards\n• Early feature access\n\n🔥 Only ${remainingSupply} of ${maxSupply} passes remaining!\n\nMint yours now and join the BaseHub community! 💎\n\n#BaseHub #BaseNetwork #NFT #EarlyAccess${appLinks}`
+        castText = `🚀 BaseHub Early Access Pass is LIVE! 🎉\n\n✨ Exclusive benefits for holders:\n• Dynamic XP multiplier: (NFT Count + 1)x on ALL activities\n• 1 NFT = 2x, 2 NFTs = 3x, 10 NFTs = 11x!\n• 50% x402 discount on analysis tools\n• Priority access to airdrops\n• Exclusive quests & rewards\n• Early feature access\n\n🔥 Only ${remainingSupply} of ${maxSupply} passes remaining!\n\nMint yours now and join the BaseHub community! 💎\n\n#BaseHub #BaseNetwork #NFT #EarlyAccess${appLinks}`
       }
       
       await farcasterContext.sdk.actions.composeCast({
@@ -184,7 +184,7 @@ const EarlyAccessNFT = () => {
     }}>
       <Helmet>
         <title>Early Access NFT - BaseHub</title>
-        <meta name="description" content="Mint your BaseHub Early Access Pass NFT – 2x XP, Wheel game, Launchpad discount & more" />
+        <meta name="description" content="Mint your BaseHub Early Access Pass NFT – 2x XP, Wheel game, Launchpad discount, analysis x402 discounts & more" />
       </Helmet>
 
       {/* Subtle top glow */}
@@ -535,6 +535,23 @@ const EarlyAccessNFT = () => {
             >
               <Percent size={18} style={{ flexShrink: 0, color: goldLight }} />
               <span style={{ flex: 1 }}><strong style={{ color: goldLight }}>75% discount</strong> on NFT Launchpad — ~$4 → ~$1</span>
+              <ExternalLink size={14} style={{ color: '#475569' }} />
+            </Link>
+
+            {/* Analysis discount */}
+            <Link to="/wallet-analysis" style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: isMobile ? '13px 14px' : '16px 18px',
+              background: 'rgba(139, 92, 246, 0.05)', borderLeft: '3px solid #a78bfa',
+              borderRadius: 12, color: '#cbd5e1', textDecoration: 'none',
+              fontSize: isMobile ? '0.88rem' : '0.92rem', fontWeight: 500,
+              transition: 'background 0.2s',
+            }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(139, 92, 246, 0.05)'}
+            >
+              <Percent size={18} style={{ flexShrink: 0, color: '#a78bfa' }} />
+              <span style={{ flex: 1 }}><strong style={{ color: '#c4b5fd' }}>50% x402 discount</strong> on Wallet Analysis, Contract Security and Allowance Cleaner</span>
               <ExternalLink size={14} style={{ color: '#475569' }} />
             </Link>
 

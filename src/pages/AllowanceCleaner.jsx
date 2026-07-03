@@ -135,6 +135,22 @@ export default function AllowanceCleaner() {
           <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0 }}>
             Scan and revoke risky token approvals to protect your assets. Pay {paymentPrice || '0.10'} USDC via x402{isPassHolder ? ' with BaseHub Pass 50% off.' : ' to scan your wallet.'}
           </p>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginTop: '12px',
+            padding: '8px 12px',
+            borderRadius: '999px',
+            background: isPassHolder ? 'rgba(34, 197, 94, 0.12)' : 'rgba(251, 191, 36, 0.1)',
+            border: `1px solid ${isPassHolder ? 'rgba(34, 197, 94, 0.28)' : 'rgba(251, 191, 36, 0.22)'}`,
+            color: isPassHolder ? '#86efac' : '#fde68a',
+            fontSize: '12px',
+            fontWeight: '700',
+          }}>
+            <CheckCircle size={14} />
+            <span>{isPassHolder ? 'BaseHub Pass verified: discounted x402 endpoint is active.' : 'BaseHub Pass holders get 50% off. The discount is checked server-side before payment.'}</span>
+          </div>
         </div>
 
         {/* Network Selection - Same style as Wallet Analysis */}
@@ -219,7 +235,7 @@ export default function AllowanceCleaner() {
             marginTop: '16px', 
             marginBottom: 0 
           }}>
-            💡 x402 payment is always on Base. BaseHub Pass holders get 50% off analyses, and you can scan any supported network.
+            💡 x402 payment is always on Base. Pass holders get 50% off after server-side NFT verification, and you can scan any supported network.
           </p>
         </div>
 

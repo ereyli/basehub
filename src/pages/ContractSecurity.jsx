@@ -187,6 +187,22 @@ export default function ContractSecurity() {
               <Eye size={18} />
               <span>{paymentPrice || '0.50'} USDC via x402 {isPassHolder ? '(BaseHub Pass 50% off)' : '(Paid on Base)'}</span>
             </div>
+            <div style={{
+              marginTop: '10px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              borderRadius: '999px',
+              background: isPassHolder ? 'rgba(34, 197, 94, 0.12)' : 'rgba(251, 191, 36, 0.1)',
+              border: `1px solid ${isPassHolder ? 'rgba(34, 197, 94, 0.28)' : 'rgba(251, 191, 36, 0.22)'}`,
+              color: isPassHolder ? '#86efac' : '#fde68a',
+              fontSize: '12px',
+              fontWeight: '700',
+            }}>
+              <CheckCircle size={14} />
+              <span>{isPassHolder ? 'BaseHub Pass verified: discounted x402 endpoint is active.' : 'BaseHub Pass holders get 50% off. The discount is checked server-side before payment.'}</span>
+            </div>
           </div>
 
           {/* Network Selection */}
@@ -274,7 +290,7 @@ export default function ContractSecurity() {
               gap: '8px',
             }}>
               <Eye size={16} />
-              <span>x402 payment is always on Base mainnet · BaseHub Pass holders get 50% off analyses</span>
+              <span>x402 payment is always on Base mainnet · Pass holders get 50% off after server-side NFT verification</span>
             </div>
           </div>
 
