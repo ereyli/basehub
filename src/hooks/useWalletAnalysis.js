@@ -15,6 +15,32 @@ export const useWalletAnalysis = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [analysis, setAnalysis] = useState(null)
+  const [analysisProgress, setAnalysisProgress] = useState({
+    stage: 'idle',
+    percent: 0,
+    label: '',
+    detail: '',
+    stageStartedAt: null,
+  })
+
+  const updateProgress = (stage, percent, label, detail = '') => {
+    setAnalysisProgress({
+      stage,
+      percent,
+      label,
+      detail,
+      stageStartedAt: Date.now(),
+    })
+  }
+
+  const hasX402PaymentHeader = (headers) => {
+    if (!headers) return false
+    if (headers instanceof Headers) return Boolean(headers.get('X-PAYMENT') || headers.get('x-payment'))
+    if (Array.isArray(headers)) {
+      return headers.some(([key]) => String(key).toLowerCase() === 'x-payment')
+    }
+    return Object.keys(headers).some((key) => key.toLowerCase() === 'x-payment')
+  }
 
   const analyzeWallet = async (targetAddress, selectedNetwork = 'ethereum') => {
     if (!targetAddress) {
@@ -30,30 +56,52 @@ export const useWalletAnalysis = () => {
       throw new Error('Wallet not connected. Please connect your wallet first.')
     }
 
+    setIsLoading(true)
+    setError(null)
+    updateProgress('initializing', 0, 'Preparing x402 payment', 'Checking wallet and Base network.')
+
     // x402 payments only work on Base network - switch if needed
     if (chainId !== NETWORKS.BASE.chainId) {
       try {
+        updateProgress('switching-network', 0, 'Switching to Base', 'x402 payments are settled on Base mainnet.')
         await switchChain({ chainId: NETWORKS.BASE.chainId })
         // Wait a bit for network switch
         await new Promise(resolve => setTimeout(resolve, 1000))
       } catch (err) {
+        setIsLoading(false)
+        updateProgress('idle', 0, '', '')
         throw new Error('Please switch to Base network to use x402 payments')
       }
     }
-
-    setIsLoading(true)
-    setError(null)
 
     try {
       console.log('🚀 Starting wallet analysis payment flow...')
       console.log('Target wallet:', targetAddress)
       console.log('Selected network:', selectedNetwork)
+      updateProgress('waiting-payment', 0, 'Complete x402 payment', 'Approve the 0.40 USDC x402 payment in your wallet. Report progress starts after approval.')
 
       // x402 payment: 0.40 USDC = 400000 base units (6 decimals)
       const MAX_PAYMENT_AMOUNT = BigInt(400000) // 0.40 USDC max
 
+      const trackedFetch = async (input, init = {}) => {
+        const isPaidRequest = hasX402PaymentHeader(init.headers) || hasX402PaymentHeader(input?.headers)
+        if (isPaidRequest) {
+          updateProgress('preparing-report', 38, 'x402 payment confirmed', 'Preparing the wallet report from live network data.')
+        }
+
+        const response = await fetch(input, init)
+
+        if (!isPaidRequest && response.status === 402) {
+          updateProgress('waiting-payment', 0, 'Waiting for x402 approval', 'Approve the payment in your wallet to start report generation.')
+        } else if (isPaidRequest) {
+          updateProgress('response-received', 82, 'Network data received', 'Final report data returned from the analysis API.')
+        }
+
+        return response
+      }
+
       const fetchWithPayment = createX402FetchWithBuilderCode(
-        fetch,
+        trackedFetch,
         walletClient,
         MAX_PAYMENT_AMOUNT
       )
@@ -125,36 +173,40 @@ export const useWalletAnalysis = () => {
         throw new Error(errorMessage)
       }
 
+      updateProgress('building-report', 92, 'Building report card', 'Formatting wallet signals into the final report.')
       const result = await response.json()
       console.log('✅ Wallet analysis successful:', result)
 
       if (result.success && result.analysis) {
         setAnalysis(result.analysis)
-        
+        updateProgress('ready', 100, 'Report ready', 'Your wallet report is ready.')
+
         // Award 400 XP for successful wallet analysis
         if (address) {
-          try {
-            console.log('🎁 Awarding 400 XP for successful wallet analysis...')
-            
-            // Add XP (400 XP for wallet analysis)
-            const transactionHash = result.transactionHash || null
-            await addXP(address, 400, 'WALLET_ANALYSIS', chainId ?? 8453, false, transactionHash)
-            console.log('✅ 400 XP added successfully')
-            console.log('✅ Transaction recorded successfully')
-            
-            // Update quest progress (if there's a wallet analysis quest)
+          void (async () => {
             try {
-              await updateQuestProgress('walletAnalysis', 1)
-              console.log('✅ Quest progress updated: walletAnalysis +1')
-            } catch (questError) {
-              // Quest might not exist, that's okay
-              console.log('ℹ️ Quest progress update skipped (quest may not exist)')
+              console.log('🎁 Awarding 400 XP for successful wallet analysis...')
+
+              // Add XP (400 XP for wallet analysis)
+              const transactionHash = result.transactionHash || null
+              await addXP(address, 400, 'WALLET_ANALYSIS', chainId ?? 8453, false, transactionHash)
+              console.log('✅ 400 XP added successfully')
+              console.log('✅ Transaction recorded successfully')
+
+              // Update quest progress (if there's a wallet analysis quest)
+              try {
+                await updateQuestProgress('walletAnalysis', 1)
+                console.log('✅ Quest progress updated: walletAnalysis +1')
+              } catch (questError) {
+                // Quest might not exist, that's okay
+                console.log('ℹ️ Quest progress update skipped (quest may not exist)')
+              }
+
+            } catch (xpError) {
+              console.error('⚠️ Error awarding XP or updating quest progress:', xpError)
+              // Don't throw error - XP is not critical for analysis flow
             }
-            
-          } catch (xpError) {
-            console.error('⚠️ Error awarding XP or updating quest progress:', xpError)
-            // Don't throw error - XP is not critical for analysis flow
-          }
+          })()
         } else {
           console.warn('⚠️ No wallet address available, skipping XP reward')
         }
@@ -168,6 +220,7 @@ export const useWalletAnalysis = () => {
       console.error('❌ Wallet analysis error:', err)
       const errorMessage = err.message || 'Analysis failed. Please try again.'
       setError(errorMessage)
+      updateProgress('error', 0, 'Analysis failed', errorMessage)
       throw err
     } finally {
       setIsLoading(false)
@@ -179,6 +232,7 @@ export const useWalletAnalysis = () => {
     isLoading,
     error,
     analysis,
+    analysisProgress,
     isConnected: !!walletClient,
   }
 }

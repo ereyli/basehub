@@ -26,24 +26,23 @@ const SUPPORTED_NETWORKS = {
 
 export default function WalletAnalysis() {
   const { address, isConnected } = useAccount()
-  const { analyzeWallet, isLoading, error, analysis } = useWalletAnalysis()
+  const { analyzeWallet, isLoading, error, analysis, analysisProgress } = useWalletAnalysis()
   const [targetAddress, setTargetAddress] = useState('')
   const [selectedNetwork, setSelectedNetwork] = useState('base')
   const [hasAnalyzed, setHasAnalyzed] = useState(false)
-  const [analysisStartedAt, setAnalysisStartedAt] = useState(null)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [shareStatus, setShareStatus] = useState('')
 
   useEffect(() => {
-    if (!isLoading || !analysisStartedAt) {
+    if (!isLoading || !analysisProgress?.stageStartedAt) {
       setElapsedSeconds(0)
       return undefined
     }
     const timer = setInterval(() => {
-      setElapsedSeconds(Math.max(0, Math.floor((Date.now() - analysisStartedAt) / 1000)))
+      setElapsedSeconds(Math.max(0, Math.floor((Date.now() - analysisProgress.stageStartedAt) / 1000)))
     }, 500)
     return () => clearInterval(timer)
-  }, [analysisStartedAt, isLoading])
+  }, [analysisProgress?.stageStartedAt, isLoading])
 
   const buildXText = () => {
     if (!analysis) return ''
@@ -202,13 +201,10 @@ export default function WalletAnalysis() {
     try {
       setHasAnalyzed(false)
       setShareStatus('')
-      setAnalysisStartedAt(Date.now())
       await analyzeWallet(addr, selectedNetwork)
       setHasAnalyzed(true)
     } catch (err) {
       console.error('Analysis failed:', err)
-    } finally {
-      setAnalysisStartedAt(null)
     }
   }
 
@@ -401,7 +397,7 @@ export default function WalletAnalysis() {
               border: '2px solid rgba(255, 255, 255, 0.3)',
             }}>
               <Eye size={18} />
-              <span>0.40 USDC per analysis (Paid on Base)</span>
+              <span>0.40 USDC via x402 (Paid on Base)</span>
             </div>
           </div>
 
@@ -490,7 +486,7 @@ export default function WalletAnalysis() {
               gap: '8px',
             }}>
               <Eye size={16} />
-              <span>Payment is always on Base mainnet</span>
+              <span>x402 payment is always settled on Base mainnet</span>
             </div>
           </div>
 
@@ -576,12 +572,12 @@ export default function WalletAnalysis() {
                 {isLoading ? (
                   <>
                     <Loader2 size={22} className="animate-spin" />
-                    <span>Analyzing...</span>
+                    <span>{analysisProgress?.percent > 0 ? 'Preparing Report...' : 'Processing x402...'}</span>
                   </>
                 ) : (
                   <>
-                    <Search size={22} />
-                    <span>Analyze Wallet</span>
+                    <Zap size={22} />
+                    <span>Pay with x402 & Analyze</span>
                   </>
                 )}
               </button>
@@ -626,7 +622,7 @@ export default function WalletAnalysis() {
             )}
 
             {isLoading && (
-              <ReportPreparationProgress elapsedSeconds={elapsedSeconds} />
+              <ReportPreparationProgress progress={analysisProgress} elapsedSeconds={elapsedSeconds} />
             )}
           </div>
 
@@ -976,23 +972,37 @@ export default function WalletAnalysis() {
               transform: rotate(360deg);
             }
           }
+          @keyframes progressFlow {
+            from {
+              background-position: 0% 50%;
+            }
+            to {
+              background-position: 180% 50%;
+            }
+          }
         `}</style>
       </div>
     </NetworkGuard>
   )
 }
 
-function ReportPreparationProgress({ elapsedSeconds }) {
-  const estimatedSeconds = 18
-  const progress = Math.min(95, Math.max(8, Math.round((elapsedSeconds / estimatedSeconds) * 100)))
-  const remaining = Math.max(3, estimatedSeconds - elapsedSeconds)
-  const phase = elapsedSeconds < 4
-    ? 'Confirming payment'
-    : elapsedSeconds < 10
-      ? 'Collecting Base activity'
-      : elapsedSeconds < 16
-        ? 'Scoring wallet signals'
-        : 'Finalizing report card'
+function ReportPreparationProgress({ progress, elapsedSeconds }) {
+  const currentProgress = progress || {}
+  const stage = currentProgress.stage || 'initializing'
+  const percent = Math.min(100, Math.max(0, currentProgress.percent || 0))
+  const hasPaymentStartedReport = percent > 0
+  const steps = [
+    { key: 'waiting-payment', label: 'x402 payment', completeAt: 1 },
+    { key: 'preparing-report', label: 'Data fetch', completeAt: 38 },
+    { key: 'response-received', label: 'API response', completeAt: 82 },
+    { key: 'building-report', label: 'Report card', completeAt: 92 },
+    { key: 'ready', label: 'Ready', completeAt: 100 },
+  ]
+  const helperText = stage === 'waiting-payment'
+    ? 'The report bar starts after your x402 payment is approved.'
+    : stage === 'preparing-report'
+      ? `Live report request running for ${elapsedSeconds}s.`
+      : currentProgress.detail || 'Preparing your wallet report.'
 
   return (
     <div style={{
@@ -1006,11 +1016,19 @@ function ReportPreparationProgress({ elapsedSeconds }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '14px', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#e2e8f0', fontWeight: '850' }}>
           <Loader2 size={18} className="animate-spin" style={{ color: '#38bdf8' }} />
-          {phase}
+          {currentProgress.label || 'Preparing x402 payment'}
         </div>
-        <div style={{ color: '#93c5fd', fontSize: '13px', fontWeight: '800' }}>
-          Usually ready in ~{remaining}s
+        <div style={{ color: hasPaymentStartedReport ? '#86efac' : '#93c5fd', fontSize: '13px', fontWeight: '800' }}>
+          {hasPaymentStartedReport ? `${percent}% report progress` : 'Waiting for payment approval'}
         </div>
+      </div>
+      <div style={{
+        color: '#94a3b8',
+        fontSize: '13px',
+        fontWeight: '650',
+        marginBottom: '12px',
+      }}>
+        {helperText}
       </div>
       <div style={{
         height: '12px',
@@ -1019,26 +1037,53 @@ function ReportPreparationProgress({ elapsedSeconds }) {
         background: 'rgba(148, 163, 184, 0.16)',
       }}>
         <div style={{
-          width: `${progress}%`,
+          width: `${percent}%`,
           height: '100%',
           borderRadius: '999px',
-          background: 'linear-gradient(90deg, #38bdf8 0%, #8b5cf6 45%, #22c55e 100%)',
+          background: hasPaymentStartedReport
+            ? 'linear-gradient(90deg, #38bdf8 0%, #8b5cf6 45%, #22c55e 100%)'
+            : 'rgba(59, 130, 246, 0.35)',
+          backgroundSize: '180% 100%',
           boxShadow: '0 0 24px rgba(56, 189, 248, 0.42)',
           transition: 'width 500ms ease',
+          animation: hasPaymentStartedReport ? 'progressFlow 1.6s linear infinite' : 'none',
         }} />
       </div>
       <div style={{
-        marginTop: '9px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        color: '#64748b',
+        marginTop: '12px',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+        gap: '8px',
         fontSize: '12px',
         fontWeight: '750',
       }}>
-        <span>Payment</span>
-        <span>Data</span>
-        <span>Score</span>
-        <span>Report</span>
+        {steps.map((step) => {
+          const isComplete = percent >= step.completeAt
+          const isActive = stage === step.key || (!hasPaymentStartedReport && step.key === 'waiting-payment')
+          return (
+            <span
+              key={step.key}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                padding: '7px 8px',
+                borderRadius: '999px',
+                color: isComplete ? '#bbf7d0' : isActive ? '#bfdbfe' : '#64748b',
+                background: isComplete
+                  ? 'rgba(34, 197, 94, 0.12)'
+                  : isActive
+                    ? 'rgba(59, 130, 246, 0.12)'
+                    : 'rgba(15, 23, 42, 0.55)',
+                border: `1px solid ${isComplete ? 'rgba(34, 197, 94, 0.26)' : isActive ? 'rgba(59, 130, 246, 0.28)' : 'rgba(148, 163, 184, 0.10)'}`,
+              }}
+            >
+              {isComplete ? <CheckCircle2 size={13} /> : isActive ? <Loader2 size={13} className="animate-spin" /> : <Clock size={13} />}
+              {step.label}
+            </span>
+          )
+        })}
       </div>
     </div>
   )
