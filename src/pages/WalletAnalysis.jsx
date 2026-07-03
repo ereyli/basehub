@@ -1,10 +1,9 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useWalletAnalysis } from '../hooks/useWalletAnalysis'
-import { Search, Wallet, Coins, Activity, TrendingUp, Award, Sparkles, AlertCircle, Loader2, Calendar, BarChart3, Zap, Eye, Shield, CheckCircle2, XCircle, Layers, Compass, Clock, Target, Gauge } from 'lucide-react'
+import { Search, Wallet, Activity, TrendingUp, Award, Sparkles, AlertCircle, Loader2, Calendar, BarChart3, Zap, Eye, Shield, CheckCircle2, XCircle, Layers, Compass, Clock, Target, Gauge, Download, Clipboard, Image as ImageIcon } from 'lucide-react'
 import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
-import { getFarcasterUniversalLink } from '../config/farcaster'
 
 // Supported networks - must match backend configuration
 const SUPPORTED_NETWORKS = {
@@ -31,20 +30,161 @@ export default function WalletAnalysis() {
   const [targetAddress, setTargetAddress] = useState('')
   const [selectedNetwork, setSelectedNetwork] = useState('base')
   const [hasAnalyzed, setHasAnalyzed] = useState(false)
+  const [analysisStartedAt, setAnalysisStartedAt] = useState(null)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [shareStatus, setShareStatus] = useState('')
 
-  const buildCastText = () => {
+  useEffect(() => {
+    if (!isLoading || !analysisStartedAt) {
+      setElapsedSeconds(0)
+      return undefined
+    }
+    const timer = setInterval(() => {
+      setElapsedSeconds(Math.max(0, Math.floor((Date.now() - analysisStartedAt) / 1000)))
+    }, 500)
+    return () => clearInterval(timer)
+  }, [analysisStartedAt, isLoading])
+
+  const buildXText = () => {
     if (!analysis) return ''
+    const report = analysis.airdropReport || {}
+    const metrics = report.metrics || {}
     const parts = []
-    parts.push(`🔍 Wallet Analysis on ${analysis.network || selectedNetwork}`)
-    parts.push(`Score: ${analysis.walletScore}/100 (${analysis.activityLevel || 'n/a'})`)
-    parts.push(`Balance: ${parseFloat(analysis.nativeBalance || 0).toFixed(4)} ${analysis.currency || 'ETH'}`)
-    parts.push(`Tx: ${analysis.totalTransactions || 0}, Tokens: ${analysis.tokenDiversity || 0}`)
-    if (analysis.favoriteToken) parts.push(`Fav token: ${analysis.favoriteToken}`)
-    if (analysis.mostActiveDay) parts.push(`Most active: ${analysis.mostActiveDay}`)
-    parts.push('Powered by BaseHub x402')
-    parts.push('Web: https://basehub.fun/wallet-analysis')
-    parts.push(`Farcaster: ${getFarcasterUniversalLink('/wallet-analysis')}`)
-    return parts.join(' • ')
+    parts.push(`I checked my Base wallet on BaseHub.`)
+    parts.push(`Score: ${analysis.walletScore}/100`)
+    parts.push(`Tier: ${report.tier || analysis.activityLevel || 'n/a'}`)
+    parts.push(`Tx: ${metrics.totalTransactions || analysis.totalTransactions || 0}`)
+    parts.push(`Active days: ${metrics.activeDays || 0}`)
+    parts.push(`Protocols: ${metrics.protocolDiversity || 0}`)
+    parts.push(`basehub.fun/wallet-analysis`)
+    return parts.join('\n')
+  }
+
+  const createReportCardBlob = async () => {
+    if (!analysis) throw new Error('No report available')
+    const report = analysis.airdropReport || {}
+    const metrics = report.metrics || {}
+    const score = report.score ?? analysis.walletScore ?? 0
+    const tier = report.tier || analysis.activityLevel || 'Base Wallet'
+    const canvas = document.createElement('canvas')
+    canvas.width = 1200
+    canvas.height = 675
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas is not available')
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
+    gradient.addColorStop(0, '#07111f')
+    gradient.addColorStop(0.55, '#12213a')
+    gradient.addColorStop(1, '#081320')
+    ctx.fillStyle = gradient
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    const accent = score >= 80 ? '#22c55e' : score >= 60 ? '#38bdf8' : score >= 40 ? '#f59e0b' : '#ef4444'
+    drawCanvasRoundRect(ctx, 56, 52, 1088, 571, 34, 'rgba(15, 23, 42, 0.84)', 'rgba(148, 163, 184, 0.22)')
+    ctx.fillStyle = accent
+    ctx.shadowColor = accent
+    ctx.shadowBlur = 28
+    ctx.beginPath()
+    ctx.arc(146, 146, 34, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.shadowBlur = 0
+    ctx.fillStyle = '#f8fafc'
+    ctx.font = '800 24px Inter, Arial'
+    ctx.fillText('BaseHub', 198, 132)
+    ctx.fillStyle = '#94a3b8'
+    ctx.font = '600 20px Inter, Arial'
+    ctx.fillText('Base Airdrop Readiness Report', 198, 166)
+
+    ctx.fillStyle = '#f8fafc'
+    ctx.font = '900 104px Inter, Arial'
+    ctx.fillText(String(score), 92, 320)
+    ctx.fillStyle = accent
+    ctx.font = '900 34px Inter, Arial'
+    ctx.fillText(tier, 96, 368)
+    ctx.fillStyle = '#94a3b8'
+    ctx.font = '600 19px Inter, Arial'
+    ctx.fillText(shortAddress(analysis.walletAddress), 96, 404)
+
+    const barX = 96
+    const barY = 438
+    drawCanvasRoundRect(ctx, barX, barY, 410, 18, 9, 'rgba(148, 163, 184, 0.20)')
+    const barGradient = ctx.createLinearGradient(barX, barY, barX + 410, barY)
+    barGradient.addColorStop(0, '#38bdf8')
+    barGradient.addColorStop(0.5, '#8b5cf6')
+    barGradient.addColorStop(1, accent)
+    drawCanvasRoundRect(ctx, barX, barY, Math.max(18, 410 * Math.min(100, score) / 100), 18, 9, barGradient)
+
+    const cards = [
+      ['Transactions', metrics.totalTransactions || analysis.totalTransactions || 0, '#22c55e'],
+      ['Active Days', metrics.activeDays || 0, '#38bdf8'],
+      ['Protocols', metrics.protocolDiversity || 0, '#a78bfa'],
+      ['Volume', report.display?.stableVolume || '$0.0000', '#f59e0b'],
+      ['Recent 30d', `${metrics.recent30Tx || 0} tx`, '#fb7185'],
+      ['Native Moved', report.display?.nativeMoved || '0 ETH', '#34d399'],
+    ]
+    cards.forEach((card, index) => {
+      const col = index % 2
+      const row = Math.floor(index / 2)
+      const x = 590 + col * 260
+      const y = 188 + row * 128
+      drawCanvasRoundRect(ctx, x, y, 224, 92, 20, 'rgba(30, 41, 59, 0.92)', `${card[2]}55`)
+      ctx.fillStyle = card[2]
+      ctx.font = '800 18px Inter, Arial'
+      ctx.fillText(card[0], x + 22, y + 34)
+      ctx.fillStyle = '#f8fafc'
+      ctx.font = '900 30px Inter, Arial'
+      ctx.fillText(String(card[1]), x + 22, y + 70)
+    })
+
+    ctx.fillStyle = '#64748b'
+    ctx.font = '700 18px Inter, Arial'
+    ctx.fillText('basehub.fun/wallet-analysis', 96, 560)
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob)
+        else reject(new Error('Could not create report image'))
+      }, 'image/png', 0.96)
+    })
+  }
+
+  const openXIntent = () => {
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(buildXText())}`, '_blank', 'noopener,noreferrer')
+  }
+
+  const handleShareOnX = async () => {
+    if (!analysis) return
+    setShareStatus('')
+    try {
+      const blob = await createReportCardBlob()
+      const file = new File([blob], 'basehub-wallet-report.png', { type: 'image/png' })
+      if (navigator.canShare?.({ files: [file] }) && navigator.share) {
+        await navigator.share({
+          title: 'BaseHub Wallet Report',
+          text: buildXText(),
+          files: [file],
+        })
+        setShareStatus('Report card shared.')
+        return
+      }
+      if (navigator.clipboard && window.ClipboardItem) {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+        setShareStatus('Report card copied. Paste it into your X post.')
+      } else {
+        downloadBlob(blob, 'basehub-wallet-report.png')
+        setShareStatus('Report card downloaded. Attach it to your X post.')
+      }
+      openXIntent()
+    } catch (err) {
+      console.error('Share image failed:', err)
+      openXIntent()
+      setShareStatus('Opened X composer. Image sharing was not available in this browser.')
+    }
+  }
+
+  const handleDownloadReportCard = async () => {
+    const blob = await createReportCardBlob()
+    downloadBlob(blob, 'basehub-wallet-report.png')
+    setShareStatus('Report card downloaded.')
   }
 
   const handleAnalyze = async () => {
@@ -61,10 +201,14 @@ export default function WalletAnalysis() {
 
     try {
       setHasAnalyzed(false)
+      setShareStatus('')
+      setAnalysisStartedAt(Date.now())
       await analyzeWallet(addr, selectedNetwork)
       setHasAnalyzed(true)
     } catch (err) {
       console.error('Analysis failed:', err)
+    } finally {
+      setAnalysisStartedAt(null)
     }
   }
 
@@ -81,6 +225,8 @@ export default function WalletAnalysis() {
     if (score >= 40) return '👍'
     return '🌱'
   }
+
+  const isBaseReport = analysis?.reportType === 'base-airdrop-readiness'
 
   // Compact StatCard Component
   const StatCard = ({ icon, label, value, color }) => (
@@ -478,6 +624,10 @@ export default function WalletAnalysis() {
                 <span>{error}</span>
               </div>
             )}
+
+            {isLoading && (
+              <ReportPreparationProgress elapsedSeconds={elapsedSeconds} />
+            )}
           </div>
 
           {/* Analysis Results */}
@@ -485,38 +635,44 @@ export default function WalletAnalysis() {
             <div style={{
               animation: 'fadeInUp 0.6s ease-out',
             }}>
-              {/* Farcaster share */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                marginBottom: '12px',
-              }}>
-                <a
-                  href={`https://warpcast.com/~/compose?text=${encodeURIComponent(buildCastText())}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '10px 14px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #805ad5 0%, #6366f1 100%)',
-                    color: 'white',
-                    fontWeight: '700',
-                    fontSize: '14px',
-                    textDecoration: 'none',
-                    boxShadow: '0 6px 18px rgba(99, 102, 241, 0.35)',
-                  }}
-                >
-                  <Sparkles size={16} />
-                  Share on Farcaster
-                </a>
-              </div>
-
-              {analysis.reportType === 'base-airdrop-readiness' && (
-                <BaseAirdropReport analysis={analysis} />
+              {isBaseReport && (
+                <BaseAirdropReport
+                  analysis={analysis}
+                  onShareX={handleShareOnX}
+                  onDownloadCard={handleDownloadReportCard}
+                  shareStatus={shareStatus}
+                />
               )}
+
+              {!isBaseReport && (
+                <>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    marginBottom: '12px',
+                  }}>
+                    <button
+                      type="button"
+                      onClick={openXIntent}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '11px 16px',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(255, 255, 255, 0.14)',
+                        background: 'linear-gradient(135deg, #020617 0%, #111827 55%, #2563eb 100%)',
+                        color: 'white',
+                        fontWeight: '800',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        boxShadow: '0 12px 28px rgba(37, 99, 235, 0.25)',
+                      }}
+                    >
+                      <span style={{ fontSize: '15px', fontWeight: '900' }}>X</span>
+                      Share on X
+                    </button>
+                  </div>
 
               {/* Wallet Score Card - Compact with Progress Bar */}
               <div style={{
@@ -621,7 +777,7 @@ export default function WalletAnalysis() {
                   color="#10b981"
                 />
                 <StatCard
-                  icon={<Coins size={24} />}
+                  icon={<Layers size={24} />}
                   label="Token Diversity"
                   value={analysis.tokenDiversity || 0}
                   color="#f59e0b"
@@ -673,99 +829,6 @@ export default function WalletAnalysis() {
                     icon={<Zap size={26} />}
                     color="#ec4899"
                   />
-                )}
-              </div>
-
-              {/* Top Tokens Section - Enhanced */}
-              <div style={{
-                background: 'rgba(30, 41, 59, 0.95)',
-                backdropFilter: 'blur(20px)',
-                borderRadius: '24px',
-                padding: '40px',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
-                marginBottom: '32px',
-                border: '2px solid rgba(102, 126, 234, 0.1)',
-              }}>
-                <h3 style={{
-                  fontSize: '28px',
-                  fontWeight: 'bold',
-                  marginBottom: '28px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px',
-                  color: '#e5e7eb',
-                }}>
-                  <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '16px',
-                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'white',
-                    boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
-                  }}>
-                    <Coins size={24} />
-                  </div>
-                  Token Holdings
-                </h3>
-                {analysis.topTokens && analysis.topTokens.length > 0 ? (
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                    gap: '20px',
-                  }}>
-                    {analysis.topTokens.map((token, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          padding: '24px',
-                          background: 'rgba(15, 23, 42, 0.8)',
-                          borderRadius: '16px',
-                          border: '2px solid rgba(102, 126, 234, 0.2)',
-                          transition: 'all 0.3s',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)'
-                          e.currentTarget.style.boxShadow = '0 12px 24px rgba(102, 126, 234, 0.3)'
-                          e.currentTarget.style.borderColor = '#667eea'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0) scale(1)'
-                          e.currentTarget.style.boxShadow = 'none'
-                          e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.2)'
-                        }}
-                      >
-                        <div style={{
-                          fontSize: '20px',
-                          fontWeight: 'bold',
-                          marginBottom: '10px',
-                          color: '#e5e7eb',
-                        }}>
-                          {token.symbol}
-                        </div>
-                        <div style={{
-                          fontSize: '18px',
-                          color: '#9ca3af',
-                          fontFamily: 'monospace',
-                          fontWeight: '600',
-                        }}>
-                          {parseFloat(token.balance).toLocaleString()}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{
-                    padding: '60px',
-                    textAlign: 'center',
-                    color: '#9ca3af',
-                    fontSize: '18px',
-                  }}>
-                    <Coins size={48} style={{ marginBottom: '16px', opacity: 0.3 }} />
-                    <div>No token holdings found</div>
-                  </div>
                 )}
               </div>
 
@@ -837,6 +900,8 @@ export default function WalletAnalysis() {
                     ))}
                   </div>
                 </div>
+              )}
+                </>
               )}
 
               {/* Wallet Address Footer - Enhanced */}
@@ -917,7 +982,105 @@ export default function WalletAnalysis() {
   )
 }
 
-function BaseAirdropReport({ analysis }) {
+function ReportPreparationProgress({ elapsedSeconds }) {
+  const estimatedSeconds = 18
+  const progress = Math.min(95, Math.max(8, Math.round((elapsedSeconds / estimatedSeconds) * 100)))
+  const remaining = Math.max(3, estimatedSeconds - elapsedSeconds)
+  const phase = elapsedSeconds < 4
+    ? 'Confirming payment'
+    : elapsedSeconds < 10
+      ? 'Collecting Base activity'
+      : elapsedSeconds < 16
+        ? 'Scoring wallet signals'
+        : 'Finalizing report card'
+
+  return (
+    <div style={{
+      marginTop: '18px',
+      padding: '18px',
+      borderRadius: '16px',
+      background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(30, 41, 59, 0.92) 100%)',
+      border: '1px solid rgba(56, 189, 248, 0.24)',
+      boxShadow: '0 16px 34px rgba(56, 189, 248, 0.12)',
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '14px', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#e2e8f0', fontWeight: '850' }}>
+          <Loader2 size={18} className="animate-spin" style={{ color: '#38bdf8' }} />
+          {phase}
+        </div>
+        <div style={{ color: '#93c5fd', fontSize: '13px', fontWeight: '800' }}>
+          Usually ready in ~{remaining}s
+        </div>
+      </div>
+      <div style={{
+        height: '12px',
+        borderRadius: '999px',
+        overflow: 'hidden',
+        background: 'rgba(148, 163, 184, 0.16)',
+      }}>
+        <div style={{
+          width: `${progress}%`,
+          height: '100%',
+          borderRadius: '999px',
+          background: 'linear-gradient(90deg, #38bdf8 0%, #8b5cf6 45%, #22c55e 100%)',
+          boxShadow: '0 0 24px rgba(56, 189, 248, 0.42)',
+          transition: 'width 500ms ease',
+        }} />
+      </div>
+      <div style={{
+        marginTop: '9px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        color: '#64748b',
+        fontSize: '12px',
+        fontWeight: '750',
+      }}>
+        <span>Payment</span>
+        <span>Data</span>
+        <span>Score</span>
+        <span>Report</span>
+      </div>
+    </div>
+  )
+}
+
+function drawCanvasRoundRect(ctx, x, y, width, height, radius, fillStyle, strokeStyle) {
+  const r = Math.min(radius, width / 2, height / 2)
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.arcTo(x + width, y, x + width, y + height, r)
+  ctx.arcTo(x + width, y + height, x, y + height, r)
+  ctx.arcTo(x, y + height, x, y, r)
+  ctx.arcTo(x, y, x + width, y, r)
+  ctx.closePath()
+  if (fillStyle) {
+    ctx.fillStyle = fillStyle
+    ctx.fill()
+  }
+  if (strokeStyle) {
+    ctx.strokeStyle = strokeStyle
+    ctx.lineWidth = 2
+    ctx.stroke()
+  }
+}
+
+function shortAddress(address) {
+  if (!address || address.length < 12) return address || ''
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
+function BaseAirdropReport({ analysis, onShareX, onDownloadCard, shareStatus }) {
   const report = analysis.airdropReport || {}
   const metrics = report.metrics || {}
   const score = report.score ?? analysis.walletScore ?? 0
@@ -932,23 +1095,32 @@ function BaseAirdropReport({ analysis }) {
       gap: '18px',
     }}>
       <div style={{
-        background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%)',
-        border: `1px solid ${color}55`,
-        borderRadius: '18px',
-        padding: '24px',
-        boxShadow: `0 20px 50px ${color}18`,
+        background: 'linear-gradient(135deg, rgba(8, 13, 27, 0.98) 0%, rgba(18, 29, 52, 0.98) 54%, rgba(7, 18, 33, 0.98) 100%)',
+        border: `1px solid ${color}66`,
+        borderRadius: '20px',
+        padding: '26px',
+        boxShadow: `0 24px 70px ${color}18, inset 0 1px 0 rgba(255,255,255,0.06)`,
+        position: 'relative',
+        overflow: 'hidden',
       }}>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: `linear-gradient(120deg, ${color}12 0%, transparent 34%, rgba(56, 189, 248, 0.08) 70%, transparent 100%)`,
+          pointerEvents: 'none',
+        }} />
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
           gap: '24px',
           alignItems: 'center',
+          position: 'relative',
         }}>
           <div style={{
-            minHeight: '210px',
-            borderRadius: '16px',
-            background: `radial-gradient(circle at 50% 20%, ${color}33 0%, rgba(15, 23, 42, 0.4) 45%, rgba(2, 6, 23, 0.65) 100%)`,
-            border: `1px solid ${color}55`,
+            minHeight: '226px',
+            borderRadius: '18px',
+            background: `radial-gradient(circle at 50% 20%, ${color}38 0%, rgba(15, 23, 42, 0.45) 45%, rgba(2, 6, 23, 0.72) 100%)`,
+            border: `1px solid ${color}66`,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -974,7 +1146,7 @@ function BaseAirdropReport({ analysis }) {
               <div style={{
                 width: `${Math.min(100, Math.max(0, score))}%`,
                 height: '100%',
-                background: color,
+                background: 'linear-gradient(90deg, #38bdf8 0%, #8b5cf6 48%, #22c55e 100%)',
                 borderRadius: '999px',
               }} />
             </div>
@@ -996,21 +1168,64 @@ function BaseAirdropReport({ analysis }) {
           </div>
 
           <div>
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 10px',
-              borderRadius: '999px',
-              background: 'rgba(59, 130, 246, 0.12)',
-              border: '1px solid rgba(59, 130, 246, 0.28)',
-              color: '#93c5fd',
-              fontSize: '13px',
-              fontWeight: '800',
-              marginBottom: '14px',
-            }}>
-              <Target size={15} />
-              Base Airdrop Readiness Report
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap', marginBottom: '14px' }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 10px',
+                borderRadius: '999px',
+                background: 'rgba(59, 130, 246, 0.12)',
+                border: '1px solid rgba(59, 130, 246, 0.28)',
+                color: '#93c5fd',
+                fontSize: '13px',
+                fontWeight: '800',
+              }}>
+                <Target size={15} />
+                Base Airdrop Readiness Report
+              </div>
+              <div style={{ display: 'flex', gap: '9px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={onShareX}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '9px',
+                    border: '1px solid rgba(255,255,255,0.16)',
+                    borderRadius: '12px',
+                    padding: '11px 15px',
+                    background: 'linear-gradient(135deg, #020617 0%, #111827 48%, #2563eb 100%)',
+                    color: '#fff',
+                    fontWeight: '900',
+                    cursor: 'pointer',
+                    boxShadow: '0 12px 30px rgba(37, 99, 235, 0.28)',
+                  }}
+                >
+                  <ImageIcon size={16} />
+                  <span style={{ fontSize: '15px', fontWeight: '900' }}>X</span>
+                  Share Card
+                </button>
+                <button
+                  type="button"
+                  onClick={onDownloadCard}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    border: '1px solid rgba(148, 163, 184, 0.22)',
+                    borderRadius: '12px',
+                    padding: '11px 13px',
+                    background: 'rgba(15, 23, 42, 0.72)',
+                    color: '#cbd5e1',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Download size={16} />
+                  PNG
+                </button>
+              </div>
             </div>
             <h2 style={{
               margin: '0 0 10px',
@@ -1029,6 +1244,20 @@ function BaseAirdropReport({ analysis }) {
             }}>
               This report measures activity depth, consistency, protocol diversity, volume signals, and recent usage patterns from available Base data sources.
             </p>
+            {shareStatus && (
+              <div style={{
+                marginBottom: '14px',
+                color: '#93c5fd',
+                fontSize: '13px',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}>
+                <Clipboard size={15} />
+                {shareStatus}
+              </div>
+            )}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
@@ -1050,7 +1279,7 @@ function BaseAirdropReport({ analysis }) {
       }}>
         <ReportMetricCard icon={<Clock size={20} />} label="First Activity" value={firstActivity} color="#60a5fa" tall />
         <ReportMetricCard icon={<Zap size={20} />} label="Last 30 Days" value={`${metrics.recent30Tx || 0} tx`} color="#fb7185" tall />
-        <ReportMetricCard icon={<Coins size={20} />} label="Native Moved" value={report.display?.nativeMoved || '0 ETH'} color="#34d399" tall />
+        <ReportMetricCard icon={<TrendingUp size={20} />} label="Native Moved" value={report.display?.nativeMoved || '0 ETH'} color="#34d399" tall />
         <ReportMetricCard icon={<Wallet size={20} />} label="Current Balance" value={`${parseFloat(analysis.nativeBalance || 0).toFixed(4)} ETH`} color="#818cf8" tall />
         <ReportMetricCard icon={<Award size={20} />} label="Last Activity" value={lastActivity} color="#fbbf24" tall />
       </div>
@@ -1125,9 +1354,9 @@ function ReportMetricCard({ icon, label, value, color, tall = false }) {
   return (
     <div style={{
       minHeight: tall ? '92px' : '76px',
-      background: 'rgba(30, 41, 59, 0.95)',
+      background: `linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, ${color}12 100%)`,
       border: `1px solid ${color}33`,
-      borderRadius: '12px',
+      borderRadius: '14px',
       padding: '14px',
       display: 'flex',
       flexDirection: 'column',
@@ -1155,10 +1384,10 @@ function ReportMetricCard({ icon, label, value, color, tall = false }) {
 function ReportPanel({ title, icon, accent, children }) {
   return (
     <div style={{
-      background: 'rgba(30, 41, 59, 0.95)',
+      background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.94) 0%, rgba(15, 23, 42, 0.94) 100%)',
       border: `1px solid ${accent}33`,
-      borderRadius: '14px',
-      padding: '18px',
+      borderRadius: '16px',
+      padding: '19px',
       boxShadow: `0 14px 32px ${accent}10`,
     }}>
       <div style={{
@@ -1185,6 +1414,7 @@ function ReportPanel({ title, icon, accent, children }) {
 
 function ScoreBreakdownRow({ item, color }) {
   const pct = item.max ? Math.round((item.value / item.max) * 100) : 0
+  const rowColor = getScoreBreakdownColor(item.label, color)
   return (
     <div style={{ marginBottom: '12px' }}>
       <div style={{
@@ -1200,7 +1430,7 @@ function ScoreBreakdownRow({ item, color }) {
         <span>{item.value}/{item.max}</span>
       </div>
       <div style={{
-        height: '8px',
+        height: '10px',
         borderRadius: '999px',
         background: 'rgba(148, 163, 184, 0.18)',
         overflow: 'hidden',
@@ -1208,12 +1438,23 @@ function ScoreBreakdownRow({ item, color }) {
         <div style={{
           width: `${Math.min(100, Math.max(0, pct))}%`,
           height: '100%',
-          background: color,
+          background: `linear-gradient(90deg, ${rowColor} 0%, ${rowColor}cc 100%)`,
           borderRadius: '999px',
+          boxShadow: `0 0 18px ${rowColor}55`,
         }} />
       </div>
     </div>
   )
+}
+
+function getScoreBreakdownColor(label, fallback) {
+  const key = String(label || '').toLowerCase()
+  if (key.includes('transaction')) return '#22c55e'
+  if (key.includes('consistency')) return '#38bdf8'
+  if (key.includes('diversity')) return '#a78bfa'
+  if (key.includes('volume')) return '#f59e0b'
+  if (key.includes('recency')) return '#fb7185'
+  return fallback
 }
 
 function InsightList({ items, color, fallback }) {
