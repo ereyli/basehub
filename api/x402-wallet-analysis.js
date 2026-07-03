@@ -978,26 +978,44 @@ async function performWalletAnalysis(walletAddress, selectedNetwork = 'ethereum'
     }
 
     // 4. Calculate Wallet Score
-    let score = 0
-    
-    if (analysis.totalTransactions > 100) score += 30
-    else if (analysis.totalTransactions > 50) score += 20
-    else if (analysis.totalTransactions > 10) score += 10
-    else if (analysis.totalTransactions > 0) score += 5
+    const transactionScore = analysis.totalTransactions > 100
+      ? 30
+      : analysis.totalTransactions > 50
+        ? 20
+        : analysis.totalTransactions > 10
+          ? 10
+          : analysis.totalTransactions > 0
+            ? 5
+            : 0
 
-    if (analysis.tokenDiversity > 10) score += 30
-    else if (analysis.tokenDiversity > 5) score += 20
-    else if (analysis.tokenDiversity > 0) score += 10
+    const diversityScore = analysis.tokenDiversity > 10
+      ? 30
+      : analysis.tokenDiversity > 5
+        ? 20
+        : analysis.tokenDiversity > 0
+          ? 10
+          : 0
 
-    const ethBalance = parseFloat(analysis.nativeBalance)
-    if (ethBalance > 1) score += 20
-    else if (ethBalance > 0.1) score += 10
-    else if (ethBalance > 0) score += 5
+    const nativeBalance = parseFloat(analysis.nativeBalance || '0')
+    const balanceScore = nativeBalance > 1
+      ? 20
+      : nativeBalance > 0.1
+        ? 10
+        : nativeBalance > 0
+          ? 5
+          : 0
 
-    if (analysis.daysActive > 365) score += 20
-    else if (analysis.daysActive > 180) score += 15
-    else if (analysis.daysActive > 30) score += 10
-    else if (analysis.daysActive > 0) score += 5
+    const activitySpanScore = analysis.daysActive > 365
+      ? 20
+      : analysis.daysActive > 180
+        ? 15
+        : analysis.daysActive > 30
+          ? 10
+          : analysis.daysActive > 0
+            ? 5
+            : 0
+
+    let score = transactionScore + diversityScore + balanceScore + activitySpanScore
 
     analysis.walletScore = Math.min(100, Math.max(0, score))
 
@@ -1035,6 +1053,55 @@ async function performWalletAnalysis(walletAddress, selectedNetwork = 'ethereum'
 
     if (parseFloat(analysis.nativeBalance) > 0.1) {
       analysis.funFacts.push(`Has ${analysis.nativeBalance} ${network.currency}`)
+    }
+
+    analysis.reportType = 'network-wallet-report'
+    analysis.display = {
+      nativeBalance: `${parseFloat(analysis.nativeBalance || 0).toFixed(4)} ${network.currency}`,
+      totalValueMoved: `${parseFloat(analysis.totalValueMoved || 0).toFixed(4)} ${network.currency}`,
+    }
+    analysis.scoreBreakdown = [
+      { label: 'Transactions', value: transactionScore, max: 30 },
+      { label: 'Token Diversity', value: diversityScore, max: 30 },
+      { label: 'Balance Signal', value: balanceScore, max: 20 },
+      { label: 'Activity Span', value: activitySpanScore, max: 20 },
+    ]
+    analysis.insights = [
+      analysis.totalTransactions > 0
+        ? `${analysis.totalTransactions.toLocaleString()} indexed transactions were found on ${network.name}.`
+        : `No indexed transactions were found on ${network.name}.`,
+      analysis.daysActive > 0
+        ? `Activity spans roughly ${analysis.daysActive.toLocaleString()} day(s).`
+        : 'No activity span could be calculated from available data.',
+      analysis.tokenDiversity > 0
+        ? `${analysis.tokenDiversity.toLocaleString()} token contract(s) appeared in transfer history.`
+        : 'No token transfer diversity was detected.',
+      parseFloat(analysis.totalValueMoved || 0) > 0
+        ? `Native movement totals about ${analysis.display.totalValueMoved}.`
+        : 'No native value movement was detected in indexed transactions.',
+    ]
+    analysis.recommendations = []
+    if (analysis.totalTransactions < 10) {
+      analysis.recommendations.push(`Build more real transaction history on ${network.name}; avoid repetitive spam patterns.`)
+    }
+    if (analysis.tokenDiversity < 3) {
+      analysis.recommendations.push('Interact with a broader set of useful apps and token contracts.')
+    }
+    if (analysis.daysActive < 30) {
+      analysis.recommendations.push('Improve consistency by spreading activity across more days.')
+    }
+    if (nativeBalance <= 0) {
+      analysis.recommendations.push(`Keep a small ${network.currency} balance for future network activity and gas.`)
+    }
+    if (analysis.recommendations.length === 0) {
+      analysis.recommendations.push('Maintain consistent organic usage and keep protocol interactions purposeful.')
+    }
+    analysis.dataQuality = {
+      status: analysis.totalTransactions > 0 || nativeBalance > 0 || analysis.tokenDiversity > 0 ? 'indexed' : 'limited',
+      source: 'Etherscan API V2',
+      note: analysis.totalTransactions > 0 || nativeBalance > 0 || analysis.tokenDiversity > 0
+        ? 'Report generated from available account, transaction, and token transfer endpoints.'
+        : 'The selected network returned limited indexed activity for this wallet.',
     }
 
   } catch (error) {

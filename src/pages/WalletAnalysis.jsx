@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useWalletAnalysis } from '../hooks/useWalletAnalysis'
-import { Search, Wallet, Activity, TrendingUp, Award, Sparkles, AlertCircle, Loader2, Calendar, BarChart3, Zap, Eye, Shield, CheckCircle2, XCircle, Layers, Compass, Clock, Target, Gauge, Download, Clipboard, Image as ImageIcon } from 'lucide-react'
+import { Wallet, Activity, TrendingUp, Award, AlertCircle, Loader2, Calendar, BarChart3, Zap, Eye, CheckCircle2, XCircle, Layers, Compass, Clock, Target, Gauge, Download, Clipboard, Image as ImageIcon } from 'lucide-react'
 import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
 
@@ -49,12 +49,17 @@ export default function WalletAnalysis() {
     const report = analysis.airdropReport || {}
     const metrics = report.metrics || {}
     const parts = []
-    parts.push(`I checked my Base wallet on BaseHub.`)
+    parts.push(`I checked my ${analysis.network || selectedNetwork} wallet on BaseHub.`)
     parts.push(`Score: ${analysis.walletScore}/100`)
     parts.push(`Tier: ${report.tier || analysis.activityLevel || 'n/a'}`)
     parts.push(`Tx: ${metrics.totalTransactions || analysis.totalTransactions || 0}`)
-    parts.push(`Active days: ${metrics.activeDays || 0}`)
-    parts.push(`Protocols: ${metrics.protocolDiversity || 0}`)
+    if (analysis.reportType === 'base-airdrop-readiness') {
+      parts.push(`Active days: ${metrics.activeDays || 0}`)
+      parts.push(`Protocols: ${metrics.protocolDiversity || 0}`)
+    } else {
+      parts.push(`Active span: ${analysis.daysActive || 0} days`)
+      parts.push(`Token diversity: ${analysis.tokenDiversity || 0}`)
+    }
     parts.push(`basehub.fun/wallet-analysis`)
     return parts.join('\n')
   }
@@ -428,7 +433,7 @@ export default function WalletAnalysis() {
             </div>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
               gap: '12px',
             }}>
               {Object.entries(SUPPORTED_NETWORKS).map(([key, network]) => (
@@ -436,7 +441,7 @@ export default function WalletAnalysis() {
                   key={key}
                   onClick={() => setSelectedNetwork(key)}
                   style={{
-                    padding: '16px',
+                    padding: '15px 14px',
                     background: selectedNetwork === key 
                       ? `linear-gradient(135deg, ${network.color}22 0%, ${network.color}44 100%)`
                       : 'rgba(30, 41, 59, 0.6)',
@@ -449,7 +454,7 @@ export default function WalletAnalysis() {
                     fontSize: '14px',
                     fontWeight: selectedNetwork === key ? '700' : '600',
                     color: selectedNetwork === key ? network.color : '#9ca3af',
-                    textAlign: 'center',
+                    textAlign: 'left',
                     boxShadow: selectedNetwork === key 
                       ? `0 4px 12px ${network.color}33`
                       : 'none',
@@ -469,7 +474,25 @@ export default function WalletAnalysis() {
                     }
                   }}
                 >
-                  {network.name}
+                  <span style={{ display: 'block', fontSize: '15px', fontWeight: '850', marginBottom: '6px' }}>
+                    {network.name}
+                  </span>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    padding: '4px 7px',
+                    borderRadius: '999px',
+                    background: selectedNetwork === key ? `${network.color}22` : 'rgba(15, 23, 42, 0.62)',
+                    border: `1px solid ${selectedNetwork === key ? `${network.color}55` : 'rgba(148, 163, 184, 0.12)'}`,
+                    color: selectedNetwork === key ? '#e0f2fe' : '#64748b',
+                    fontSize: '10px',
+                    fontWeight: '850',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.02em',
+                  }}>
+                    {key === 'base' ? 'Airdrop Report' : 'Wallet Report'}
+                  </span>
                 </button>
               ))}
             </div>
@@ -641,263 +664,10 @@ export default function WalletAnalysis() {
               )}
 
               {!isBaseReport && (
-                <>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'flex-end',
-                    marginBottom: '12px',
-                  }}>
-                    <button
-                      type="button"
-                      onClick={openXIntent}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '11px 16px',
-                        borderRadius: '12px',
-                        border: '1px solid rgba(255, 255, 255, 0.14)',
-                        background: 'linear-gradient(135deg, #020617 0%, #111827 55%, #2563eb 100%)',
-                        color: 'white',
-                        fontWeight: '800',
-                        fontSize: '14px',
-                        cursor: 'pointer',
-                        boxShadow: '0 12px 28px rgba(37, 99, 235, 0.25)',
-                      }}
-                    >
-                      <span style={{ fontSize: '15px', fontWeight: '900' }}>X</span>
-                      Share on X
-                    </button>
-                  </div>
-
-              {/* Wallet Score Card - Compact with Progress Bar */}
-              <div style={{
-                background: 'rgba(30, 41, 59, 0.95)',
-                borderRadius: '20px',
-                padding: '28px',
-                marginBottom: '24px',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
-                border: '2px solid rgba(102, 126, 234, 0.1)',
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '20px',
-                  marginBottom: '16px',
-                }}>
-                  <div style={{
-                    fontSize: '56px',
-                    filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))',
-                  }}>
-                    {getScoreEmoji(analysis.walletScore)}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '10px',
-                    }}>
-                      <h3 style={{
-                        fontSize: '20px',
-                        fontWeight: 'bold',
-                        color: '#e5e7eb',
-                        margin: 0,
-                      }}>
-                        Wallet Score
-                      </h3>
-                      <div style={{
-                        fontSize: '28px',
-                        fontWeight: '900',
-                        color: getScoreColor(analysis.walletScore),
-                      }}>
-                        {analysis.walletScore}/100
-                      </div>
-                    </div>
-                    
-                    {/* Progress Bar */}
-                    <div style={{
-                      width: '100%',
-                      height: '12px',
-                      background: '#e5e7eb',
-                      borderRadius: '6px',
-                      overflow: 'hidden',
-                      position: 'relative',
-                    }}>
-                      <div style={{
-                        width: `${analysis.walletScore}%`,
-                        height: '100%',
-                        background: `linear-gradient(90deg, ${getScoreColor(analysis.walletScore)} 0%, ${getScoreColor(analysis.walletScore)}dd 100%)`,
-                        borderRadius: '6px',
-                        transition: 'width 1s ease-out',
-                        boxShadow: `0 2px 8px ${getScoreColor(analysis.walletScore)}44`,
-                      }} />
-                    </div>
-                    
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      marginTop: '10px',
-                    }}>
-                      <Shield size={18} style={{ color: getScoreColor(analysis.walletScore) }} />
-                      <span style={{
-                        fontSize: '16px',
-                        fontWeight: '600',
-                        color: getScoreColor(analysis.walletScore),
-                      }}>
-                        {analysis.activityLevel}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Main Stats Grid - Compact */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '16px',
-                marginBottom: '24px',
-              }}>
-                <StatCard
-                  icon={<Wallet size={24} />}
-                  label="Native Balance"
-                  value={`${parseFloat(analysis.nativeBalance || 0).toFixed(4)} ${analysis.currency || 'ETH'}`}
-                  color="#3b82f6"
+                <NetworkWalletReport
+                  analysis={analysis}
+                  onShareX={openXIntent}
                 />
-                <StatCard
-                  icon={<Activity size={24} />}
-                  label="Transactions"
-                  value={analysis.totalTransactions?.toLocaleString() || '0'}
-                  color="#10b981"
-                />
-                <StatCard
-                  icon={<Layers size={24} />}
-                  label="Token Diversity"
-                  value={analysis.tokenDiversity || 0}
-                  color="#f59e0b"
-                />
-              </div>
-
-              {/* Secondary Stats Grid - Enhanced */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                gap: '24px',
-                marginBottom: '32px',
-              }}>
-                <DetailCard
-                  title="Total Value Moved"
-                  value={`${parseFloat(analysis.totalValueMoved || 0).toFixed(6)} ETH`}
-                  icon={<TrendingUp size={26} />}
-                  color="#3b82f6"
-                />
-                <DetailCard
-                  title="Days Active"
-                  value={analysis.daysActive || 0}
-                  subtitle={analysis.daysActive > 0 ? 'days' : 'No activity yet'}
-                  icon={<Calendar size={26} />}
-                  color="#10b981"
-                />
-                {analysis.firstTransactionDate && (
-                  <DetailCard
-                    title="First Transaction"
-                    value={analysis.firstTransactionDate}
-                    icon={<Award size={26} />}
-                    color="#f59e0b"
-                  />
-                )}
-                {analysis.mostActiveDay && (
-                  <DetailCard
-                    title="Most Active Day"
-                    value={analysis.mostActiveDay.split(' (')[0]}
-                    subtitle={analysis.mostActiveDay.split('(')[1]?.replace(')', '')}
-                    icon={<BarChart3 size={26} />}
-                    color="#8b5cf6"
-                  />
-                )}
-                {analysis.favoriteToken && (
-                  <DetailCard
-                    title="Favorite Token"
-                    value={analysis.favoriteToken}
-                    subtitle="Most traded token"
-                    icon={<Zap size={26} />}
-                    color="#ec4899"
-                  />
-                )}
-              </div>
-
-              {/* Fun Facts Section - Enhanced */}
-              {analysis.funFacts && analysis.funFacts.length > 0 && (
-                <div style={{
-                  background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                  borderRadius: '24px',
-                  padding: '40px',
-                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                  marginBottom: '32px',
-                  border: '2px solid rgba(245, 158, 11, 0.3)',
-                }}>
-                  <h3 style={{
-                    fontSize: '28px',
-                    fontWeight: 'bold',
-                    marginBottom: '28px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '16px',
-                    color: '#e5e7eb',
-                  }}>
-                    <div style={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: '16px',
-                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
-                    }}>
-                      <Sparkles size={24} />
-                    </div>
-                    Fun Facts
-                  </h3>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                    gap: '20px',
-                  }}>
-                    {analysis.funFacts.map((fact, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          padding: '24px',
-                          background: 'rgba(30, 41, 59, 0.95)',
-                          borderRadius: '16px',
-                          fontSize: '17px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '16px',
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-                          transition: 'all 0.3s',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-4px)'
-                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.12)'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)'
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)'
-                        }}
-                      >
-                        <span style={{ fontSize: '32px' }}>✨</span>
-                        <span style={{ color: '#e5e7eb', fontWeight: '500' }}>{fact}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-                </>
               )}
 
               {/* Wallet Address Footer - Enhanced */}
@@ -1395,6 +1165,202 @@ function BaseAirdropReport({ analysis, onShareX, onDownloadCard, shareStatus }) 
   )
 }
 
+function NetworkWalletReport({ analysis, onShareX }) {
+  const score = Math.min(100, Math.max(0, analysis.walletScore || 0))
+  const color = getReportScoreColor(score)
+  const networkName = analysis.network || 'Selected Network'
+  const currency = analysis.currency || 'ETH'
+  const display = analysis.display || {}
+  const dataQuality = analysis.dataQuality || {}
+  const breakdown = analysis.scoreBreakdown || [
+    { label: 'Transactions', value: Math.min(30, analysis.totalTransactions > 100 ? 30 : analysis.totalTransactions > 50 ? 20 : analysis.totalTransactions > 10 ? 10 : analysis.totalTransactions > 0 ? 5 : 0), max: 30 },
+    { label: 'Token Diversity', value: Math.min(30, analysis.tokenDiversity > 10 ? 30 : analysis.tokenDiversity > 5 ? 20 : analysis.tokenDiversity > 0 ? 10 : 0), max: 30 },
+    { label: 'Balance Signal', value: parseFloat(analysis.nativeBalance || 0) > 1 ? 20 : parseFloat(analysis.nativeBalance || 0) > 0.1 ? 10 : parseFloat(analysis.nativeBalance || 0) > 0 ? 5 : 0, max: 20 },
+    { label: 'Activity Span', value: analysis.daysActive > 365 ? 20 : analysis.daysActive > 180 ? 15 : analysis.daysActive > 30 ? 10 : analysis.daysActive > 0 ? 5 : 0, max: 20 },
+  ]
+  const insights = analysis.insights || analysis.funFacts || []
+  const recommendations = analysis.recommendations || []
+
+  return (
+    <div style={{ display: 'grid', gap: '18px' }}>
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(8, 13, 27, 0.98) 0%, rgba(18, 29, 52, 0.98) 56%, rgba(7, 18, 33, 0.98) 100%)',
+        border: `1px solid ${color}66`,
+        borderRadius: '20px',
+        padding: '26px',
+        boxShadow: `0 24px 70px ${color}18, inset 0 1px 0 rgba(255,255,255,0.06)`,
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: `linear-gradient(120deg, ${color}12 0%, transparent 34%, rgba(56, 189, 248, 0.08) 70%, transparent 100%)`,
+          pointerEvents: 'none',
+        }} />
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
+          gap: '24px',
+          alignItems: 'center',
+          position: 'relative',
+        }}>
+          <div style={{
+            minHeight: '226px',
+            borderRadius: '18px',
+            background: `radial-gradient(circle at 50% 20%, ${color}38 0%, rgba(15, 23, 42, 0.45) 45%, rgba(2, 6, 23, 0.72) 100%)`,
+            border: `1px solid ${color}66`,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+          }}>
+            <div style={{ fontSize: '44px', marginBottom: '10px' }}>{getReportScoreEmoji(score)}</div>
+            <div style={{
+              fontSize: '64px',
+              fontWeight: '950',
+              color: '#f8fafc',
+              lineHeight: 1,
+            }}>
+              {score}
+            </div>
+            <div style={{
+              color,
+              fontSize: '16px',
+              fontWeight: '900',
+              marginTop: '8px',
+            }}>
+              {analysis.activityLevel || 'Wallet Activity'}
+            </div>
+            <div style={{
+              width: '78%',
+              height: '10px',
+              borderRadius: '999px',
+              background: 'rgba(148, 163, 184, 0.18)',
+              marginTop: '20px',
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                width: `${score}%`,
+                height: '100%',
+                background: 'linear-gradient(90deg, #38bdf8 0%, #8b5cf6 48%, #22c55e 100%)',
+                borderRadius: '999px',
+              }} />
+            </div>
+          </div>
+
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap', marginBottom: '14px' }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 10px',
+                borderRadius: '999px',
+                background: 'rgba(59, 130, 246, 0.12)',
+                border: '1px solid rgba(59, 130, 246, 0.28)',
+                color: '#93c5fd',
+                fontSize: '13px',
+                fontWeight: '800',
+              }}>
+                <Gauge size={15} />
+                Network Wallet Report
+              </div>
+              <button
+                type="button"
+                onClick={onShareX}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '9px',
+                  border: '1px solid rgba(255,255,255,0.16)',
+                  borderRadius: '12px',
+                  padding: '11px 15px',
+                  background: 'linear-gradient(135deg, #020617 0%, #111827 48%, #2563eb 100%)',
+                  color: '#fff',
+                  fontWeight: '900',
+                  cursor: 'pointer',
+                  boxShadow: '0 12px 30px rgba(37, 99, 235, 0.28)',
+                }}
+              >
+                <span style={{ fontSize: '15px', fontWeight: '900' }}>X</span>
+                Share Report
+              </button>
+            </div>
+            <h2 style={{
+              margin: '0 0 10px',
+              color: '#f8fafc',
+              fontSize: 'clamp(26px, 4vw, 42px)',
+              lineHeight: 1.05,
+              fontWeight: '950',
+            }}>
+              {networkName} wallet profile
+            </h2>
+            <p style={{
+              color: '#94a3b8',
+              fontSize: '15px',
+              lineHeight: 1.55,
+              margin: '0 0 18px',
+              maxWidth: '720px',
+            }}>
+              This report summarizes wallet activity, native movement, token interaction breadth, and activity consistency from the available network indexer data.
+            </p>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+              gap: '12px',
+            }}>
+              <ReportMetricCard icon={<Activity size={20} />} label="Transactions" value={(analysis.totalTransactions || 0).toLocaleString()} color="#22c55e" />
+              <ReportMetricCard icon={<Calendar size={20} />} label="Active Span" value={`${analysis.daysActive || 0} days`} color="#38bdf8" />
+              <ReportMetricCard icon={<Layers size={20} />} label="Token Diversity" value={analysis.tokenDiversity || 0} color="#a78bfa" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+        gap: '14px',
+      }}>
+        <ReportMetricCard icon={<Wallet size={20} />} label="Native Balance" value={display.nativeBalance || `${parseFloat(analysis.nativeBalance || 0).toFixed(4)} ${currency}`} color="#818cf8" tall />
+        <ReportMetricCard icon={<TrendingUp size={20} />} label="Native Moved" value={display.totalValueMoved || `${parseFloat(analysis.totalValueMoved || 0).toFixed(4)} ${currency}`} color="#34d399" tall />
+        <ReportMetricCard icon={<Award size={20} />} label="First Activity" value={analysis.firstTransactionDate || 'No activity'} color="#fbbf24" tall />
+        <ReportMetricCard icon={<BarChart3 size={20} />} label="Most Active Day" value={analysis.mostActiveDay ? analysis.mostActiveDay.split(' (')[0] : 'No peak day'} color="#fb7185" tall />
+        <ReportMetricCard icon={<Zap size={20} />} label="Favorite Token" value={analysis.favoriteToken || 'Not detected'} color="#06b6d4" tall />
+      </div>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))',
+        gap: '16px',
+      }}>
+        <ReportPanel title="Score Breakdown" icon={<Gauge size={20} />} accent={color}>
+          {breakdown.map((item) => (
+            <ScoreBreakdownRow key={item.label} item={item} color={color} />
+          ))}
+        </ReportPanel>
+        <ReportPanel title="Report Signals" icon={<Compass size={20} />} accent="#38bdf8">
+          <InsightList items={insights} color="#38bdf8" fallback="No strong activity signals found from available data." />
+        </ReportPanel>
+        <ReportPanel title="Next Best Actions" icon={<Target size={20} />} accent="#8b5cf6">
+          <InsightList items={recommendations} color="#8b5cf6" fallback="Build consistent activity, use more real protocols, and avoid repetitive low-signal transactions." />
+        </ReportPanel>
+      </div>
+
+      <div style={{
+        color: '#94a3b8',
+        fontSize: '12px',
+        fontWeight: '650',
+        padding: '0 2px',
+      }}>
+        Data quality: {dataQuality.status || 'available'} · Source: {dataQuality.source || 'network indexer'} · Payment: x402 on Base
+      </div>
+    </div>
+  )
+}
+
 function ReportMetricCard({ icon, label, value, color, tall = false }) {
   return (
     <div style={{
@@ -1499,7 +1465,23 @@ function getScoreBreakdownColor(label, fallback) {
   if (key.includes('diversity')) return '#a78bfa'
   if (key.includes('volume')) return '#f59e0b'
   if (key.includes('recency')) return '#fb7185'
+  if (key.includes('balance')) return '#818cf8'
+  if (key.includes('span')) return '#38bdf8'
   return fallback
+}
+
+function getReportScoreColor(score) {
+  if (score >= 80) return '#22c55e'
+  if (score >= 60) return '#38bdf8'
+  if (score >= 40) return '#f59e0b'
+  return '#ef4444'
+}
+
+function getReportScoreEmoji(score) {
+  if (score >= 80) return '🏆'
+  if (score >= 60) return '⭐'
+  if (score >= 40) return '👍'
+  return '🌱'
 }
 
 function InsightList({ items, color, fallback }) {
