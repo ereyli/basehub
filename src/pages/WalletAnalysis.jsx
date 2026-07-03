@@ -616,7 +616,7 @@ export default function WalletAnalysis() {
                 ) : (
                   <>
                     <Zap size={22} />
-                    <span>Pay with x402 & Analyze</span>
+                    <span>Pay {paymentPrice || '0.40'} USDC with x402 & Analyze</span>
                   </>
                 )}
               </button>

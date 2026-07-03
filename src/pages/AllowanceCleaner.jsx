@@ -311,7 +311,7 @@ export default function AllowanceCleaner() {
               ) : (
                 <>
                   <Search size={20} />
-                  Scan Allowances ({paymentPrice || '0.10'} USDC)
+                  Scan Allowances ({paymentPrice || '0.10'} USDC via x402)
                 </>
               )}
             </button>

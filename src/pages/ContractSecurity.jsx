@@ -381,7 +381,7 @@ export default function ContractSecurity() {
                 ) : (
                   <>
                     <Shield size={22} />
-                    <span>Analyze Contract</span>
+                    <span>Pay {paymentPrice || '0.50'} USDC with x402 & Analyze</span>
                   </>
                 )}
               </button>
