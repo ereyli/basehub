@@ -40,7 +40,9 @@ export default function AllowanceCleaner() {
     error, 
     allowances,
     hasScanned,
-    scannedNetwork
+    scannedNetwork,
+    isPassHolder,
+    paymentPrice
   } = useAllowanceCleaner()
 
   const [revokingIndex, setRevokingIndex] = useState(null)
@@ -131,7 +133,7 @@ export default function AllowanceCleaner() {
             </h1>
           </div>
           <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0 }}>
-            Scan and revoke risky token approvals to protect your assets. Pay 0.1 USDC to scan your wallet.
+            Scan and revoke risky token approvals to protect your assets. Pay {paymentPrice || '0.10'} USDC via x402{isPassHolder ? ' with BaseHub Pass 50% off.' : ' to scan your wallet.'}
           </p>
         </div>
 
@@ -217,7 +219,7 @@ export default function AllowanceCleaner() {
             marginTop: '16px', 
             marginBottom: 0 
           }}>
-            💡 Payment is always on Base network, but you can scan any supported network
+            💡 x402 payment is always on Base. BaseHub Pass holders get 50% off analyses, and you can scan any supported network.
           </p>
         </div>
 
@@ -293,7 +295,7 @@ export default function AllowanceCleaner() {
               ) : (
                 <>
                   <Search size={20} />
-                  Scan Allowances (0.1 USDC)
+                  Scan Allowances ({paymentPrice || '0.10'} USDC)
                 </>
               )}
             </button>

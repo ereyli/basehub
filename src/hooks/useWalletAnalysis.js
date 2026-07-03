@@ -1,8 +1,8 @@
 // Hook for wallet analysis using x402 payment
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useWalletClient, useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { createX402FetchWithBuilderCode } from '../utils/x402BuilderCode'
-import { addXP } from '../utils/xpUtils'
+import { addXP, getNFTCount } from '../utils/xpUtils'
 import { useQuestSystem } from './useQuestSystem'
 import { NETWORKS } from '../config/networks'
 
@@ -15,6 +15,27 @@ export const useWalletAnalysis = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [analysis, setAnalysis] = useState(null)
+  const [isPassHolder, setIsPassHolder] = useState(false)
+  const [paymentPrice, setPaymentPrice] = useState('0.40')
+
+  useEffect(() => {
+    let active = true
+    async function checkPass() {
+      if (!address) {
+        setIsPassHolder(false)
+        setPaymentPrice('0.40')
+        return
+      }
+      const passHolder = (await getNFTCount(address)) > 0
+      if (!active) return
+      setIsPassHolder(passHolder)
+      setPaymentPrice(passHolder ? '0.20' : '0.40')
+    }
+    checkPass()
+    return () => {
+      active = false
+    }
+  }, [address])
   const [analysisProgress, setAnalysisProgress] = useState({
     stage: 'idle',
     percent: 0,
@@ -78,10 +99,19 @@ export const useWalletAnalysis = () => {
       console.log('🚀 Starting wallet analysis payment flow...')
       console.log('Target wallet:', targetAddress)
       console.log('Selected network:', selectedNetwork)
-      updateProgress('waiting-payment', 0, 'Complete x402 payment', 'Approve the 0.40 USDC x402 payment in your wallet. Report progress starts after approval.')
+      const passHolder = address ? (await getNFTCount(address)) > 0 : false
+      setIsPassHolder(passHolder)
+      setPaymentPrice(passHolder ? '0.20' : '0.40')
+      updateProgress(
+        'waiting-payment',
+        0,
+        'Complete x402 payment',
+        `Approve the ${passHolder ? '0.20' : '0.40'} USDC x402 payment in your wallet${passHolder ? ' with BaseHub Pass discount' : ''}. Report progress starts after approval.`
+      )
 
       // x402 payment: 0.40 USDC = 400000 base units (6 decimals)
-      const MAX_PAYMENT_AMOUNT = BigInt(400000) // 0.40 USDC max
+      const MAX_PAYMENT_AMOUNT = passHolder ? BigInt(200000) : BigInt(400000)
+      const endpoint = passHolder ? '/api/x402-wallet-analysis?pass=1' : '/api/x402-wallet-analysis'
 
       const trackedFetch = async (input, init = {}) => {
         const isPaidRequest = hasX402PaymentHeader(init.headers) || hasX402PaymentHeader(input?.headers)
@@ -106,15 +136,16 @@ export const useWalletAnalysis = () => {
         MAX_PAYMENT_AMOUNT
       )
 
-      console.log('💳 Making payment request to /api/x402-wallet-analysis...')
+      console.log('💳 Making payment request to wallet analysis endpoint...', { passHolder })
 
-      const response = await fetchWithPayment('/api/x402-wallet-analysis', {
+      const response = await fetchWithPayment(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
           walletAddress: targetAddress,
+          payerWalletAddress: address,
           network: selectedNetwork,
         }),
       })
@@ -152,7 +183,7 @@ export const useWalletAnalysis = () => {
           }
 
           if (errorText === 'insufficient_funds' || errorText.includes('insufficient_funds')) {
-            errorMessage = 'Insufficient USDC balance. Please ensure you have at least 0.40 USDC in your wallet on Base network.'
+            errorMessage = `Insufficient USDC balance. Please ensure you have at least ${passHolder ? '0.20' : '0.40'} USDC in your wallet on Base network.`
           } else if (errorText === 'X-PAYMENT header is required' || errorText.includes('X-PAYMENT')) {
             errorMessage = 'Payment required. Please complete the payment in your wallet.'
           } else if (errorText.trim()) {
@@ -233,6 +264,8 @@ export const useWalletAnalysis = () => {
     error,
     analysis,
     analysisProgress,
+    isPassHolder,
+    paymentPrice,
     isConnected: !!walletClient,
   }
 }

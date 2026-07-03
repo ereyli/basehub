@@ -1,10 +1,11 @@
 // x402 Contract Security Analysis Endpoint for BaseHub using Hono
-// Accepts 0.5 USDC payments using Coinbase x402 on Base network
+// Accepts 0.50 USDC payments, or 0.25 USDC for BaseHub Pass holders, using Coinbase x402 on Base network
 // Provides on-chain contract security analysis using Etherscan API
 
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { createX402PaymentMiddleware, createX402Route, getFacilitatorConfig } from './_x402BuilderCode.js'
+import { ANALYSIS_PASS_DISCOUNT_PERCENT, enforceAnalysisPassDiscount, isPassDiscountRequest } from './_analysisPassDiscount.js'
 
 const app = new Hono()
 
@@ -15,6 +16,7 @@ const app = new Hono()
 const NETWORK = 'base' // Payment network (Base mainnet)
 const RECEIVING_ADDRESS = '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
 const PRICE = '$0.50' // 0.50 USDC
+const PASS_PRICE = '$0.25' // 50% BaseHub Pass discount
 const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' // Base USDC
 // Use env only – no fallback in repo (best practice for secrets)
 const API_KEYS = {
@@ -77,6 +79,8 @@ app.get('/', (c) => {
     status: 'ok',
     service: 'Contract Security Analysis',
     price: PRICE,
+    passPrice: PASS_PRICE,
+    passDiscountPercent: ANALYSIS_PASS_DISCOUNT_PERCENT,
     paymentNetwork: NETWORK,
     supportedAnalysisNetworks: Object.keys(SUPPORTED_NETWORKS),
   })
@@ -93,6 +97,51 @@ app.use(
         network: NETWORK,
         payTo: RECEIVING_ADDRESS,
         description: 'BaseHub Contract Security Analysis - Pay 0.50 USDC on Base',
+        maxTimeoutSeconds: 600,
+      }),
+    },
+    facilitatorConfig
+  )
+)
+
+const passApp = new Hono()
+
+passApp.use('/*', cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization', 'X-PAYMENT', 'PAYMENT-SIGNATURE'],
+  exposeHeaders: ['X-PAYMENT-RESPONSE', 'PAYMENT-RESPONSE', 'PAYMENT-REQUIRED'],
+  maxAge: 86400,
+}))
+
+passApp.get('/', (c) => {
+  return c.json({
+    status: 'ok',
+    service: 'Contract Security Analysis',
+    price: PASS_PRICE,
+    standardPrice: PRICE,
+    passDiscountPercent: ANALYSIS_PASS_DISCOUNT_PERCENT,
+    paymentNetwork: NETWORK,
+    supportedAnalysisNetworks: Object.keys(SUPPORTED_NETWORKS),
+  })
+})
+
+passApp.use(async (c, next) => {
+  if (c.req.method === 'POST') {
+    const response = await enforceAnalysisPassDiscount(c)
+    if (response) return response
+  }
+  return next()
+})
+
+passApp.use(
+  createX402PaymentMiddleware(
+    {
+      'POST /': createX402Route({
+        price: PASS_PRICE,
+        network: NETWORK,
+        payTo: RECEIVING_ADDRESS,
+        description: 'BaseHub Contract Security Analysis - BaseHub Pass holder price 0.25 USDC on Base',
         maxTimeoutSeconds: 600,
       }),
     },
@@ -878,7 +927,7 @@ function calculateSecurityScore(analysis) {
 // ==========================================
 // Contract Security Analysis endpoint
 // ==========================================
-app.post('/', async (c) => {
+async function handleContractSecurityRequest(c) {
   console.log('✅ POST / endpoint called - payment verified by middleware')
   console.log('📋 Request details:', {
     method: c.req.method,
@@ -954,7 +1003,10 @@ app.post('/', async (c) => {
       message: error.message || 'An unexpected error occurred',
     }, 500)
   }
-})
+}
+
+app.post('/', handleContractSecurityRequest)
+passApp.post('/', handleContractSecurityRequest)
 
 // ==========================================
 // Export for Vercel (serverless function)
@@ -984,7 +1036,8 @@ export default async function handler(req, res) {
       body: body,
     })
 
-    const response = await app.fetch(request)
+    const activeApp = isPassDiscountRequest(req) ? passApp : app
+    const response = await activeApp.fetch(request)
 
     console.log('📥 Hono app response:', {
       status: response.status,

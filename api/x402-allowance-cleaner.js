@@ -1,10 +1,11 @@
 // Allowance Cleaner Endpoint for BaseHub
 // Scans wallet for token approvals and identifies risky ones
-// Payment: 0.1 USDC on Base via x402
+// Payment: 0.10 USDC, or 0.05 USDC for BaseHub Pass holders, on Base via x402
 
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { createX402PaymentMiddleware, createX402Route, getFacilitatorConfig } from './_x402BuilderCode.js'
+import { ANALYSIS_PASS_DISCOUNT_PERCENT, enforceAnalysisPassDiscount, isPassDiscountRequest } from './_analysisPassDiscount.js'
 import { createPublicClient, http, formatUnits } from 'viem'
 import { base, mainnet, polygon, arbitrum, optimism, bsc, avalanche } from 'viem/chains'
 
@@ -18,6 +19,7 @@ console.log('🚀 Allowance Cleaner API loaded')
 const NETWORK = 'base' // Payment network (Base mainnet)
 const RECEIVING_ADDRESS = '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
 const PRICE = '$0.10' // 0.10 USDC
+const PASS_PRICE = '$0.05' // 50% BaseHub Pass discount
 
 // Configure facilitator
 let facilitatorConfig
@@ -48,6 +50,8 @@ app.get('/', (c) => {
     status: 'ok',
     service: 'Allowance Cleaner',
     price: PRICE,
+    passPrice: PASS_PRICE,
+    passDiscountPercent: ANALYSIS_PASS_DISCOUNT_PERCENT,
     paymentNetwork: NETWORK,
     supportedNetworks: ['base', 'ethereum', 'polygon', 'arbitrum', 'optimism', 'bsc', 'avalanche'],
   })
@@ -64,6 +68,51 @@ app.use(
         network: NETWORK,
         payTo: RECEIVING_ADDRESS,
         description: 'BaseHub Allowance Cleaner - Pay 0.10 USDC on Base',
+        maxTimeoutSeconds: 600,
+      }),
+    },
+    facilitatorConfig
+  )
+)
+
+const passApp = new Hono()
+
+passApp.use('/*', cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization', 'X-PAYMENT', 'PAYMENT-SIGNATURE'],
+  exposeHeaders: ['X-PAYMENT-RESPONSE', 'PAYMENT-RESPONSE', 'PAYMENT-REQUIRED'],
+  maxAge: 86400,
+}))
+
+passApp.get('/', (c) => {
+  return c.json({
+    status: 'ok',
+    service: 'Allowance Cleaner',
+    price: PASS_PRICE,
+    standardPrice: PRICE,
+    passDiscountPercent: ANALYSIS_PASS_DISCOUNT_PERCENT,
+    paymentNetwork: NETWORK,
+    supportedNetworks: ['base', 'ethereum', 'polygon', 'arbitrum', 'optimism', 'bsc', 'avalanche'],
+  })
+})
+
+passApp.use(async (c, next) => {
+  if (c.req.method === 'POST') {
+    const response = await enforceAnalysisPassDiscount(c)
+    if (response) return response
+  }
+  return next()
+})
+
+passApp.use(
+  createX402PaymentMiddleware(
+    {
+      'POST /': createX402Route({
+        price: PASS_PRICE,
+        network: NETWORK,
+        payTo: RECEIVING_ADDRESS,
+        description: 'BaseHub Allowance Cleaner - BaseHub Pass holder price 0.05 USDC on Base',
         maxTimeoutSeconds: 600,
       }),
     },
@@ -864,7 +913,7 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
 }
 
 // Endpoint
-app.post('/', async (c) => {
+async function handleAllowanceCleanerRequest(c) {
   try {
     const { walletAddress, network } = await c.req.json()
     
@@ -923,7 +972,10 @@ app.post('/', async (c) => {
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     }, 500)
   }
-})
+}
+
+app.post('/', handleAllowanceCleanerRequest)
+passApp.post('/', handleAllowanceCleanerRequest)
 
 // Vercel handler
 export default async function handler(req, res) {
@@ -943,7 +995,8 @@ export default async function handler(req, res) {
       body: body,
     })
 
-    const response = await app.fetch(request)
+    const activeApp = isPassDiscountRequest(req) ? passApp : app
+    const response = await activeApp.fetch(request)
 
     response.headers.forEach((value, key) => {
       res.setHeader(key, value)

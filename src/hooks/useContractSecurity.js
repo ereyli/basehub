@@ -1,8 +1,8 @@
 // Hook for contract security analysis using x402 payment
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useWalletClient, useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { createX402FetchWithBuilderCode } from '../utils/x402BuilderCode'
-import { addXP } from '../utils/xpUtils'
+import { addXP, getNFTCount } from '../utils/xpUtils'
 import { useQuestSystem } from './useQuestSystem'
 import { NETWORKS } from '../config/networks'
 
@@ -15,6 +15,27 @@ export const useContractSecurity = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [analysis, setAnalysis] = useState(null)
+  const [isPassHolder, setIsPassHolder] = useState(false)
+  const [paymentPrice, setPaymentPrice] = useState('0.50')
+
+  useEffect(() => {
+    let active = true
+    async function checkPass() {
+      if (!address) {
+        setIsPassHolder(false)
+        setPaymentPrice('0.50')
+        return
+      }
+      const passHolder = (await getNFTCount(address)) > 0
+      if (!active) return
+      setIsPassHolder(passHolder)
+      setPaymentPrice(passHolder ? '0.25' : '0.50')
+    }
+    checkPass()
+    return () => {
+      active = false
+    }
+  }, [address])
 
   const analyzeContract = async (contractAddress, selectedNetwork = 'ethereum') => {
     if (!contractAddress) {
@@ -48,9 +69,13 @@ export const useContractSecurity = () => {
       console.log('🚀 Starting contract security analysis payment flow...')
       console.log('Target contract:', contractAddress)
       console.log('Selected network:', selectedNetwork)
+      const passHolder = address ? (await getNFTCount(address)) > 0 : false
+      setIsPassHolder(passHolder)
+      setPaymentPrice(passHolder ? '0.25' : '0.50')
 
       // x402 payment: 0.50 USDC = 500000 base units (6 decimals)
-      const MAX_PAYMENT_AMOUNT = BigInt(500000) // 0.50 USDC max
+      const MAX_PAYMENT_AMOUNT = passHolder ? BigInt(250000) : BigInt(500000)
+      const endpoint = passHolder ? '/api/x402-contract-security?pass=1' : '/api/x402-contract-security'
 
       const fetchWithPayment = createX402FetchWithBuilderCode(
         fetch,
@@ -58,15 +83,16 @@ export const useContractSecurity = () => {
         MAX_PAYMENT_AMOUNT
       )
 
-      console.log('💳 Making payment request to /api/x402-contract-security...')
+      console.log('💳 Making payment request to contract security endpoint...', { passHolder })
 
-      const response = await fetchWithPayment('/api/x402-contract-security', {
+      const response = await fetchWithPayment(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
           contractAddress: contractAddress,
+          payerWalletAddress: address,
           network: selectedNetwork,
         }),
       })
@@ -104,7 +130,7 @@ export const useContractSecurity = () => {
           }
 
           if (errorText === 'insufficient_funds' || errorText.includes('insufficient_funds')) {
-            errorMessage = 'Insufficient USDC balance. Please ensure you have at least 0.50 USDC in your wallet on Base network.'
+            errorMessage = `Insufficient USDC balance. Please ensure you have at least ${passHolder ? '0.25' : '0.50'} USDC in your wallet on Base network.`
           } else if (errorText === 'X-PAYMENT header is required' || errorText.includes('X-PAYMENT')) {
             errorMessage = 'Payment required. Please complete the payment in your wallet.'
           } else if (errorText.trim()) {
@@ -179,6 +205,8 @@ export const useContractSecurity = () => {
     isLoading,
     error,
     analysis,
+    isPassHolder,
+    paymentPrice,
     isConnected: !!walletClient,
   }
 }

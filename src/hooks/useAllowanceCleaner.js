@@ -1,10 +1,10 @@
 // Hook for Allowance Cleaner using x402 payment
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useWalletClient, useAccount, useWriteContract, useReadContract, useChainId, useSwitchChain } from 'wagmi'
 import { createX402FetchWithBuilderCode } from '../utils/x402BuilderCode'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { config, DATA_SUFFIX } from '../config/wagmi'
-import { addXP } from '../utils/xpUtils'
+import { addXP, getNFTCount } from '../utils/xpUtils'
 import { useQuestSystem } from './useQuestSystem'
 import { NETWORKS } from '../config/networks'
 import { parseUnits, formatUnits, maxUint256 } from 'viem'
@@ -103,6 +103,27 @@ export const useAllowanceCleaner = () => {
   const [allowances, setAllowances] = useState([])
   const [hasScanned, setHasScanned] = useState(false)
   const [scannedNetwork, setScannedNetwork] = useState(null) // Track which network was scanned
+  const [isPassHolder, setIsPassHolder] = useState(false)
+  const [paymentPrice, setPaymentPrice] = useState('0.10')
+
+  useEffect(() => {
+    let active = true
+    async function checkPass() {
+      if (!address) {
+        setIsPassHolder(false)
+        setPaymentPrice('0.10')
+        return
+      }
+      const passHolder = (await getNFTCount(address)) > 0
+      if (!active) return
+      setIsPassHolder(passHolder)
+      setPaymentPrice(passHolder ? '0.05' : '0.10')
+    }
+    checkPass()
+    return () => {
+      active = false
+    }
+  }, [address])
 
   // Scan allowances for connected wallet on selected network
   const scanAllowances = async (network = 'base') => {
@@ -130,9 +151,13 @@ export const useAllowanceCleaner = () => {
 
     try {
       console.log('🔍 Starting allowance scan for:', address)
+      const passHolder = address ? (await getNFTCount(address)) > 0 : false
+      setIsPassHolder(passHolder)
+      setPaymentPrice(passHolder ? '0.05' : '0.10')
 
       // x402 payment: 0.1 USDC = 100000 base units (6 decimals)
-      const MAX_PAYMENT_AMOUNT = BigInt(100000) // 0.1 USDC max
+      const MAX_PAYMENT_AMOUNT = passHolder ? BigInt(50000) : BigInt(100000)
+      const endpoint = passHolder ? '/api/x402-allowance-cleaner?pass=1' : '/api/x402-allowance-cleaner'
 
       const fetchWithPayment = createX402FetchWithBuilderCode(
         fetch,
@@ -140,15 +165,16 @@ export const useAllowanceCleaner = () => {
         MAX_PAYMENT_AMOUNT
       )
 
-      console.log('💳 Making payment request to /api/x402-allowance-cleaner...')
+      console.log('💳 Making payment request to allowance cleaner endpoint...', { passHolder })
 
-      const response = await fetchWithPayment('/api/x402-allowance-cleaner', {
+      const response = await fetchWithPayment(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
           walletAddress: address,
+          payerWalletAddress: address,
           network: network, // Selected network for scanning
         }),
       })
@@ -178,7 +204,7 @@ export const useAllowanceCleaner = () => {
           }
 
           if (errorText === 'insufficient_funds' || errorText.includes('insufficient_funds')) {
-            errorMessage = 'Insufficient USDC balance. Please ensure you have at least 0.1 USDC in your wallet on Base network.'
+            errorMessage = `Insufficient USDC balance. Please ensure you have at least ${passHolder ? '0.05' : '0.10'} USDC in your wallet on Base network.`
           } else if (errorText === 'X-PAYMENT header is required' || errorText.includes('X-PAYMENT')) {
             errorMessage = 'Payment required. Please complete the payment in your wallet.'
           } else if (errorText.trim()) {
@@ -438,6 +464,8 @@ export const useAllowanceCleaner = () => {
     allowances,
     hasScanned,
     scannedNetwork, // Export scannedNetwork
+    isPassHolder,
+    paymentPrice,
     isConnected: !!walletClient,
   }
 }

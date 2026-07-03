@@ -26,7 +26,7 @@ const SUPPORTED_NETWORKS = {
 
 export default function WalletAnalysis() {
   const { address, isConnected } = useAccount()
-  const { analyzeWallet, isLoading, error, analysis, analysisProgress } = useWalletAnalysis()
+  const { analyzeWallet, isLoading, error, analysis, analysisProgress, isPassHolder, paymentPrice } = useWalletAnalysis()
   const [targetAddress, setTargetAddress] = useState('')
   const [selectedNetwork, setSelectedNetwork] = useState('base')
   const [hasAnalyzed, setHasAnalyzed] = useState(false)
@@ -402,7 +402,7 @@ export default function WalletAnalysis() {
               border: '2px solid rgba(255, 255, 255, 0.3)',
             }}>
               <Eye size={18} />
-              <span>0.40 USDC via x402 (Paid on Base)</span>
+              <span>{paymentPrice || '0.40'} USDC via x402 {isPassHolder ? '(BaseHub Pass 50% off)' : '(Paid on Base)'}</span>
             </div>
           </div>
 
@@ -509,7 +509,7 @@ export default function WalletAnalysis() {
               gap: '8px',
             }}>
               <Eye size={16} />
-              <span>x402 payment is always settled on Base mainnet</span>
+              <span>x402 payment is always settled on Base mainnet · BaseHub Pass holders get 50% off analyses</span>
             </div>
           </div>
 

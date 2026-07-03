@@ -27,7 +27,7 @@ const SUPPORTED_NETWORKS = {
 
 export default function ContractSecurity() {
   const { address, isConnected } = useAccount()
-  const { analyzeContract, isLoading, error, analysis } = useContractSecurity()
+  const { analyzeContract, isLoading, error, analysis, isPassHolder, paymentPrice } = useContractSecurity()
   const [contractAddress, setContractAddress] = useState('')
   const [selectedNetwork, setSelectedNetwork] = useState('base')
   const [hasAnalyzed, setHasAnalyzed] = useState(false)
@@ -185,7 +185,7 @@ export default function ContractSecurity() {
               border: '2px solid rgba(255, 255, 255, 0.3)',
             }}>
               <Eye size={18} />
-              <span>0.50 USDC per analysis (Paid on Base)</span>
+              <span>{paymentPrice || '0.50'} USDC via x402 {isPassHolder ? '(BaseHub Pass 50% off)' : '(Paid on Base)'}</span>
             </div>
           </div>
 
@@ -274,7 +274,7 @@ export default function ContractSecurity() {
               gap: '8px',
             }}>
               <Eye size={16} />
-              <span>Payment is always on Base mainnet</span>
+              <span>x402 payment is always on Base mainnet · BaseHub Pass holders get 50% off analyses</span>
             </div>
           </div>
 
