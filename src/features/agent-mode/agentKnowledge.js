@@ -49,13 +49,6 @@ export const BASEHUB_KNOWLEDGE = [
     currentlyExecutableByBurner: true,
   },
   {
-    id: 'prediction-arena',
-    title: 'Prediction Arena',
-    category: 'nft',
-    description: 'BaseHub yes/no prediction surface.',
-    currentlyExecutableByBurner: false,
-  },
-  {
     id: 'deploy',
     title: 'Deploy Token',
     category: 'deploy',

@@ -69,7 +69,6 @@ type UserStats = {
 const FEATURES: Feature[] = [
   { id: 'swap', title: 'SwapHub', xpReward: '5k XP / $100' },
   { id: 'wallet-analysis', title: 'Wallet Analysis', xpReward: '400 XP' },
-  { id: 'prediction-arena', title: 'Prediction Arena', xpReward: '2000 XP' },
   { id: 'coin-flip', title: 'Coin Flip Game', xpReward: '150 XP' },
   { id: 'dice-roll', title: 'Dice Roll Game', xpReward: '150 XP' },
   { id: 'slots', title: 'Slots Game', xpReward: '150 XP' },
@@ -437,14 +436,14 @@ Output JSON only:
         },
         {
           message:
-            'Eğer yüksek XP istiyorsan Prediction Arena + SwapHub kombosu, üzerine bir token/NFT aracı eklemek bugün için çok iyi çalışır.',
+            'Eğer yüksek sinyal istiyorsan Wallet Analysis + SwapHub kombosu, üzerine bir token/NFT aracı eklemek bugün için çok iyi çalışır.',
           missions: [
             {
-              title: 'Prediction Arena turu aç',
+              title: 'Wallet Analysis raporu al',
               description:
-                'Bir ETH tahmin turu oluştur ya da mevcut tura katıl; tek hamlede yüksek XP ve onchain aktivite eklersin.',
-              featureId: 'prediction-arena',
-              estimatedXp: '2000 XP',
+                'Cüzdan aktiviteni analiz et; hangi ağlarda güçlü/zayıf olduğunu görüp sonraki onchain adımlarını planla.',
+              featureId: 'wallet-analysis',
+              estimatedXp: '400 XP',
             },
             {
               title: 'Orta hacimli bir Swap yap',
@@ -521,4 +520,3 @@ Output JSON only:
     })
   }
 })
-

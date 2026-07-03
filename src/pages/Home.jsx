@@ -756,8 +756,6 @@ const Home = () => {
 
   const showDexSection = games.some(g => g.id === 'swap')
   const showNftSection = games.some(g => ['nft-launchpad', 'nft-launchpad-explore'].includes(g.id))
-  const showPredictionSection = games.some(g => g.id === 'prediction-arena')
-  const showSocialSection = games.some(g => g.id === 'featured-profiles')
   const showGamingSection = games.some(g => ['flip', 'dice', 'slot', 'lucky'].includes(g.id))
   const showGuildSection = games.some(g => g.id === 'base-guild-companion')
   const showAgentSection = games.some(g => g.id === 'agent-mode')
@@ -1378,37 +1376,6 @@ const Home = () => {
               </div>
               )}
 
-              {/* 5. Prediction Category (under NFT) */}
-              {showPredictionSection && (
-              <div id="prediction" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(20, 184, 166, 0.12)` }}>
-                <div style={compactStyles.categoryHeader}>
-                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(20, 184, 166, 0.15)', border: '1px solid rgba(20, 184, 166, 0.3)', color: '#14b8a6' }}>
-                    <Users size={compactStyles.iconSize} />
-                  </div>
-                  <h2 style={compactStyles.categoryTitle}>PREDICTION</h2>
-                  <span style={{
-                    padding: '3px 10px',
-                    background: 'rgba(245, 158, 11, 0.10)',
-                    border: '1px solid rgba(245, 158, 11, 0.25)',
-                    borderRadius: '20px',
-                    color: '#fbbf24',
-                    fontSize: '10px',
-                    fontWeight: '700',
-                    letterSpacing: '0.5px',
-                    fontFamily: 'Poppins, sans-serif'
-                  }}>
-                    BETA
-                  </span>
-                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['prediction-arena']))}
-                </div>
-                <div style={compactStyles.cardGrid}>
-                  {games.filter(g => g.id === 'prediction-arena').map((game) =>
-                    renderCompactCard(game, null, game.path, 'prediction')
-                  )}
-                </div>
-              </div>
-              )}
-
               {/* Airdrop Hub — own category (not under Deploy) */}
               <div id="airdrop-hub" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(59, 130, 246, 0.18)` }}>
                 <div style={compactStyles.categoryHeader}>
@@ -1541,24 +1508,6 @@ const Home = () => {
                   )}
                 </div>
               </div>
-
-              {/* SOCIAL Category */}
-              {showSocialSection && (
-              <div id="social" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(245, 158, 11, 0.12)` }}>
-                <div style={compactStyles.categoryHeader}>
-                  <div style={{ ...compactStyles.categoryIconBox, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b' }}>
-                    <Users size={compactStyles.iconSize} />
-                  </div>
-                  <h2 style={compactStyles.categoryTitle}>SOCIAL</h2>
-                  {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['featured-profiles']))}
-                </div>
-                <div style={compactStyles.cardGrid}>
-                  {games.filter(g => ['featured-profiles'].includes(g.id)).map((game) =>
-                    renderCompactCard(game, null, game.path, 'social')
-                  )}
-                </div>
-              </div>
-              )}
 
               {/* GM & GN Category */}
               <div id="gm-gn" style={{ ...compactStyles.categoryContainer, border: `1px solid rgba(34, 197, 94, 0.12)` }}>

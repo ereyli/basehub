@@ -97,13 +97,6 @@ const FRAME_CONFIG = {
     description: 'Deploy ERC1155 multi-token contract on Base.',
     imageUrl: WEB_OG_IMAGE,
   },
-  'featured-profiles': {
-    path: '/featured-profiles',
-    buttonText: 'Featured profiles',
-    title: 'Featured Profiles - BaseHub',
-    description: 'Discover featured Farcaster profiles on Base.',
-    imageUrl: WEB_OG_IMAGE,
-  },
   'allowance-cleaner': {
     path: '/allowance-cleaner',
     buttonText: 'Clean allowances',

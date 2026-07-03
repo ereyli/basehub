@@ -24,10 +24,10 @@ export const NAV_SECTIONS = {
   guild: ['base-guild-companion'],
   /** Agent: wallet-centered bounded automation for BaseHub actions */
   agent: ['agent-mode'],
-  nft: ['early-access', 'nft-launchpad', 'nft-launchpad-explore', 'prediction-arena', 'nft-plinko'],
+  nft: ['early-access', 'nft-launchpad', 'nft-launchpad-explore', 'nft-plinko'],
   analysis: ['wallet-analysis', 'contract-security', 'allowance-cleaner'],
   deploy: ['deploy-b20', 'deploy-erc8004', 'agent-directory', 'deploy', 'deploy-erc721', 'deploy-erc1155'],
-  social: ['featured-profiles'],
+  social: [],
   dex: ['swap'],
 }
 
@@ -56,9 +56,7 @@ const CAST_SHARE = {
   'wallet-analysis': 'Get fun insights about any wallet on BaseHub. Portfolio, activity and more.',
   'contract-security': 'Analyze smart contract security risks on BaseHub. Stay safe on-chain.',
   'allowance-cleaner': 'Scan and revoke risky token approvals on BaseHub. Take back control of your wallet.',
-  'featured-profiles': 'Register your profile on BaseHub Featured Profiles. Connect through mutual follows and earn.',
   'base-guild-companion': 'Track your Base Guild mission progress with wallet checks and one-click actions inside BaseHub.',
-  'prediction-arena': 'Create yes/no ETH prediction rounds on BaseHub. Win by consensus, earn XP.',
   'agent-mode': 'Create an agent wallet on BaseHub and let it run BaseHub GM and GN actions from its own address.',
   'deploy': 'Deploy your own ERC20 token on BaseHub. No code – multi-chain in one click.',
   'deploy-b20': 'Base-native B20 token launches are coming soon to BaseHub on Base mainnet.',
@@ -83,10 +81,8 @@ const PRODUCTS_ALL = [
   { id: 'wallet-analysis', path: '/wallet-analysis', label: 'Wallet Analysis', title: 'Wallet Analysis', description: 'Get fun insights about any wallet', castShareText: CAST_SHARE['wallet-analysis'], category: CATEGORIES.ANALYSIS, color: '#3b82f6', icon: 'Search', xpReward: '400 XP', bonusXP: '0.40 USDC', networks: ['base'], isX402: true },
   { id: 'contract-security', path: '/contract-security', label: 'Contract Security', title: 'Contract Security', description: 'Analyze smart contract security risks', castShareText: CAST_SHARE['contract-security'], category: CATEGORIES.ANALYSIS, color: '#8b5cf6', icon: 'Shield', xpReward: '500 XP', bonusXP: '0.50 USDC', networks: ['base'], isX402: true },
   { id: 'allowance-cleaner', path: '/allowance-cleaner', label: 'Allowance Cleaner', title: 'Allowance Cleaner', description: 'Scan and revoke risky token approvals', castShareText: CAST_SHARE['allowance-cleaner'], category: CATEGORIES.ANALYSIS, color: '#8b5cf6', icon: 'Trash2', xpReward: '300 XP', bonusXP: '0.1 USDC', networks: ['base'], isX402: true },
-  { id: 'featured-profiles', path: '/featured-profiles', label: 'Featured Profiles', title: 'Featured Profiles', description: 'Register your profile and connect through mutual follows', castShareText: CAST_SHARE['featured-profiles'], category: CATEGORIES.SOCIAL, color: '#f59e0b', icon: 'Star', xpReward: '200 XP', bonusXP: '0.2-6.0 USDC', networks: ['base'], isX402: true },
   { id: 'base-guild-companion', path: '/base-guild', label: 'Base Guild', title: 'Base Guild Companion', description: 'Complete Base Guild-style missions with one-click actions and wallet checks', castShareText: CAST_SHARE['base-guild-companion'], category: CATEGORIES.GUILD, color: '#2563eb', icon: 'Shield', xpReward: '500 XP', bonusXP: 'Community bonus', networks: ['base'] },
   { id: 'agent-mode', path: '/agent', label: 'Agent', title: 'Agent Mode (Beta)', description: 'Create a delegated agent wallet and let it run approved BaseHub actions with your limits', castShareText: CAST_SHARE['agent-mode'], category: CATEGORIES.AGENT, color: '#60a5fa', icon: 'Bot', xpReward: 'Setup', bonusXP: 'Agent', networks: ['base'] },
-  { id: 'prediction-arena', path: '/prediction-arena', label: 'Prediction Arena', title: 'Prediction Arena', description: 'Create yes/no ETH prediction rounds and win by side consensus', castShareText: CAST_SHARE['prediction-arena'], category: CATEGORIES.NFT, color: '#14b8a6', icon: 'Users', xpReward: '2000 XP', bonusXP: '200 XP per bet', networks: ['base'] },
   { id: 'deploy-b20', path: '/deploy-b20', label: 'B20', title: 'B20 Launchpad', description: 'Base-native B20 asset and stablecoin launches', castShareText: CAST_SHARE['deploy-b20'], category: CATEGORIES.DEPLOY, color: '#2563eb', icon: 'Rocket', iconImage: '/crypto-logos/basahub logo/B20.svg', xpReward: '5000 XP', bonusXP: 'Coming Soon', networks: ['base'] },
   { id: 'deploy', path: '/deploy', label: 'Deploy Token', title: 'Deploy Token', description: 'Create your own ERC20 token', castShareText: CAST_SHARE['deploy'], category: CATEGORIES.DEPLOY, color: '#f59e0b', icon: 'Coins', iconImage: '/crypto-logos/basahub logo/ERC20.png', xpReward: '850 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'katana', 'megaeth', 'tempo', 'arc-restnet', 'robinhood-testnet'] },
   { id: 'deploy-erc721', path: '/deploy-erc721', label: 'ERC721', title: 'Deploy ERC721', description: 'Deploy your own NFT contract', castShareText: CAST_SHARE['deploy-erc721'], category: CATEGORIES.DEPLOY, color: '#06b6d4', icon: 'Package', iconImage: '/crypto-logos/basahub logo/ERC-721.png', xpReward: '850 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'katana', 'megaeth', 'tempo', 'arc-restnet', 'robinhood-testnet'] },

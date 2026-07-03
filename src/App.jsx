@@ -44,7 +44,6 @@ import SharePage from './pages/SharePage'
 import WalletAnalysis from './pages/WalletAnalysis'
 import ContractSecurity from './pages/ContractSecurity'
 import AllowanceCleaner from './pages/AllowanceCleaner'
-import FeaturedProfiles from './pages/FeaturedProfiles'
 import SwapHub from './pages/SwapHub'
 import Profile from './pages/Profile'
 import EarlyAccessNFT from './pages/EarlyAccessNFT'
@@ -52,7 +51,6 @@ import NFTWheelGame from './pages/NFTWheelGame'
 import NFTPlinkoGame from './pages/NFTPlinkoGame'
 import PumpHub from './pages/PumpHub'
 import FrameLanding from './pages/FrameLanding'
-import PredictionArena from './pages/PredictionArena'
 import BaseGuildCompanion from './pages/BaseGuildCompanion'
 import AirdropHub from './pages/AirdropHub'
 import AgentMode from './pages/AgentMode'
@@ -360,7 +358,6 @@ function FarcasterAppContent() {
               <Route path="/wallet-analysis" element={<WalletAnalysis />} />
               <Route path="/contract-security" element={<ContractSecurity />} />
               <Route path="/allowance-cleaner" element={<AllowanceCleaner />} />
-              <Route path="/featured-profiles" element={<FeaturedProfiles />} />
               <Route path="/swap" element={<SwapHub />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/early-access" element={<EarlyAccessNFT />} />
@@ -370,7 +367,6 @@ function FarcasterAppContent() {
               <Route path="/airdrop-hub" element={<AirdropHub />} />
               <Route path="/agent" element={<AgentModeGate />} />
               <Route path="/admin" element={<AdminNotifications />} />
-              <Route path="/prediction-arena" element={<PredictionArena />} />
               <Route path="/base-guild" element={<BaseGuildCompanion />} />
               <Route path="/frames/:frameType" element={<FrameLanding />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
@@ -440,7 +436,6 @@ function WebAppContent() {
               <Route path="/wallet-analysis" element={<WalletAnalysis />} />
               <Route path="/contract-security" element={<ContractSecurity />} />
               <Route path="/allowance-cleaner" element={<AllowanceCleaner />} />
-              <Route path="/featured-profiles" element={<FeaturedProfiles />} />
               <Route path="/swap" element={<SwapHub />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/early-access" element={<EarlyAccessNFT />} />
@@ -450,7 +445,6 @@ function WebAppContent() {
             <Route path="/airdrop-hub" element={<AirdropHub />} />
             <Route path="/agent" element={<AgentModeGate />} />
             <Route path="/admin" element={<AdminNotifications />} />
-            <Route path="/prediction-arena" element={<PredictionArena />} />
             <Route path="/base-guild" element={<BaseGuildCompanion />} />
             <Route path="/frames/:frameType" element={<FrameLanding />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
@@ -489,7 +483,7 @@ function App() {
   console.log('🔍 App Environment Check:', { useMiniappLayout: useMiniapp, isWeb })
   
   if (isWeb) {
-    // Web (desktop) users get RainbowKit + FarcasterProvider for Featured Profiles
+    // Web (desktop) users get RainbowKit + FarcasterProvider.
     console.log('🌐 Using RainbowKit for web users')
     return (
       <HelmetProvider>

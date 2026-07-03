@@ -14,7 +14,7 @@ const WebBottomNav = () => {
   const { isConnected, address } = useAccount()
   const chainId = useChainId()
   const { sendGMTransaction, sendGNTransaction, isLoading: transactionLoading } = useTransactions()
-  const [activeTab, setActiveTab] = useState(null) // null = hidden, 'gmgn' | 'gaming' | 'nft' | 'analysis' | 'deploy' | 'social' | 'dex' | 'dex'
+  const [activeTab, setActiveTab] = useState(null) // null = hidden, 'gmgn' | 'gaming' | 'nft' | 'analysis' | 'deploy' | 'dex'
   const [isLoadingGM, setIsLoadingGM] = useState(false)
   const [isLoadingGN, setIsLoadingGN] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
@@ -87,8 +87,6 @@ const WebBottomNav = () => {
   const nftTools = getNavItems('nft')
   const analysisTools = getNavItems('analysis')
   const deployTools = getNavItems('deploy')
-  const socialTools = getNavItems('social')
-
   const renderNavIcon = (iconName) => {
     const Icon = LUCIDE_ICONS[iconName]
     return Icon ? <Icon size={20} /> : null
@@ -368,36 +366,6 @@ const WebBottomNav = () => {
           <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>DEPLOY</span>
         </button>
 
-        {/* SOCIAL Tab */}
-        <button
-          onClick={() => handleTabClick('social')}
-          style={{
-            width: '100%',
-            padding: '12px 8px',
-            border: 'none',
-            borderRadius: '12px',
-            background: activeTab === 'social' 
-              ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' 
-              : 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)',
-            color: activeTab === 'social' ? 'white' : '#fbbf24',
-            fontSize: '10px',
-            fontWeight: '700',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '4px',
-            transition: 'all 0.2s ease',
-            minHeight: '70px',
-            justifyContent: 'center',
-            boxShadow: activeTab === 'social' 
-              ? '0 4px 12px rgba(251, 191, 36, 0.3)' 
-              : '0 2px 4px rgba(251, 191, 36, 0.1)'
-          }}
-        >
-          <Users size={20} />
-          <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>SOCIAL</span>
-        </button>
       </div>
 
       {/* Content Panel - Slides up from bottom */}
@@ -702,52 +670,6 @@ const WebBottomNav = () => {
               </div>
             )}
 
-            {/* SOCIAL Content */}
-            {activeTab === 'social' && (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px'
-              }}>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700', color: '#e5e7eb' }}>
-                  Social Tools
-                </h3>
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(2, 1fr)', 
-                  gap: '12px' 
-                }}>
-                  {socialTools.map((tool) => (
-                    <button
-                      key={tool.id}
-                      onClick={() => {
-                        navigate(tool.path)
-                        setActiveTab(null)
-                      }}
-                      style={{
-                        padding: '16px',
-                        border: 'none',
-                        borderRadius: '12px',
-                        background: `linear-gradient(135deg, ${tool.color} 0%, ${tool.color}dd 100%)`,
-                        color: 'white',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '8px',
-                        boxShadow: `0 4px 12px ${tool.color}40`
-                      }}
-                    >
-                      {renderNavIcon(tool.icon)}
-                      <span>{tool.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
           </div>
         </>
       )}
@@ -778,4 +700,3 @@ const WebBottomNav = () => {
 }
 
 export default WebBottomNav
-

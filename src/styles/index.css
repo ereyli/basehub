@@ -3614,7 +3614,7 @@ select:focus {
     padding: 10px !important;
   }
 
-  /* Profile cards in Featured Profiles */
+  /* Compact rounded cards */
   .farcaster-app .card [style*="borderRadius: '12px'"],
   .farcaster-app .card [style*="borderRadius: '16px'"] {
     border-radius: 10px !important;
@@ -3629,7 +3629,7 @@ select:focus {
     border-radius: 8px !important;
   }
 
-  /* Star/Featured icons */
+  /* Highlight icons */
   .farcaster-app .card [style*="color: '#fbbf24'"] svg,
   .farcaster-app .card [style*="color: 'rgb(251, 191, 36)'"] svg {
     width: 24px !important;
@@ -3694,7 +3694,7 @@ select:focus {
     min-width: auto !important;
   }
 
-  /* Featured badge */
+  /* Highlight badge */
   .farcaster-app .card [style*="background: '#fbbf24'"],
   .farcaster-app .card [style*="background: 'rgb(251, 191, 36)'"] {
     padding: 3px 8px !important;
