@@ -25,8 +25,9 @@ contract SlotGame {
     event SlotSpun(address indexed player, uint256[4] symbols, bool won, uint256 xpEarned);
     event CreditsWithdrawn(address indexed player, uint256 amount);
     
-    constructor() {
-        owner = msg.sender;
+    constructor(address owner_) {
+        require(owner_ != address(0), "Invalid owner");
+        owner = owner_;
     }
     
     // Purchase credits with ETH

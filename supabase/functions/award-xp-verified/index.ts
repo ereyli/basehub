@@ -12,6 +12,7 @@ const CHAIN_RPC: Record<number, string> = {
   57073: "https://rpc-qnd.inkonchain.com",
   1868: "https://rpc.soneium.org",
   747474: "https://rpc.katana.network",
+  4663: "https://rpc.mainnet.chain.robinhood.com",
   // 4326 MegaETH: not in CHAIN_RPC – receipt verification disabled; XP awarded without server-side check
 }
 

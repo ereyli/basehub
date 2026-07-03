@@ -10,8 +10,9 @@ contract GMGame {
     
     event GMSent(address indexed player, string message);
     
-    constructor() {
-        owner = msg.sender;
+    constructor(address owner_) {
+        require(owner_ != address(0), "Invalid owner");
+        owner = owner_;
     }
     
     // Send GM message and earn tokens

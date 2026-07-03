@@ -123,27 +123,27 @@ const arcRestnet = defineChain({
   },
 })
 
-// Robinhood Chain Testnet
-const robinhoodTestnet = defineChain({
-  id: NETWORKS.ROBINHOOD_TESTNET.chainId,
-  name: NETWORKS.ROBINHOOD_TESTNET.chainName,
-  nativeCurrency: NETWORKS.ROBINHOOD_TESTNET.nativeCurrency,
+// Robinhood Chain
+const robinhoodChain = defineChain({
+  id: NETWORKS.ROBINHOOD.chainId,
+  name: NETWORKS.ROBINHOOD.chainName,
+  nativeCurrency: NETWORKS.ROBINHOOD.nativeCurrency,
   rpcUrls: {
     default: {
-      http: NETWORKS.ROBINHOOD_TESTNET.rpcUrls,
+      http: NETWORKS.ROBINHOOD.rpcUrls,
     },
   },
   blockExplorers: {
     default: {
       name: 'Robinhood Explorer',
-      url: NETWORKS.ROBINHOOD_TESTNET.blockExplorerUrls[0],
+      url: NETWORKS.ROBINHOOD.blockExplorerUrls[0],
     },
   },
 })
 
 // Wagmi config with multiple wallet support
 export const config = createConfig({
-  chains: [base, inkChain, soneium, katana, megaeth, tempo, arcRestnet, robinhoodTestnet],
+  chains: [base, inkChain, soneium, katana, megaeth, tempo, arcRestnet, robinhoodChain],
   dataSuffix: DATA_SUFFIX,
   transports: {
     [base.id]: fallback(
@@ -176,7 +176,7 @@ export const config = createConfig({
       retryCount: 3,
       retryDelay: 1000,
     }),
-    [robinhoodTestnet.id]: http(NETWORKS.ROBINHOOD_TESTNET.rpcUrls[0], {
+    [robinhoodChain.id]: http(NETWORKS.ROBINHOOD.rpcUrls[0], {
       timeout: 30000,
       retryCount: 3,
       retryDelay: 1000,

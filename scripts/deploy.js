@@ -8,18 +8,13 @@ async function main() {
   console.log("Deploying contracts with account:", deployer.address);
   console.log("Account balance:", (await deployer.provider.getBalance(deployer.address)).toString());
 
-  // Deploy GameToken first
-  console.log("\n📄 Deploying GameToken...");
-  const GameToken = await ethers.getContractFactory("GameToken");
-  const gameToken = await GameToken.deploy();
-  await gameToken.waitForDeployment();
-  const gameTokenAddress = await gameToken.getAddress();
-  console.log("✅ GameToken deployed to:", gameTokenAddress);
+  const feeWallet = process.env.FEE_WALLET || deployer.address;
+  console.log("Fee wallet / owner:", feeWallet);
 
   // Deploy GM Game
   console.log("\n🌅 Deploying GMGame...");
   const GMGame = await ethers.getContractFactory("GMGame");
-  const gmGame = await GMGame.deploy(gameTokenAddress);
+  const gmGame = await GMGame.deploy(feeWallet);
   await gmGame.waitForDeployment();
   const gmGameAddress = await gmGame.getAddress();
   console.log("✅ GMGame deployed to:", gmGameAddress);
@@ -27,7 +22,7 @@ async function main() {
   // Deploy GN Game
   console.log("\n🌙 Deploying GNGame...");
   const GNGame = await ethers.getContractFactory("GNGame");
-  const gnGame = await GNGame.deploy(gameTokenAddress);
+  const gnGame = await GNGame.deploy(feeWallet);
   await gnGame.waitForDeployment();
   const gnGameAddress = await gnGame.getAddress();
   console.log("✅ GNGame deployed to:", gnGameAddress);
@@ -35,7 +30,7 @@ async function main() {
   // Deploy Flip Game
   console.log("\n🪙 Deploying FlipGame...");
   const FlipGame = await ethers.getContractFactory("FlipGame");
-  const flipGame = await FlipGame.deploy(gameTokenAddress);
+  const flipGame = await FlipGame.deploy(feeWallet);
   await flipGame.waitForDeployment();
   const flipGameAddress = await flipGame.getAddress();
   console.log("✅ FlipGame deployed to:", flipGameAddress);
@@ -43,7 +38,7 @@ async function main() {
   // Deploy Lucky Number Game
   console.log("\n🎲 Deploying LuckyNumber...");
   const LuckyNumber = await ethers.getContractFactory("LuckyNumber");
-  const luckyNumber = await LuckyNumber.deploy(gameTokenAddress);
+  const luckyNumber = await LuckyNumber.deploy(feeWallet);
   await luckyNumber.waitForDeployment();
   const luckyNumberAddress = await luckyNumber.getAddress();
   console.log("✅ LuckyNumber deployed to:", luckyNumberAddress);
@@ -51,24 +46,15 @@ async function main() {
   // Deploy Dice Roll Game
   console.log("\n🎲 Deploying DiceRoll...");
   const DiceRoll = await ethers.getContractFactory("DiceRoll");
-  const diceRoll = await DiceRoll.deploy(gameTokenAddress);
+  const diceRoll = await DiceRoll.deploy(feeWallet);
   await diceRoll.waitForDeployment();
   const diceRollAddress = await diceRoll.getAddress();
   console.log("✅ DiceRoll deployed to:", diceRollAddress);
 
-  // Add game contracts to GameToken
-  console.log("\n🔗 Adding game contracts to GameToken...");
-  await gameToken.addGameContract(gmGameAddress);
-  await gameToken.addGameContract(gnGameAddress);
-  await gameToken.addGameContract(flipGameAddress);
-  await gameToken.addGameContract(luckyNumberAddress);
-  await gameToken.addGameContract(diceRollAddress);
-  console.log("✅ All game contracts added to GameToken");
-
   // Print summary
   console.log("\n🎉 Deployment Summary:");
   console.log("=====================");
-  console.log("GameToken:", gameTokenAddress);
+  console.log("Fee wallet / owner:", feeWallet);
   console.log("GMGame:", gmGameAddress);
   console.log("GNGame:", gnGameAddress);
   console.log("FlipGame:", flipGameAddress);
@@ -78,7 +64,7 @@ async function main() {
 
   // Save addresses to file
   const addresses = {
-    GameToken: gameTokenAddress,
+    feeWallet,
     GMGame: gmGameAddress,
     GNGame: gnGameAddress,
     FlipGame: flipGameAddress,

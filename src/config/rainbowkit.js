@@ -159,20 +159,20 @@ const arcRestnet = defineChain({
   iconBackground: '#ffffff',
 })
 
-// Robinhood Chain Testnet for RainbowKit
-const robinhoodTestnet = defineChain({
-  id: NETWORKS.ROBINHOOD_TESTNET.chainId,
-  name: NETWORKS.ROBINHOOD_TESTNET.chainName,
-  nativeCurrency: NETWORKS.ROBINHOOD_TESTNET.nativeCurrency,
+// Robinhood Chain for RainbowKit
+const robinhoodChain = defineChain({
+  id: NETWORKS.ROBINHOOD.chainId,
+  name: NETWORKS.ROBINHOOD.chainName,
+  nativeCurrency: NETWORKS.ROBINHOOD.nativeCurrency,
   rpcUrls: {
     default: {
-      http: NETWORKS.ROBINHOOD_TESTNET.rpcUrls,
+      http: NETWORKS.ROBINHOOD.rpcUrls,
     },
   },
   blockExplorers: {
     default: {
       name: 'Robinhood Explorer',
-      url: NETWORKS.ROBINHOOD_TESTNET.blockExplorerUrls[0],
+      url: NETWORKS.ROBINHOOD.blockExplorerUrls[0],
     },
   },
   iconUrl: '/robinhood-testnet-logo.png',
@@ -183,7 +183,7 @@ const robinhoodTestnet = defineChain({
 export const rainbowkitConfig = getDefaultConfig({
   appName: APP_NAME,
   projectId: REOWN_PROJECT_ID,
-  chains: [base, inkChain, soneium, katana, megaeth, tempo, arcRestnet, robinhoodTestnet],
+  chains: [base, inkChain, soneium, katana, megaeth, tempo, arcRestnet, robinhoodChain],
   wallets: [
     {
       groupName: 'Recommended',

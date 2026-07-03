@@ -10,8 +10,9 @@ contract GNGame {
     
     event GNSent(address indexed player, string message);
     
-    constructor() {
-        owner = msg.sender;
+    constructor(address owner_) {
+        require(owner_ != address(0), "Invalid owner");
+        owner = owner_;
     }
     
     // Send GN message and earn tokens

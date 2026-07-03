@@ -128,18 +128,18 @@ export const NETWORKS = {
     iconUrls: ['/arc-testnet-logo.jpg'],
     isFarcasterSupported: false,
   },
-  ROBINHOOD_TESTNET: {
-    chainId: 46630,
-    networkKey: 'robinhood-testnet',
-    chainName: 'Robinhood Chain Testnet',
-    isTestnet: true,
+  ROBINHOOD: {
+    chainId: 4663,
+    networkKey: 'robinhood',
+    chainName: 'Robinhood Chain',
+    isTestnet: false,
     nativeCurrency: {
       name: 'Ethereum',
       symbol: 'ETH',
       decimals: 18,
     },
-    rpcUrls: ['https://rpc.testnet.chain.robinhood.com'],
-    blockExplorerUrls: ['https://explorer.testnet.chain.robinhood.com'],
+    rpcUrls: ['https://rpc.mainnet.chain.robinhood.com'],
+    blockExplorerUrls: ['https://robinhoodchain.blockscout.com'],
     iconUrls: ['/robinhood-testnet-logo.png'],
     isFarcasterSupported: false,
   },
@@ -238,14 +238,14 @@ export const CONTRACT_ADDRESSES = {
     SLOT_GAME: '0xB2b2c587E51175a2aE4713d8Ea68A934a8527a4b',
     BASEHUB_DEPLOYER: '0x84e4dD821c8F848470Fc49Def3B14Fc870Fa97f0',
   },
-  ROBINHOOD_TESTNET: {
-    DICE_ROLL: '0x5E86e9Cd50E7F64b692b90FaE1487d2F6ED1AbA9',
-    FLIP_GAME: '0x1fe43a182B2a4A5845B91bA29Cd7E7EEBC4b68Df',
-    GM_GAME: '0x74A2C6466d98253cA932fe6a6CcB811d4d7d5784',
-    GN_GAME: '0x933570b7A6B872e1be0A1585AACcDbf609C5F981',
-    LUCKY_NUMBER: '0xA15CE1eAdA8E34ec67d82f8D7aB242a42C767C2d',
-    SLOT_GAME: '0xB2b2c587E51175a2aE4713d8Ea68A934a8527a4b',
-    BASEHUB_DEPLOYER: '0x84e4dD821c8F848470Fc49Def3B14Fc870Fa97f0',
+  ROBINHOOD: {
+    DICE_ROLL: '0xCD8cBAc71195fe2f2a81dbbbE4AE4Fff5278102C',
+    FLIP_GAME: '0x2Bcf075C5876385FE191d0a471FE53D6f6FA8b05',
+    GM_GAME: '0x166011AB63AA872cf9E1d7d0f7a1ddfa32e2f7b9',
+    GN_GAME: '0x71e90F79B07c42DAF99C5BBEd1B5E5C7b52a2129',
+    LUCKY_NUMBER: '0x4873c6A524c47FEe05F2839c308553bc8c09bC47',
+    SLOT_GAME: '0xc64006e31Dd09Df82B6513A9Cba20A52341EF1dB',
+    BASEHUB_DEPLOYER: '0x71Bc04A2e357279c75EB1E2c133f08Ca9097d9bF',
   },
 }
 
@@ -331,6 +331,7 @@ export const getBlockExplorerDisplayName = (chainId) => {
   if (cid === NETWORKS.MEGAETH.chainId) return 'MegaETH Explorer'
   if (cid === NETWORKS.TEMPO.chainId) return 'Tempo Explorer'
   if (cid === NETWORKS.KATANA.chainId) return 'Katana Explorer'
+  if (cid === NETWORKS.ROBINHOOD.chainId) return 'Robinhood Explorer'
   const net = getNetworkConfig(cid)
   if (net?.chainName) return `${net.chainName} Explorer`
   return 'Explorer'

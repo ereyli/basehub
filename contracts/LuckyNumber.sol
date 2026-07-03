@@ -11,8 +11,9 @@ contract LuckyNumber {
     mapping(address => uint256) public playerLuckyCount;
     event LuckyNumberGuessed(address indexed player, uint256 guess, uint256 result, bool won, uint256 xpEarned);
     
-    constructor() {
-        owner = msg.sender;
+    constructor(address owner_) {
+        require(owner_ != address(0), "Invalid owner");
+        owner = owner_;
     }
     
     // Guess a lucky number (1-10) and earn tokens

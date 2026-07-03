@@ -11,8 +11,9 @@ contract DiceRoll {
     mapping(address => uint256) public playerDiceCount;
     event DiceRolled(address indexed player, uint256 guess, uint256 result, bool won, uint256 xpEarned);
     
-    constructor() {
-        owner = msg.sender;
+    constructor(address owner_) {
+        require(owner_ != address(0), "Invalid owner");
+        owner = owner_;
     }
     
     // Roll dice and guess the result (1-6)

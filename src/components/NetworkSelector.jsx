@@ -243,10 +243,10 @@ const NetworkSelector = () => {
               backgroundColor: 'rgba(255,255,255,0.1)'
             }}
           />
-        ) : currentNetwork.chainId === NETWORKS.ROBINHOOD_TESTNET?.chainId ? (
+        ) : currentNetwork.chainId === NETWORKS.ROBINHOOD?.chainId ? (
           <img 
             src="/robinhood-testnet-logo.png" 
-            alt="Robinhood Chain Testnet" 
+            alt="Robinhood Chain" 
             style={{
               width: 20,
               height: 20,
@@ -359,8 +359,8 @@ function renderNetworkButton(network, currentChainId, handleNetworkSelect) {
         <img src="/megaeth-logo.jpg" alt="MegaETH" style={{ width: '20px', height: '20px', borderRadius: '6px', objectFit: 'cover', opacity: isActive ? 1 : 0.6 }} />
       ) : network.chainId === NETWORKS.ARC_RESTNET?.chainId ? (
         <img src="/arc-testnet-logo.jpg" alt="Arc Testnet" style={{ width: 20, height: 20, minWidth: 20, minHeight: 20, borderRadius: '6px', objectFit: 'contain', opacity: isActive ? 1 : 0.6, display: 'block', backgroundColor: 'rgba(255,255,255,0.1)' }} />
-      ) : network.chainId === NETWORKS.ROBINHOOD_TESTNET?.chainId ? (
-        <img src="/robinhood-testnet-logo.png" alt="Robinhood Chain Testnet" style={{ width: 20, height: 20, minWidth: 20, minHeight: 20, borderRadius: '6px', objectFit: 'contain', opacity: isActive ? 1 : 0.6, display: 'block' }} />
+      ) : network.chainId === NETWORKS.ROBINHOOD?.chainId ? (
+        <img src="/robinhood-testnet-logo.png" alt="Robinhood Chain" style={{ width: 20, height: 20, minWidth: 20, minHeight: 20, borderRadius: '6px', objectFit: 'contain', opacity: isActive ? 1 : 0.6, display: 'block' }} />
       ) : (
         <img src="/base-logo.jpg" alt="" style={{ width: '20px', height: '20px', borderRadius: '6px', objectFit: 'cover', opacity: isActive ? 1 : 0.6 }} />
       )}

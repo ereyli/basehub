@@ -49,7 +49,7 @@ Büyük XP kazandıran tüm özellikler **on-chain doğrulama** ile güvenli: tx
 - Soneium (1868)
 - Katana (747474)
 - Arc Testnet (5042002)
-- Robinhood Testnet (46630)
+- Robinhood (4663)
 
 ---
 

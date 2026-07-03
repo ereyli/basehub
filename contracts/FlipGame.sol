@@ -29,8 +29,9 @@ contract FlipGame {
         uint256 xpEarned
     );
     
-    constructor() {
-        owner = msg.sender;
+    constructor(address owner_) {
+        require(owner_ != address(0), "Invalid owner");
+        owner = owner_;
     }
     
     // Play coin flip game
