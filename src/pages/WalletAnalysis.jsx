@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useWalletAnalysis } from '../hooks/useWalletAnalysis'
-import { Search, Wallet, Coins, Activity, TrendingUp, Award, Sparkles, AlertCircle, Loader2, Calendar, BarChart3, Zap, Eye, Shield } from 'lucide-react'
+import { Search, Wallet, Coins, Activity, TrendingUp, Award, Sparkles, AlertCircle, Loader2, Calendar, BarChart3, Zap, Eye, Shield, CheckCircle2, XCircle, Layers, Compass, Clock, Target, Gauge } from 'lucide-react'
 import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
 import { getFarcasterUniversalLink } from '../config/farcaster'
@@ -29,7 +29,7 @@ export default function WalletAnalysis() {
   const { address, isConnected } = useAccount()
   const { analyzeWallet, isLoading, error, analysis } = useWalletAnalysis()
   const [targetAddress, setTargetAddress] = useState('')
-  const [selectedNetwork, setSelectedNetwork] = useState('ethereum')
+  const [selectedNetwork, setSelectedNetwork] = useState('base')
   const [hasAnalyzed, setHasAnalyzed] = useState(false)
 
   const buildCastText = () => {
@@ -514,6 +514,10 @@ export default function WalletAnalysis() {
                 </a>
               </div>
 
+              {analysis.reportType === 'base-airdrop-readiness' && (
+                <BaseAirdropReport analysis={analysis} />
+              )}
+
               {/* Wallet Score Card - Compact with Progress Bar */}
               <div style={{
                 background: 'rgba(30, 41, 59, 0.95)',
@@ -910,6 +914,351 @@ export default function WalletAnalysis() {
         `}</style>
       </div>
     </NetworkGuard>
+  )
+}
+
+function BaseAirdropReport({ analysis }) {
+  const report = analysis.airdropReport || {}
+  const metrics = report.metrics || {}
+  const score = report.score ?? analysis.walletScore ?? 0
+  const color = score >= 80 ? '#10b981' : score >= 60 ? '#3b82f6' : score >= 40 ? '#f59e0b' : '#ef4444'
+  const lastActivity = report.timeline?.lastActivity ? new Date(report.timeline.lastActivity).toLocaleDateString() : 'No activity'
+  const firstActivity = report.timeline?.firstActivity ? new Date(report.timeline.firstActivity).toLocaleDateString() : 'No activity'
+
+  return (
+    <div style={{
+      marginBottom: '28px',
+      display: 'grid',
+      gap: '18px',
+    }}>
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%)',
+        border: `1px solid ${color}55`,
+        borderRadius: '18px',
+        padding: '24px',
+        boxShadow: `0 20px 50px ${color}18`,
+      }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
+          gap: '24px',
+          alignItems: 'center',
+        }}>
+          <div style={{
+            minHeight: '210px',
+            borderRadius: '16px',
+            background: `radial-gradient(circle at 50% 20%, ${color}33 0%, rgba(15, 23, 42, 0.4) 45%, rgba(2, 6, 23, 0.65) 100%)`,
+            border: `1px solid ${color}55`,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+          }}>
+            <Gauge size={34} style={{ color }} />
+            <div style={{
+              fontSize: '58px',
+              lineHeight: 1,
+              fontWeight: '900',
+              color: '#f8fafc',
+            }}>
+              {score}
+            </div>
+            <div style={{
+              width: '78%',
+              height: '9px',
+              borderRadius: '999px',
+              background: 'rgba(148, 163, 184, 0.22)',
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                width: `${Math.min(100, Math.max(0, score))}%`,
+                height: '100%',
+                background: color,
+                borderRadius: '999px',
+              }} />
+            </div>
+            <div style={{
+              color,
+              fontSize: '16px',
+              fontWeight: '800',
+              textAlign: 'center',
+            }}>
+              {report.tier || analysis.activityLevel}
+            </div>
+            <div style={{
+              color: '#94a3b8',
+              fontSize: '12px',
+              fontWeight: '700',
+            }}>
+              Confidence: {report.confidence || 'Medium'}
+            </div>
+          </div>
+
+          <div>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 10px',
+              borderRadius: '999px',
+              background: 'rgba(59, 130, 246, 0.12)',
+              border: '1px solid rgba(59, 130, 246, 0.28)',
+              color: '#93c5fd',
+              fontSize: '13px',
+              fontWeight: '800',
+              marginBottom: '14px',
+            }}>
+              <Target size={15} />
+              Base Airdrop Readiness Report
+            </div>
+            <h2 style={{
+              margin: '0 0 10px',
+              color: '#f8fafc',
+              fontSize: '30px',
+              lineHeight: 1.15,
+              fontWeight: '900',
+            }}>
+              {report.summary || 'Professional Base wallet activity report'}
+            </h2>
+            <p style={{
+              margin: '0 0 18px',
+              color: '#cbd5e1',
+              fontSize: '15px',
+              lineHeight: 1.6,
+            }}>
+              This report measures activity depth, consistency, protocol diversity, volume signals, and recent usage patterns from available Base data sources.
+            </p>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+              gap: '10px',
+            }}>
+              <ReportMetricCard icon={<Activity size={18} />} label="Transactions" value={metrics.totalTransactions || 0} color="#22c55e" />
+              <ReportMetricCard icon={<Calendar size={18} />} label="Active Days" value={metrics.activeDays || 0} color="#38bdf8" />
+              <ReportMetricCard icon={<Layers size={18} />} label="Protocols" value={metrics.protocolDiversity || 0} color="#a78bfa" />
+              <ReportMetricCard icon={<TrendingUp size={18} />} label="Volume Signal" value={report.display?.stableVolume || '$0.0000'} color="#f59e0b" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: '14px',
+      }}>
+        <ReportMetricCard icon={<Clock size={20} />} label="First Activity" value={firstActivity} color="#60a5fa" tall />
+        <ReportMetricCard icon={<Zap size={20} />} label="Last 30 Days" value={`${metrics.recent30Tx || 0} tx`} color="#fb7185" tall />
+        <ReportMetricCard icon={<Coins size={20} />} label="Native Moved" value={report.display?.nativeMoved || '0 ETH'} color="#34d399" tall />
+        <ReportMetricCard icon={<Wallet size={20} />} label="Current Balance" value={`${parseFloat(analysis.nativeBalance || 0).toFixed(4)} ETH`} color="#818cf8" tall />
+        <ReportMetricCard icon={<Award size={20} />} label="Last Activity" value={lastActivity} color="#fbbf24" tall />
+      </div>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+        gap: '16px',
+      }}>
+        <ReportPanel title="Score Breakdown" icon={<BarChart3 size={20} />} accent={color}>
+          {(report.scoreBreakdown || []).map((item) => (
+            <ScoreBreakdownRow key={item.label} item={item} color={color} />
+          ))}
+        </ReportPanel>
+
+        <ReportPanel title="Protocol Footprint" icon={<Compass size={20} />} accent="#38bdf8">
+          {report.topCategories && report.topCategories.length > 0 ? (
+            <div style={{ display: 'grid', gap: '10px' }}>
+              {report.topCategories.slice(0, 6).map((item) => (
+                <div key={item.name} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '12px',
+                  background: 'rgba(15, 23, 42, 0.72)',
+                  border: '1px solid rgba(148, 163, 184, 0.14)',
+                  borderRadius: '12px',
+                }}>
+                  <span style={{ color: '#e2e8f0', fontWeight: '750' }}>{item.name}</span>
+                  <span style={{ color: '#93c5fd', fontWeight: '850' }}>{item.count}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyReportText text="No recognizable protocol footprint detected yet." />
+          )}
+        </ReportPanel>
+      </div>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: '16px',
+      }}>
+        <ReportPanel title="Strong Signals" icon={<CheckCircle2 size={20} />} accent="#22c55e">
+          <InsightList items={report.strengths || []} color="#22c55e" fallback="No strong signals detected yet." />
+        </ReportPanel>
+        <ReportPanel title="Needs Work" icon={<XCircle size={20} />} accent="#f97316">
+          <InsightList items={report.gaps || []} color="#f97316" fallback="No major gaps detected from available data." />
+        </ReportPanel>
+        <ReportPanel title="Next Best Actions" icon={<Target size={20} />} accent="#8b5cf6">
+          <InsightList items={report.nextActions || []} color="#8b5cf6" fallback="Keep using Base naturally and consistently." />
+        </ReportPanel>
+      </div>
+
+      {report.dataSources && (
+        <div style={{
+          color: '#94a3b8',
+          fontSize: '12px',
+          fontWeight: '650',
+          padding: '0 2px',
+        }}>
+          Data sources: {report.dataSources.join(', ')}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ReportMetricCard({ icon, label, value, color, tall = false }) {
+  return (
+    <div style={{
+      minHeight: tall ? '92px' : '76px',
+      background: 'rgba(30, 41, 59, 0.95)',
+      border: `1px solid ${color}33`,
+      borderRadius: '12px',
+      padding: '14px',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      gap: '8px',
+      boxShadow: `0 10px 24px ${color}10`,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color }}>
+        {icon}
+        <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: '800' }}>{label}</span>
+      </div>
+      <div style={{
+        color: '#f8fafc',
+        fontSize: tall ? '20px' : '22px',
+        fontWeight: '900',
+        lineHeight: 1.15,
+        overflowWrap: 'anywhere',
+      }}>
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function ReportPanel({ title, icon, accent, children }) {
+  return (
+    <div style={{
+      background: 'rgba(30, 41, 59, 0.95)',
+      border: `1px solid ${accent}33`,
+      borderRadius: '14px',
+      padding: '18px',
+      boxShadow: `0 14px 32px ${accent}10`,
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        color: accent,
+        marginBottom: '14px',
+      }}>
+        {icon}
+        <h3 style={{
+          margin: 0,
+          color: '#f8fafc',
+          fontSize: '17px',
+          fontWeight: '900',
+        }}>
+          {title}
+        </h3>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function ScoreBreakdownRow({ item, color }) {
+  const pct = item.max ? Math.round((item.value / item.max) * 100) : 0
+  return (
+    <div style={{ marginBottom: '12px' }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        gap: '10px',
+        marginBottom: '7px',
+        color: '#cbd5e1',
+        fontSize: '13px',
+        fontWeight: '750',
+      }}>
+        <span>{item.label}</span>
+        <span>{item.value}/{item.max}</span>
+      </div>
+      <div style={{
+        height: '8px',
+        borderRadius: '999px',
+        background: 'rgba(148, 163, 184, 0.18)',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          width: `${Math.min(100, Math.max(0, pct))}%`,
+          height: '100%',
+          background: color,
+          borderRadius: '999px',
+        }} />
+      </div>
+    </div>
+  )
+}
+
+function InsightList({ items, color, fallback }) {
+  if (!items || items.length === 0) return <EmptyReportText text={fallback} />
+  return (
+    <div style={{ display: 'grid', gap: '10px' }}>
+      {items.map((item, index) => (
+        <div key={`${item}-${index}`} style={{
+          display: 'grid',
+          gridTemplateColumns: '18px 1fr',
+          gap: '10px',
+          alignItems: 'start',
+          color: '#e2e8f0',
+          fontSize: '14px',
+          lineHeight: 1.45,
+          fontWeight: '650',
+        }}>
+          <span style={{
+            width: '9px',
+            height: '9px',
+            borderRadius: '50%',
+            background: color,
+            marginTop: '6px',
+            boxShadow: `0 0 0 4px ${color}18`,
+          }} />
+          <span>{item}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function EmptyReportText({ text }) {
+  return (
+    <div style={{
+      color: '#94a3b8',
+      fontSize: '14px',
+      lineHeight: 1.5,
+      padding: '12px',
+      background: 'rgba(15, 23, 42, 0.55)',
+      borderRadius: '10px',
+      border: '1px solid rgba(148, 163, 184, 0.12)',
+    }}>
+      {text}
+    </div>
   )
 }
 

@@ -116,6 +116,7 @@ export default function AllowanceCleaner() {
   }
 
   const riskyCount = allowances.filter(a => a.riskLevel === 'high' || a.riskLevel === 'medium').length
+  const canRevokeScannedNetwork = (scannedNetwork || selectedNetwork) === 'base'
 
   return (
     <NetworkGuard showWarning={true}>
@@ -323,7 +324,7 @@ export default function AllowanceCleaner() {
                   {riskyCount}
                 </div>
               </div>
-              {riskyCount > 0 && (
+              {riskyCount > 0 && canRevokeScannedNetwork && (
                 <button
                   onClick={handleRevokeAllRisky}
                   disabled={isRevoking}
@@ -354,6 +355,17 @@ export default function AllowanceCleaner() {
                     </>
                   )}
                 </button>
+              )}
+              {riskyCount > 0 && !canRevokeScannedNetwork && (
+                <div style={{
+                  color: '#f59e0b',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  maxWidth: '320px',
+                  lineHeight: 1.45
+                }}>
+                  Revoke is available in-app for Base approvals. For {SUPPORTED_NETWORKS[scannedNetwork]?.name || scannedNetwork}, use the network explorer or wallet approval manager.
+                </div>
               )}
             </div>
 
@@ -404,6 +416,9 @@ export default function AllowanceCleaner() {
                         {categoryAllowances.map((allowance, index) => {
                   // Use backend's formatted amount if available
                   const displayAmount = allowance.amountFormatted || 'Unknown'
+                  const allowanceNetwork = allowance.network || scannedNetwork || selectedNetwork
+                  const canRevokeInApp = allowanceNetwork === 'base'
+                  const isNetworkMismatch = allowance.network && allowance.network !== scannedNetwork
 
                   return (
                     <div
@@ -506,7 +521,7 @@ export default function AllowanceCleaner() {
                       )}
 
                       {/* Network mismatch warning */}
-                      {allowance.network && allowance.network !== scannedNetwork && (
+                      {isNetworkMismatch && (
                         <div style={{
                           background: 'rgba(245, 158, 11, 0.1)',
                           border: '1px solid rgba(245, 158, 11, 0.3)',
@@ -527,13 +542,28 @@ export default function AllowanceCleaner() {
                         </div>
                       )}
 
+                      {!canRevokeInApp && (
+                        <div style={{
+                          background: 'rgba(59, 130, 246, 0.08)',
+                          border: '1px solid rgba(59, 130, 246, 0.22)',
+                          borderRadius: '8px',
+                          padding: '12px',
+                          marginBottom: '12px',
+                          color: '#93c5fd',
+                          fontSize: '13px',
+                          lineHeight: 1.45
+                        }}>
+                          In-app revoke is currently enabled for Base approvals. This approval is on {SUPPORTED_NETWORKS[allowanceNetwork]?.name || allowanceNetwork}, so use the explorer link or your wallet's approval manager to revoke it.
+                        </div>
+                      )}
+
                       <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <button
                           onClick={() => handleRevoke(allowance.tokenAddress, allowance.spenderAddress, index)}
-                          disabled={isRevoking || revokingIndex === index || (allowance.network && allowance.network !== scannedNetwork)}
+                          disabled={isRevoking || revokingIndex === index || isNetworkMismatch || !canRevokeInApp}
                           style={{
                             background: (allowance.riskLevel === 'high' || allowance.riskLevel === 'medium')
-                              ? (allowance.network && allowance.network !== scannedNetwork 
+                              ? (isNetworkMismatch || !canRevokeInApp
                                   ? 'rgba(239, 68, 68, 0.3)' 
                                   : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)')
                               : 'rgba(59, 130, 246, 0.2)',
@@ -543,14 +573,16 @@ export default function AllowanceCleaner() {
                             padding: '10px 20px',
                             fontSize: '14px',
                             fontWeight: '600',
-                            cursor: (isRevoking || revokingIndex === index || (allowance.network && allowance.network !== scannedNetwork)) ? 'not-allowed' : 'pointer',
+                            cursor: (isRevoking || revokingIndex === index || isNetworkMismatch || !canRevokeInApp) ? 'not-allowed' : 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '6px',
                             transition: 'all 0.2s',
-                            opacity: (isRevoking || revokingIndex === index || (allowance.network && allowance.network !== scannedNetwork)) ? 0.5 : 1
+                            opacity: (isRevoking || revokingIndex === index || isNetworkMismatch || !canRevokeInApp) ? 0.5 : 1
                           }}
-                          title={allowance.network && allowance.network !== scannedNetwork 
+                          title={!canRevokeInApp
+                            ? 'In-app revoke is currently supported on Base only'
+                            : isNetworkMismatch
                             ? `Switch to ${SUPPORTED_NETWORKS[allowance.network]?.name || allowance.network} to revoke` 
                             : 'Revoke this allowance'}
                         >
@@ -559,7 +591,12 @@ export default function AllowanceCleaner() {
                               <Loader2 size={14} className="spin" />
                               Revoking...
                             </>
-                          ) : allowance.network && allowance.network !== scannedNetwork ? (
+                          ) : !canRevokeInApp ? (
+                            <>
+                              <XCircle size={14} />
+                              Scan Only
+                            </>
+                          ) : isNetworkMismatch ? (
                             <>
                               <XCircle size={14} />
                               Wrong Network
@@ -613,4 +650,3 @@ export default function AllowanceCleaner() {
     </NetworkGuard>
   )
 }
-

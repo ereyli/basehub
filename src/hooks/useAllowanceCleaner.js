@@ -255,6 +255,27 @@ export const useAllowanceCleaner = () => {
       throw new Error('Wallet not connected')
     }
 
+    const targetAllowance = allowances.find(
+      allowance =>
+        allowance.tokenAddress?.toLowerCase() === tokenAddress.toLowerCase() &&
+        allowance.spenderAddress?.toLowerCase() === spenderAddress.toLowerCase()
+    )
+    const targetNetwork = targetAllowance?.network || scannedNetwork || 'base'
+    if (targetNetwork !== 'base') {
+      const message = 'In-app revoke is currently supported on Base allowances only. Use the target chain explorer or wallet approval manager for this network.'
+      setError(message)
+      throw new Error(message)
+    }
+
+    if (chainId !== NETWORKS.BASE.chainId) {
+      try {
+        await switchChain({ chainId: NETWORKS.BASE.chainId })
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      } catch (err) {
+        throw new Error('Please switch to Base network to revoke this Base allowance')
+      }
+    }
+
     setIsRevoking(true)
     setError(null)
 
@@ -335,9 +356,25 @@ export const useAllowanceCleaner = () => {
     }
 
     const riskyAllowances = allowances.filter(a => a.riskLevel === 'high' || a.riskLevel === 'medium')
+    const nonBaseRiskyCount = riskyAllowances.filter(a => (a.network || scannedNetwork || 'base') !== 'base').length
     
     if (riskyAllowances.length === 0) {
       throw new Error('No risky allowances to revoke')
+    }
+
+    if (nonBaseRiskyCount > 0) {
+      const message = 'Batch revoke is currently supported for Base allowances only.'
+      setError(message)
+      throw new Error(message)
+    }
+
+    if (chainId !== NETWORKS.BASE.chainId) {
+      try {
+        await switchChain({ chainId: NETWORKS.BASE.chainId })
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      } catch (err) {
+        throw new Error('Please switch to Base network to revoke Base allowances')
+      }
     }
 
     setIsRevoking(true)

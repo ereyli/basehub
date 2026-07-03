@@ -29,7 +29,7 @@ export default function ContractSecurity() {
   const { address, isConnected } = useAccount()
   const { analyzeContract, isLoading, error, analysis } = useContractSecurity()
   const [contractAddress, setContractAddress] = useState('')
-  const [selectedNetwork, setSelectedNetwork] = useState('ethereum')
+  const [selectedNetwork, setSelectedNetwork] = useState('base')
   const [hasAnalyzed, setHasAnalyzed] = useState(false)
 
   const buildCastText = () => {
@@ -592,7 +592,7 @@ export default function ContractSecurity() {
                           <div style={{
                             fontSize: '15px',
                             fontWeight: '700',
-                            color: '#e5e7eb',
+                            color: check.passed ? '#065f46' : check.status.includes('⚠️') ? '#92400e' : '#991b1b',
                             flex: 1,
                           }}>
                             {check.check}
@@ -674,6 +674,14 @@ export default function ContractSecurity() {
                       </div>
                     </div>
                   )}
+                  {analysis.dataQuality && (
+                    <div>
+                      <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Data Quality</div>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: analysis.dataQuality === 'Full' ? '#10b981' : '#f59e0b' }}>
+                        {analysis.dataQuality}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -730,7 +738,7 @@ export default function ContractSecurity() {
                           <div style={{
                             fontSize: '18px',
                             fontWeight: '800',
-                            color: '#e5e7eb',
+                            color: risk.severity === 'Critical' || risk.severity === 'High' ? '#7f1d1d' : '#78350f',
                           }}>
                             {risk.type}
                           </div>
@@ -823,7 +831,7 @@ export default function ContractSecurity() {
                           <div style={{
                             marginTop: '8px',
                             fontSize: '12px',
-                            color: '#9ca3af',
+                            color: '#78350f',
                             fontStyle: 'italic',
                           }}>
                             Total owner functions: {risk.functionCount}
@@ -930,7 +938,7 @@ export default function ContractSecurity() {
                           <div style={{
                             fontSize: '14px',
                             fontWeight: '700',
-                            color: '#e5e7eb',
+                            color: '#065f46',
                           }}>
                             {feature.type}
                           </div>
@@ -970,10 +978,10 @@ export default function ContractSecurity() {
                   fontWeight: '700',
                   color: '#e5e7eb',
                   wordBreak: 'break-all',
-                  background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
+                  background: 'rgba(15, 23, 42, 0.8)',
                   padding: '12px 20px',
                   borderRadius: '12px',
-                  border: '2px solid #d1d5db',
+                  border: '2px solid rgba(102, 126, 234, 0.2)',
                 }}>
                   {analysis.contractAddress}
                 </div>
@@ -1017,4 +1025,3 @@ export default function ContractSecurity() {
     </NetworkGuard>
   )
 }
-

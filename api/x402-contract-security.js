@@ -17,7 +17,10 @@ const RECEIVING_ADDRESS = '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
 const PRICE = '$0.50' // 0.50 USDC
 const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' // Base USDC
 // Use env only – no fallback in repo (best practice for secrets)
-const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || ''
+const API_KEYS = {
+  // Etherscan API V2 uses one account key across supported chains.
+  ETHERSCAN: process.env.ETHERSCAN_API_KEY || process.env.BASESCAN_API_KEY || '',
+}
 
 // Supported networks for contract analysis (same as wallet analysis)
 const SUPPORTED_NETWORKS = {
@@ -39,10 +42,10 @@ const SUPPORTED_NETWORKS = {
 }
 
 // Log API key status
-if (BASESCAN_API_KEY) {
-  console.log('✅ Etherscan/Basescan API Key loaded from environment:', `${BASESCAN_API_KEY.substring(0, 10)}...`)
+if (API_KEYS.ETHERSCAN) {
+  console.log('✅ Etherscan API V2 key loaded from environment:', `${API_KEYS.ETHERSCAN.substring(0, 10)}...`)
 } else {
-  console.warn('⚠️ BASESCAN_API_KEY not set – set it in env for Etherscan/Basescan API calls')
+  console.warn('⚠️ ETHERSCAN_API_KEY/BASESCAN_API_KEY not set – contract analysis will return limited reports')
 }
 
 // Configure facilitator
@@ -101,6 +104,59 @@ app.use(
 // Contract Security Analysis Function
 // ==========================================
 
+function hideApiKeyInUrl(url, key) {
+  if (!key) return url
+  return url.replace(key, 'API_KEY_HIDDEN')
+}
+
+function addSecurityCheckOnce(analysis, check) {
+  if (analysis.securityChecks.some(existing => existing.check === check.check)) return
+  analysis.securityChecks.push(check)
+}
+
+function addLimitedDataChecks(analysis, reason) {
+  analysis.dataQuality = 'Limited'
+  analysis.warnings.push({
+    type: 'Limited Data',
+    description: reason,
+  })
+  addSecurityCheckOnce(analysis, {
+    check: 'Explorer Data',
+    passed: false,
+    status: '⚠️ Limited explorer data',
+    details: reason,
+  })
+  addSecurityCheckOnce(analysis, {
+    check: 'Contract Verification',
+    passed: false,
+    status: '⚠️ Verification unknown',
+    details: 'Source code could not be verified from available explorer data.',
+  })
+}
+
+function finalizeContractAnalysis(analysis) {
+  if (!analysis.isVerified) {
+    addSecurityCheckOnce(analysis, {
+      check: 'Contract Verification',
+      passed: false,
+      status: '❌ Not verified',
+      details: 'Contract source code is not verified or could not be fetched. Treat this as a high-uncertainty result.',
+    })
+  }
+
+  addSecurityCheckOnce(analysis, {
+    check: 'ABI Availability',
+    passed: Boolean(analysis.abi),
+    status: analysis.abi ? '✅ ABI available' : '⚠️ ABI unavailable',
+    details: analysis.abi
+      ? 'Contract ABI was retrieved from the explorer.'
+      : 'ABI is not available. Function-level checks are limited.',
+  })
+
+  calculateSecurityScore(analysis)
+  return analysis
+}
+
 async function analyzeContractSecurity(contractAddress, selectedNetwork = 'ethereum') {
   // Validate network selection
   if (!SUPPORTED_NETWORKS[selectedNetwork]) {
@@ -129,14 +185,24 @@ async function analyzeContractSecurity(contractAddress, selectedNetwork = 'ether
     optimizationEnabled: false,
     sourceCode: null,
     abi: null,
+    dataQuality: 'Full',
+    dataSources: [],
+  }
+
+  if (!API_KEYS.ETHERSCAN) {
+    addLimitedDataChecks(
+      analysis,
+      'Etherscan API V2 key is not configured. Set ETHERSCAN_API_KEY for full contract source and ABI analysis.'
+    )
+    return finalizeContractAnalysis(analysis)
   }
 
   try {
     // 1. Get contract source code (if verified)
     console.log(`🔍 Fetching contract source code from Etherscan API V2 (${network.name})...`)
     try {
-      const sourceCodeUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=contract&action=getsourcecode&address=${contractAddress}&apikey=${BASESCAN_API_KEY}`
-      console.log(`🌐 Source code API URL (${network.name}):`, sourceCodeUrl.replace(BASESCAN_API_KEY, 'API_KEY_HIDDEN'))
+      const sourceCodeUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=contract&action=getsourcecode&address=${contractAddress}&apikey=${API_KEYS.ETHERSCAN}`
+      console.log(`🌐 Source code API URL (${network.name}):`, hideApiKeyInUrl(sourceCodeUrl, API_KEYS.ETHERSCAN))
       
       const sourceCodeResponse = await fetch(sourceCodeUrl, {
         headers: {
@@ -165,6 +231,7 @@ async function analyzeContractSecurity(contractAddress, selectedNetwork = 'ether
           
           if (analysis.isVerified) {
             analysis.sourceCode = contractInfo.SourceCode
+            analysis.dataSources.push('Etherscan V2 Source')
             console.log('✅ Contract is verified, source code available')
             
             // Analyze source code for risks
@@ -172,24 +239,25 @@ async function analyzeContractSecurity(contractAddress, selectedNetwork = 'ether
           } else {
             console.log('⚠️ Contract is not verified, limited analysis possible')
             analysis.warnings.push('Contract source code is not verified. Full security analysis cannot be performed.')
+            analysis.dataQuality = 'Limited'
           }
         } else {
           console.log('⚠️ No contract information found')
-          analysis.warnings.push('Contract information not found on blockchain explorer.')
+          addLimitedDataChecks(analysis, sourceCodeData.result || 'Contract information not found on blockchain explorer.')
         }
       } else {
         console.error('❌ Source code API HTTP error:', sourceCodeResponse.status)
-        analysis.warnings.push('Failed to fetch contract information from blockchain explorer.')
+        addLimitedDataChecks(analysis, `Failed to fetch contract information from blockchain explorer. HTTP ${sourceCodeResponse.status}.`)
       }
     } catch (sourceCodeError) {
       console.error('❌ Error fetching source code:', sourceCodeError)
-      analysis.warnings.push('Error fetching contract source code.')
+      addLimitedDataChecks(analysis, `Error fetching contract source code: ${sourceCodeError.message}`)
     }
 
     // 2. Get contract ABI
     console.log(`🔍 Fetching contract ABI from Etherscan API V2 (${network.name})...`)
     try {
-      const abiUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=contract&action=getabi&address=${contractAddress}&apikey=${BASESCAN_API_KEY}`
+      const abiUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=contract&action=getabi&address=${contractAddress}&apikey=${API_KEYS.ETHERSCAN}`
       const abiResponse = await fetch(abiUrl, {
         headers: {
           'Accept': 'application/json',
@@ -202,6 +270,7 @@ async function analyzeContractSecurity(contractAddress, selectedNetwork = 'ether
         if (abiData.status === '1' && abiData.result && abiData.result !== 'Contract source code not verified') {
           try {
             analysis.abi = JSON.parse(abiData.result)
+            analysis.dataSources.push('Etherscan V2 ABI')
             console.log('✅ Contract ABI retrieved')
           } catch (parseError) {
             console.log('⚠️ ABI parse error:', parseError)
@@ -213,7 +282,7 @@ async function analyzeContractSecurity(contractAddress, selectedNetwork = 'ether
     }
 
     // 3. Calculate Security Score
-    calculateSecurityScore(analysis)
+    finalizeContractAnalysis(analysis)
 
   } catch (error) {
     console.error('❌ Contract security analysis error:', error)
@@ -784,6 +853,11 @@ function calculateSecurityScore(analysis) {
     score += 10
   } else {
     score -= 15 // Unverified contracts are risky
+    score = Math.min(score, 55)
+  }
+
+  if (analysis.dataQuality === 'Limited') {
+    score = Math.min(score, 45)
   }
   
   // Ensure score is between 0 and 100

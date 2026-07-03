@@ -82,7 +82,27 @@ app.use(
 const API_KEYS = {
   ALCHEMY: process.env.ALCHEMY_API_KEY || '',
   // Etherscan API V2 - Single key works for ALL Etherscan family chains
-  ETHERSCAN: process.env.ETHERSCAN_API_KEY || '',
+  ETHERSCAN: process.env.ETHERSCAN_API_KEY || process.env.BASESCAN_API_KEY || '',
+}
+
+const RPC_URLS = {
+  base: API_KEYS.ALCHEMY
+    ? `https://base-mainnet.g.alchemy.com/v2/${API_KEYS.ALCHEMY}`
+    : (process.env.BASE_RPC_URL || 'https://mainnet.base.org'),
+  ethereum: API_KEYS.ALCHEMY
+    ? `https://eth-mainnet.g.alchemy.com/v2/${API_KEYS.ALCHEMY}`
+    : 'https://eth.llamarpc.com',
+  polygon: API_KEYS.ALCHEMY
+    ? `https://polygon-mainnet.g.alchemy.com/v2/${API_KEYS.ALCHEMY}`
+    : 'https://polygon-rpc.com',
+  arbitrum: API_KEYS.ALCHEMY
+    ? `https://arb-mainnet.g.alchemy.com/v2/${API_KEYS.ALCHEMY}`
+    : 'https://arb1.arbitrum.io/rpc',
+  optimism: API_KEYS.ALCHEMY
+    ? `https://opt-mainnet.g.alchemy.com/v2/${API_KEYS.ALCHEMY}`
+    : 'https://mainnet.optimism.io',
+  bsc: 'https://bsc-dataseed.binance.org',
+  avalanche: 'https://api.avax.network/ext/bc/C/rpc',
 }
 
 // Rate limits per API (calls per second)
@@ -132,7 +152,7 @@ const SUPPORTED_NETWORKS = {
     chainId: 8453, 
     name: 'Base Mainnet',
     slug: 'base',
-    rpc: `https://base-mainnet.g.alchemy.com/v2/${API_KEYS.ALCHEMY}`,
+    rpc: RPC_URLS.base,
     // V2 API: Use Etherscan V2 endpoint with chainid parameter
     apiUrl: 'https://api.etherscan.io/v2/api',
     apiKey: API_KEYS.ETHERSCAN, // Single key for all chains!
@@ -145,7 +165,7 @@ const SUPPORTED_NETWORKS = {
     chainId: 1, 
     name: 'Ethereum Mainnet',
     slug: 'ethereum',
-    rpc: `https://eth-mainnet.g.alchemy.com/v2/${API_KEYS.ALCHEMY}`,
+    rpc: RPC_URLS.ethereum,
     apiUrl: 'https://api.etherscan.io/v2/api',
     apiKey: API_KEYS.ETHERSCAN,
     apiRateLimit: RATE_LIMITS.etherscan,
@@ -157,7 +177,7 @@ const SUPPORTED_NETWORKS = {
     chainId: 137, 
     name: 'Polygon Mainnet',
     slug: 'polygon',
-    rpc: `https://polygon-mainnet.g.alchemy.com/v2/${API_KEYS.ALCHEMY}`,
+    rpc: RPC_URLS.polygon,
     apiUrl: 'https://api.etherscan.io/v2/api',
     apiKey: API_KEYS.ETHERSCAN,
     apiRateLimit: RATE_LIMITS.etherscan,
@@ -169,7 +189,7 @@ const SUPPORTED_NETWORKS = {
     chainId: 42161, 
     name: 'Arbitrum One',
     slug: 'arbitrum',
-    rpc: `https://arb-mainnet.g.alchemy.com/v2/${API_KEYS.ALCHEMY}`,
+    rpc: RPC_URLS.arbitrum,
     apiUrl: 'https://api.etherscan.io/v2/api',
     apiKey: API_KEYS.ETHERSCAN,
     apiRateLimit: RATE_LIMITS.etherscan,
@@ -181,7 +201,7 @@ const SUPPORTED_NETWORKS = {
     chainId: 10, 
     name: 'Optimism',
     slug: 'optimism',
-    rpc: `https://opt-mainnet.g.alchemy.com/v2/${API_KEYS.ALCHEMY}`,
+    rpc: RPC_URLS.optimism,
     apiUrl: 'https://api.etherscan.io/v2/api',
     apiKey: API_KEYS.ETHERSCAN,
     apiRateLimit: RATE_LIMITS.etherscan,
@@ -193,7 +213,7 @@ const SUPPORTED_NETWORKS = {
     chainId: 56, 
     name: 'BNB Chain',
     slug: 'bsc',
-    rpc: 'https://bsc-dataseed.binance.org',
+    rpc: RPC_URLS.bsc,
     apiUrl: 'https://api.etherscan.io/v2/api',
     apiKey: API_KEYS.ETHERSCAN,
     apiRateLimit: RATE_LIMITS.etherscan,
@@ -205,7 +225,7 @@ const SUPPORTED_NETWORKS = {
     chainId: 43114, 
     name: 'Avalanche',
     slug: 'avalanche',
-    rpc: 'https://api.avax.network/ext/bc/C/rpc',
+    rpc: RPC_URLS.avalanche,
     apiUrl: 'https://api.etherscan.io/v2/api',
     apiKey: API_KEYS.ETHERSCAN,
     apiRateLimit: RATE_LIMITS.etherscan,
@@ -277,7 +297,9 @@ const COMMON_SPENDERS = [
 app.use('/*', cors({
   origin: '*',
   allowMethods: ['POST', 'GET', 'OPTIONS'],
-  allowHeaders: ['Content-Type'],
+  allowHeaders: ['Content-Type', 'Authorization', 'X-PAYMENT', 'PAYMENT-SIGNATURE'],
+  exposeHeaders: ['X-PAYMENT-RESPONSE', 'PAYMENT-RESPONSE', 'PAYMENT-REQUIRED'],
+  maxAge: 86400,
 }))
 
 // Helpers
@@ -798,7 +820,7 @@ async function scanAllowances(walletAddress, selectedNetwork = 'base') {
               riskLevel,
               reason,
               network: selectedNetwork, // Add network info for frontend
-              chainId: networkConfig.chainId // Add chainId for verification
+              chainId: network.chainId // Add chainId for verification
             })
             
             console.log(`   ✅ Found approval: ${tokenInfo.symbol} -> ${spender.substring(0, 10)}... (${isUnlimited ? 'Unlimited' : allowance.toString()})`)
