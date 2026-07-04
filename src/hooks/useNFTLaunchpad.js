@@ -7,8 +7,7 @@ import { parseEther, encodeAbiParameters, parseAbiParameters, toEventHash, maxUi
 import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/pinata'
 import {
   encodeDeployerCall,
-  DEPLOYER_FEE_NFT_COLLECTION_ETH,
-  DEPLOYER_FEE_NFT_COLLECTION_ETH_HOLDER,
+  getNFTCollectionFeeNative,
 } from '../config/deployer'
 import { getContractAddressByNetwork, NETWORKS } from '../config/networks'
 import { NFT_COLLECTION_BYTECODE } from '../config/nftCollection'
@@ -57,7 +56,7 @@ export function useNFTLaunchpad() {
     query: { enabled: shouldFetchEarlyAccess },
   })
   const isEarlyAccessHolder = (earlyAccessBalance ?? 0n) > 0n
-  const deployFeeEth = isEarlyAccessHolder ? DEPLOYER_FEE_NFT_COLLECTION_ETH_HOLDER : DEPLOYER_FEE_NFT_COLLECTION_ETH
+  const deployFeeNative = getNFTCollectionFeeNative(chainId, isEarlyAccessHolder)
 
   const [isLoading, setIsLoading] = useState(false)
   const [loadingStep, setLoadingStep] = useState(null)
@@ -328,7 +327,7 @@ export function useNFTLaunchpad() {
       }
 
       // Fee at tx time: read Early Access balance on Base only (Early Access Pass is Base-only)
-      let feeEthForTx = DEPLOYER_FEE_NFT_COLLECTION_ETH
+      let feeNativeForTx = getNFTCollectionFeeNative(chainId, false)
       if (chainId === NETWORKS.BASE.chainId && publicClient && address && EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS) {
         try {
           const balance = await publicClient.readContract({
@@ -337,7 +336,7 @@ export function useNFTLaunchpad() {
             functionName: 'balanceOf',
             args: [address],
           })
-          if (balance != null && balance > 0n) feeEthForTx = DEPLOYER_FEE_NFT_COLLECTION_ETH_HOLDER
+          if (balance != null && balance > 0n) feeNativeForTx = getNFTCollectionFeeNative(chainId, true)
         } catch (e) {
           console.warn('Early Access balance check failed, using standard fee:', e)
         }
@@ -377,7 +376,7 @@ export function useNFTLaunchpad() {
           ? {}
           : {
               account: address,
-              value: parseEther(feeEthForTx),
+              value: parseEther(feeNativeForTx),
             }),
         to: getAddress(deployerAddress),
         data: dataToSend,
@@ -471,9 +470,10 @@ export function useNFTLaunchpad() {
   }
 
   /** UI: Tempo uses pathUSD (TIP20 / PUSD-style), not ETH for deploy fee */
+  const nativeSymbol = NETWORKS.MONAD?.chainId === chainId ? 'MON' : 'ETH'
   const deployFeeLabel = isTempoChain
     ? '4.40 PUSD (pathUSD)'
-    : `${deployFeeEth} ETH`
+    : `${deployFeeNative} ${nativeSymbol}`
 
   return {
     createCollection,
@@ -484,7 +484,7 @@ export function useNFTLaunchpad() {
     contractAddress,
     deployTxHash,
     slug,
-    deployFeeEth,
+    deployFeeEth: deployFeeNative,
     deployFeeLabel,
     isTempoChain,
     isEarlyAccessHolder,

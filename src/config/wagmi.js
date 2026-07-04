@@ -141,9 +141,60 @@ const robinhoodChain = defineChain({
   },
 })
 
+const arbitrum = defineChain({
+  id: NETWORKS.ARBITRUM.chainId,
+  name: NETWORKS.ARBITRUM.chainName,
+  nativeCurrency: NETWORKS.ARBITRUM.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.ARBITRUM.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Arbiscan',
+      url: NETWORKS.ARBITRUM.blockExplorerUrls[0],
+    },
+  },
+})
+
+const optimism = defineChain({
+  id: NETWORKS.OPTIMISM.chainId,
+  name: NETWORKS.OPTIMISM.chainName,
+  nativeCurrency: NETWORKS.OPTIMISM.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.OPTIMISM.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Optimistic Etherscan',
+      url: NETWORKS.OPTIMISM.blockExplorerUrls[0],
+    },
+  },
+})
+
+const monad = defineChain({
+  id: NETWORKS.MONAD.chainId,
+  name: NETWORKS.MONAD.chainName,
+  nativeCurrency: NETWORKS.MONAD.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.MONAD.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'MonadVision',
+      url: NETWORKS.MONAD.blockExplorerUrls[0],
+    },
+  },
+})
+
 // Wagmi config with multiple wallet support
 export const config = createConfig({
-  chains: [base, inkChain, tempo, soneium, katana, megaeth, arcRestnet, robinhoodChain],
+  chains: [base, inkChain, tempo, soneium, katana, megaeth, arcRestnet, robinhoodChain, arbitrum, optimism, monad],
   dataSuffix: DATA_SUFFIX,
   transports: {
     [base.id]: fallback(
@@ -177,6 +228,17 @@ export const config = createConfig({
       retryDelay: 1000,
     }),
     [robinhoodChain.id]: http(NETWORKS.ROBINHOOD.rpcUrls[0], {
+      timeout: 30000,
+      retryCount: 3,
+      retryDelay: 1000,
+    }),
+    [arbitrum.id]: fallback(
+      NETWORKS.ARBITRUM.rpcUrls.map((url) => viemHttp(url, { timeout: 30000, retryCount: 2, retryDelay: 1000 }))
+    ),
+    [optimism.id]: fallback(
+      NETWORKS.OPTIMISM.rpcUrls.map((url) => viemHttp(url, { timeout: 30000, retryCount: 2, retryDelay: 1000 }))
+    ),
+    [monad.id]: http(NETWORKS.MONAD.rpcUrls[0], {
       timeout: 30000,
       retryCount: 3,
       retryDelay: 1000,

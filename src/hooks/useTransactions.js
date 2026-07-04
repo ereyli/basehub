@@ -11,6 +11,7 @@ import { config, DATA_SUFFIX } from '../config/wagmi' // DATA_SUFFIX: Base app/m
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { useQuestSystem } from './useQuestSystem'
 import { sendContractCallBaseApp, shouldUseSendCallsForBaseApp } from '../utils/baseAppSendCalls'
+import { getGameFeeNative } from '../config/deployer'
 
 export const useTransactions = () => {
   // Check if we're in web environment
@@ -156,10 +157,8 @@ export const useTransactions = () => {
     return getContractAddressByNetwork(contractName, chainId) || getContractAddress(contractName) // Fallback to Base
   }
 
-  // Get game fee based on network
-  // Base + all networks: 0.00002 ETH
   const getGameFee = () => {
-    return parseEther('0.00002')
+    return parseEther(getGameFeeNative(chainId))
   }
 
   const readTempoFeeConfig = useCallback(async (contractAddress, feeField = 'GAME_FEE_USD6') => {
@@ -250,11 +249,11 @@ export const useTransactions = () => {
         })
         return BigInt(price)
       } catch (e) {
-        console.warn('Could not read CREDIT_PRICE from contract, using 0.00002:', e?.message)
+        console.warn('Could not read CREDIT_PRICE from contract, using fallback:', e?.message)
       }
     }
-    return parseEther('0.00002')
-  }, [publicClient])
+    return parseEther(getGameFeeNative(chainId))
+  }, [publicClient, chainId])
 
   const sendGMTransaction = useCallback(async (message = 'GM!') => {
     if (!address) {

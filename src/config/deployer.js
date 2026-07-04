@@ -104,3 +104,22 @@ export const DEPLOYER_FEE_ETH = '0.00025'
 export const DEPLOYER_FEE_NFT_COLLECTION_ETH = '0.002'
 /** NFT Launchpad: BaseHub Early Access Pass holders */
 export const DEPLOYER_FEE_NFT_COLLECTION_ETH_HOLDER = '0.0005'
+
+export const MONAD_CHAIN_ID = 143
+/** Monad fees are MON-native equivalents of ETH-network fees, calculated from Jul 4 2026 spot prices. */
+export const MONAD_GAME_FEE_MON = '1.75'
+export const MONAD_DEPLOYER_FEE_MON = '22'
+export const MONAD_NFT_COLLECTION_FEE_MON = '175'
+
+export function getDeployerFeeNative(chainId) {
+  return Number(chainId) === MONAD_CHAIN_ID ? MONAD_DEPLOYER_FEE_MON : DEPLOYER_FEE_ETH
+}
+
+export function getNFTCollectionFeeNative(chainId, isEarlyAccessHolder = false) {
+  if (Number(chainId) === MONAD_CHAIN_ID) return MONAD_NFT_COLLECTION_FEE_MON
+  return isEarlyAccessHolder ? DEPLOYER_FEE_NFT_COLLECTION_ETH_HOLDER : DEPLOYER_FEE_NFT_COLLECTION_ETH
+}
+
+export function getGameFeeNative(chainId) {
+  return Number(chainId) === MONAD_CHAIN_ID ? MONAD_GAME_FEE_MON : '0.00002'
+}

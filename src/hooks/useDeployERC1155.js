@@ -9,7 +9,7 @@ import { useNetworkCheck } from './useNetworkCheck'
 import { useQuestSystem } from './useQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { NETWORKS, getContractAddressByNetwork } from '../config/networks'
-import { BASEHUB_DEPLOYER_ABI, DEPLOYER_FEE_ETH, encodeDeployerCall } from '../config/deployer'
+import { BASEHUB_DEPLOYER_ABI, encodeDeployerCall, getDeployerFeeNative } from '../config/deployer'
 // ERC1155 doesn't need IPFS uploads - uses URI system instead
 
 // ERC1155 Contract ABI
@@ -544,7 +544,7 @@ export const useDeployERC1155 = () => {
         deployTxHash = await walletClient.sendTransaction({
           to: deployerAddress,
           data: deployDataWithSuffix,
-          ...(isTempoChain ? {} : { value: parseEther(DEPLOYER_FEE_ETH) }),
+          ...(isTempoChain ? {} : { value: parseEther(getDeployerFeeNative(chainId)) }),
           chainId,
           gas: deployGas,
           ...(isTempoChain ? { chain: tempo } : {}),

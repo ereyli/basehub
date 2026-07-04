@@ -179,11 +179,65 @@ const robinhoodChain = defineChain({
   iconBackground: '#C2FF00',
 })
 
+const arbitrum = defineChain({
+  id: NETWORKS.ARBITRUM.chainId,
+  name: NETWORKS.ARBITRUM.chainName,
+  nativeCurrency: NETWORKS.ARBITRUM.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.ARBITRUM.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Arbiscan',
+      url: NETWORKS.ARBITRUM.blockExplorerUrls[0],
+    },
+  },
+  iconBackground: '#28a0f0',
+})
+
+const optimism = defineChain({
+  id: NETWORKS.OPTIMISM.chainId,
+  name: NETWORKS.OPTIMISM.chainName,
+  nativeCurrency: NETWORKS.OPTIMISM.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.OPTIMISM.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Optimistic Etherscan',
+      url: NETWORKS.OPTIMISM.blockExplorerUrls[0],
+    },
+  },
+  iconBackground: '#ff0420',
+})
+
+const monad = defineChain({
+  id: NETWORKS.MONAD.chainId,
+  name: NETWORKS.MONAD.chainName,
+  nativeCurrency: NETWORKS.MONAD.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.MONAD.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'MonadVision',
+      url: NETWORKS.MONAD.blockExplorerUrls[0],
+    },
+  },
+  iconBackground: '#836ef9',
+})
+
 // RainbowKit configuration for web users only
 export const rainbowkitConfig = getDefaultConfig({
   appName: APP_NAME,
   projectId: REOWN_PROJECT_ID,
-  chains: [base, inkChain, tempo, soneium, katana, megaeth, arcRestnet, robinhoodChain],
+  chains: [base, inkChain, tempo, soneium, katana, megaeth, arcRestnet, robinhoodChain, arbitrum, optimism, monad],
   wallets: [
     {
       groupName: 'Recommended',

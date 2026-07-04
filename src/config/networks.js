@@ -143,6 +143,59 @@ export const NETWORKS = {
     iconUrls: ['/robinhood-testnet-logo.png'],
     isFarcasterSupported: false,
   },
+  ARBITRUM: {
+    chainId: 42161,
+    networkKey: 'arbitrum',
+    chainName: 'Arbitrum One',
+    isTestnet: false,
+    nativeCurrency: {
+      name: 'Ethereum',
+      symbol: 'ETH',
+      decimals: 18,
+    },
+    rpcUrls: [
+      'https://arb1.arbitrum.io/rpc',
+      'https://arbitrum-one-rpc.publicnode.com',
+      'https://arbitrum.drpc.org',
+    ],
+    blockExplorerUrls: ['https://arbiscan.io'],
+    iconUrls: [],
+    isFarcasterSupported: false,
+  },
+  OPTIMISM: {
+    chainId: 10,
+    networkKey: 'optimism',
+    chainName: 'Optimism',
+    isTestnet: false,
+    nativeCurrency: {
+      name: 'Ethereum',
+      symbol: 'ETH',
+      decimals: 18,
+    },
+    rpcUrls: [
+      'https://mainnet.optimism.io',
+      'https://optimism-rpc.publicnode.com',
+      'https://optimism.drpc.org',
+    ],
+    blockExplorerUrls: ['https://optimistic.etherscan.io'],
+    iconUrls: [],
+    isFarcasterSupported: false,
+  },
+  MONAD: {
+    chainId: 143,
+    networkKey: 'monad',
+    chainName: 'Monad',
+    isTestnet: false,
+    nativeCurrency: {
+      name: 'Monad',
+      symbol: 'MON',
+      decimals: 18,
+    },
+    rpcUrls: ['https://rpc.monad.xyz'],
+    blockExplorerUrls: ['https://monadvision.com'],
+    iconUrls: [],
+    isFarcasterSupported: false,
+  },
 }
 
 // Contract addresses by network
@@ -334,6 +387,9 @@ export const getBlockExplorerDisplayName = (chainId) => {
   if (cid === NETWORKS.TEMPO.chainId) return 'Tempo Explorer'
   if (cid === NETWORKS.KATANA.chainId) return 'Katana Explorer'
   if (cid === NETWORKS.ROBINHOOD.chainId) return 'Robinhood Explorer'
+  if (cid === NETWORKS.ARBITRUM.chainId) return 'Arbiscan'
+  if (cid === NETWORKS.OPTIMISM.chainId) return 'Optimistic Etherscan'
+  if (cid === NETWORKS.MONAD.chainId) return 'MonadVision'
   const net = getNetworkConfig(cid)
   if (net?.chainName) return `${net.chainName} Explorer`
   return 'Explorer'

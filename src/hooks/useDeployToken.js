@@ -8,7 +8,7 @@ import { useNetworkCheck } from './useNetworkCheck'
 import { useQuestSystem } from './useQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { NETWORKS, getContractAddressByNetwork } from '../config/networks'
-import { BASEHUB_DEPLOYER_ABI, DEPLOYER_FEE_ETH, TEMPO_TOKEN_FACTORY_ABI } from '../config/deployer'
+import { BASEHUB_DEPLOYER_ABI, TEMPO_TOKEN_FACTORY_ABI, getDeployerFeeNative } from '../config/deployer'
 
 // ERC20 ABI with constructor for writeContractAsync
 const ERC20_ABI = [
@@ -462,7 +462,9 @@ export const useDeployToken = () => {
       let deployTxHash
       let contractAddress = null
       let feeTxHash = null
-      let feeLabel = isTempoChain ? '0.022 USD (PUSD)' : (DEPLOYER_FEE_ETH + ' ETH')
+      let feeLabel = isTempoChain
+        ? '0.022 USD (PUSD)'
+        : `${getDeployerFeeNative(chainId)} ${currentNetworkConfig?.nativeCurrency?.symbol || 'ETH'}`
 
       const tempoTokenFactory = isTempoChain ? getContractAddressByNetwork('TEMPO_TOKEN_FACTORY', chainId) : null
       const deployerAddress = getContractAddressByNetwork('BASEHUB_DEPLOYER', chainId)
@@ -541,7 +543,7 @@ export const useDeployToken = () => {
           abi: BASEHUB_DEPLOYER_ABI,
           functionName: 'deployERC20',
           args: [initCode],
-          ...(isTempoChain ? {} : { value: parseEther(DEPLOYER_FEE_ETH) }),
+          ...(isTempoChain ? {} : { value: parseEther(getDeployerFeeNative(chainId)) }),
           chainId,
           dataSuffix: DATA_SUFFIX,
         })
