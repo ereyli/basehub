@@ -286,7 +286,8 @@ export default function NFTLaunchpad() {
       supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).eq('chain_id', 1868),
       supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).eq('chain_id', 4326),
       supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).eq('chain_id', 4217),
-    ]).then(([r1, r2, r3, r4, r5]) => {
+      supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).eq('chain_id', 4663),
+    ]).then(([r1, r2, r3, r4, r5, r6]) => {
       if (cancelled) return
       setCountsByChain({
         8453: r1?.count ?? 0,
@@ -294,6 +295,7 @@ export default function NFTLaunchpad() {
         1868: r3?.count ?? 0,
         4326: r4?.count ?? 0,
         4217: r5?.count ?? 0,
+        4663: r6?.count ?? 0,
       })
     })
     return () => { cancelled = true }
@@ -308,7 +310,7 @@ export default function NFTLaunchpad() {
       .select('contract_address, deployer_address, name, symbol, supply, image_url, mint_price, slug, total_minted, is_active, created_at, chain_id')
       .order('created_at', { ascending: false })
       .limit(100)
-    // Filter by chain: Base (8453), Ink (57073), Soneium (1868), MegaETH (4326), Tempo (4217). Legacy rows have chain_id NULL = treat as Base
+    // Filter by chain: Base (8453), Ink (57073), Soneium (1868), MegaETH (4326), Tempo (4217), Robinhood (4663). Legacy rows have chain_id NULL = treat as Base
     if (chainId === NETWORKS.BASE.chainId) {
       query = query.or('chain_id.eq.8453,chain_id.is.null')
     } else if (chainId === NETWORKS.INKCHAIN.chainId) {
@@ -319,6 +321,8 @@ export default function NFTLaunchpad() {
       query = query.eq('chain_id', 4326)
     } else if (chainId === NETWORKS.TEMPO.chainId) {
       query = query.eq('chain_id', 4217)
+    } else if (chainId === NETWORKS.ROBINHOOD.chainId) {
+      query = query.eq('chain_id', 4663)
     }
     query.then(({ data, error }) => {
         if (cancelled) return
@@ -558,7 +562,7 @@ export default function NFTLaunchpad() {
               NFT Launchpad
             </h1>
             <p style={{ fontSize: '14px', color: '#94a3b8', margin: 0, maxWidth: '420px', marginInline: 'auto', lineHeight: 1.5 }}>
-              Deploy your NFT collection on Base, Ink, Soneium, MegaETH or Tempo. Set a mint price, get a shareable page, and earn from every mint.
+              Deploy your NFT collection on Base, Ink, Soneium, MegaETH, Tempo or Robinhood. Set a mint price, get a shareable page, and earn from every mint.
             </p>
             {/* Network deploy counts - compact row */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '12px', flexWrap: 'wrap' }}>
@@ -568,6 +572,7 @@ export default function NFTLaunchpad() {
                 { chainId: 1868, logo: '/soneium-logo.jpg', label: 'Soneium' },
                 { chainId: 4326, logo: '/megaeth-logo.jpg', label: 'MegaETH' },
                 { chainId: 4217, logo: '/Tempo logo.jpg', label: 'Tempo' },
+                { chainId: 4663, logo: '/robinhood-testnet-logo.png', label: 'Robinhood' },
               ].map(({ chainId: cid, logo, label }) => (
                 <div key={cid} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'rgba(30,41,59,0.5)', borderRadius: '10px', border: '1px solid rgba(55,65,81,0.5)' }}>
                   <img src={logo} alt={label} style={{ width: '20px', height: '20px', borderRadius: '50%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none' }} />

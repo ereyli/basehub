@@ -71,7 +71,7 @@ export function useNFTLaunchpad() {
   const validateNetwork = async () => {
     if (!isCorrectNetwork) {
       throw new Error(
-        `Please switch to Base, InkChain, Soneium, MegaETH or Tempo. You are currently on ${networkName}. Use the network selector.`
+        `Please switch to Base, InkChain, Soneium, MegaETH, Tempo or Robinhood. You are currently on ${networkName}. Use the network selector.`
       )
     }
   }
@@ -387,7 +387,11 @@ export function useNFTLaunchpad() {
       })
       setDeployTxHash(txHash)
 
-      const isFastChain = chainId === NETWORKS.INKCHAIN.chainId || chainId === NETWORKS.SONEIUM.chainId || chainId === NETWORKS.MEGAETH.chainId
+      const isFastChain =
+        chainId === NETWORKS.INKCHAIN.chainId ||
+        chainId === NETWORKS.SONEIUM.chainId ||
+        chainId === NETWORKS.MEGAETH.chainId ||
+        chainId === NETWORKS.ROBINHOOD.chainId
       const receipt = await waitForTransactionReceipt(config, {
         hash: txHash,
         chainId,

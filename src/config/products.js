@@ -65,7 +65,7 @@ const CAST_SHARE = {
   'deploy-erc8004': 'Register a trustless ERC-8004 AI agent identity on BaseHub and earn 5,000 XP.',
   'agent-directory': 'Browse ERC-8004 AI agents registered on Base through BaseHub.',
   'nft-launchpad': 'Create and mint NFT collections on BaseHub. Upload art or generate with AI, deploy on Base and more.',
-  'nft-launchpad-explore': 'Browse and mint from NFT collections launched on BaseHub. Base, Ink, Soneium, MegaETH.',
+  'nft-launchpad-explore': 'Browse and mint from NFT collections launched on BaseHub. Base, Ink, Soneium, MegaETH, Robinhood.',
 }
 
 const PRODUCTS_ALL = [
@@ -89,8 +89,8 @@ const PRODUCTS_ALL = [
   { id: 'deploy-erc1155', path: '/deploy-erc1155', label: 'ERC1155', title: 'Deploy ERC1155', description: 'Deploy multi-token contract', category: CATEGORIES.DEPLOY, color: '#8b5cf6', icon: 'Factory', iconImage: '/crypto-logos/basahub logo/ERC-1155.png', xpReward: '850 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'katana', 'megaeth', 'tempo', 'arc-restnet', 'robinhood'] },
   { id: 'deploy-erc8004', path: '/deploy-erc8004', label: 'ERC-8004', title: 'Deploy ERC-8004 Agent', description: 'Register a trustless AI agent identity', castShareText: CAST_SHARE['deploy-erc8004'], category: CATEGORIES.DEPLOY, color: '#22c55e', icon: 'Bot', xpReward: '5000 XP', bonusXP: 'New', networks: ['base'] },
   { id: 'agent-directory', path: '/agents', label: 'Agents', title: 'Agent Directory', description: 'Browse ERC-8004 AI agents registered on BaseHub', castShareText: CAST_SHARE['agent-directory'], category: CATEGORIES.DEPLOY, color: '#60a5fa', icon: 'Users', xpReward: 'Explore', bonusXP: 'Directory', networks: ['base'] },
-  { id: 'nft-launchpad', path: '/nft-launchpad', label: 'NFT Launchpad', title: 'NFT Launchpad', description: 'Create your own NFT collection. Upload art or generate with AI, then deploy on Base, Ink, Soneium, MegaETH or Tempo.', castShareText: CAST_SHARE['nft-launchpad'], category: CATEGORIES.NFT, color: '#3b82f6', icon: 'Package', xpReward: '2000 XP', bonusXP: '200 XP per mint', networks: ['base', 'ink', 'soneium', 'megaeth', 'tempo'], isX402: true, holderDiscount: 'Pass: 0.0005 ETH deploy (Base)' },
-  { id: 'nft-launchpad-explore', path: '/nft-launchpad?tab=explore', label: 'Launched NFTs', title: 'Launched Collections', description: 'Browse and mint from NFT collections launched on Base, Ink, Soneium, MegaETH or Tempo', castShareText: CAST_SHARE['nft-launchpad-explore'], category: CATEGORIES.NFT, color: '#10b981', icon: 'LayoutGrid', xpReward: '200 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'megaeth', 'tempo'] },
+  { id: 'nft-launchpad', path: '/nft-launchpad', label: 'NFT Launchpad', title: 'NFT Launchpad', description: 'Create your own NFT collection. Upload art or generate with AI, then deploy on Base, Ink, Soneium, MegaETH, Tempo or Robinhood.', castShareText: CAST_SHARE['nft-launchpad'], category: CATEGORIES.NFT, color: '#3b82f6', icon: 'Package', xpReward: '2000 XP', bonusXP: '200 XP per mint', networks: ['base', 'ink', 'soneium', 'megaeth', 'tempo', 'robinhood'], isX402: true, holderDiscount: 'Pass: 0.0005 ETH deploy (Base)' },
+  { id: 'nft-launchpad-explore', path: '/nft-launchpad?tab=explore', label: 'Launched NFTs', title: 'Launched Collections', description: 'Browse and mint from NFT collections launched on Base, Ink, Soneium, MegaETH, Tempo or Robinhood', castShareText: CAST_SHARE['nft-launchpad-explore'], category: CATEGORIES.NFT, color: '#10b981', icon: 'LayoutGrid', xpReward: '200 XP', bonusXP: null, networks: ['base', 'ink', 'soneium', 'megaeth', 'tempo', 'robinhood'] },
 ]
 
 /** Public catalog */
