@@ -84,41 +84,24 @@ const SlotGame = () => {
 
   const symbolMap = ['ETH', 'BTC', 'USDC', 'USDT']
   const [spinAnimation, setSpinAnimation] = useState(false)
+  const [stoppedReels, setStoppedReels] = useState(4)
   
   const playSound = (soundType) => {
     try {
       soundManager.ensureAudioContext()
-      const ctx = soundManager._getOrCreateContext()
-      if (!ctx) return
-      const oscillator = ctx.createOscillator()
-      const gainNode = ctx.createGain()
-      oscillator.connect(gainNode)
-      gainNode.connect(ctx.destination)
-      const t = ctx.currentTime
       switch(soundType) {
         case 'spin':
-          oscillator.frequency.setValueAtTime(800, t)
-          oscillator.frequency.exponentialRampToValueAtTime(200, t + 0.3)
-          gainNode.gain.setValueAtTime(0.1, t)
-          gainNode.gain.exponentialRampToValueAtTime(0.01, t + 0.3)
-          oscillator.start(); oscillator.stop(t + 0.3)
+          soundManager.playSlotSpin()
           break
         case 'win':
-          oscillator.frequency.setValueAtTime(523, t)
-          oscillator.frequency.setValueAtTime(659, t + 0.1)
-          oscillator.frequency.setValueAtTime(784, t + 0.2)
-          gainNode.gain.setValueAtTime(0.2, t)
-          gainNode.gain.exponentialRampToValueAtTime(0.01, t + 0.5)
-          oscillator.start(); oscillator.stop(t + 0.5)
-          break
         case 'jackpot':
-          oscillator.frequency.setValueAtTime(523, t)
-          oscillator.frequency.setValueAtTime(659, t + 0.1)
-          oscillator.frequency.setValueAtTime(784, t + 0.2)
-          oscillator.frequency.setValueAtTime(1047, t + 0.3)
-          gainNode.gain.setValueAtTime(0.3, t)
-          gainNode.gain.exponentialRampToValueAtTime(0.01, t + 0.8)
-          oscillator.start(); oscillator.stop(t + 0.8)
+          soundManager.playSlotWin()
+          break
+        case 'stop':
+          soundManager.playSlotStop()
+          break
+        default:
+          soundManager.playClick()
           break
       }
     } catch (error) { /* audio unsupported */ }
@@ -145,7 +128,10 @@ const SlotGame = () => {
     if (!isConnected) { alert('Please connect your wallet first'); return }
     if (credits < 1) { alert('You need at least 1 credit to spin.'); return }
     try {
+      soundManager.ensureAudioContext()
       setIsSpinning(true); setSpinAnimation(true)
+      setStoppedReels(0)
+      setLastResult(null)
       const spinInterval = setInterval(() => {
         setCurrentSymbols([
           symbolMap[Math.floor(Math.random() * symbolMap.length)],
@@ -155,11 +141,25 @@ const SlotGame = () => {
         ])
       }, 100)
       playSound('spin')
+      await new Promise(resolve => requestAnimationFrame(resolve))
       const result = await sendSlotTransaction('spinSlot')
       clearInterval(spinInterval)
+      const finalSymbols = (result.symbols || [0, 1, 2, 3]).map(id => symbolMap[id] || 'ETH')
+      finalSymbols.forEach((_, reelIndex) => {
+        setTimeout(() => {
+          setCurrentSymbols(prev => prev.map((sym, idx) => {
+            if (idx <= reelIndex) return finalSymbols[idx]
+            return symbolMap[Math.floor(Math.random() * symbolMap.length)]
+          }))
+          setStoppedReels(reelIndex + 1)
+          playSound('stop')
+        }, 260 + reelIndex * 330)
+      })
+
       setTimeout(() => {
         setSpinAnimation(false); setIsSpinning(false)
-        if (result.symbols) setCurrentSymbols(result.symbols.map(id => symbolMap[id] || 'ETH'))
+        setStoppedReels(4)
+        setCurrentSymbols(finalSymbols)
         setLastResult({ symbols: result.symbols || [0,1,2,3], won: result.won, xpEarned: result.xpEarned })
         if (result.won) {
           const maxCount = Math.max(...Object.values(
@@ -170,9 +170,10 @@ const SlotGame = () => {
         setCredits(prev => prev - 1)
         setLastTransaction(result)
         if (refetchCredits) refetchCredits()
-      }, 2000)
+      }, 1750)
     } catch (error) {
       setIsSpinning(false); setSpinAnimation(false)
+      setStoppedReels(4)
       if (error.message.includes('Insufficient credits')) alert('You need at least 1 credit to spin.')
       else alert(`Spin failed: ${error.message}`)
     }
@@ -207,13 +208,54 @@ const SlotGame = () => {
         <div style={innerStyle}>
           <BackButton />
           <GamingShortcuts />
-          <div style={{ background: cardBg, border: cardBorder, borderRadius: 20, padding: 48, textAlign: 'center' }}>
-            <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              <Gift size={26} color="#f87171" />
+          <div style={{ background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.84))', border: '1px solid rgba(96, 165, 250, 0.12)', borderRadius: 20, padding: isMobile ? 18 : 26, textAlign: 'center', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 18px 46px rgba(0,0,0,0.26)' }}>
+            <div style={{ textAlign: 'center', marginBottom: 14, fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#64748b' }}>
+              Live reels preview
+            </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: isMobile ? 8 : 12,
+              padding: isMobile ? 14 : 20,
+              background: 'linear-gradient(180deg, rgba(2,6,23,0.82), rgba(15,23,42,0.72))',
+              borderRadius: 14,
+              border: '1px solid rgba(148, 163, 184, 0.08)',
+              marginBottom: 22,
+              boxShadow: 'inset 0 12px 28px rgba(0,0,0,0.34), inset 0 -10px 24px rgba(96,165,250,0.06)',
+              perspective: 900,
+            }}>
+              {currentSymbols.map((symbol, index) => (
+                <div key={`${symbol}-${index}`} style={{
+                  background: 'rgba(15, 23, 42, 0.58)',
+                  borderRadius: 14,
+                  aspectRatio: '1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  animation: `reelSpin3d ${0.32 + index * 0.04}s cubic-bezier(0.2, 0.8, 0.2, 1) infinite`
+                }}>
+                  <div style={{ position: 'absolute', inset: '8% 14%', borderRadius: 999, background: 'radial-gradient(ellipse, rgba(255,255,255,0.16), transparent 64%)', transform: 'translateY(-24%)', pointerEvents: 'none' }} />
+                  <img
+                    src={`/crypto-logos/${symbol === 'ETH' ? 'ethereum-eth-logo.png' : symbol === 'BTC' ? 'bitcoin-btc-logo.png' : symbol === 'USDC' ? 'usd-coin-usdc-logo.png' : 'tether-usdt-logo.png'}`}
+                    alt={symbol}
+                    style={{ width: isMobile ? 36 : 48, height: isMobile ? 36 : 48, filter: 'drop-shadow(0 6px 10px rgba(0,0,0,0.45))' }}
+                  />
+                </div>
+              ))}
             </div>
             <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>Connect Wallet to Play</h2>
             <p style={{ color: '#64748b', fontSize: '0.88rem', margin: 0 }}>Connect your wallet to buy credits and spin the reels.</p>
           </div>
+          <style>{`
+            @keyframes reelSpin3d {
+              0% { transform: translateY(-8px) rotateX(18deg) scale(0.94); filter: blur(0.2px); }
+              50% { transform: translateY(8px) rotateX(-20deg) scale(1.03); filter: blur(1.2px); }
+              100% { transform: translateY(-8px) rotateX(18deg) scale(0.94); filter: blur(0.2px); }
+            }
+          `}</style>
         </div>
       </div>
     )
@@ -257,9 +299,10 @@ const SlotGame = () => {
 
         {/* ── Slot Machine ── */}
         <div style={{
-          background: cardBg, border: cardBorder, borderRadius: 20,
+          background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.84))', border: '1px solid rgba(96, 165, 250, 0.12)', borderRadius: 20,
           padding: isMobile ? '20px 16px' : '28px 24px',
           marginBottom: 16, position: 'relative', overflow: 'hidden',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 18px 46px rgba(0,0,0,0.26)'
         }}>
           {/* Top accent line */}
           <div style={{ position: 'absolute', top: 0, left: 20, right: 20, height: 2, background: `linear-gradient(90deg, transparent, ${accent}, transparent)`, borderRadius: 2 }} />
@@ -273,9 +316,11 @@ const SlotGame = () => {
           <div style={{
             display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: isMobile ? 8 : 12,
             padding: isMobile ? 14 : 20,
-            background: 'rgba(0, 0, 0, 0.2)', borderRadius: 14,
-            border: '1px solid rgba(255, 255, 255, 0.03)',
+            background: 'linear-gradient(180deg, rgba(2,6,23,0.82), rgba(15,23,42,0.72))', borderRadius: 14,
+            border: '1px solid rgba(148, 163, 184, 0.08)',
             marginBottom: 20,
+            boxShadow: 'inset 0 12px 28px rgba(0,0,0,0.34), inset 0 -10px 24px rgba(96,165,250,0.06)',
+            perspective: 900,
           }}>
             {currentSymbols.map((symbol, index) => {
               let isWinning = false, isJackpot = false
@@ -299,18 +344,22 @@ const SlotGame = () => {
                   boxShadow: isJackpot ? `0 0 20px rgba(245, 158, 11, 0.15)` : isWinning ? '0 0 16px rgba(34, 197, 94, 0.1)' : 'none',
                   transition: 'all 0.3s ease',
                   position: 'relative', overflow: 'hidden',
-                  animation: spinAnimation ? 'reelSpin 0.15s ease-in-out infinite alternate' : isJackpot ? 'jackpotPulse 1s ease-in-out infinite' : isWinning ? 'winBounce 0.5s ease-in-out' : 'none',
+                  transformStyle: 'preserve-3d',
+                  animation: (spinAnimation && index >= stoppedReels) ? `reelSpin3d ${0.22 + index * 0.03}s cubic-bezier(0.2, 0.8, 0.2, 1) infinite` : isJackpot ? 'jackpotPulse 1s ease-in-out infinite' : isWinning ? 'winBounce 0.5s ease-in-out' : 'none',
+                  transform: spinAnimation && index < stoppedReels ? 'translateY(0) scale(1.02)' : undefined,
                 }}>
-                  {spinAnimation && (
-                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 50%, rgba(255,255,255,0.03) 100%)', pointerEvents: 'none' }} />
+                  {spinAnimation && index >= stoppedReels && (
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 44%, rgba(59,130,246,0.08) 100%)', pointerEvents: 'none' }} />
                   )}
+                  <div style={{ position: 'absolute', inset: '8% 14%', borderRadius: 999, background: 'radial-gradient(ellipse, rgba(255,255,255,0.16), transparent 64%)', transform: 'translateY(-24%)', pointerEvents: 'none' }} />
                   <img
                     src={`/crypto-logos/${symbol === 'ETH' ? 'ethereum-eth-logo.png' : symbol === 'BTC' ? 'bitcoin-btc-logo.png' : symbol === 'USDC' ? 'usd-coin-usdc-logo.png' : 'tether-usdt-logo.png'}`}
                     alt={symbol}
                     style={{
                       width: isMobile ? 36 : 48, height: isMobile ? 36 : 48,
-                      filter: `drop-shadow(0 2px 6px rgba(0,0,0,0.4))`,
+                      filter: `drop-shadow(0 6px 10px rgba(0,0,0,0.45))`,
                       transition: 'transform 0.2s ease',
+                      transform: (spinAnimation && index >= stoppedReels) ? 'scale(0.9)' : 'scale(1)',
                     }}
                   />
                 </div>
@@ -507,9 +556,10 @@ const SlotGame = () => {
         </div>
 
         <style>{`
-          @keyframes reelSpin {
-            0% { transform: translateY(-2px) scale(0.97); }
-            100% { transform: translateY(2px) scale(1.03); }
+          @keyframes reelSpin3d {
+            0% { transform: translateY(-8px) rotateX(18deg) scale(0.94); filter: blur(0.2px); }
+            50% { transform: translateY(8px) rotateX(-20deg) scale(1.03); filter: blur(1.2px); }
+            100% { transform: translateY(-8px) rotateX(18deg) scale(0.94); filter: blur(0.2px); }
           }
           @keyframes spinIcon {
             from { transform: rotate(0deg); }

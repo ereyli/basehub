@@ -77,17 +77,17 @@ const LuckyNumberGame = () => {
     setGameResult(null)
     setXpPopup(null)
     
-    // Play button click sound
+    soundManager.ensureAudioContext()
     soundManager.playClick()
 
     try {
       console.log('🎯 Starting lucky number transaction, waiting for blockchain confirmation...')
       
-      // Start spinning animation when transaction is confirmed
       setIsSpinning(true)
       
-      // Start number spin sound loop
       spinSoundIntervalRef.current = soundManager.startNumberSpinLoop()
+      await new Promise(resolve => requestAnimationFrame(resolve))
+      await new Promise(resolve => setTimeout(resolve, 80))
       
       // This will wait for transaction confirmation before returning
       const result = await sendLuckyNumberTransaction(selectedNumber)
@@ -181,12 +181,11 @@ const LuckyNumberGame = () => {
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 12px' }}>
         <BackButton />
         <GamingShortcuts />
-        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'linear-gradient(180deg, rgba(139,92,246,0.08) 0%, transparent 100%)', borderRadius: 24, border: '1px solid rgba(139,92,246,0.15)' }}>
-          <div style={{ fontSize: 72, marginBottom: 16, animation: 'bounceLucky 2s ease-in-out infinite' }}>🍀</div>
+        <div style={{ textAlign: 'center', padding: '18px 12px 24px', background: 'linear-gradient(180deg, rgba(139,92,246,0.08) 0%, transparent 100%)', borderRadius: 24, border: '1px solid rgba(139,92,246,0.15)' }}>
+          <NumberWheel isSpinning={true} isRevealing={false} selectedNumber={selectedNumber} compact={isMobile} />
           <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 8, color: '#a78bfa', letterSpacing: '-0.02em' }}>LUCKY NUMBER</h2>
           <p style={{ color: '#94a3b8', fontSize: 15 }}>Connect your wallet to play</p>
         </div>
-        <style>{`@keyframes bounceLucky { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-12px) scale(1.1)} }`}</style>
       </div>
     )
   }
@@ -224,9 +223,14 @@ const LuckyNumberGame = () => {
 
       <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
 
-      {(isSpinning || isRevealing || showResult) && (
-        <NumberWheel isSpinning={isSpinning} isRevealing={isRevealing} winningNumber={gameResult?.winningNumber} selectedNumber={gameResult?.selectedNumber || selectedNumber} onSpinComplete={handleSpinComplete} compact={isMobile} />
-      )}
+      <NumberWheel
+        isSpinning={isSpinning || (!isRevealing && !showResult)}
+        isRevealing={isRevealing}
+        winningNumber={gameResult?.winningNumber}
+        selectedNumber={gameResult?.selectedNumber || selectedNumber}
+        onSpinComplete={handleSpinComplete}
+        compact={isMobile}
+      />
 
       {/* XP Popup */}
       {xpPopup && (

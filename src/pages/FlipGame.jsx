@@ -74,17 +74,17 @@ const FlipGame = () => {
     setResult(null)
     setXpPopup(null)
     
-    // Play button click sound
+    soundManager.ensureAudioContext()
     soundManager.playClick()
 
     try {
       console.log('🎯 Starting flip transaction, waiting for blockchain confirmation...')
       
-      // Start spinning animation when transaction is confirmed
       setIsSpinning(true)
       
-      // Start coin spin sound loop
       spinSoundIntervalRef.current = soundManager.startCoinSpinLoop()
+      await new Promise(resolve => requestAnimationFrame(resolve))
+      await new Promise(resolve => setTimeout(resolve, 80))
       
       // This will wait for transaction confirmation before returning
       const result = await sendFlipTransaction(selectedSide)
@@ -170,12 +170,11 @@ const FlipGame = () => {
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 12px' }}>
         <BackButton />
         <GamingShortcuts />
-        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'linear-gradient(180deg, rgba(245,158,11,0.08) 0%, transparent 100%)', borderRadius: 24, border: '1px solid rgba(245,158,11,0.15)' }}>
-          <div style={{ fontSize: 72, marginBottom: 16, animation: 'floatCoin 3s ease-in-out infinite' }}>🪙</div>
+        <div style={{ textAlign: 'center', padding: '18px 12px 24px', background: 'linear-gradient(180deg, rgba(245,158,11,0.08) 0%, transparent 100%)', borderRadius: 24, border: '1px solid rgba(245,158,11,0.15)' }}>
+          <Coin3D isSpinning={true} isRevealing={false} result={selectedSide} size={110} />
           <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 8, color: '#fbbf24', letterSpacing: '-0.02em' }}>COIN FLIP</h2>
           <p style={{ color: '#94a3b8', fontSize: 15, marginBottom: 0 }}>Connect your wallet to play</p>
         </div>
-        <style>{`@keyframes floatCoin { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-12px) rotate(5deg)} }`}</style>
       </div>
     )
   }
@@ -213,15 +212,13 @@ const FlipGame = () => {
       </div>
 
       {/* 3D Coin Animation */}
-      {(isSpinning || isRevealing || showResult) && (
-        <Coin3D
-          isSpinning={isSpinning}
-          isRevealing={isRevealing}
-          result={result}
-          size={isMobile ? 100 : 160}
-          onSpinComplete={handleSpinComplete}
-        />
-      )}
+      <Coin3D
+        isSpinning={isSpinning || (!isRevealing && !showResult)}
+        isRevealing={isRevealing}
+        result={isSpinning ? null : (result || selectedSide)}
+        size={isMobile ? 100 : 160}
+        onSpinComplete={handleSpinComplete}
+      />
 
       {/* XP Popup */}
       {xpPopup && (

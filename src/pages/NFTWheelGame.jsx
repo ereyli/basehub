@@ -254,12 +254,18 @@ const NFTWheelGame = () => {
       {!isConnected ? (
         <div style={{
           textAlign: 'center',
-          padding: '40px',
+          padding: isMobile ? '18px 12px 28px' : '28px 24px 36px',
           background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%)',
           borderRadius: '20px',
           border: '2px solid rgba(59, 130, 246, 0.3)',
           marginBottom: '40px'
         }}>
+          <NFTWheel
+            isSpinning={false}
+            winningSegment={null}
+            segments={WHEEL_VISUAL_ORDER}
+            previewSpin={true}
+          />
           <Lock size={48} color="#3b82f6" style={{ marginBottom: '16px' }} />
           <h2 style={{ color: '#cbd5e1', marginBottom: '8px' }}>Connect Your Wallet</h2>
           <p style={{ color: '#94a3b8' }}>Connect your wallet to spin the NFT Wheel!</p>

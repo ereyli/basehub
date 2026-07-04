@@ -1,207 +1,152 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { useFrame } from '@react-three/fiber'
+import GameStage3D from './GameStage3D'
+import CanvasLabel3D from './CanvasLabel3D'
 
-const NumberWheel = ({ 
-  isSpinning, 
-  isRevealing, 
-  winningNumber, 
-  selectedNumber,
-  onSpinComplete,
-  compact = false
-}) => {
-  const [displayNumbers, setDisplayNumbers] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-  const [currentIndex, setCurrentIndex] = useState(0)
+function NumberOrb({ isSpinning, isRevealing, winningNumber, selectedNumber, onSpinComplete }) {
+  const group = useRef(null)
+  const revealStart = useRef(null)
+  const doneRef = useRef(false)
+  const [display, setDisplay] = useState(selectedNumber || 1)
 
   useEffect(() => {
-    if (isSpinning) {
-      const interval = setInterval(() => {
-        setCurrentIndex(prev => (prev + 1) % 10)
-        // Shuffle numbers for visual effect
-        setDisplayNumbers(prev => {
-          const shuffled = [...prev]
-          for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-          }
-          return shuffled
-        })
-      }, 150) // Change number every 150ms
-
-      return () => clearInterval(interval)
-    }
+    if (!isSpinning) return undefined
+    const interval = setInterval(() => setDisplay(Math.floor(Math.random() * 10) + 1), 90)
+    return () => clearInterval(interval)
   }, [isSpinning])
 
   useEffect(() => {
     if (isRevealing && winningNumber) {
-      // Slow down and reveal the winning number
-      const revealInterval = setInterval(() => {
-        setCurrentIndex(prev => {
-          const next = (prev + 1) % 10
-          if (next === winningNumber - 1) {
-            clearInterval(revealInterval)
-            setTimeout(() => {
-              if (onSpinComplete) onSpinComplete()
-            }, 500)
-            return next
-          }
-          return next
-        })
-      }, 200)
-
-      return () => clearInterval(revealInterval)
+      revealStart.current = performance.now()
+      doneRef.current = false
+      setDisplay(winningNumber)
+    } else {
+      revealStart.current = null
+      doneRef.current = false
     }
-  }, [isRevealing, winningNumber, onSpinComplete])
+  }, [isRevealing, winningNumber])
 
-  const getDisplayNumber = () => {
-    if (isRevealing && winningNumber) {
-      return winningNumber
+  const balls = React.useMemo(() => {
+    return Array.from({ length: 10 }, (_, i) => {
+      const n = i + 1
+      const a = (i / 10) * Math.PI * 2
+      const row = i % 2 === 0 ? -0.1 : 0.28
+      return {
+        n,
+        x: Math.cos(a) * (0.62 + (i % 3) * 0.11),
+        y: row + Math.sin(i * 1.7) * 0.16,
+        z: Math.sin(a) * 0.56
+      }
+    })
+  }, [])
+
+  useFrame((state, delta) => {
+    if (!group.current) return
+    const g = group.current
+    g.position.y = Math.sin(state.clock.elapsedTime * 1.8) * 0.035
+
+    if (isSpinning) {
+      g.rotation.y += delta * 3.4
+      g.rotation.x = Math.sin(state.clock.elapsedTime * 3.2) * 0.08
+      return
     }
-    return displayNumbers[currentIndex]
-  }
+
+    if (isRevealing && revealStart.current) {
+      const t = Math.min((performance.now() - revealStart.current) / 1450, 1)
+      const ease = 1 - Math.pow(1 - t, 3)
+      g.rotation.y = (1 - ease) * Math.PI * 6
+      g.rotation.x = Math.sin(t * Math.PI) * 0.42
+      g.scale.setScalar(1 + Math.sin(t * Math.PI) * 0.16)
+      if (t >= 1 && !doneRef.current) {
+        doneRef.current = true
+        onSpinComplete?.()
+      }
+      return
+    }
+
+    g.rotation.y += delta * 0.22
+    g.rotation.x *= 0.92
+    g.scale.setScalar(1)
+  })
+
+  const highlight = winningNumber || display
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        margin: compact ? '24px 0' : '60px 0',
-        minHeight: compact ? '160px' : '280px',
-        position: 'relative',
-        perspective: '1200px'
-      }}
-    >
-      {/* Ambient light effect */}
-      {(isSpinning || isRevealing) && (
-        <div
-          style={{
-            position: 'absolute',
-            width: '200%',
-            height: '200%',
-            top: '-50%',
-            left: '-50%',
-            background: 'radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 60%)',
-            pointerEvents: 'none',
-            zIndex: 0
-          }}
-        />
-      )}
-
-      {/* Main number display */}
-      <div
-        style={{
-          width: compact ? '130px' : '200px',
-          height: compact ? '130px' : '200px',
-          borderRadius: '50%',
-          background: `
-            radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 50%),
-            linear-gradient(135deg, #a78bfa 0%, #8b5cf6 30%, #7c3aed 70%, #6d28d9 100%)
-          `,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: compact ? '72px' : '120px',
-          fontWeight: 'bold',
-          color: 'white',
-          textShadow: '4px 4px 12px rgba(0, 0, 0, 0.6)',
-          boxShadow: `
-            0 0 50px rgba(139, 92, 246, 0.7),
-            inset 0 0 40px rgba(255, 255, 255, 0.3),
-            inset -20px -20px 50px rgba(0, 0, 0, 0.4),
-            0 12px 30px rgba(0, 0, 0, 0.4)
-          `,
-          border: '8px solid rgba(255, 255, 255, 0.4)',
-          borderTop: '8px solid rgba(255, 255, 255, 0.6)',
-          borderLeft: '8px solid rgba(255, 255, 255, 0.6)',
-          filter: (isSpinning || isRevealing) 
-            ? 'drop-shadow(0 0 40px rgba(139, 92, 246, 0.8))' 
-            : 'drop-shadow(0 12px 40px rgba(0, 0, 0, 0.4))',
-          animation: isSpinning 
-            ? 'numberSpin 0.15s linear infinite' 
-            : isRevealing 
-            ? 'numberReveal 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards' 
-            : 'none',
-          transform: isSpinning ? 'rotateY(360deg)' : 'none',
-          transformStyle: 'preserve-3d',
-          zIndex: 1,
-          transition: isRevealing ? 'transform 0.3s ease-out' : 'none'
-        }}
-      >
-        {getDisplayNumber()}
-      </div>
-
-      {/* Glow effect layers */}
-      {(isSpinning || isRevealing) && (
-        <>
-          <div
-            style={{
-              position: 'absolute',
-              width: '140%',
-              height: '140%',
-              top: '-20%',
-              left: '-20%',
-              borderRadius: '50%',
-              background: `radial-gradient(circle, rgba(139, 92, 246, ${isSpinning ? 0.4 : 0.2}) 0%, transparent 60%)`,
-              animation: isSpinning ? 'pulse 1.2s ease-in-out infinite' : 'none',
-              pointerEvents: 'none',
-              zIndex: -1
-            }}
+    <group>
+      <group ref={group}>
+        <mesh castShadow receiveShadow>
+          <sphereGeometry args={[1.12, 64, 64]} />
+          <meshPhysicalMaterial
+            color="#c4b5fd"
+            roughness={0.05}
+            metalness={0.02}
+            transmission={0.46}
+            transparent
+            opacity={0.22}
+            thickness={0.5}
           />
-          <div
-            style={{
-              position: 'absolute',
-              width: '160%',
-              height: '160%',
-              top: '-30%',
-              left: '-30%',
-              borderRadius: '50%',
-              background: `radial-gradient(circle, rgba(139, 92, 246, ${isSpinning ? 0.2 : 0.1}) 0%, transparent 70%)`,
-              animation: isSpinning ? 'pulse 1.5s ease-in-out infinite' : 'none',
-              pointerEvents: 'none',
-              zIndex: -2
-            }}
-          />
-        </>
-      )}
-
-      <style>{`
-        @keyframes numberSpin {
-          from {
-            transform: rotateY(0deg) scale(1);
-          }
-          to {
-            transform: rotateY(360deg) scale(1);
-          }
-        }
-
-        @keyframes numberReveal {
-          0% {
-            transform: rotateY(0deg) scale(1);
-          }
-          30% {
-            transform: rotateY(180deg) scale(1.3);
-          }
-          60% {
-            transform: rotateY(360deg) scale(1.1);
-          }
-          100% {
-            transform: rotateY(360deg) scale(1);
-          }
-        }
-
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 0.5;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 0.9;
-            transform: scale(1.05);
-          }
-        }
-      `}</style>
-    </div>
+        </mesh>
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[1.16, 0.03, 14, 128]} />
+          <meshStandardMaterial color="#ddd6fe" roughness={0.24} metalness={0.55} />
+        </mesh>
+        <mesh rotation={[0, Math.PI / 2, 0]}>
+          <torusGeometry args={[1.16, 0.02, 14, 128]} />
+          <meshStandardMaterial color="#7dd3fc" roughness={0.3} metalness={0.45} />
+        </mesh>
+        <mesh rotation={[0, 0, Math.PI / 2]}>
+          <torusGeometry args={[1.16, 0.018, 14, 128]} />
+          <meshStandardMaterial color="#a78bfa" roughness={0.3} metalness={0.4} />
+        </mesh>
+        {balls.map(({ n, x, y, z }) => {
+          const active = n === highlight
+          return (
+            <group key={n} position={[x, y, z]} scale={active ? 1.18 : 1}>
+              <mesh castShadow receiveShadow>
+                <sphereGeometry args={[0.19, 32, 32]} />
+                <meshStandardMaterial color={active ? '#fef3c7' : '#6d28d9'} roughness={0.28} metalness={0.12} emissive={active ? '#f59e0b' : '#1e1b4b'} emissiveIntensity={active ? 0.22 : 0.08} />
+              </mesh>
+              <CanvasLabel3D
+                text={n}
+                position={[0, 0, 0.205]}
+                scale={[0.28, 0.16, 1]}
+                color={active ? '#3b0764' : '#ede9fe'}
+                outline={active ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.55)'}
+                font="800 92px Arial"
+              />
+            </group>
+          )
+        })}
+      </group>
+      <group position={[0, -0.18, 1.16]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.44, 48, 48]} />
+          <meshStandardMaterial color="#fef3c7" roughness={0.24} metalness={0.14} emissive="#f59e0b" emissiveIntensity={0.12} />
+        </mesh>
+        <CanvasLabel3D text={display} position={[0, 0.01, 0.47]} scale={[0.58, 0.34, 1]} color="#3b0764" outline="rgba(255,255,255,0.45)" font="900 128px Arial" />
+      </group>
+      <CanvasLabel3D text={`PICK ${selectedNumber || 1}`} position={[0, -1.03, 0.76]} scale={[0.92, 0.22, 1]} color="#ede9fe" background="rgba(46,16,101,0.62)" font="800 58px Arial" />
+    </group>
   )
 }
 
-export default NumberWheel
+const NumberWheel = ({
+  isSpinning,
+  isRevealing,
+  winningNumber,
+  selectedNumber,
+  onSpinComplete,
+  compact = false
+}) => (
+  <GameStage3D compact={compact} active={isSpinning || isRevealing} theme="violet" height={compact ? 205 : 315}>
+    <NumberOrb
+      isSpinning={isSpinning}
+      isRevealing={isRevealing}
+      winningNumber={winningNumber}
+      selectedNumber={selectedNumber}
+      onSpinComplete={onSpinComplete}
+    />
+  </GameStage3D>
+)
 
+export default NumberWheel

@@ -13,16 +13,47 @@ const DEFAULT_SEGMENTS = [
   { id: 5, xp: 112000, label: '112K', color: '#ef4444' }
 ]
 
+let wheelAudioContext = null
+function playWheelTick(index = 0) {
+  if (typeof window === 'undefined') return
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext
+    if (!Ctx) return
+    if (!wheelAudioContext) wheelAudioContext = new Ctx()
+    const ctx = wheelAudioContext
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {})
+    const t = ctx.currentTime
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    const filter = ctx.createBiquadFilter()
+    osc.type = 'triangle'
+    osc.frequency.setValueAtTime(720 + (index % 4) * 24, t)
+    osc.frequency.exponentialRampToValueAtTime(420, t + 0.045)
+    filter.type = 'bandpass'
+    filter.frequency.setValueAtTime(980, t)
+    filter.Q.setValueAtTime(8, t)
+    gain.gain.setValueAtTime(0.055, t)
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.055)
+    osc.connect(filter)
+    filter.connect(gain)
+    gain.connect(ctx.destination)
+    osc.start(t)
+    osc.stop(t + 0.06)
+  } catch (_) {}
+}
+
 const NFTWheel = ({ 
   isSpinning, 
   winningSegment, 
   onSpinComplete,
-  segments = DEFAULT_SEGMENTS
+  segments = DEFAULT_SEGMENTS,
+  previewSpin = false
 }) => {
   const [rotation, setRotation] = useState(0)
   const [showResult, setShowResult] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
   const canvasRef = useRef(null)
+  const tickRef = useRef(null)
   const spinDuration = 4000
 
   const segmentCount = segments.length
@@ -181,6 +212,26 @@ const NFTWheel = ({
     }
   }, [isSpinning, winningSegment]) // Only depend on these two values
 
+  useEffect(() => {
+    if (!isSpinning) {
+      if (tickRef.current) clearInterval(tickRef.current)
+      tickRef.current = null
+      return undefined
+    }
+    let count = 0
+    let delay = 92
+    const schedule = () => {
+      playWheelTick(count++)
+      delay = Math.min(240, delay + 8)
+      tickRef.current = setTimeout(schedule, delay)
+    }
+    tickRef.current = setTimeout(schedule, delay)
+    return () => {
+      if (tickRef.current) clearTimeout(tickRef.current)
+      tickRef.current = null
+    }
+  }, [isSpinning])
+
   // Reset rotation when winningSegment becomes null (after result is shown)
   useEffect(() => {
     if (winningSegment === null && !isSpinning) {
@@ -214,7 +265,9 @@ const NFTWheel = ({
         width: '380px',
         height: '380px',
         maxWidth: '85vw',
-        maxHeight: '85vw'
+        maxHeight: '85vw',
+        transform: isSpinning ? 'translateZ(0) scale(1.01)' : 'translateZ(0)',
+        transition: 'transform 280ms ease'
       }}>
         {/* Pointer */}
         <div style={{
@@ -231,6 +284,19 @@ const NFTWheel = ({
           zIndex: 20
         }} />
 
+        <div style={{
+          position: 'absolute',
+          top: '-6px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 18,
+          height: 18,
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, #fef3c7, #f59e0b)',
+          boxShadow: '0 0 16px rgba(245, 158, 11, 0.65)',
+          zIndex: 21
+        }} />
+
         {/* Outer ring glow */}
         <div style={{
           position: 'absolute',
@@ -240,6 +306,15 @@ const NFTWheel = ({
           opacity: 0.3,
           filter: 'blur(15px)',
           zIndex: 0
+        }} />
+
+        <div style={{
+          position: 'absolute',
+          inset: '-28px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle at 50% 38%, rgba(255,255,255,0.16), transparent 30%), radial-gradient(circle, rgba(15,23,42,0) 52%, rgba(15,23,42,0.72) 72%)',
+          pointerEvents: 'none',
+          zIndex: 2
         }} />
 
         {/* Wheel */}
@@ -254,8 +329,9 @@ const NFTWheel = ({
             0 0 0 12px rgba(139, 92, 246, 0.5),
             0 20px 50px rgba(0, 0, 0, 0.5)
           `,
-          transform: `rotate(${rotation}deg)`,
-          transition: (isSpinning && !isResetting)
+          transform: previewSpin ? undefined : `rotate(${rotation}deg)`,
+          animation: previewSpin ? 'wheelPreviewSpin 9s linear infinite' : 'none',
+          transition: (isSpinning && !isResetting && !previewSpin)
             ? `transform ${spinDuration}ms cubic-bezier(0.2, 0.8, 0.3, 1)` 
             : 'none',
           zIndex: 1
@@ -321,6 +397,10 @@ const NFTWheel = ({
             opacity: 1;
             transform: translateY(0);
           }
+        }
+        @keyframes wheelPreviewSpin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>

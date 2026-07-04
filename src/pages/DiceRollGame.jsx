@@ -74,17 +74,17 @@ const DiceRollGame = () => {
     setGameResult(null)
     setXpPopup(null)
     
-    // Play button click sound
+    soundManager.ensureAudioContext()
     soundManager.playClick()
 
     try {
       console.log('🎯 Starting dice roll transaction, waiting for blockchain confirmation...')
       
-      // Start rolling animation when transaction is confirmed
       setIsRolling(true)
       
-      // Start dice roll sound loop
       rollSoundIntervalRef.current = soundManager.startDiceRollLoop()
+      await new Promise(resolve => requestAnimationFrame(resolve))
+      await new Promise(resolve => setTimeout(resolve, 80))
       
       // This will wait for transaction confirmation before returning
       const result = await sendDiceRollTransaction(selectedNumber)
@@ -181,12 +181,11 @@ const DiceRollGame = () => {
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 12px' }}>
         <BackButton />
         <GamingShortcuts />
-        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'linear-gradient(180deg, rgba(16,185,129,0.08) 0%, transparent 100%)', borderRadius: 24, border: '1px solid rgba(16,185,129,0.15)' }}>
-          <div style={{ fontSize: 72, marginBottom: 16, animation: 'shakeDice 2s ease-in-out infinite' }}>🎲</div>
+        <div style={{ textAlign: 'center', padding: '18px 12px 24px', background: 'linear-gradient(180deg, rgba(16,185,129,0.08) 0%, transparent 100%)', borderRadius: 24, border: '1px solid rgba(16,185,129,0.15)' }}>
+          <Dice3D isRolling={true} isRevealing={false} dice1={selectedNumber} dice2={6} compact={isMobile} />
           <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 8, color: '#34d399', letterSpacing: '-0.02em' }}>DICE ROLL</h2>
           <p style={{ color: '#94a3b8', fontSize: 15 }}>Connect your wallet to play</p>
         </div>
-        <style>{`@keyframes shakeDice { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(8deg)} 75%{transform:rotate(-8deg)} }`}</style>
       </div>
     )
   }
@@ -223,9 +222,14 @@ const DiceRollGame = () => {
 
       <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
 
-      {(isRolling || isRevealing || showResult) && (
-        <Dice3D isRolling={isRolling} isRevealing={isRevealing} dice1={gameResult?.dice1} dice2={gameResult?.dice2} onRollComplete={handleRollComplete} compact={isMobile} />
-      )}
+      <Dice3D
+        isRolling={isRolling || (!isRevealing && !showResult)}
+        isRevealing={isRevealing}
+        dice1={gameResult?.dice1 || selectedNumber}
+        dice2={gameResult?.dice2 || 6}
+        onRollComplete={handleRollComplete}
+        compact={isMobile}
+      />
 
       {/* XP Popup */}
       {xpPopup && (

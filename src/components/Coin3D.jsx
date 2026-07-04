@@ -1,233 +1,175 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
+import * as THREE from 'three'
+import GameStage3D from './GameStage3D'
+import CanvasLabel3D from './CanvasLabel3D'
 
-const Coin3D = ({ 
-  isSpinning, 
-  isRevealing, 
-  result, 
-  size = 120,
-  onSpinComplete 
-}) => {
-  const coinRef = useRef(null)
-  const animationEndHandled = useRef(false)
+function createCoinFaceTexture(face) {
+  const canvas = document.createElement('canvas')
+  canvas.width = 512
+  canvas.height = 512
+  const ctx = canvas.getContext('2d')
+  const isHeads = face === 'heads'
 
-  const getCoinFace = () => {
-    if (!result) return 'heads'
-    return result.toLowerCase()
-  }
+  const gradient = ctx.createRadialGradient(170, 130, 20, 256, 256, 250)
+  gradient.addColorStop(0, isHeads ? '#fff6bf' : '#fde68a')
+  gradient.addColorStop(0.42, isHeads ? '#f7c948' : '#c87916')
+  gradient.addColorStop(1, isHeads ? '#a76308' : '#7c2d12')
+  ctx.fillStyle = gradient
+  ctx.beginPath()
+  ctx.arc(256, 256, 244, 0, Math.PI * 2)
+  ctx.fill()
 
-  const coinFace = getCoinFace()
-  const finalRotation = coinFace === 'heads' ? 0 : 180
+  ctx.strokeStyle = isHeads ? '#fff3a3' : '#fed7aa'
+  ctx.lineWidth = 14
+  ctx.beginPath()
+  ctx.arc(256, 256, 212, 0, Math.PI * 2)
+  ctx.stroke()
+
+  ctx.strokeStyle = isHeads ? '#8a4f05' : '#451a03'
+  ctx.lineWidth = 4
+  ctx.beginPath()
+  ctx.arc(256, 256, 162, 0, Math.PI * 2)
+  ctx.stroke()
+
+  ctx.fillStyle = isHeads ? '#5b3405' : '#fff7ad'
+  ctx.strokeStyle = isHeads ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)'
+  ctx.lineWidth = 8
+  ctx.font = '900 58px Arial'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.strokeText(isHeads ? 'HEADS' : 'TAILS', 256, 176)
+  ctx.fillText(isHeads ? 'HEADS' : 'TAILS', 256, 176)
+
+  ctx.font = '900 128px Arial'
+  ctx.strokeText(isHeads ? 'H' : 'T', 256, 282)
+  ctx.fillText(isHeads ? 'H' : 'T', 256, 282)
+
+  ctx.font = '800 32px Arial'
+  ctx.strokeText('BASEHUB', 256, 372)
+  ctx.fillText('BASEHUB', 256, 372)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.anisotropy = 4
+  return texture
+}
+
+function CoinMesh({ isSpinning, isRevealing, result, onSpinComplete }) {
+  const group = useRef(null)
+  const revealStart = useRef(null)
+  const completeRef = useRef(false)
+  const target = result?.toLowerCase() === 'tails' ? Math.PI : 0
+  const headsMap = useMemo(() => createCoinFaceTexture('heads'), [])
+  const tailsMap = useMemo(() => createCoinFaceTexture('tails'), [])
 
   useEffect(() => {
-    if (isRevealing && !animationEndHandled.current) {
-      const timer = setTimeout(() => {
-        if (onSpinComplete && coinRef.current) {
-          animationEndHandled.current = true
-          onSpinComplete()
-        }
-      }, 1800) // Match animation duration
-
-      return () => clearTimeout(timer)
-    } else if (!isRevealing) {
-      animationEndHandled.current = false
+    if (isRevealing) {
+      revealStart.current = performance.now()
+      completeRef.current = false
+    } else {
+      revealStart.current = null
+      completeRef.current = false
     }
-  }, [isRevealing, onSpinComplete])
+  }, [isRevealing, result])
+
+  useFrame((state, delta) => {
+    if (!group.current) return
+    const g = group.current
+    const presentationSpin = isSpinning && result
+    g.position.y = Math.sin(state.clock.elapsedTime * 1.7) * 0.045
+
+    if (isSpinning) {
+      if (presentationSpin) {
+        g.rotation.y = target + Math.sin(state.clock.elapsedTime * 1.45) * 0.78
+        g.rotation.x = 0.18 + Math.sin(state.clock.elapsedTime * 2.1) * 0.08
+        g.rotation.z = Math.sin(state.clock.elapsedTime * 1.2) * 0.07
+        return
+      }
+
+      g.rotation.y += delta * 14
+      g.rotation.x = Math.sin(state.clock.elapsedTime * 8) * 0.22
+      g.rotation.z = Math.sin(state.clock.elapsedTime * 5) * 0.08
+      return
+    }
+
+    if (isRevealing && revealStart.current) {
+      const t = Math.min((performance.now() - revealStart.current) / 1750, 1)
+      const ease = 1 - Math.pow(1 - t, 3)
+      g.rotation.y = ease * (Math.PI * 6 + target)
+      g.rotation.x = Math.sin((1 - t) * Math.PI) * 0.48
+      g.scale.setScalar(1 + Math.sin(t * Math.PI) * 0.14)
+      if (t >= 1 && !completeRef.current) {
+        completeRef.current = true
+        onSpinComplete?.()
+      }
+      return
+    }
+
+    g.rotation.y += (target - g.rotation.y) * 0.08
+    g.rotation.x *= 0.9
+    g.rotation.z *= 0.9
+    g.scale.setScalar(1)
+  })
+
+  const edgePositions = useMemo(() => Array.from({ length: 42 }, (_, i) => i), [])
 
   return (
-    <div
-      style={{
-        perspective: '1200px',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        margin: size <= 110 ? '24px 0' : '60px 0',
-        minHeight: size <= 110 ? '160px' : '280px',
-        position: 'relative'
-      }}
-    >
-      {/* Ambient light effect */}
-      {(isSpinning || isRevealing) && (
-        <div
-          style={{
-            position: 'absolute',
-            width: '200%',
-            height: '200%',
-            top: '-50%',
-            left: '-50%',
-            background: 'radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 60%)',
-            pointerEvents: 'none',
-            zIndex: 0
-          }}
+    <group ref={group} rotation={[0.12, 0, -0.05]}>
+      <mesh castShadow receiveShadow rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[1.28, 1.28, 0.18, 128, 1, false]} />
+        <meshStandardMaterial color="#c87916" roughness={0.32} metalness={0.86} />
+      </mesh>
+      <mesh position={[0, 0, 0.096]}>
+        <circleGeometry args={[1.18, 128]} />
+        <meshStandardMaterial map={headsMap} roughness={0.24} metalness={0.72} />
+      </mesh>
+      <mesh position={[0, 0, -0.096]} rotation={[0, Math.PI, 0]}>
+        <circleGeometry args={[1.18, 128]} />
+        <meshStandardMaterial map={tailsMap} roughness={0.3} metalness={0.78} />
+      </mesh>
+      {edgePositions.map((i) => {
+        const a = (i / edgePositions.length) * Math.PI * 2
+        return (
+          <mesh key={i} position={[Math.cos(a) * 1.285, Math.sin(a) * 1.285, 0]} rotation={[0, 0, a]}>
+            <boxGeometry args={[0.035, 0.12, 0.19]} />
+            <meshStandardMaterial color="#fef08a" roughness={0.38} metalness={0.75} />
+          </mesh>
+        )
+      })}
+      <mesh position={[0, 0, 0.112]}>
+        <torusGeometry args={[1.19, 0.026, 14, 128]} />
+        <meshStandardMaterial color="#fff2a6" roughness={0.26} metalness={0.78} />
+      </mesh>
+      <mesh position={[0, 0, -0.112]}>
+        <torusGeometry args={[1.19, 0.026, 14, 128]} />
+        <meshStandardMaterial color="#fbbf24" roughness={0.3} metalness={0.8} />
+      </mesh>
+      {result && (
+        <CanvasLabel3D
+          text={result.toUpperCase()}
+          position={[0, -1.15, 0.64]}
+          scale={[1.35, 0.34, 1]}
+          color="#fef3c7"
+          background="rgba(15,23,42,0.72)"
         />
       )}
-      
-      <div
-        ref={coinRef}
-        style={{
-          width: `${size * 1.3}px`,
-          height: `${size * 1.3}px`,
-          position: 'relative',
-          transformStyle: 'preserve-3d',
-          animation: isSpinning 
-            ? 'coinSpin 0.35s linear infinite' 
-            : isRevealing 
-            ? `coinReveal-${finalRotation} 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards` 
-            : 'none',
-          filter: isSpinning ? 'drop-shadow(0 0 30px rgba(245, 158, 11, 0.6))' : 'drop-shadow(0 10px 40px rgba(0, 0, 0, 0.4))',
-          zIndex: 1
-        }}
-      >
-        {/* Coin Front (Heads) */}
-        <div
-          style={{
-            position: 'absolute',
-            width: '100%',
-            height: '100%',
-            borderRadius: '50%',
-            background: `
-              radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 50%),
-              linear-gradient(135deg, #fbbf24 0%, #f59e0b 30%, #d97706 70%, #b45309 100%)
-            `,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '64px',
-            fontWeight: 'bold',
-            color: 'white',
-            textShadow: '2px 2px 8px rgba(0, 0, 0, 0.5)',
-            backfaceVisibility: 'hidden',
-            transform: 'rotateY(0deg) translateZ(2px)',
-            boxShadow: `
-              0 0 40px rgba(245, 158, 11, 0.6),
-              inset 0 0 30px rgba(255, 255, 255, 0.3),
-              inset -15px -15px 40px rgba(0, 0, 0, 0.4),
-              0 8px 20px rgba(0, 0, 0, 0.3)
-            `,
-            border: '6px solid rgba(255, 255, 255, 0.4)',
-            borderTop: '6px solid rgba(255, 255, 255, 0.6)',
-            borderLeft: '6px solid rgba(255, 255, 255, 0.6)'
-          }}
-        >
-          🪙
-        </div>
+    </group>
+  )
+}
 
-        {/* Coin Back (Tails) */}
-        <div
-          style={{
-            position: 'absolute',
-            width: '100%',
-            height: '100%',
-            borderRadius: '50%',
-            background: `
-              radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
-              linear-gradient(135deg, #d97706 0%, #b45309 30%, #92400e 70%, #78350f 100%)
-            `,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '64px',
-            fontWeight: 'bold',
-            color: 'white',
-            textShadow: '2px 2px 8px rgba(0, 0, 0, 0.5)',
-            backfaceVisibility: 'hidden',
-            transform: 'rotateY(180deg) translateZ(2px)',
-            boxShadow: `
-              0 0 40px rgba(217, 119, 6, 0.6),
-              inset 0 0 30px rgba(255, 255, 255, 0.25),
-              inset -15px -15px 40px rgba(0, 0, 0, 0.4),
-              0 8px 20px rgba(0, 0, 0, 0.3)
-            `,
-            border: '6px solid rgba(255, 255, 255, 0.35)',
-            borderTop: '6px solid rgba(255, 255, 255, 0.5)',
-            borderLeft: '6px solid rgba(255, 255, 255, 0.5)'
-          }}
-        >
-          ⭐
-        </div>
-
-        {/* Enhanced glow effect */}
-        {(isSpinning || isRevealing) && (
-          <>
-            <div
-              style={{
-                position: 'absolute',
-                width: '140%',
-                height: '140%',
-                top: '-20%',
-                left: '-20%',
-                borderRadius: '50%',
-                background: `radial-gradient(circle, rgba(245, 158, 11, ${isSpinning ? 0.4 : 0.2}) 0%, transparent 60%)`,
-                animation: isSpinning ? 'pulse 1.2s ease-in-out infinite' : 'none',
-                pointerEvents: 'none',
-                zIndex: -1
-              }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                width: '160%',
-                height: '160%',
-                top: '-30%',
-                left: '-30%',
-                borderRadius: '50%',
-                background: `radial-gradient(circle, rgba(245, 158, 11, ${isSpinning ? 0.2 : 0.1}) 0%, transparent 70%)`,
-                animation: isSpinning ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                pointerEvents: 'none',
-                zIndex: -2
-              }}
-            />
-          </>
-        )}
-      </div>
-
-      <style>{`
-        @keyframes coinSpin {
-          from {
-            transform: rotateY(0deg);
-          }
-          to {
-            transform: rotateY(360deg);
-          }
-        }
-
-        @keyframes coinReveal-0 {
-          0% {
-            transform: rotateY(0deg) scale(1);
-          }
-          50% {
-            transform: rotateY(180deg) scale(1.2);
-          }
-          100% {
-            transform: rotateY(0deg) scale(1);
-          }
-        }
-
-        @keyframes coinReveal-180 {
-          0% {
-            transform: rotateY(0deg) scale(1);
-          }
-          50% {
-            transform: rotateY(180deg) scale(1.2);
-          }
-          100% {
-            transform: rotateY(180deg) scale(1);
-          }
-        }
-
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 0.5;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 0.9;
-            transform: scale(1.05);
-          }
-        }
-      `}</style>
-    </div>
+const Coin3D = ({ isSpinning, isRevealing, result, size = 120, onSpinComplete }) => {
+  const compact = size <= 110
+  return (
+    <GameStage3D compact={compact} active={isSpinning || isRevealing} theme="gold" height={compact ? 190 : 300}>
+      <CoinMesh
+        isSpinning={isSpinning}
+        isRevealing={isRevealing}
+        result={result}
+        onSpinComplete={onSpinComplete}
+      />
+    </GameStage3D>
   )
 }
 
 export default Coin3D
-

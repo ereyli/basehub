@@ -272,13 +272,16 @@ const NFTPlinkoGame = () => {
         <div
           style={{
             textAlign: 'center',
-            padding: 40,
+            padding: isMobile ? 18 : 28,
             background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.1) 0%, rgba(8, 145, 178, 0.1) 100%)',
             borderRadius: 20,
             border: `2px solid rgba(34, 211, 238, 0.3)`,
             marginBottom: 40,
           }}
         >
+          <div style={{ marginBottom: 20 }}>
+            <NFTPlinkoBoard targetSlot={2} isAnimating={true} onAnimationEnd={() => {}} />
+          </div>
           <Lock size={48} color={accent} style={{ marginBottom: 16 }} />
           <h2 style={{ color: '#cbd5e1', marginBottom: 8 }}>Connect Your Wallet</h2>
           <p style={{ color: '#94a3b8' }}>Connect to play Plinko and earn XP.</p>

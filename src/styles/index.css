@@ -3882,3 +3882,80 @@ select:focus {
   color: rgba(226, 232, 240, 0.72);
   opacity: 1;
 }
+
+.game-stage-3d {
+  position: relative;
+  width: min(100%, 520px);
+  margin: 18px auto 24px;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at 50% 22%, var(--stage-glow), transparent 46%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(2, 6, 23, 0.94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 18px 48px rgba(0, 0, 0, 0.32);
+  isolation: isolate;
+}
+
+.game-stage-3d::before {
+  content: "";
+  position: absolute;
+  inset: 12px 16px auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--stage-rim), transparent);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.game-stage-3d::after {
+  content: "";
+  position: absolute;
+  inset: auto 10% 10px;
+  height: 28px;
+  border-radius: 999px;
+  background: radial-gradient(ellipse, var(--stage-rim), transparent 70%);
+  filter: blur(10px);
+  opacity: 0.72;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.game-stage-3d canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: manipulation;
+}
+
+.game-stage-3d.is-active {
+  animation: gameStageBreathe 1.8s ease-in-out infinite;
+}
+
+@keyframes gameStageBreathe {
+  0%, 100% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 18px 48px rgba(0, 0, 0, 0.32);
+  }
+  50% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 22px 58px rgba(0, 0, 0, 0.42),
+      0 0 34px var(--stage-glow);
+  }
+}
+
+@media (max-width: 640px) {
+  .game-stage-3d {
+    border-radius: 14px;
+    margin: 14px auto 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-stage-3d.is-active {
+    animation: none;
+  }
+}

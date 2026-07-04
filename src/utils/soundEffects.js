@@ -1,11 +1,28 @@
-// Sound effects with Web Audio API — distinct character per game
-// Coin Flip: metallic/casino | Dice Roll: wooden table thud | Lucky Number: magical/mystical
+// CC0 Kenney casino audio files first, Web Audio fallback second.
+// Source/license: public/sounds/kenney-casino/License.txt
 
 class SoundManager {
   constructor() {
     this.audioContext = null
     this.enabled = true
     this._unlocked = false
+    this.assetBase = '/sounds/kenney-casino'
+    this.assets = {
+      click: ['chip-lay-1.ogg', 'chip-lay-2.ogg'],
+      win: ['chips-stack-1.ogg', 'chips-stack-2.ogg'],
+      lose: ['chip-lay-2.ogg'],
+      coinSpin: ['chips-collide-1.ogg', 'chips-collide-2.ogg'],
+      coinReveal: ['chip-lay-1.ogg'],
+      diceRoll: ['dice-shake-1.ogg', 'dice-shake-2.ogg'],
+      diceReveal: ['dice-throw-1.ogg', 'dice-throw-2.ogg'],
+      diceSelect: ['dice-grab-1.ogg'],
+      numberSpin: ['chips-handle-1.ogg', 'chips-handle-2.ogg'],
+      numberReveal: ['chips-stack-1.ogg'],
+      numberSelect: ['chips-collide-1.ogg'],
+      slotSpin: ['chips-handle-1.ogg', 'chips-handle-2.ogg'],
+      slotStop: ['chips-collide-1.ogg', 'chips-collide-2.ogg'],
+      slotWin: ['chips-stack-1.ogg', 'chips-stack-2.ogg']
+    }
     this._setupUserGestureUnlock()
   }
 
@@ -85,138 +102,120 @@ class SoundManager {
     return src
   }
 
+  _pickAsset(key) {
+    const list = this.assets[key]
+    if (!list || list.length === 0) return null
+    return list[Math.floor(Math.random() * list.length)]
+  }
+
+  _playAsset(key, { volume = 0.55, playbackRate = 1, delay = 0 } = {}) {
+    if (typeof window === 'undefined' || !this.enabled) return false
+    const file = this._pickAsset(key)
+    if (!file) return false
+
+    const play = () => {
+      try {
+        const audio = new Audio(`${this.assetBase}/${file}`)
+        audio.preload = 'auto'
+        audio.volume = Math.max(0, Math.min(1, volume))
+        audio.playbackRate = playbackRate
+        const promise = audio.play()
+        if (promise?.catch) promise.catch(() => {})
+      } catch (_) {}
+    }
+
+    if (delay > 0) window.setTimeout(play, delay)
+    else play()
+    return true
+  }
+
+  _tone({ type = 'sine', frequency = 220, endFrequency, delay = 0, duration = 0.12, gain = 0.08, destination }) {
+    if (!this._ready()) return
+    const ctx = this._getOrCreateContext()
+    const t = this._now() + delay
+    const osc = ctx.createOscillator()
+    const g = ctx.createGain()
+    osc.connect(g)
+    g.connect(destination || ctx.destination)
+    osc.type = type
+    osc.frequency.setValueAtTime(frequency, t)
+    if (endFrequency) osc.frequency.exponentialRampToValueAtTime(endFrequency, t + duration)
+    g.gain.setValueAtTime(0.001, t)
+    g.gain.linearRampToValueAtTime(gain, t + Math.min(0.018, duration * 0.25))
+    g.gain.exponentialRampToValueAtTime(0.001, t + duration)
+    osc.start(t)
+    osc.stop(t + duration + 0.02)
+  }
+
+  _noiseHit({ duration = 0.08, gain = 0.08, filterType = 'lowpass', frequency = 420, endFrequency, q = 1.2, delay = 0 }) {
+    if (!this._ready()) return
+    const ctx = this._getOrCreateContext()
+    const t = this._now() + delay
+    const noise = this._createNoise(duration)
+    const filter = ctx.createBiquadFilter()
+    const g = ctx.createGain()
+    noise.connect(filter); filter.connect(g); g.connect(ctx.destination)
+    filter.type = filterType
+    filter.frequency.setValueAtTime(frequency, t)
+    if (endFrequency) filter.frequency.exponentialRampToValueAtTime(endFrequency, t + duration)
+    filter.Q.setValueAtTime(q, t)
+    g.gain.setValueAtTime(gain, t)
+    g.gain.exponentialRampToValueAtTime(0.001, t + duration)
+    noise.start(t)
+    noise.stop(t + duration)
+  }
+
   // ======================== SHARED ========================
 
   playClick() {
+    if (this._playAsset('click', { volume: 0.34, playbackRate: 0.94 + Math.random() * 0.08 })) return
     if (!this._ready()) return
-    const t = this._now()
-    const ctx = this._getOrCreateContext()
-
-    const osc = ctx.createOscillator()
-    const g = ctx.createGain()
-    osc.connect(g); g.connect(ctx.destination)
-    osc.type = 'sine'
-    osc.frequency.setValueAtTime(880, t)
-    osc.frequency.exponentialRampToValueAtTime(660, t + 0.04)
-    g.gain.setValueAtTime(0.06, t)
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.06)
-    osc.start(t); osc.stop(t + 0.06)
+    this._noiseHit({ duration: 0.035, gain: 0.045, filterType: 'bandpass', frequency: 360, q: 2.2 })
+    this._tone({ type: 'triangle', frequency: 190, endFrequency: 140, duration: 0.055, gain: 0.035 })
   }
 
   playWinSound() {
+    this._playAsset('win', { volume: 0.6, playbackRate: 0.92 })
+    this._playAsset('win', { volume: 0.42, playbackRate: 1.05, delay: 120 })
+    return
     if (!this._ready()) return
-    const t = this._now()
-    const ctx = this._getOrCreateContext()
-
-    // Triumphant ascending arpeggio: C5-E5-G5-C6
-    const notes = [523, 659, 784, 1047]
-    notes.forEach((freq, i) => {
-      const osc = ctx.createOscillator()
-      const g = ctx.createGain()
-      osc.connect(g); g.connect(ctx.destination)
-      osc.type = 'sine'
-      osc.frequency.setValueAtTime(freq, t + i * 0.1)
-
-      const start = t + i * 0.1
-      g.gain.setValueAtTime(0.001, start)
-      g.gain.linearRampToValueAtTime(0.12, start + 0.05)
-      g.gain.exponentialRampToValueAtTime(0.001, start + 0.5)
-      osc.start(start); osc.stop(start + 0.5)
+    this._noiseHit({ duration: 0.11, gain: 0.055, filterType: 'highpass', frequency: 900, q: 0.8 })
+    ;[262, 330, 392, 523].forEach((freq, i) => {
+      this._tone({ type: 'triangle', frequency: freq, endFrequency: freq * 0.96, delay: i * 0.085, duration: 0.28, gain: 0.075 })
     })
-
-    // Shimmer layer
-    const shimmer = ctx.createOscillator()
-    const sg = ctx.createGain()
-    shimmer.connect(sg); sg.connect(ctx.destination)
-    shimmer.type = 'sine'
-    shimmer.frequency.setValueAtTime(2093, t + 0.35)
-    shimmer.frequency.exponentialRampToValueAtTime(1568, t + 1.0)
-    sg.gain.setValueAtTime(0.001, t + 0.35)
-    sg.gain.linearRampToValueAtTime(0.06, t + 0.45)
-    sg.gain.exponentialRampToValueAtTime(0.001, t + 1.0)
-    shimmer.start(t + 0.35); shimmer.stop(t + 1.0)
+    this._tone({ type: 'sine', frequency: 1046, endFrequency: 880, delay: 0.24, duration: 0.34, gain: 0.025 })
   }
 
   playLoseSound() {
+    if (this._playAsset('lose', { volume: 0.36, playbackRate: 0.82 })) return
     if (!this._ready()) return
-    const t = this._now()
-    const ctx = this._getOrCreateContext()
-
-    // Gentle descending two-note: "wah-wah"
-    const osc = ctx.createOscillator()
-    const g = ctx.createGain()
-    osc.connect(g); g.connect(ctx.destination)
-    osc.type = 'triangle'
-    osc.frequency.setValueAtTime(440, t)
-    osc.frequency.linearRampToValueAtTime(330, t + 0.2)
-    osc.frequency.linearRampToValueAtTime(260, t + 0.5)
-    g.gain.setValueAtTime(0.08, t)
-    g.gain.linearRampToValueAtTime(0.04, t + 0.25)
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.6)
-    osc.start(t); osc.stop(t + 0.6)
+    this._noiseHit({ duration: 0.13, gain: 0.04, filterType: 'lowpass', frequency: 360, endFrequency: 120, q: 0.9 })
+    this._tone({ type: 'triangle', frequency: 196, endFrequency: 112, duration: 0.45, gain: 0.065 })
   }
 
   // ======================== COIN FLIP — Casino/Metallic ========================
 
   playCoinSpin() {
+    if (this._playAsset('coinSpin', { volume: 0.42, playbackRate: 0.88 + Math.random() * 0.16 })) return
     if (!this._ready()) return
-    const t = this._now()
-    const ctx = this._getOrCreateContext()
-
-    // Metallic ring: two detuned sine waves for shimmer
-    const osc1 = ctx.createOscillator()
-    const osc2 = ctx.createOscillator()
-    const g = ctx.createGain()
-    osc1.connect(g); osc2.connect(g); g.connect(ctx.destination)
-
-    osc1.type = 'sine'
-    osc2.type = 'sine'
-    const base = 1200 + Math.random() * 400
-    osc1.frequency.setValueAtTime(base, t)
-    osc2.frequency.setValueAtTime(base * 1.005, t) // slight detune
-    osc1.frequency.exponentialRampToValueAtTime(base * 0.7, t + 0.12)
-    osc2.frequency.exponentialRampToValueAtTime(base * 0.7 * 1.005, t + 0.12)
-
-    g.gain.setValueAtTime(0.04, t)
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.12)
-    osc1.start(t); osc2.start(t)
-    osc1.stop(t + 0.12); osc2.stop(t + 0.12)
+    this._noiseHit({ duration: 0.045, gain: 0.04, filterType: 'bandpass', frequency: 1150 + Math.random() * 240, q: 8 })
+    this._tone({ type: 'triangle', frequency: 360 + Math.random() * 90, endFrequency: 230, duration: 0.075, gain: 0.035 })
   }
 
   playResultReveal() {
+    if (this._playAsset('coinReveal', { volume: 0.56, playbackRate: 0.88 })) return
     if (!this._ready()) return
-    const t = this._now()
-    const ctx = this._getOrCreateContext()
-
-    // Casino "ding" — bright bell
-    const osc = ctx.createOscillator()
-    const g = ctx.createGain()
-    osc.connect(g); g.connect(ctx.destination)
-    osc.type = 'sine'
-    osc.frequency.setValueAtTime(1318, t) // E6
-    osc.frequency.exponentialRampToValueAtTime(880, t + 0.6)
-    g.gain.setValueAtTime(0.15, t)
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.6)
-    osc.start(t); osc.stop(t + 0.6)
-
-    // Harmonic overtone
-    const osc2 = ctx.createOscillator()
-    const g2 = ctx.createGain()
-    osc2.connect(g2); g2.connect(ctx.destination)
-    osc2.type = 'sine'
-    osc2.frequency.setValueAtTime(2636, t) // E7
-    g2.gain.setValueAtTime(0.04, t)
-    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.35)
-    osc2.start(t); osc2.stop(t + 0.35)
+    this._noiseHit({ duration: 0.09, gain: 0.075, filterType: 'lowpass', frequency: 620, endFrequency: 190, q: 1.1 })
+    this._tone({ type: 'triangle', frequency: 392, endFrequency: 330, duration: 0.32, gain: 0.075 })
+    this._tone({ type: 'sine', frequency: 784, endFrequency: 660, delay: 0.035, duration: 0.22, gain: 0.035 })
   }
 
   startCoinSpinLoop() {
     if (!this._ready()) return null
-    let speed = 220
+    this.playCoinSpin()
     const interval = setInterval(() => {
       this.playCoinSpin()
-      if (speed > 120) speed -= 8
-    }, speed)
+    }, 280)
     return interval
   }
 
@@ -225,104 +224,37 @@ class SoundManager {
   // ======================== DICE ROLL — Wooden Table ========================
 
   playDiceRoll() {
+    if (this._playAsset('diceRoll', { volume: 0.42, playbackRate: 0.86 + Math.random() * 0.12 })) return
     if (!this._ready()) return
-    const t = this._now()
-    const ctx = this._getOrCreateContext()
-
-    // Wooden knock/thud via filtered noise burst
-    const noise = this._createNoise(0.08)
-    const filter = ctx.createBiquadFilter()
-    const g = ctx.createGain()
-    noise.connect(filter); filter.connect(g); g.connect(ctx.destination)
-
-    filter.type = 'bandpass'
-    filter.frequency.setValueAtTime(300 + Math.random() * 200, t)
-    filter.Q.setValueAtTime(2, t)
-
-    g.gain.setValueAtTime(0.12, t)
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.08)
-    noise.start(t); noise.stop(t + 0.08)
-
-    // Subtle resonant tap
-    const osc = ctx.createOscillator()
-    const og = ctx.createGain()
-    osc.connect(og); og.connect(ctx.destination)
-    osc.type = 'sine'
-    osc.frequency.setValueAtTime(180 + Math.random() * 60, t)
-    osc.frequency.exponentialRampToValueAtTime(90, t + 0.06)
-    og.gain.setValueAtTime(0.06, t)
-    og.gain.exponentialRampToValueAtTime(0.001, t + 0.06)
-    osc.start(t); osc.stop(t + 0.06)
+    this._noiseHit({ duration: 0.075, gain: 0.09, filterType: 'lowpass', frequency: 520 + Math.random() * 170, endFrequency: 160, q: 1.5 })
+    this._tone({ type: 'triangle', frequency: 150 + Math.random() * 45, endFrequency: 82, duration: 0.07, gain: 0.06 })
   }
 
   playDiceReveal() {
+    if (this._playAsset('diceReveal', { volume: 0.62, playbackRate: 0.9 + Math.random() * 0.08 })) return
     if (!this._ready()) return
-    const t = this._now()
-    const ctx = this._getOrCreateContext()
-
-    // Heavy landing thud
-    const noise = this._createNoise(0.2)
-    const filter = ctx.createBiquadFilter()
-    const g = ctx.createGain()
-    noise.connect(filter); filter.connect(g); g.connect(ctx.destination)
-    filter.type = 'lowpass'
-    filter.frequency.setValueAtTime(400, t)
-    filter.frequency.exponentialRampToValueAtTime(100, t + 0.2)
-    g.gain.setValueAtTime(0.15, t)
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.2)
-    noise.start(t); noise.stop(t + 0.2)
-
-    // Low impact tone
-    const osc = ctx.createOscillator()
-    const og = ctx.createGain()
-    osc.connect(og); og.connect(ctx.destination)
-    osc.type = 'sine'
-    osc.frequency.setValueAtTime(120, t)
-    osc.frequency.exponentialRampToValueAtTime(60, t + 0.25)
-    og.gain.setValueAtTime(0.1, t)
-    og.gain.exponentialRampToValueAtTime(0.001, t + 0.3)
-    osc.start(t); osc.stop(t + 0.3)
+    this._noiseHit({ duration: 0.19, gain: 0.13, filterType: 'lowpass', frequency: 430, endFrequency: 95, q: 1 })
+    this._tone({ type: 'sine', frequency: 115, endFrequency: 58, duration: 0.28, gain: 0.09 })
 
     // Bounce — secondary smaller thud
     setTimeout(() => {
       if (!this._ready()) return
-      const ctx2 = this._getOrCreateContext()
-      if (!ctx2) return
-      const t2 = this._now()
-      const n2 = this._createNoise(0.06)
-      const f2 = ctx2.createBiquadFilter()
-      const g2 = ctx.createGain()
-      n2.connect(f2); f2.connect(g2); g2.connect(ctx2.destination)
-      f2.type = 'lowpass'; f2.frequency.setValueAtTime(250, t2)
-      g2.gain.setValueAtTime(0.06, t2)
-      g2.gain.exponentialRampToValueAtTime(0.001, t2 + 0.06)
-      n2.start(t2); n2.stop(t2 + 0.06)
+      this._noiseHit({ duration: 0.055, gain: 0.048, filterType: 'lowpass', frequency: 230, q: 1.1 })
     }, 150)
   }
 
   playDiceSelect() {
+    if (this._playAsset('diceSelect', { volume: 0.32, playbackRate: 0.95 })) return
     if (!this._ready()) return
-    const t = this._now()
-    const ctx = this._getOrCreateContext()
-
-    // Small wooden tap
-    const noise = this._createNoise(0.04)
-    const filter = ctx.createBiquadFilter()
-    const g = ctx.createGain()
-    noise.connect(filter); filter.connect(g); g.connect(ctx.destination)
-    filter.type = 'bandpass'
-    filter.frequency.setValueAtTime(600, t)
-    filter.Q.setValueAtTime(3, t)
-    g.gain.setValueAtTime(0.06, t)
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.04)
-    noise.start(t); noise.stop(t + 0.04)
+    this._noiseHit({ duration: 0.04, gain: 0.055, filterType: 'bandpass', frequency: 430, q: 3 })
   }
 
   startDiceRollLoop() {
     if (!this._ready()) return null
+    this.playDiceRoll()
     const interval = setInterval(() => {
       this.playDiceRoll()
-    }, 180)
+    }, 260)
     return interval
   }
 
@@ -331,95 +263,50 @@ class SoundManager {
   // ======================== LUCKY NUMBER — Magical/Mystical ========================
 
   playNumberSpin() {
+    if (this._playAsset('numberSpin', { volume: 0.4, playbackRate: 0.92 + Math.random() * 0.12 })) return
     if (!this._ready()) return
-    const t = this._now()
-    const ctx = this._getOrCreateContext()
-
-    // Magical chime: ascending tone with vibrato
-    const osc = ctx.createOscillator()
-    const lfo = ctx.createOscillator()
-    const lfoGain = ctx.createGain()
-    const g = ctx.createGain()
-
-    lfo.connect(lfoGain); lfoGain.connect(osc.frequency)
-    osc.connect(g); g.connect(ctx.destination)
-
-    const base = 600 + Math.random() * 600
-    osc.type = 'sine'
-    osc.frequency.setValueAtTime(base, t)
-    osc.frequency.exponentialRampToValueAtTime(base * 0.8, t + 0.15)
-
-    lfo.type = 'sine'
-    lfo.frequency.setValueAtTime(12, t)
-    lfoGain.gain.setValueAtTime(15, t)
-
-    g.gain.setValueAtTime(0.05, t)
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.15)
-
-    osc.start(t); lfo.start(t)
-    osc.stop(t + 0.15); lfo.stop(t + 0.15)
+    this._noiseHit({ duration: 0.055, gain: 0.055, filterType: 'bandpass', frequency: 520 + Math.random() * 260, q: 4.5 })
+    this._tone({ type: 'triangle', frequency: 210 + Math.random() * 70, endFrequency: 155, duration: 0.06, gain: 0.035 })
   }
 
   playNumberReveal() {
+    if (this._playAsset('numberReveal', { volume: 0.56, playbackRate: 0.94 })) return
     if (!this._ready()) return
-    const t = this._now()
-    const ctx = this._getOrCreateContext()
-
-    // Magical reveal: rising sparkle arpeggio
-    const notes = [523, 784, 1047, 1568] // C5, G5, C6, G6
-    notes.forEach((freq, i) => {
-      const osc = ctx.createOscillator()
-      const g = ctx.createGain()
-      osc.connect(g); g.connect(ctx.destination)
-      osc.type = 'sine'
-
-      const start = t + i * 0.06
-      osc.frequency.setValueAtTime(freq, start)
-      g.gain.setValueAtTime(0.001, start)
-      g.gain.linearRampToValueAtTime(0.08, start + 0.03)
-      g.gain.exponentialRampToValueAtTime(0.001, start + 0.35)
-      osc.start(start); osc.stop(start + 0.35)
-    })
-
-    // Sparkle shimmer (high-frequency wash)
-    const shimmer = ctx.createOscillator()
-    const sg = ctx.createGain()
-    shimmer.connect(sg); sg.connect(ctx.destination)
-    shimmer.type = 'sine'
-    shimmer.frequency.setValueAtTime(3136, t + 0.2)
-    shimmer.frequency.exponentialRampToValueAtTime(2093, t + 0.8)
-    sg.gain.setValueAtTime(0.001, t + 0.2)
-    sg.gain.linearRampToValueAtTime(0.04, t + 0.3)
-    sg.gain.exponentialRampToValueAtTime(0.001, t + 0.8)
-    shimmer.start(t + 0.2); shimmer.stop(t + 0.8)
+    this._noiseHit({ duration: 0.12, gain: 0.08, filterType: 'bandpass', frequency: 680, q: 2.8 })
+    this._tone({ type: 'triangle', frequency: 262, endFrequency: 330, duration: 0.2, gain: 0.06 })
+    this._tone({ type: 'triangle', frequency: 392, endFrequency: 523, delay: 0.08, duration: 0.24, gain: 0.052 })
   }
 
   playNumberSelect() {
+    if (this._playAsset('numberSelect', { volume: 0.28, playbackRate: 1.05 })) return
     if (!this._ready()) return
-    const t = this._now()
-    const ctx = this._getOrCreateContext()
-
-    // Soft magical "ping" — two quick harmonics
-    const osc = ctx.createOscillator()
-    const g = ctx.createGain()
-    osc.connect(g); g.connect(ctx.destination)
-    osc.type = 'sine'
-    osc.frequency.setValueAtTime(1047, t) // C6
-    osc.frequency.exponentialRampToValueAtTime(784, t + 0.08)
-    g.gain.setValueAtTime(0.05, t)
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.1)
-    osc.start(t); osc.stop(t + 0.1)
+    this._noiseHit({ duration: 0.04, gain: 0.05, filterType: 'bandpass', frequency: 620, q: 3.5 })
+    this._tone({ type: 'triangle', frequency: 260, endFrequency: 210, duration: 0.055, gain: 0.03 })
   }
 
   startNumberSpinLoop() {
     if (!this._ready()) return null
+    this.playNumberSpin()
     const interval = setInterval(() => {
       this.playNumberSpin()
-    }, 160)
+    }, 240)
     return interval
   }
 
   stopNumberSpinLoop(interval) { if (interval) clearInterval(interval) }
+
+  playSlotSpin() {
+    this._playAsset('slotSpin', { volume: 0.44, playbackRate: 0.86 + Math.random() * 0.08 })
+  }
+
+  playSlotStop() {
+    this._playAsset('slotStop', { volume: 0.42, playbackRate: 0.9 + Math.random() * 0.1 })
+  }
+
+  playSlotWin() {
+    this._playAsset('slotWin', { volume: 0.62, playbackRate: 0.9 })
+    this._playAsset('slotWin', { volume: 0.48, playbackRate: 1.04, delay: 150 })
+  }
 }
 
 const soundManager = new SoundManager()
