@@ -844,6 +844,7 @@ const Home = () => {
                 { key: 'KAT',   label: 'Katana',   logo: '/katana-logo.jpg', chainId: NETWORKS.KATANA.chainId },
                 { key: 'MEGA',  label: 'MegaETH',  logo: '/megaeth-logo.jpg', chainId: NETWORKS.MEGAETH.chainId },
                 ...(NETWORKS.ARC_RESTNET ? [{ key: 'ARC', label: 'Arc Testnet', logo: '/arc-testnet-logo.jpg', chainId: NETWORKS.ARC_RESTNET.chainId }] : []),
+                ...(NETWORKS.ROBINHOOD ? [{ key: 'RH', label: 'Robinhood', logo: '/robinhood-testnet-logo.png', chainId: NETWORKS.ROBINHOOD.chainId }] : []),
               ].map((net) => {
                 // Miniapp: sadece Base kullanılır, geçiş yok; Base seçili görünsün, diğerlerine tıklanınca tepki verme
                 const isActive = isInFarcaster

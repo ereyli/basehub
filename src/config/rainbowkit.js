@@ -159,11 +159,31 @@ const arcRestnet = defineChain({
   iconBackground: '#ffffff',
 })
 
+// Robinhood Chain for RainbowKit
+const robinhoodChain = defineChain({
+  id: NETWORKS.ROBINHOOD.chainId,
+  name: NETWORKS.ROBINHOOD.chainName,
+  nativeCurrency: NETWORKS.ROBINHOOD.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.ROBINHOOD.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Robinhood Explorer',
+      url: NETWORKS.ROBINHOOD.blockExplorerUrls[0],
+    },
+  },
+  iconUrl: '/robinhood-testnet-logo.png',
+  iconBackground: '#C2FF00',
+})
+
 // RainbowKit configuration for web users only
 export const rainbowkitConfig = getDefaultConfig({
   appName: APP_NAME,
   projectId: REOWN_PROJECT_ID,
-  chains: [base, inkChain, tempo, soneium, katana, megaeth, arcRestnet],
+  chains: [base, inkChain, tempo, soneium, katana, megaeth, arcRestnet, robinhoodChain],
   wallets: [
     {
       groupName: 'Recommended',

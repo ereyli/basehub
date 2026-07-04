@@ -286,7 +286,7 @@ export const getNetworkKey = (chainId) => {
 
 // Mainnet networks only (NetworkSelector Mainnet group)
 export const getMainnetNetworks = () => {
-  const visibleOrder = ['BASE', 'INKCHAIN', 'TEMPO', 'SONEIUM', 'KATANA', 'MEGAETH']
+  const visibleOrder = ['BASE', 'INKCHAIN', 'TEMPO', 'SONEIUM', 'KATANA', 'MEGAETH', 'ROBINHOOD']
   return visibleOrder.map(key => NETWORKS[key]).filter(net => net && net.isTestnet === false)
 }
 

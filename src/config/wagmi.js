@@ -123,9 +123,27 @@ const arcRestnet = defineChain({
   },
 })
 
+// Robinhood Chain
+const robinhoodChain = defineChain({
+  id: NETWORKS.ROBINHOOD.chainId,
+  name: NETWORKS.ROBINHOOD.chainName,
+  nativeCurrency: NETWORKS.ROBINHOOD.nativeCurrency,
+  rpcUrls: {
+    default: {
+      http: NETWORKS.ROBINHOOD.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Robinhood Explorer',
+      url: NETWORKS.ROBINHOOD.blockExplorerUrls[0],
+    },
+  },
+})
+
 // Wagmi config with multiple wallet support
 export const config = createConfig({
-  chains: [base, inkChain, tempo, soneium, katana, megaeth, arcRestnet],
+  chains: [base, inkChain, tempo, soneium, katana, megaeth, arcRestnet, robinhoodChain],
   dataSuffix: DATA_SUFFIX,
   transports: {
     [base.id]: fallback(
@@ -154,6 +172,11 @@ export const config = createConfig({
       retryDelay: 1000,
     }),
     [arcRestnet.id]: http(NETWORKS.ARC_RESTNET.rpcUrls[0], {
+      timeout: 30000,
+      retryCount: 3,
+      retryDelay: 1000,
+    }),
+    [robinhoodChain.id]: http(NETWORKS.ROBINHOOD.rpcUrls[0], {
       timeout: 30000,
       retryCount: 3,
       retryDelay: 1000,
