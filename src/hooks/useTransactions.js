@@ -72,7 +72,7 @@ export const useTransactions = () => {
 
   const UI_MAX_WAIT_MS = 7000
   // Ink, Soneium, MegaETH: fast chains – 0 confirmations + short polling so receipt comes quickly (like Ink)
-  const isFastChain = chainId === NETWORKS.INKCHAIN.chainId || chainId === NETWORKS.SONEIUM.chainId || chainId === NETWORKS.MEGAETH.chainId
+  const isFastChain = chainId === NETWORKS.INKCHAIN.chainId || chainId === NETWORKS.SONEIUM.chainId || chainId === NETWORKS.MEGAETH.chainId || chainId === NETWORKS.ROBINHOOD.chainId || chainId === NETWORKS.ARBITRUM.chainId || chainId === NETWORKS.OPTIMISM.chainId || chainId === NETWORKS.MONAD.chainId
 
   /** Receipt exists but execution reverted — must not be treated as a successful confirmation / timeout fallback. */
   const isOnChainFailureError = (err) => {

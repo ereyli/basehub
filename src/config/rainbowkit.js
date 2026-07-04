@@ -194,6 +194,7 @@ const arbitrum = defineChain({
       url: NETWORKS.ARBITRUM.blockExplorerUrls[0],
     },
   },
+  iconUrl: '/arbitrum-logo.svg',
   iconBackground: '#28a0f0',
 })
 
@@ -212,6 +213,7 @@ const optimism = defineChain({
       url: NETWORKS.OPTIMISM.blockExplorerUrls[0],
     },
   },
+  iconUrl: '/optimism-logo.svg',
   iconBackground: '#ff0420',
 })
 
@@ -230,6 +232,7 @@ const monad = defineChain({
       url: NETWORKS.MONAD.blockExplorerUrls[0],
     },
   },
+  iconUrl: '/monad-logo.svg',
   iconBackground: '#836ef9',
 })
 

@@ -390,7 +390,10 @@ export function useNFTLaunchpad() {
         chainId === NETWORKS.INKCHAIN.chainId ||
         chainId === NETWORKS.SONEIUM.chainId ||
         chainId === NETWORKS.MEGAETH.chainId ||
-        chainId === NETWORKS.ROBINHOOD.chainId
+        chainId === NETWORKS.ROBINHOOD.chainId ||
+        chainId === NETWORKS.ARBITRUM.chainId ||
+        chainId === NETWORKS.OPTIMISM.chainId ||
+        chainId === NETWORKS.MONAD.chainId
       const receipt = await waitForTransactionReceipt(config, {
         hash: txHash,
         chainId,

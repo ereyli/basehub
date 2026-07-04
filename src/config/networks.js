@@ -2,7 +2,7 @@ import tempoLogo from '../../Tempo logo.jpg'
 
 // Multi-network configuration
 // Mainnet + Testnet. When adding testnet networks, also add them to CONTRACT_ADDRESSES.
-// Keys used in product.networks: 'base', 'ink', 'soneium', 'katana', 'tempo' (+ testnet keys)
+// Keys used in product.networks: 'base', 'ink', 'soneium', 'katana', 'tempo', 'arbitrum', 'optimism', 'monad' (+ testnet keys)
 
 export const NETWORKS = {
   BASE: {
@@ -159,7 +159,7 @@ export const NETWORKS = {
       'https://arbitrum.drpc.org',
     ],
     blockExplorerUrls: ['https://arbiscan.io'],
-    iconUrls: [],
+    iconUrls: ['/arbitrum-logo.svg'],
     isFarcasterSupported: false,
   },
   OPTIMISM: {
@@ -178,7 +178,7 @@ export const NETWORKS = {
       'https://optimism.drpc.org',
     ],
     blockExplorerUrls: ['https://optimistic.etherscan.io'],
-    iconUrls: [],
+    iconUrls: ['/optimism-logo.svg'],
     isFarcasterSupported: false,
   },
   MONAD: {
@@ -193,7 +193,7 @@ export const NETWORKS = {
     },
     rpcUrls: ['https://rpc.monad.xyz'],
     blockExplorerUrls: ['https://monadvision.com'],
-    iconUrls: [],
+    iconUrls: ['/monad-logo.svg'],
     isFarcasterSupported: false,
   },
 }
@@ -301,6 +301,36 @@ export const CONTRACT_ADDRESSES = {
     BASEHUB_DEPLOYER: '0x71Bc04A2e357279c75EB1E2c133f08Ca9097d9bF',
     BASEHUB_NFT_COLLECTION_DEPLOYER: '0x71Bc04A2e357279c75EB1E2c133f08Ca9097d9bF',
   },
+  ARBITRUM: {
+    DICE_ROLL: '0xCD8cBAc71195fe2f2a81dbbbE4AE4Fff5278102C',
+    FLIP_GAME: '0x2Bcf075C5876385FE191d0a471FE53D6f6FA8b05',
+    GM_GAME: '0x166011AB63AA872cf9E1d7d0f7a1ddfa32e2f7b9',
+    GN_GAME: '0x71e90F79B07c42DAF99C5BBEd1B5E5C7b52a2129',
+    LUCKY_NUMBER: '0x4873c6A524c47FEe05F2839c308553bc8c09bC47',
+    SLOT_GAME: '0xc64006e31Dd09Df82B6513A9Cba20A52341EF1dB',
+    BASEHUB_DEPLOYER: '0x71Bc04A2e357279c75EB1E2c133f08Ca9097d9bF',
+    BASEHUB_NFT_COLLECTION_DEPLOYER: '0x71Bc04A2e357279c75EB1E2c133f08Ca9097d9bF',
+  },
+  OPTIMISM: {
+    DICE_ROLL: '0xCD8cBAc71195fe2f2a81dbbbE4AE4Fff5278102C',
+    FLIP_GAME: '0x2Bcf075C5876385FE191d0a471FE53D6f6FA8b05',
+    GM_GAME: '0x166011AB63AA872cf9E1d7d0f7a1ddfa32e2f7b9',
+    GN_GAME: '0x71e90F79B07c42DAF99C5BBEd1B5E5C7b52a2129',
+    LUCKY_NUMBER: '0x4873c6A524c47FEe05F2839c308553bc8c09bC47',
+    SLOT_GAME: '0xc64006e31Dd09Df82B6513A9Cba20A52341EF1dB',
+    BASEHUB_DEPLOYER: '0x71Bc04A2e357279c75EB1E2c133f08Ca9097d9bF',
+    BASEHUB_NFT_COLLECTION_DEPLOYER: '0x71Bc04A2e357279c75EB1E2c133f08Ca9097d9bF',
+  },
+  MONAD: {
+    DICE_ROLL: '0xCD8cBAc71195fe2f2a81dbbbE4AE4Fff5278102C',
+    FLIP_GAME: '0x2Bcf075C5876385FE191d0a471FE53D6f6FA8b05',
+    GM_GAME: '0x166011AB63AA872cf9E1d7d0f7a1ddfa32e2f7b9',
+    GN_GAME: '0x71e90F79B07c42DAF99C5BBEd1B5E5C7b52a2129',
+    LUCKY_NUMBER: '0x4873c6A524c47FEe05F2839c308553bc8c09bC47',
+    SLOT_GAME: '0xc64006e31Dd09Df82B6513A9Cba20A52341EF1dB',
+    BASEHUB_DEPLOYER: '0x71Bc04A2e357279c75EB1E2c133f08Ca9097d9bF',
+    BASEHUB_NFT_COLLECTION_DEPLOYER: '0x71Bc04A2e357279c75EB1E2c133f08Ca9097d9bF',
+  },
 }
 
 /** PumpHub factory for Base / Tempo (Tempo requires VITE_PUMPHUB_FACTORY_TEMPO). */
@@ -340,7 +370,7 @@ export const getNetworkKey = (chainId) => {
 
 // Mainnet networks only (NetworkSelector Mainnet group)
 export const getMainnetNetworks = () => {
-  const visibleOrder = ['BASE', 'INKCHAIN', 'TEMPO', 'SONEIUM', 'KATANA', 'MEGAETH', 'ROBINHOOD']
+  const visibleOrder = ['BASE', 'INKCHAIN', 'TEMPO', 'SONEIUM', 'KATANA', 'MEGAETH', 'ARBITRUM', 'OPTIMISM', 'MONAD', 'ROBINHOOD']
   return visibleOrder.map(key => NETWORKS[key]).filter(net => net && net.isTestnet === false)
 }
 

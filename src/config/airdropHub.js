@@ -11,6 +11,9 @@ export const HUB_CHAIN_LOGO = {
   megaeth: '/megaeth-logo.jpg',
   tempo: '/Tempo logo.jpg',
   katana: '/katana-logo.jpg',
+  arbitrum: '/arbitrum-logo.svg',
+  optimism: '/optimism-logo.svg',
+  monad: '/monad-logo.svg',
   // Match Home / NetworkSelector / rainbowkit (jpg reads better in circular avatars than wide white SVG)
   'arc-restnet': '/arc-testnet-logo.jpg',
   'robinhood': '/robinhood-testnet-logo.png',
@@ -35,7 +38,7 @@ export const HUB_MODULES = [
   { id: 'deploy1155', label: 'ERC-1155', path: '/deploy-erc1155', requiresDeployer: true },
 ]
 
-const NETWORK_ORDER = ['base', 'ink', 'soneium', 'megaeth', 'tempo', 'katana', 'arc-restnet', 'robinhood']
+const NETWORK_ORDER = ['base', 'ink', 'tempo', 'soneium', 'katana', 'megaeth', 'arbitrum', 'optimism', 'monad', 'arc-restnet', 'robinhood']
 
 function configKeyForNetworkKey(networkKey) {
   const entry = Object.entries(NETWORKS).find(([, n]) => n.networkKey === networkKey)

@@ -40,6 +40,18 @@ function formatMintPrice(price, isTempo) {
   return isTempo ? `${p} PUSD` : `${p} ETH`
 }
 
+const NFT_CHAIN_OPTIONS = [
+  { chainId: 8453, logo: '/base-logo.jpg', label: 'Base' },
+  { chainId: 57073, logo: '/ink-logo.jpg', label: 'Ink' },
+  { chainId: 1868, logo: '/soneium-logo.jpg', label: 'Soneium' },
+  { chainId: 4326, logo: '/megaeth-logo.jpg', label: 'MegaETH' },
+  { chainId: 4217, logo: '/Tempo logo.jpg', label: 'Tempo' },
+  { chainId: 4663, logo: '/robinhood-testnet-logo.png', label: 'Robinhood' },
+  { chainId: 42161, logo: '/arbitrum-logo.svg', label: 'Arbitrum' },
+  { chainId: 10, logo: '/optimism-logo.svg', label: 'Optimism' },
+  { chainId: 143, logo: '/monad-logo.svg', label: 'Monad' },
+]
+
 // Convert IPFS hash to gateway URL
 function ipfsToUrl(ipfsHash) {
   if (!ipfsHash) return null
@@ -251,7 +263,7 @@ export default function NFTLaunchpad() {
   // Collections state
   const [collections, setCollections] = useState([])
   const [collectionsLoading, setCollectionsLoading] = useState(true)
-  const [countsByChain, setCountsByChain] = useState({ 8453: 0, 57073: 0, 1868: 0, 4326: 0, 4217: 0 })
+  const [countsByChain, setCountsByChain] = useState({ 8453: 0, 57073: 0, 1868: 0, 4326: 0, 4217: 0, 4663: 0, 42161: 0, 10: 0, 143: 0 })
   const [chainStatsByContract, setChainStatsByContract] = useState({})
   const [sortBy, setSortBy] = useState('newest') // newest | most_minted | trending | least_minted | oldest | price_low | price_high | recent_activity
   const [soldOutOnly, setSoldOutOnly] = useState(false)
@@ -280,28 +292,18 @@ export default function NFTLaunchpad() {
   useEffect(() => {
     if (!supabase?.from) return
     let cancelled = false
-    Promise.all([
-      supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).or('chain_id.eq.8453,chain_id.is.null'),
-      supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).eq('chain_id', 57073),
-      supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).eq('chain_id', 1868),
-      supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).eq('chain_id', 4326),
-      supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).eq('chain_id', 4217),
-      supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).eq('chain_id', 4663),
-    ]).then(([r1, r2, r3, r4, r5, r6]) => {
+    Promise.all(NFT_CHAIN_OPTIONS.map(({ chainId: cid }) => (
+      cid === NETWORKS.BASE.chainId
+        ? supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).or('chain_id.eq.8453,chain_id.is.null')
+        : supabase.from('nft_launchpad_collections').select('*', { count: 'exact', head: true }).eq('chain_id', cid)
+    ))).then((results) => {
       if (cancelled) return
-      setCountsByChain({
-        8453: r1?.count ?? 0,
-        57073: r2?.count ?? 0,
-        1868: r3?.count ?? 0,
-        4326: r4?.count ?? 0,
-        4217: r5?.count ?? 0,
-        4663: r6?.count ?? 0,
-      })
+      setCountsByChain(Object.fromEntries(NFT_CHAIN_OPTIONS.map(({ chainId: cid }, index) => [cid, results[index]?.count ?? 0])))
     })
     return () => { cancelled = true }
   }, [success])
 
-  // Load collections - filter by current chain (Base, Ink or Soneium)
+  // Load collections - filter by current chain. Legacy rows have chain_id NULL = treat as Base.
   useEffect(() => {
     if (!supabase?.from) { setCollectionsLoading(false); return }
     let cancelled = false
@@ -310,19 +312,10 @@ export default function NFTLaunchpad() {
       .select('contract_address, deployer_address, name, symbol, supply, image_url, mint_price, slug, total_minted, is_active, created_at, chain_id')
       .order('created_at', { ascending: false })
       .limit(100)
-    // Filter by chain: Base (8453), Ink (57073), Soneium (1868), MegaETH (4326), Tempo (4217), Robinhood (4663). Legacy rows have chain_id NULL = treat as Base
     if (chainId === NETWORKS.BASE.chainId) {
       query = query.or('chain_id.eq.8453,chain_id.is.null')
-    } else if (chainId === NETWORKS.INKCHAIN.chainId) {
-      query = query.eq('chain_id', 57073)
-    } else if (chainId === NETWORKS.SONEIUM.chainId) {
-      query = query.eq('chain_id', 1868)
-    } else if (chainId === NETWORKS.MEGAETH.chainId) {
-      query = query.eq('chain_id', 4326)
-    } else if (chainId === NETWORKS.TEMPO.chainId) {
-      query = query.eq('chain_id', 4217)
-    } else if (chainId === NETWORKS.ROBINHOOD.chainId) {
-      query = query.eq('chain_id', 4663)
+    } else if (NFT_CHAIN_OPTIONS.some(({ chainId: cid }) => cid === Number(chainId))) {
+      query = query.eq('chain_id', Number(chainId))
     }
     query.then(({ data, error }) => {
         if (cancelled) return
@@ -562,17 +555,12 @@ export default function NFTLaunchpad() {
               NFT Launchpad
             </h1>
             <p style={{ fontSize: '14px', color: '#94a3b8', margin: 0, maxWidth: '420px', marginInline: 'auto', lineHeight: 1.5 }}>
-              Deploy your NFT collection on Base, Ink, Soneium, MegaETH, Tempo or Robinhood. Set a mint price, get a shareable page, and earn from every mint.
+              Deploy your NFT collection on Base, Ink, Soneium, MegaETH, Tempo, Robinhood, Arbitrum, Optimism or Monad. Set a mint price, get a shareable page, and earn from every mint.
             </p>
             {/* Network deploy counts - compact row */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '12px', flexWrap: 'wrap' }}>
               {[
-                { chainId: 8453, logo: '/base-logo.jpg', label: 'Base' },
-                { chainId: 57073, logo: '/ink-logo.jpg', label: 'Ink' },
-                { chainId: 1868, logo: '/soneium-logo.jpg', label: 'Soneium' },
-                { chainId: 4326, logo: '/megaeth-logo.jpg', label: 'MegaETH' },
-                { chainId: 4217, logo: '/Tempo logo.jpg', label: 'Tempo' },
-                { chainId: 4663, logo: '/robinhood-testnet-logo.png', label: 'Robinhood' },
+                ...NFT_CHAIN_OPTIONS,
               ].map(({ chainId: cid, logo, label }) => (
                 <div key={cid} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'rgba(30,41,59,0.5)', borderRadius: '10px', border: '1px solid rgba(55,65,81,0.5)' }}>
                   <img src={logo} alt={label} style={{ width: '20px', height: '20px', borderRadius: '50%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none' }} />

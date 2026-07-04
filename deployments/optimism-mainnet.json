@@ -1,0 +1,50 @@
+{
+  "chainId": 10,
+  "rpcUrl": "https://mainnet.optimism.io",
+  "explorer": "https://optimistic.etherscan.io",
+  "nativeSymbol": "ETH",
+  "deployer": "0x3782fc55C0E2C464f0f1413Ab623D88155c91287",
+  "feeWallet": "0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe",
+  "feeOverrides": null,
+  "deployedAt": "2026-07-04T01:16:45.468Z",
+  "contracts": {
+    "GM_GAME": "0x166011AB63AA872cf9E1d7d0f7a1ddfa32e2f7b9",
+    "GN_GAME": "0x71e90F79B07c42DAF99C5BBEd1B5E5C7b52a2129",
+    "FLIP_GAME": "0x2Bcf075C5876385FE191d0a471FE53D6f6FA8b05",
+    "LUCKY_NUMBER": "0x4873c6A524c47FEe05F2839c308553bc8c09bC47",
+    "DICE_ROLL": "0xCD8cBAc71195fe2f2a81dbbbE4AE4Fff5278102C",
+    "SLOT_GAME": "0xc64006e31Dd09Df82B6513A9Cba20A52341EF1dB",
+    "BASEHUB_DEPLOYER": "0x71Bc04A2e357279c75EB1E2c133f08Ca9097d9bF",
+    "BASEHUB_NFT_COLLECTION_DEPLOYER": "0x71Bc04A2e357279c75EB1E2c133f08Ca9097d9bF"
+  },
+  "verification": {
+    "GM_GAME": {
+      "owner": "0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe",
+      "gameFee": "20000000000000"
+    },
+    "GN_GAME": {
+      "owner": "0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe",
+      "gameFee": "20000000000000"
+    },
+    "FLIP_GAME": {
+      "owner": "0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe",
+      "gameFee": "20000000000000"
+    },
+    "LUCKY_NUMBER": {
+      "owner": "0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe",
+      "gameFee": "20000000000000"
+    },
+    "DICE_ROLL": {
+      "owner": "0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe",
+      "gameFee": "20000000000000"
+    },
+    "SLOT_GAME": {
+      "creditPrice": "20000000000000"
+    },
+    "BASEHUB_DEPLOYER": {
+      "feeWallet": "0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe",
+      "fee": "250000000000000",
+      "nftCollectionFee": "2000000000000000"
+    }
+  }
+}

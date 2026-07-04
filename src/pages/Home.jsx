@@ -506,6 +506,27 @@ const Home = () => {
             style={baseStyle} 
           />
         )}
+        {networks.includes('arbitrum') && (
+          <img
+            src="/arbitrum-logo.svg"
+            alt="Arbitrum"
+            style={{ ...baseStyle, objectFit: 'contain', background: '#213147' }}
+          />
+        )}
+        {networks.includes('optimism') && (
+          <img
+            src="/optimism-logo.svg"
+            alt="Optimism"
+            style={{ ...baseStyle, objectFit: 'contain', background: '#ff0421' }}
+          />
+        )}
+        {networks.includes('monad') && (
+          <img
+            src="/monad-logo.svg"
+            alt="Monad"
+            style={{ ...baseStyle, objectFit: 'contain', background: '#6e54ff' }}
+          />
+        )}
         {networks.includes('arc-restnet') && (
           <img 
             src="/arc-testnet-logo.jpg" 
@@ -829,12 +850,12 @@ const Home = () => {
               display: networksUseGrid ? 'grid' : 'flex',
               gridTemplateColumns: networksUseGrid ? 'repeat(2, minmax(0, 1fr))' : undefined,
               justifyContent: networksUseGrid ? 'stretch' : 'center',
-              gap: isCompactMode ? '6px' : networksUseGrid ? '8px' : '20px',
-              marginBottom: isCompactMode ? '12px' : networksUseGrid ? '16px' : '28px',
+              gap: isCompactMode ? '6px' : networksUseGrid ? '8px' : '12px',
+              marginBottom: isCompactMode ? '12px' : networksUseGrid ? '16px' : '24px',
               flexWrap: networksUseGrid ? undefined : 'wrap',
-              maxWidth: networksUseGrid ? '320px' : undefined,
-              marginLeft: networksUseGrid ? 'auto' : undefined,
-              marginRight: networksUseGrid ? 'auto' : undefined
+              maxWidth: networksUseGrid ? '320px' : '1340px',
+              marginLeft: 'auto',
+              marginRight: 'auto'
             }}>
               {[
                 { key: 'BASE',  label: 'Base',     logo: '/base-logo.jpg',   chainId: NETWORKS.BASE.chainId },
@@ -843,6 +864,9 @@ const Home = () => {
                 { key: 'SONE',  label: 'Soneium',  logo: '/soneium-logo.jpg', chainId: NETWORKS.SONEIUM.chainId },
                 { key: 'KAT',   label: 'Katana',   logo: '/katana-logo.jpg', chainId: NETWORKS.KATANA.chainId },
                 { key: 'MEGA',  label: 'MegaETH',  logo: '/megaeth-logo.jpg', chainId: NETWORKS.MEGAETH.chainId },
+                { key: 'ARB',   label: 'Arbitrum', logo: '/arbitrum-logo.svg', chainId: NETWORKS.ARBITRUM.chainId },
+                { key: 'OP',    label: 'Optimism', logo: '/optimism-logo.svg', chainId: NETWORKS.OPTIMISM.chainId },
+                { key: 'MON',   label: 'Monad',    logo: '/monad-logo.svg', chainId: NETWORKS.MONAD.chainId },
                 ...(NETWORKS.ARC_RESTNET ? [{ key: 'ARC', label: 'Arc Testnet', logo: '/arc-testnet-logo.jpg', chainId: NETWORKS.ARC_RESTNET.chainId }] : []),
                 ...(NETWORKS.ROBINHOOD ? [{ key: 'RH', label: 'Robinhood', logo: '/robinhood-testnet-logo.png', chainId: NETWORKS.ROBINHOOD.chainId }] : []),
               ].map((net) => {
@@ -850,7 +874,7 @@ const Home = () => {
                 const isActive = isInFarcaster
                   ? net.chainId === NETWORKS.BASE.chainId
                   : chainId === net.chainId
-                const logoSize = isCompactMode ? 24 : networksUseGrid ? 28 : 40
+                const logoSize = isCompactMode ? 24 : networksUseGrid ? 28 : 34
                 const showLabel = !isCompactMode
                 const isMiniappNoSwitch = isInFarcaster
                 return (
@@ -870,8 +894,8 @@ const Home = () => {
                       background: isActive 
                         ? 'linear-gradient(135deg, rgba(59,130,246,0.25), rgba(37,99,235,0.35))'
                         : 'rgba(15,23,42,0.9)',
-                      borderRadius: isCompactMode ? '10px' : networksUseGrid ? '12px' : '18px',
-                      padding: isCompactMode ? '6px 8px' : networksUseGrid ? '8px 10px' : '10px 16px',
+                      borderRadius: isCompactMode ? '10px' : networksUseGrid ? '12px' : '14px',
+                      padding: isCompactMode ? '6px 8px' : networksUseGrid ? '8px 10px' : '8px 12px',
                       display: 'flex',
                       alignItems: 'center',
                       gap: isCompactMode ? '4px' : networksUseGrid ? '8px' : '10px',
@@ -881,7 +905,7 @@ const Home = () => {
                         : '0 2px 8px rgba(15,23,42,0.6)',
                       transform: isActive ? 'translateY(-1px)' : 'translateY(0)',
                       transition: 'all 0.2s ease',
-                      minWidth: isCompactMode ? 'auto' : networksUseGrid ? 0 : '140px',
+                      minWidth: isCompactMode ? 'auto' : networksUseGrid ? 0 : '118px',
                       width: networksUseGrid ? '100%' : undefined,
                       justifyContent: isCompactMode ? 'center' : 'flex-start',
                       flex: isCompactMode ? '1' : 'none',
@@ -913,7 +937,7 @@ const Home = () => {
                     {showLabel && (
                       <div style={{ textAlign: 'left', minWidth: 0, flex: 1 }}>
                         <div style={{ 
-                          fontSize: networksUseGrid ? '12px' : '14px', 
+                          fontSize: networksUseGrid ? '12px' : '13px',
                           fontWeight: 600, 
                           color: '#e5e7eb',
                           fontFamily: 'Poppins, sans-serif',
@@ -924,7 +948,7 @@ const Home = () => {
                           {net.label}
                         </div>
                         <div style={{ 
-                          fontSize: networksUseGrid ? '10px' : '11px', 
+                          fontSize: networksUseGrid ? '10px' : '10px',
                           color: isActive ? '#a5b4fc' : '#6b7280'
                         }}>
                           {isActive ? 'Connected' : 'Switch'}
