@@ -116,7 +116,7 @@ export const useWalletAnalysis = () => {
       const trackedFetch = async (input, init = {}) => {
         const isPaidRequest = hasX402PaymentHeader(init.headers) || hasX402PaymentHeader(input?.headers)
         if (isPaidRequest) {
-          updateProgress('preparing-report', 38, 'x402 payment confirmed', 'Preparing the wallet report from live network data.')
+          updateProgress('fetching-explorer', 28, 'x402 payment confirmed', 'Fetching explorer data from BaseScan, Blockscout, and RPC sources.')
         }
 
         const response = await fetch(input, init)
@@ -124,7 +124,7 @@ export const useWalletAnalysis = () => {
         if (!isPaidRequest && response.status === 402) {
           updateProgress('waiting-payment', 0, 'Waiting for x402 approval', 'Approve the payment in your wallet to start report generation.')
         } else if (isPaidRequest) {
-          updateProgress('response-received', 82, 'Network data received', 'Final report data returned from the analysis API.')
+          updateProgress('calculating-score', 82, 'Network data received', 'Normalizing transfers, fees, activity days, and score breakdown.')
         }
 
         return response
@@ -204,7 +204,7 @@ export const useWalletAnalysis = () => {
         throw new Error(errorMessage)
       }
 
-      updateProgress('building-report', 92, 'Building report card', 'Formatting wallet signals into the final report.')
+      updateProgress('rendering-report', 92, 'Rendering report card', 'Formatting wallet signals into the final premium report.')
       const result = await response.json()
       console.log('✅ Wallet analysis successful:', result)
 

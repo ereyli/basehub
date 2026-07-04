@@ -296,6 +296,60 @@ function cloneJson(value) {
   return JSON.parse(JSON.stringify(value))
 }
 
+function getEventTimestamp(event) {
+  return event?.timeStamp ? safeNumber(event.timeStamp, 0) : safeNumber(event?.timestamp || event?.blockTimestamp, 0)
+}
+
+function getLongestDailyStreak(dayKeys) {
+  const sorted = [...new Set(dayKeys)].sort()
+  let longest = 0
+  let current = 0
+  let previousTime = null
+
+  sorted.forEach((day) => {
+    const time = Date.parse(`${day}T00:00:00.000Z`)
+    if (!Number.isFinite(time)) return
+    current = previousTime !== null && time - previousTime === 24 * 60 * 60 * 1000 ? current + 1 : 1
+    longest = Math.max(longest, current)
+    previousTime = time
+  })
+
+  return longest
+}
+
+function compactAddress(address) {
+  if (!address || String(address).length < 12) return address || ''
+  const value = String(address)
+  return `${value.slice(0, 6)}...${value.slice(-4)}`
+}
+
+async function fetchJsonWithRetry(url, options = {}, retryOptions = {}) {
+  const maxAttempts = Math.max(1, retryOptions.maxAttempts || 3)
+  const provider = retryOptions.provider || 'API'
+  let lastError = null
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const response = await fetch(url, options)
+      if ((response.status === 429 || response.status >= 500) && attempt < maxAttempts - 1) {
+        lastError = new Error(`${provider} HTTP ${response.status}`)
+        await sleep(getRetryDelayMs(response, attempt))
+        continue
+      }
+      if (!response.ok) throw new Error(`${provider} HTTP ${response.status}`)
+      return response.json()
+    } catch (error) {
+      lastError = error
+      if (attempt < maxAttempts - 1) {
+        await sleep(getRetryDelayMs(null, attempt))
+        continue
+      }
+    }
+  }
+
+  throw lastError || new Error(`${provider} request failed`)
+}
+
 async function rpcCall(method, params = [], options = {}) {
   const rpcUrl = options.rpcUrl || BASE_NATIVE_RPC_URL
   const maxAttempts = Math.max(1, options.maxAttempts || 1)
@@ -339,7 +393,7 @@ async function alchemyRpcCall(method, params = []) {
   if (!ALCHEMY_BASE_RPC_URL) throw new Error('Base Alchemy provider is not configured')
   return rpcCall(method, params, {
     rpcUrl: ALCHEMY_BASE_RPC_URL,
-    maxAttempts: 1,
+    maxAttempts: 3,
   })
 }
 
@@ -347,7 +401,7 @@ async function fetchBaseNativeBalance(walletAddress) {
   try {
     const balanceHex = await rpcCall('eth_getBalance', [walletAddress, 'latest'], {
       rpcUrl: BASE_NATIVE_RPC_URL,
-      maxAttempts: 1,
+      maxAttempts: 3,
     })
     return formatTokenAmount(balanceHex, 18, 6)
   } catch (error) {
@@ -366,14 +420,12 @@ async function fetchEtherscanAccountAction(chainId, action, params = {}) {
     ...params,
   })
   const url = `https://api.etherscan.io/v2/api?${query.toString()}`
-  const response = await fetch(url, {
+  const data = await fetchJsonWithRetry(url, {
     headers: {
       'Accept': 'application/json',
       'User-Agent': 'BaseHub-WalletAnalysis/2.0',
     },
-  })
-  if (!response.ok) throw new Error(`Etherscan API error: ${response.status}`)
-  const data = await response.json()
+  }, { provider: 'Etherscan API' })
   if (data.status === '1' && Array.isArray(data.result)) return data.result
   if (data.status === '1') return data.result
   const message = `${data.message || 'NOTOK'} ${data.result || ''}`.trim()
@@ -519,14 +571,12 @@ async function fetchGoldRushActivitySummary(walletAddress) {
     key: API_KEYS.GOLDRUSH,
   })
   const url = `${GOLDRUSH_API_BASE_URL}/base-mainnet/address/${walletAddress}/transactions_summary/?${query.toString()}`
-  const response = await fetch(url, {
+  const data = await fetchJsonWithRetry(url, {
     headers: {
       Accept: 'application/json',
       'User-Agent': 'BaseHub-WalletAnalysis/2.1',
     },
-  })
-  if (!response.ok) throw new Error(`GoldRush summary HTTP ${response.status}`)
-  const data = await response.json()
+  }, { provider: 'GoldRush summary' })
   if (data.error) throw new Error(data.error_message || data.error_code || 'GoldRush summary unavailable')
   const item = data.data?.items?.[0]
   if (!item) return { first: null, last: null, totalTransactions: null, gasSpentEth: null, gasSpentUSD: null, source: 'GoldRush', errors: [] }
@@ -559,14 +609,12 @@ async function fetchBlockscoutAccountAction(action, walletAddress, sort = 'asc',
     offset: String(offset),
     sort,
   })
-  const response = await fetch(`${BASE_BLOCKSCOUT_API_URL}?${query.toString()}`, {
+  const data = await fetchJsonWithRetry(`${BASE_BLOCKSCOUT_API_URL}?${query.toString()}`, {
     headers: {
       Accept: 'application/json',
       'User-Agent': 'BaseHub-WalletAnalysis/2.1',
     },
-  })
-  if (!response.ok) throw new Error(`Blockscout ${action} HTTP ${response.status}`)
-  const data = await response.json()
+  }, { provider: `Blockscout ${action}` })
   const message = `${data.message || ''} ${typeof data.result === 'string' ? data.result : ''}`.trim()
   if (data.status === '1' && Array.isArray(data.result)) return data.result
   if (isNoIndexedDataMessage(message)) return []
@@ -862,8 +910,8 @@ function addUniqueSource(dataSources, source) {
 function buildBaseReport(walletAddress, nativeBalance, normalTransactions, tokenTransfers, tokenBalances, dataSources, options = {}) {
   const activityAnchors = options.activityAnchors || {}
   const coverage = options.coverage || {}
-  const detailDataAvailable = options.detailDataAvailable !== false
   const providerIssues = options.providerIssues || []
+  const normalizedWallet = String(walletAddress || '').toLowerCase()
   const events = [...normalTransactions, ...tokenTransfers]
     .filter((event) => event && event.hash)
     .map((event) => ({
@@ -871,6 +919,8 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
       from: event.from || event.from_address || '',
       to: event.to || event.to_address || '',
       timeStamp: event.timeStamp || event.timestamp || event.blockTimestamp || null,
+      contractAddress: event.contractAddress || event.rawContract?.address || '',
+      tokenSymbol: event.tokenSymbol || event.token?.symbol || event.asset || '',
     }))
 
   const hashSet = new Set(events.map((event) => event.hash).filter(Boolean))
@@ -882,7 +932,7 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
 
   const datedEvents = events
     .map((event) => {
-      const timestamp = event.timeStamp ? safeNumber(event.timeStamp, 0) : 0
+      const timestamp = getEventTimestamp(event)
       return timestamp ? { ...event, timestamp, date: new Date(timestamp * 1000) } : null
     })
     .filter(Boolean)
@@ -898,6 +948,8 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
   const protocolCounts = {}
   const categoryCounts = {}
   const tokenMap = new Map()
+  const contractMap = new Map()
+  const methodCounts = {}
   let nativeMovedEth = 0
   let gasSpentEth = 0
   let gasSpentUSD = Number.isFinite(Number(activityAnchors.gasSpentUSD)) ? Number(activityAnchors.gasSpentUSD) : null
@@ -905,6 +957,8 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
   let stableVolumeUSD = 0
   let dexNativeVolumeEth = 0
   let nftEvents = 0
+  let tokenTransferEvents = 0
+  let nativeTransferEvents = 0
 
   const now = Date.now()
   let recent30Tx = 0
@@ -932,8 +986,9 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
       recent30Tx = recent30Hashes.size
     }
 
-    const tokenSymbol = event.tokenSymbol || event.token?.symbol || event.asset || ''
-    const contractAddress = (event.contractAddress || '').toLowerCase()
+    const tokenSymbol = event.tokenSymbol || ''
+    const contractAddress = String(event.contractAddress || '').toLowerCase()
+    const targetAddress = String(contractAddress || event.to || '').toLowerCase()
     if (contractAddress || tokenSymbol) {
       const key = contractAddress || tokenSymbol.toUpperCase()
       if (!tokenMap.has(key)) {
@@ -945,6 +1000,7 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
         })
       }
       tokenMap.get(key).transfers++
+      tokenTransferEvents++
     }
 
     const protocol = classifyInteraction({
@@ -956,9 +1012,31 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
     protocolCounts[protocol.name] = (protocolCounts[protocol.name] || 0) + 1
     categoryCounts[protocol.category] = (categoryCounts[protocol.category] || 0) + 1
 
+    if (targetAddress && targetAddress !== normalizedWallet && targetAddress !== '0x0000000000000000000000000000000000000000') {
+      const existing = contractMap.get(targetAddress) || {
+        address: targetAddress,
+        label: BASE_PROTOCOL_LOOKUP[targetAddress]?.name || protocol.name || compactAddress(targetAddress),
+        category: BASE_PROTOCOL_LOOKUP[targetAddress]?.category || protocol.category || 'Contract',
+        interactions: 0,
+        firstSeen: event.date.toISOString(),
+        lastSeen: event.date.toISOString(),
+      }
+      existing.interactions += 1
+      existing.firstSeen = event.date.toISOString() < existing.firstSeen ? event.date.toISOString() : existing.firstSeen
+      existing.lastSeen = event.date.toISOString() > existing.lastSeen ? event.date.toISOString() : existing.lastSeen
+      contractMap.set(targetAddress, existing)
+    }
+
+    const method = String(event.functionName || event.methodId || event.method || (event.category === 'external' ? 'native transfer' : event.category || 'transfer'))
+      .split('(')[0]
+      .slice(0, 44)
+    methodCounts[method] = (methodCounts[method] || 0) + 1
+
     const valueWei = event.value || '0'
-    nativeMovedEth += safeNumber(formatTokenAmount(valueWei, 18, 8))
-    if (protocol.category === 'DEX') dexNativeVolumeEth += safeNumber(formatTokenAmount(valueWei, 18, 8))
+    const nativeAmount = safeNumber(formatTokenAmount(valueWei, 18, 8))
+    nativeMovedEth += Math.abs(nativeAmount)
+    if (nativeAmount > 0) nativeTransferEvents++
+    if (protocol.category === 'DEX') dexNativeVolumeEth += Math.abs(nativeAmount)
 
     const gasUsed = event.gasUsed || event.gas || '0'
     const gasPrice = event.gasPrice || '0'
@@ -995,12 +1073,13 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
   const activeDays = Object.keys(dayCounts).length
   const activeWeeks = Object.keys(weekCounts).length
   const activeMonths = Object.keys(monthCounts).length
+  const longestStreakDays = getLongestDailyStreak(Object.keys(dayCounts))
   const firstEvent = datedEvents[0]
   const lastEvent = datedEvents[datedEvents.length - 1]
   const verifiedFirstEvent = activityAnchors.first || null
   const verifiedLastEvent = activityAnchors.last || null
-  const timelineFirstEvent = verifiedFirstEvent || (coverage.isComplete ? firstEvent : null)
-  const timelineLastEvent = verifiedLastEvent || (coverage.isComplete ? lastEvent : null)
+  const timelineFirstEvent = verifiedFirstEvent || firstEvent || null
+  const timelineLastEvent = verifiedLastEvent || lastEvent || null
   const spanDays = firstEvent && lastEvent
     ? Math.max(1, Math.ceil((lastEvent.date - firstEvent.date) / (1000 * 60 * 60 * 24)))
     : 0
@@ -1011,37 +1090,78 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
   const protocolDiversity = Object.keys(protocolCounts).filter((name) => name !== 'Onchain Activity').length
   const categoryDiversity = Object.keys(categoryCounts).length
   const tokenDiversity = tokenMap.size
+  const uniqueContracts = contractMap.size
+  const volumeSignalAvailable = stableVolumeUSD > 0 || nativeMovedEth > 0
+  const hasDatedEvents = datedEvents.length > 0
+  const hasTimeline = Boolean(timelineFirstEvent || timelineLastEvent)
+  const hasBalance = nativeBalance !== null && nativeBalance !== undefined && nativeBalance !== ''
+  const detailDataAvailable = hasDatedEvents || tokenBalances.length > 0 || uniqueContracts > 0
+
+  const availability = {
+    transactions: exactTransactionCount !== null || totalTransactions > 0 || indexedEventCount > 0 || Boolean(activityAnchors.source),
+    timeline: hasTimeline,
+    walletAge: verifiedSpanDays > 0,
+    activeDays: hasDatedEvents,
+    activeWeeks: hasDatedEvents,
+    activeMonths: hasDatedEvents,
+    longestStreak: hasDatedEvents,
+    recent30Tx: hasDatedEvents,
+    protocols: protocolDiversity > 0 || categoryDiversity > 0,
+    contracts: uniqueContracts > 0,
+    tokens: tokenDiversity > 0,
+    volume: volumeSignalAvailable,
+    nativeMoved: nativeMovedEth > 0 || normalTransactions.length > 0,
+    stableVolume: stableVolumeUSD > 0,
+    fees: gasSpentAvailable,
+    balance: hasBalance,
+    nft: nftEvents > 0 || tokenTransferEvents > 0,
+    methods: Object.keys(methodCounts).length > 0,
+  }
 
   const txScore = Math.min(25, totalTransactions >= 250 ? 25 : totalTransactions >= 100 ? 21 : totalTransactions >= 50 ? 16 : totalTransactions >= 15 ? 10 : totalTransactions > 0 ? 5 : 0)
-  const consistencyScore = detailDataAvailable
-    ? Math.min(25, (activeDays >= 60 ? 16 : activeDays >= 30 ? 12 : activeDays >= 10 ? 8 : activeDays > 0 ? 4 : 0) + (activeMonths >= 6 ? 9 : activeMonths >= 3 ? 6 : activeMonths >= 2 ? 4 : activeMonths > 0 ? 2 : 0))
+  const consistencyScore = availability.activeDays
+    ? Math.min(25, (activeDays >= 60 ? 15 : activeDays >= 30 ? 12 : activeDays >= 10 ? 8 : activeDays > 0 ? 4 : 0) + (activeMonths >= 6 ? 6 : activeMonths >= 3 ? 4 : activeMonths >= 2 ? 3 : activeMonths > 0 ? 1 : 0) + (longestStreakDays >= 10 ? 4 : longestStreakDays >= 5 ? 3 : longestStreakDays >= 2 ? 1 : 0))
     : 0
-  const diversityScore = detailDataAvailable
-    ? Math.min(25, (protocolDiversity >= 8 ? 12 : protocolDiversity >= 5 ? 9 : protocolDiversity >= 3 ? 6 : protocolDiversity > 0 ? 3 : 0) + (tokenDiversity >= 20 ? 8 : tokenDiversity >= 10 ? 6 : tokenDiversity >= 5 ? 4 : tokenDiversity > 0 ? 2 : 0) + (categoryDiversity >= 5 ? 5 : categoryDiversity >= 3 ? 3 : categoryDiversity > 1 ? 2 : 0))
+  const diversityScore = availability.protocols || availability.tokens || availability.contracts
+    ? Math.min(25, (uniqueContracts >= 30 ? 8 : uniqueContracts >= 15 ? 6 : uniqueContracts >= 6 ? 4 : uniqueContracts > 0 ? 2 : 0) + (protocolDiversity >= 8 ? 8 : protocolDiversity >= 5 ? 6 : protocolDiversity >= 3 ? 4 : protocolDiversity > 0 ? 2 : 0) + (tokenDiversity >= 20 ? 5 : tokenDiversity >= 10 ? 4 : tokenDiversity >= 5 ? 3 : tokenDiversity > 0 ? 1 : 0) + (categoryDiversity >= 5 ? 4 : categoryDiversity >= 3 ? 3 : categoryDiversity > 1 ? 1 : 0))
     : 0
-  const volumeScore = detailDataAvailable
+  const volumeScore = availability.volume
     ? Math.min(15, (stableVolumeUSD >= 5000 ? 8 : stableVolumeUSD >= 1000 ? 6 : stableVolumeUSD >= 250 ? 4 : stableVolumeUSD > 0 ? 2 : 0) + (nativeMovedEth >= 5 ? 7 : nativeMovedEth >= 1 ? 5 : nativeMovedEth >= 0.1 ? 3 : nativeMovedEth > 0 ? 1 : 0))
     : 0
-  const recencyScore = detailDataAvailable
+  const feesScore = availability.fees
+    ? Math.min(10, gasSpentEth >= 0.1 ? 10 : gasSpentEth >= 0.03 ? 7 : gasSpentEth >= 0.01 ? 5 : gasSpentEth > 0 ? 2 : 0)
+    : 0
+  const recencyScore = availability.recent30Tx
     ? Math.min(10, recent30Tx >= 20 ? 10 : recent30Tx >= 10 ? 7 : recent30Tx >= 3 ? 5 : recent30Tx > 0 ? 3 : lastEvent ? 1 : 0)
     : 0
-  const score = Math.min(100, txScore + consistencyScore + diversityScore + volumeScore + recencyScore)
+  const rawScore = txScore + consistencyScore + diversityScore + volumeScore + feesScore + recencyScore
+  const score = Math.min(100, rawScore)
 
   const tier = score >= 85 ? 'Power User' : score >= 70 ? 'Airdrop Hunter' : score >= 50 ? 'Active Builder' : score >= 30 ? 'Growing Wallet' : totalTransactions > 0 ? 'Early Base User' : 'Fresh Wallet'
-  let confidence = dataSources.includes('Etherscan V2') || dataSources.includes('Alchemy') || dataSources.includes('Moralis') || dataSources.includes('Blockscout')
-    ? (dataSources.length >= 2 ? 'High' : 'Medium')
-    : 'Low'
-  if (!coverage.isComplete) {
-    confidence = verifiedFirstEvent ? 'Medium' : 'Low'
-  }
+  const successfulSourceCount = dataSources.filter((source) => source && source !== 'Base RPC').length
+  let confidence = successfulSourceCount >= 3 ? 'High' : successfulSourceCount >= 1 ? 'Medium' : 'Low'
+  if (providerIssues.length && successfulSourceCount <= 1) confidence = hasTimeline ? 'Medium' : 'Low'
 
   const topProtocols = Object.entries(protocolCounts)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 6)
+    .slice(0, 8)
     .map(([name, count]) => ({ name, count }))
 
   const topCategories = Object.entries(categoryCounts)
     .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => ({ name, count }))
+
+  const topContracts = Array.from(contractMap.values())
+    .sort((a, b) => b.interactions - a.interactions)
+    .slice(0, 10)
+    .map((contract) => ({
+      ...contract,
+      shortAddress: compactAddress(contract.address),
+    }))
+
+  const topMethods = Object.entries(methodCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
     .map(([name, count]) => ({ name, count }))
 
   const topTokens = Array.from(tokenMap.values())
@@ -1054,40 +1174,51 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
       transfers: token.transfers,
     }))
 
+  const unavailableMetrics = Object.entries(availability)
+    .filter(([, available]) => !available)
+    .map(([key]) => key)
+  const sourceCoverage = dataSources.map((source) => ({
+    source,
+    status: 'available',
+  }))
+
   const strengths = []
   if (totalTransactions >= 100) strengths.push('Strong transaction footprint on Base')
   if (verifiedSpanDays >= 90) strengths.push('Wallet age is verified across multiple months')
-  if (detailDataAvailable && activeMonths >= 3) strengths.push('Activity is spread across multiple months')
-  if (detailDataAvailable && protocolDiversity >= 4) strengths.push('Uses several protocol categories instead of one repeated action')
-  if (detailDataAvailable && (stableVolumeUSD > 0 || dexNativeVolumeEth > 0)) strengths.push('Has measurable swap or stablecoin movement')
-  if (detailDataAvailable && nftEvents > 0) strengths.push('Shows NFT or mint activity')
-  if (detailDataAvailable && recent30Tx >= 3) strengths.push('Recent onchain activity is visible')
+  if (availability.activeDays && activeMonths >= 3) strengths.push('Activity is spread across multiple months')
+  if (availability.contracts && uniqueContracts >= 10) strengths.push('Uses a broad set of apps and contracts')
+  if (availability.protocols && protocolDiversity >= 4) strengths.push('Uses several protocol categories instead of one repeated action')
+  if (availability.volume && (stableVolumeUSD > 0 || dexNativeVolumeEth > 0 || nativeMovedEth > 0)) strengths.push('Has measurable value movement on Base')
+  if (availability.fees && gasSpentEth > 0) strengths.push('Fee spend confirms real onchain execution')
+  if (availability.recent30Tx && recent30Tx >= 3) strengths.push('Recent onchain activity is visible')
   if (strengths.length === 0 && totalTransactions > 0) strengths.push('Wallet has started building Base history')
 
   const gaps = []
   if (totalTransactions < 50) gaps.push('Transaction count is still light for a serious activity profile')
-  if (!detailDataAvailable) {
-    gaps.push('Detailed protocol, volume, and recency data could not be fetched from the enrichment provider.')
-  } else {
-    if (activeDays < 14) gaps.push('Activity is not yet spread across enough different days')
-    if (protocolDiversity < 4) gaps.push('Protocol diversity can be improved')
-    if (stableVolumeUSD === 0 && dexNativeVolumeEth === 0) gaps.push('No clear DEX or stablecoin volume detected from available data')
-    if (recent30Tx === 0 && totalTransactions > 0) gaps.push('Wallet looks inactive in the last 30 days')
-  }
-  if (dataSources.length < 2) gaps.push('Report confidence would improve with more verified data sources.')
+  if (!availability.activeDays) gaps.push('Active day and streak data could not be calculated from available indexed events')
+  if (availability.activeDays && activeDays < 14) gaps.push('Activity is not yet spread across enough different days')
+  if (!availability.contracts) gaps.push('App and contract footprint could not be identified from available providers')
+  if (availability.contracts && uniqueContracts < 6) gaps.push('App diversity can be improved')
+  if (!availability.volume) gaps.push('Volume and native movement could not be estimated from available providers')
+  if (availability.volume && stableVolumeUSD === 0 && dexNativeVolumeEth === 0 && nativeMovedEth === 0) gaps.push('No clear value movement detected from available data')
+  if (availability.recent30Tx && recent30Tx === 0 && totalTransactions > 0) gaps.push('Wallet looks inactive in the last 30 days')
+  if (providerIssues.length) gaps.push('Some data providers were unavailable, so the report is source-aware and conservative')
 
   const nextActions = []
-  if (!detailDataAvailable) {
-    nextActions.push('Re-run later when enrichment data is available to review protocols, volume, and recent activity.')
-  } else {
-    if (activeDays < 14) nextActions.push('Spread small real actions across more days instead of doing everything at once')
-    if (protocolDiversity < 4) nextActions.push('Add variety: one DEX swap, one mint/NFT action, one DeFi or bridge-related action')
-    if (stableVolumeUSD < 250) nextActions.push('Build modest stablecoin or swap volume with realistic transaction sizes')
-    if (recent30Tx < 3) nextActions.push('Refresh activity with a few recent Base interactions')
-  }
+  if (availability.activeDays && activeDays < 14) nextActions.push('Spread small real actions across more days instead of doing everything at once')
+  if (availability.contracts && uniqueContracts < 10) nextActions.push('Use more real Base apps: swaps, minting, lending, bridge, and social interactions')
+  if (availability.volume && stableVolumeUSD < 250 && nativeMovedEth < 0.1) nextActions.push('Build modest value movement with realistic transaction sizes')
+  if (availability.recent30Tx && recent30Tx < 3) nextActions.push('Refresh activity with a few recent Base interactions')
+  if (!availability.contracts || !availability.volume) nextActions.push('Re-run when explorer enrichment is healthy to review app footprint and value movement')
   nextActions.push('Keep gas spend natural and avoid repetitive spam patterns')
 
   const mostActiveDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]
+  const volumeLabel = stableVolumeUSD > 0 ? `$${formatCompactNumber(stableVolumeUSD)} stable` : `${formatCompactNumber(nativeMovedEth)} ETH`
+  const coverageNote = coverage.isComplete
+    ? 'Activity metrics are based on the indexed response available to this report.'
+    : detailDataAvailable
+      ? 'Activity metrics use sampled indexed pages; timeline and fee summaries are verified separately when providers expose them.'
+      : 'Only limited verified data was available; unknown fields are marked as Data unavailable instead of showing fake zero values.'
 
   return {
     walletAddress,
@@ -1100,16 +1231,16 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
     tokenDiversity,
     totalTransactions,
     totalValueMoved: nativeMovedEth.toFixed(6),
-    firstTransactionDate: firstEvent ? firstEvent.date.toLocaleDateString() : null,
-    daysActive: spanDays,
+    firstTransactionDate: timelineFirstEvent ? timelineFirstEvent.date.toLocaleDateString() : null,
+    daysActive: verifiedSpanDays,
     favoriteToken: topTokens[0]?.symbol || null,
     mostActiveDay: mostActiveDay ? `${mostActiveDay[0]} (${mostActiveDay[1]} transactions)` : null,
     topTokens,
     funFacts: [
       `Base readiness tier: ${tier}`,
-      `${activeDays} active days across ${activeMonths} months`,
-      `${protocolDiversity} recognizable protocol groups detected`,
-      `Recent 30d activity: ${recent30Tx} transactions`,
+      availability.activeDays ? `${activeDays} active days across ${activeMonths} months` : 'Active day data unavailable',
+      availability.contracts ? `${uniqueContracts} apps/contracts touched` : 'App footprint unavailable',
+      availability.recent30Tx ? `Recent 30d activity: ${recent30Tx} transactions` : 'Recent activity unavailable',
     ],
     reportType: 'base-airdrop-readiness',
     airdropReport: {
@@ -1121,7 +1252,9 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
         ? 'This wallet has a credible Base footprint with meaningful activity breadth.'
         : score >= 40
           ? 'This wallet has a useful Base foundation, but consistency and diversity can still improve.'
-          : 'This wallet needs more sustained Base usage before it looks like a strong airdrop profile.',
+          : totalTransactions > 0
+            ? 'This wallet needs more sustained Base usage before it looks like a strong airdrop profile.'
+            : 'No indexed Base activity was found for this wallet yet.',
       metrics: {
         totalTransactions,
         totalTransactionsExact: exactTransactionCount !== null,
@@ -1130,6 +1263,7 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
         activeDays,
         activeWeeks,
         activeMonths,
+        longestStreakDays,
         spanDays,
         walletAgeDays: verifiedSpanDays,
         firstActivityVerified: Boolean(verifiedFirstEvent),
@@ -1138,25 +1272,34 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
         recent30Tx,
         protocolDiversity,
         categoryDiversity,
+        uniqueContracts,
         tokenDiversity,
         nativeMovedEth: nativeMovedEth.toFixed(6),
         dexNativeVolumeEth: dexNativeVolumeEth.toFixed(6),
         stableVolumeUSD: stableVolumeUSD.toFixed(2),
+        volumeSignal: volumeLabel,
+        volumeEstimated: stableVolumeUSD === 0,
         gasSpentEth: gasSpentEth.toFixed(6),
         gasSpentUSD: gasSpentUSD !== null ? gasSpentUSD.toFixed(2) : null,
         gasSpentAvailable,
-        gasSpentSource: activityAnchors.gasSummarySource || null,
+        gasSpentSource: activityAnchors.gasSummarySource || (gasSpentAvailable ? dataSources.join(', ') : null),
         nftEvents,
+        tokenTransferEvents,
+        nativeTransferEvents,
       },
       scoreBreakdown: [
-        { label: 'Transactions', value: txScore, max: 25 },
-        { label: 'Consistency', value: consistencyScore, max: 25, unavailable: !detailDataAvailable },
-        { label: 'Diversity', value: diversityScore, max: 25, unavailable: !detailDataAvailable },
-        { label: 'Volume', value: volumeScore, max: 15, unavailable: !detailDataAvailable },
-        { label: 'Recency', value: recencyScore, max: 10, unavailable: !detailDataAvailable },
+        { label: 'Transactions', value: txScore, max: 25, unavailable: !availability.transactions },
+        { label: 'Consistency', value: consistencyScore, max: 25, unavailable: !availability.activeDays },
+        { label: 'Apps', value: diversityScore, max: 25, unavailable: !(availability.protocols || availability.tokens || availability.contracts) },
+        { label: 'Volume', value: volumeScore, max: 15, unavailable: !availability.volume },
+        { label: 'Fees', value: feesScore, max: 10, unavailable: !availability.fees },
+        { label: 'Recency', value: recencyScore, max: 10, unavailable: !availability.recent30Tx },
       ],
       topProtocols,
       topCategories,
+      topContracts,
+      topMethods,
+      topTokens,
       strengths: strengths.slice(0, 5),
       gaps: gaps.slice(0, 5),
       nextActions: nextActions.slice(0, 5),
@@ -1175,16 +1318,21 @@ function buildBaseReport(walletAddress, nativeBalance, normalTransactions, token
         hasMore: Boolean(coverage.hasMore),
         sampled: !coverage.isComplete,
         detailDataAvailable,
-        unavailableMetrics: detailDataAvailable ? [] : ['activeDays', 'protocolDiversity', 'volume', 'recent30Tx', 'nativeMoved'],
-        providerIssues: providerIssues.slice(0, 4),
-        note: coverage.isComplete
-          ? 'Activity metrics are based on the full indexed response available to this report.'
-          : detailDataAvailable
-            ? 'Activity counts are sampled from indexed transfer pages; exact wallet age is verified separately when available.'
-            : 'Detailed activity enrichment was unavailable; verified timeline, wallet age, balance, and transaction summary are still shown when available.',
+        availability,
+        unavailableMetrics,
+        sourceCoverage,
+        indexedRows: {
+          normalTransactions: normalTransactions.length,
+          tokenTransfers: tokenTransfers.length,
+          tokenBalances: tokenBalances.length,
+          uniqueTransactionHashes: hashSet.size,
+        },
+        providerIssues: providerIssues.slice(0, 6),
+        note: coverageNote,
       },
       display: {
         stableVolume: `$${formatCompactNumber(stableVolumeUSD)}`,
+        volumeSignal: volumeLabel,
         nativeMoved: `${formatCompactNumber(nativeMovedEth)} ETH`,
         gasSpent: `${formatCompactNumber(gasSpentEth)} ETH`,
         gasSpentUSD: gasSpentUSD !== null ? `$${formatCompactNumber(gasSpentUSD)}` : null,
@@ -1308,7 +1456,16 @@ async function buildBaseWalletReportFromAlchemy(walletAddress) {
     console.warn('⚠️ Alchemy Base transfers unavailable:', error.message)
   }
 
-  const tokenBalances = []
+  let tokenBalances = []
+  if (API_KEYS.ALCHEMY) {
+    try {
+      tokenBalances = await fetchAlchemyTokenBalances(walletAddress)
+      if (tokenBalances.length) addUniqueSource(dataSources, 'Alchemy Balances')
+    } catch (error) {
+      providerIssues.push(`Alchemy balances: ${error.message}`)
+      console.warn('⚠️ Alchemy Base balances unavailable:', error.message)
+    }
+  }
 
   const hasIndexedSignals = normalTransactions.length > 0 || tokenTransfers.length > 0 || tokenBalances.length > 0
   const hasProviderFailure = providerIssues.some((issue) => isProviderFailureMessage(issue))

@@ -53,14 +53,18 @@ export default function WalletAnalysis() {
     parts.push(`I checked my ${analysis.network || selectedNetwork} wallet on BaseHub.`)
     parts.push(`Score: ${analysis.walletScore}/100`)
     parts.push(`Tier: ${report.tier || analysis.activityLevel || 'n/a'}`)
-    const detailDataAvailable = report.coverage?.detailDataAvailable !== false
+    const availability = report.coverage?.availability || {}
+    const fieldAvailable = (key, fallback = report.coverage?.detailDataAvailable !== false) => availability[key] ?? fallback
     const txText = metrics.totalTransactionsExact
       ? (metrics.totalTransactions || analysis.totalTransactions || 0)
       : `${metrics.indexedEventCount || metrics.totalTransactions || analysis.totalTransactions || 0}+ indexed events`
     parts.push(`Tx: ${txText}`)
     if (analysis.reportType === 'base-airdrop-readiness') {
-      parts.push(`${report.coverage?.sampled ? 'Sampled days' : 'Active days'}: ${detailDataAvailable ? (metrics.activeDays || 0) : 'Data unavailable'}`)
-      parts.push(`Protocols: ${detailDataAvailable ? (metrics.protocolDiversity || 0) : 'Data unavailable'}`)
+      parts.push(`${report.coverage?.sampled ? 'Sampled days' : 'Active days'}: ${fieldAvailable('activeDays') ? (metrics.activeDays || 0) : 'Data unavailable'}`)
+      parts.push(`Longest streak: ${fieldAvailable('longestStreak') ? `${metrics.longestStreakDays || 0} days` : 'Data unavailable'}`)
+      parts.push(`Apps/contracts: ${fieldAvailable('contracts') ? (metrics.uniqueContracts || 0) : 'Data unavailable'}`)
+      parts.push(`Fees: ${fieldAvailable('fees') ? (report.display?.gasSpent || '0 ETH') : 'Data unavailable'}`)
+      parts.push(`Volume: ${fieldAvailable('volume') ? (report.display?.volumeSignal || report.display?.stableVolume || '0') : 'Data unavailable'}`)
     } else {
       parts.push(`Active span: ${analysis.daysActive || 0} days`)
       parts.push(`Token diversity: ${analysis.tokenDiversity || 0}`)
@@ -75,7 +79,8 @@ export default function WalletAnalysis() {
     const metrics = report.metrics || {}
     const score = report.score ?? analysis.walletScore ?? 0
     const tier = report.tier || analysis.activityLevel || 'Base Wallet'
-    const detailDataAvailable = report.coverage?.detailDataAvailable !== false
+    const availability = report.coverage?.availability || {}
+    const fieldAvailable = (key, fallback = report.coverage?.detailDataAvailable !== false) => availability[key] ?? fallback
     const unavailableText = 'Data unavailable'
     const canvas = document.createElement('canvas')
     canvas.width = 1200
@@ -127,27 +132,28 @@ export default function WalletAnalysis() {
     const txCardValue = metrics.totalTransactionsExact
       ? (metrics.totalTransactions || analysis.totalTransactions || 0)
       : `${metrics.indexedEventCount || metrics.totalTransactions || analysis.totalTransactions || 0}+`
-    const gasSpentCardValue = metrics.gasSpentAvailable ? (report.display?.gasSpent || '0.0000 ETH') : unavailableText
+    const gasSpentCardValue = fieldAvailable('fees') ? (report.display?.gasSpent || '0.0000 ETH') : unavailableText
     const cards = [
       [metrics.totalTransactionsExact ? 'Transactions' : 'Indexed Events', txCardValue, '#22c55e'],
-      [report.coverage?.sampled ? 'Sampled Days' : 'Active Days', detailDataAvailable ? (metrics.activeDays || 0) : unavailableText, '#38bdf8'],
-      ['Protocols', detailDataAvailable ? (metrics.protocolDiversity || 0) : unavailableText, '#a78bfa'],
-      ['Volume', detailDataAvailable ? (report.display?.stableVolume || '$0.0000') : unavailableText, '#f59e0b'],
+      [report.coverage?.sampled ? 'Sampled Days' : 'Active Days', fieldAvailable('activeDays') ? (metrics.activeDays || 0) : unavailableText, '#38bdf8'],
+      ['Longest Streak', fieldAvailable('longestStreak') ? `${metrics.longestStreakDays || 0}d` : unavailableText, '#14b8a6'],
+      ['Apps Used', fieldAvailable('contracts') ? (metrics.uniqueContracts || 0) : unavailableText, '#a78bfa'],
+      ['Volume', fieldAvailable('volume') ? (report.display?.volumeSignal || report.display?.stableVolume || '$0.0000') : unavailableText, '#f59e0b'],
       ['Fees Spent', gasSpentCardValue, '#f97316'],
-      ['Native Moved', detailDataAvailable ? (report.display?.nativeMoved || '0 ETH') : unavailableText, '#34d399'],
+      ['Native Moved', fieldAvailable('nativeMoved') ? (report.display?.nativeMoved || '0 ETH') : unavailableText, '#34d399'],
     ]
     cards.forEach((card, index) => {
-      const col = index % 2
-      const row = Math.floor(index / 2)
-      const x = 590 + col * 260
-      const y = 188 + row * 128
-      drawCanvasRoundRect(ctx, x, y, 224, 92, 20, 'rgba(30, 41, 59, 0.92)', `${card[2]}55`)
+      const col = index % 3
+      const row = Math.floor(index / 3)
+      const x = 548 + col * 194
+      const y = 208 + row * 122
+      drawCanvasRoundRect(ctx, x, y, 174, 88, 18, 'rgba(30, 41, 59, 0.92)', `${card[2]}55`)
       ctx.fillStyle = card[2]
-      ctx.font = '800 18px Inter, Arial'
-      ctx.fillText(card[0], x + 22, y + 34)
+      ctx.font = '800 15px Inter, Arial'
+      ctx.fillText(card[0], x + 18, y + 31)
       ctx.fillStyle = '#f8fafc'
-      ctx.font = '900 30px Inter, Arial'
-      ctx.fillText(String(card[1]), x + 22, y + 70)
+      ctx.font = String(card[1]).length > 12 ? '900 19px Inter, Arial' : '900 25px Inter, Arial'
+      ctx.fillText(String(card[1]), x + 18, y + 66)
     })
 
     ctx.fillStyle = '#64748b'
@@ -819,14 +825,14 @@ function ReportPreparationProgress({ progress, elapsedSeconds }) {
   const hasPaymentStartedReport = percent > 0
   const steps = [
     { key: 'waiting-payment', label: 'x402 payment', completeAt: 1 },
-    { key: 'preparing-report', label: 'Data fetch', completeAt: 38 },
-    { key: 'response-received', label: 'API response', completeAt: 82 },
-    { key: 'building-report', label: 'Report card', completeAt: 92 },
+    { key: 'fetching-explorer', label: 'Explorer data', completeAt: 28 },
+    { key: 'calculating-score', label: 'Score model', completeAt: 82 },
+    { key: 'rendering-report', label: 'Report card', completeAt: 92 },
     { key: 'ready', label: 'Ready', completeAt: 100 },
   ]
   const helperText = stage === 'waiting-payment'
     ? 'The report bar starts after your x402 payment is approved.'
-    : stage === 'preparing-report'
+    : stage === 'fetching-explorer'
       ? `Live report request running for ${elapsedSeconds}s.`
       : currentProgress.detail || 'Preparing your wallet report.'
 
@@ -970,11 +976,30 @@ function BaseAirdropReport({ analysis, onShareX, onDownloadCard, shareStatus }) 
     : 'Verification unavailable'
   const isSampled = Boolean(report.coverage?.sampled)
   const detailDataAvailable = report.coverage?.detailDataAvailable !== false
+  const availability = report.coverage?.availability || {}
   const unavailableText = 'Data unavailable'
-  const gasSpentValue = metrics.gasSpentAvailable ? (report.display?.gasSpent || '0.0000 ETH') : unavailableText
-  const valueOrUnavailable = (value, suffix = '') => {
-    if (!detailDataAvailable) return unavailableText
+  const fieldAvailable = (key, fallback = detailDataAvailable) => availability[key] ?? fallback
+  const gasSpentValue = fieldAvailable('fees') ? (report.display?.gasSpent || '0.0000 ETH') : unavailableText
+  const valueOrUnavailable = (key, value, suffix = '') => {
+    if (!fieldAvailable(key)) return unavailableText
     return suffix ? `${value}${suffix}` : value
+  }
+  const unavailableMetrics = report.coverage?.unavailableMetrics || []
+  const metricNames = {
+    activeDays: 'active days',
+    activeWeeks: 'active weeks',
+    activeMonths: 'active months',
+    longestStreak: 'longest streak',
+    recent30Tx: '30-day activity',
+    protocols: 'protocol footprint',
+    contracts: 'app/contract footprint',
+    tokens: 'token diversity',
+    volume: 'volume signal',
+    nativeMoved: 'native movement',
+    stableVolume: 'stablecoin volume',
+    fees: 'fees spent',
+    nft: 'NFT activity',
+    methods: 'method breakdown',
   }
 
   return (
@@ -1152,10 +1177,11 @@ function BaseAirdropReport({ analysis, onShareX, onDownloadCard, shareStatus }) 
               gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
               gap: '10px',
             }}>
-              <ReportMetricCard icon={<Activity size={18} />} label={metrics.totalTransactionsExact ? 'Transactions' : 'Indexed Events'} value={transactionCount} color="#22c55e" />
-              <ReportMetricCard icon={<Calendar size={18} />} label={isSampled ? 'Sampled Days' : 'Active Days'} value={valueOrUnavailable(metrics.activeDays || 0)} color="#38bdf8" />
-              <ReportMetricCard icon={<Layers size={18} />} label="Protocols" value={valueOrUnavailable(metrics.protocolDiversity || 0)} color="#a78bfa" />
-              <ReportMetricCard icon={<TrendingUp size={18} />} label="Volume Signal" value={detailDataAvailable ? (report.display?.stableVolume || '$0.0000') : unavailableText} color="#f59e0b" />
+              <ReportMetricCard icon={<Activity size={18} />} label={metrics.totalTransactionsExact ? 'Transactions' : 'Indexed Events'} value={fieldAvailable('transactions', true) ? transactionCount : unavailableText} color="#22c55e" />
+              <ReportMetricCard icon={<Calendar size={18} />} label={isSampled ? 'Sampled Days' : 'Active Days'} value={valueOrUnavailable('activeDays', metrics.activeDays || 0)} color="#38bdf8" />
+              <ReportMetricCard icon={<Zap size={18} />} label="Longest Streak" value={valueOrUnavailable('longestStreak', metrics.longestStreakDays || 0, ' days')} color="#14b8a6" />
+              <ReportMetricCard icon={<Layers size={18} />} label="Apps Used" value={valueOrUnavailable('contracts', metrics.uniqueContracts || 0)} color="#a78bfa" />
+              <ReportMetricCard icon={<TrendingUp size={18} />} label="Volume Signal" value={fieldAvailable('volume') ? (report.display?.volumeSignal || report.display?.stableVolume || '$0.0000') : unavailableText} color="#f59e0b" />
             </div>
           </div>
         </div>
@@ -1166,26 +1192,88 @@ function BaseAirdropReport({ analysis, onShareX, onDownloadCard, shareStatus }) 
         gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
         gap: '14px',
       }}>
-        <ReportMetricCard icon={<Clock size={20} />} label="First Activity" value={firstActivity} color="#60a5fa" tall />
-        <ReportMetricCard icon={<Calendar size={20} />} label="Wallet Age" value={walletAge} color="#2dd4bf" tall />
-        <ReportMetricCard icon={<Zap size={20} />} label="Last 30 Days" value={detailDataAvailable ? `${metrics.recent30Tx || 0} tx` : unavailableText} color="#fb7185" tall />
-        <ReportMetricCard icon={<TrendingUp size={20} />} label="Native Moved" value={detailDataAvailable ? (report.display?.nativeMoved || '0 ETH') : unavailableText} color="#34d399" tall />
+        <ReportMetricCard icon={<Clock size={20} />} label="First Activity" value={fieldAvailable('timeline', Boolean(report.timeline?.firstActivity)) ? firstActivity : unavailableText} color="#60a5fa" tall />
+        <ReportMetricCard icon={<Calendar size={20} />} label="Wallet Age" value={fieldAvailable('walletAge', Boolean(metrics.walletAgeDays)) ? walletAge : unavailableText} color="#2dd4bf" tall />
+        <ReportMetricCard icon={<Zap size={20} />} label="Last 30 Days" value={fieldAvailable('recent30Tx') ? `${metrics.recent30Tx || 0} tx` : unavailableText} color="#fb7185" tall />
+        <ReportMetricCard icon={<TrendingUp size={20} />} label="Native Moved" value={fieldAvailable('nativeMoved') ? (report.display?.nativeMoved || '0 ETH') : unavailableText} color="#34d399" tall />
         <ReportMetricCard icon={<Receipt size={20} />} label="Fees Spent" value={gasSpentValue} color="#f97316" tall />
-        <ReportMetricCard icon={<Wallet size={20} />} label="Current Balance" value={`${parseFloat(analysis.nativeBalance || 0).toFixed(4)} ETH`} color="#818cf8" tall />
-        <ReportMetricCard icon={<Award size={20} />} label="Last Activity" value={lastActivity} color="#fbbf24" tall />
+        <ReportMetricCard icon={<Wallet size={20} />} label="Current Balance" value={fieldAvailable('balance', true) ? `${parseFloat(analysis.nativeBalance || 0).toFixed(4)} ETH` : unavailableText} color="#818cf8" tall />
+        <ReportMetricCard icon={<Award size={20} />} label="Token Diversity" value={fieldAvailable('tokens') ? (metrics.tokenDiversity || 0) : unavailableText} color="#22d3ee" tall />
+        <ReportMetricCard icon={<Award size={20} />} label="Last Activity" value={fieldAvailable('timeline', Boolean(report.timeline?.lastActivity)) ? lastActivity : unavailableText} color="#fbbf24" tall />
       </div>
 
-      {!detailDataAvailable && (
+      {unavailableMetrics.length > 0 && (
         <ReportPanel title="Unavailable Detail Data" icon={<AlertCircle size={20} />} accent="#f59e0b">
           <InsightList
             items={[
-              'Protocol footprint, sampled active days, volume, native movement, and 30-day activity could not be fetched from the enrichment provider.',
-              'Verified timeline, wallet age, fee summary, current balance, and transaction summary are still shown when explorer/indexer sources provide them.',
+              `Unavailable fields: ${unavailableMetrics.map((metric) => metricNames[metric] || metric).slice(0, 8).join(', ')}.`,
+              'Available fields are still shown from explorer, RPC, and enrichment sources. Unknown fields are never displayed as fake zero values.',
             ]}
             color="#f59e0b"
           />
         </ReportPanel>
       )}
+
+      <ReportPanel title="Data Coverage" icon={<Eye size={20} />} accent="#60a5fa">
+        <div style={{ display: 'grid', gap: '12px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {(report.coverage?.sourceCoverage || report.dataSources?.map((source) => ({ source, status: 'available' })) || []).map((source) => (
+              <span key={source.source} style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '7px',
+                padding: '8px 10px',
+                borderRadius: '999px',
+                background: 'rgba(37, 99, 235, 0.14)',
+                border: '1px solid rgba(96, 165, 250, 0.28)',
+                color: '#bfdbfe',
+                fontSize: '12px',
+                fontWeight: '850',
+              }}>
+                <CheckCircle2 size={13} />
+                {source.source}
+              </span>
+            ))}
+            {report.coverage?.sampled && (
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '7px',
+                padding: '8px 10px',
+                borderRadius: '999px',
+                background: 'rgba(245, 158, 11, 0.14)',
+                border: '1px solid rgba(245, 158, 11, 0.28)',
+                color: '#fde68a',
+                fontSize: '12px',
+                fontWeight: '850',
+              }}>
+                <AlertCircle size={13} />
+                Sampled index
+              </span>
+            )}
+          </div>
+          <div style={{
+            color: '#cbd5e1',
+            fontSize: '13px',
+            lineHeight: 1.5,
+            fontWeight: '650',
+          }}>
+            {report.coverage?.note || 'Report generated from available Base data providers.'}
+          </div>
+          {report.coverage?.indexedRows && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+              gap: '10px',
+            }}>
+              <MiniDataPill label="Tx rows" value={report.coverage.indexedRows.normalTransactions} color="#22c55e" />
+              <MiniDataPill label="Token rows" value={report.coverage.indexedRows.tokenTransfers} color="#38bdf8" />
+              <MiniDataPill label="Balances" value={report.coverage.indexedRows.tokenBalances} color="#a78bfa" />
+              <MiniDataPill label="Unique hashes" value={report.coverage.indexedRows.uniqueTransactionHashes} color="#f59e0b" />
+            </div>
+          )}
+        </div>
+      </ReportPanel>
 
       <div style={{
         display: 'grid',
@@ -1219,6 +1307,42 @@ function BaseAirdropReport({ analysis, onShareX, onDownloadCard, shareStatus }) 
             </div>
           ) : (
             <EmptyReportText text="No recognizable protocol footprint detected yet." />
+          )}
+        </ReportPanel>
+      </div>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+        gap: '16px',
+      }}>
+        <ReportPanel title="Top Apps & Contracts" icon={<Layers size={20} />} accent="#a78bfa">
+          {report.topContracts && report.topContracts.length > 0 ? (
+            <CompactRows
+              items={report.topContracts.slice(0, 6).map((item) => ({
+                title: item.label || item.shortAddress,
+                meta: item.category || item.shortAddress,
+                value: item.interactions,
+              }))}
+              color="#a78bfa"
+            />
+          ) : (
+            <EmptyReportText text="No app or contract footprint could be identified from available data." />
+          )}
+        </ReportPanel>
+
+        <ReportPanel title="Token Signals" icon={<Wallet size={20} />} accent="#22d3ee">
+          {report.topTokens && report.topTokens.length > 0 ? (
+            <CompactRows
+              items={report.topTokens.slice(0, 6).map((item) => ({
+                title: item.symbol || 'TOKEN',
+                meta: item.balance && item.balance !== '0' ? `Balance ${item.balance}` : item.address ? shortAddress(item.address) : 'Transfer signal',
+                value: item.transfers,
+              }))}
+              color="#22d3ee"
+            />
+          ) : (
+            <EmptyReportText text="No token balance or transfer signal was available." />
           )}
         </ReportPanel>
       </div>
@@ -1445,6 +1569,53 @@ function NetworkWalletReport({ analysis, onShareX }) {
       }}>
         Data quality: {dataQuality.status || 'available'} · Source: {dataQuality.source || 'network indexer'} · Payment: x402 on Base
       </div>
+    </div>
+  )
+}
+
+function MiniDataPill({ label, value, color }) {
+  return (
+    <div style={{
+      padding: '10px 12px',
+      borderRadius: '12px',
+      background: `linear-gradient(135deg, rgba(15, 23, 42, 0.82) 0%, ${color}12 100%)`,
+      border: `1px solid ${color}30`,
+    }}>
+      <div style={{ color: '#94a3b8', fontSize: '11px', fontWeight: '850', marginBottom: '4px' }}>{label}</div>
+      <div style={{ color: '#f8fafc', fontSize: '18px', fontWeight: '950' }}>{Number(value || 0).toLocaleString()}</div>
+    </div>
+  )
+}
+
+function CompactRows({ items, color }) {
+  return (
+    <div style={{ display: 'grid', gap: '10px' }}>
+      {items.map((item, index) => (
+        <div key={`${item.title}-${index}`} style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto',
+          gap: '12px',
+          alignItems: 'center',
+          padding: '12px',
+          background: 'rgba(15, 23, 42, 0.72)',
+          border: '1px solid rgba(148, 163, 184, 0.14)',
+          borderRadius: '12px',
+        }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ color: '#e2e8f0', fontSize: '14px', fontWeight: '850', overflowWrap: 'anywhere' }}>{item.title}</div>
+            <div style={{ color: '#94a3b8', fontSize: '12px', fontWeight: '700', marginTop: '3px', overflowWrap: 'anywhere' }}>{item.meta}</div>
+          </div>
+          <div style={{
+            color,
+            fontSize: '18px',
+            fontWeight: '950',
+            minWidth: '42px',
+            textAlign: 'right',
+          }}>
+            {Number(item.value || 0).toLocaleString()}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
