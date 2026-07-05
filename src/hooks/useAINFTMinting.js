@@ -111,6 +111,7 @@ const AI_NFT_ABI = [
 // AI NFT Collection Contract Address (Base Mainnet)
 // Update this address after deploy
 const AI_NFT_CONTRACT_ADDRESS = getContractAddress();
+const AI_NFT_XP_GAME_TYPE = 'AI_NFT_MINTING';
 
 /**
  * Hook for AI NFT minting functionality
@@ -492,16 +493,24 @@ export function useAINFTMinting(quantity = 1) {
       
       // Award XP and update quest progress
       const awardXPAndUpdateQuests = async () => {
-        try {
-          console.log('🎉 Awarding 500 XP for AI NFT minting!');
-          await addXP(address, 500, 'AI NFT Minting', chainId ?? 8453, false, hash);
-          
+        const questUpdates = async () => {
           await updateQuestProgress('nftMinted', 1);
           await updateQuestProgress('transactions', 1);
-          
-          console.log('✅ XP awarded, transaction recorded, and quest progress updated!');
+        };
+
+        try {
+          await questUpdates();
+          console.log('✅ AI NFT quest progress updated!');
+        } catch (questError) {
+          console.error('❌ Failed to update AI NFT quest progress:', questError);
+        }
+
+        try {
+          console.log('🎉 Awarding 500 XP for AI NFT minting!');
+          await addXP(address, 500, AI_NFT_XP_GAME_TYPE, chainId ?? 8453, false, hash);
+          console.log('✅ AI NFT XP awarded and transaction recorded!');
         } catch (error) {
-          console.error('❌ Failed to award XP or update quest progress:', error);
+          console.error('❌ Failed to award AI NFT XP:', error);
         }
       };
       

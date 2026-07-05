@@ -116,17 +116,44 @@ export const useQuestSystem = () => {
       console.log(`🔄 Updating quest progress: ${questType} +${amount} for address: ${address}`)
       
       // Get current progress
-      const { data: currentData, error: fetchError } = await supabase
+      let { data: currentDataResult, error: fetchError } = await supabase
         .from('quest_progress')
         .select('*')
         .eq('wallet_address', address)
         .single()
 
       if (fetchError) {
-        console.error('❌ Error fetching current quest progress:', fetchError)
-        throw fetchError
+        if (fetchError.code !== 'PGRST116') {
+          console.error('❌ Error fetching current quest progress:', fetchError)
+          throw fetchError
+        }
+
+        console.log('🆕 No quest progress row found during update, creating one...')
+        const initialProgress = {
+          wallet_address: address,
+          current_day: 1,
+          weekly_bonus_earned: false,
+          quest_stats: {},
+          total_quest_xp: 0,
+          next_day_unlock_time: null,
+          completed_quests: []
+        }
+        const { data: insertedProgress, error: insertError } = await supabase
+          .from('quest_progress')
+          .insert(initialProgress)
+          .select()
+          .single()
+
+        if (insertError) {
+          console.error('❌ Error creating quest progress during update:', insertError)
+          throw insertError
+        }
+
+        console.log('✅ Quest progress row created during update:', insertedProgress)
+        currentDataResult = insertedProgress
       }
 
+      const currentData = currentDataResult
       console.log('📊 Current quest data:', currentData)
       console.log('📊 Current quest stats:', currentData.quest_stats)
       console.log(`🔍 Before update - ${questType}: ${currentData.quest_stats?.[questType] || 0}`)
