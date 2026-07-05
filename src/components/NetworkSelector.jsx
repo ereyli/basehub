@@ -173,10 +173,10 @@ const NetworkSelector = () => {
           }
         }}
       >
-        {currentNetwork.chainId === NETWORKS.BASE.chainId ? (
-          <img 
-            src="/base-logo.jpg" 
-            alt="Base" 
+        {currentNetwork.chainId === NETWORKS.BASE.chainId || currentNetwork.chainId === NETWORKS.BASE_SEPOLIA?.chainId ? (
+          <img
+            src="/base-logo.jpg"
+            alt={currentNetwork.chainName}
             style={{
               width: '20px',
               height: '20px',
@@ -347,8 +347,8 @@ function renderNetworkButton(network, currentChainId, handleNetworkSelect) {
         }
       }}
     >
-      {network.chainId === NETWORKS.BASE?.chainId ? (
-        <img src="/base-logo.jpg" alt="Base" style={{ width: '20px', height: '20px', borderRadius: '6px', objectFit: 'cover', opacity: isActive ? 1 : 0.6 }} />
+      {network.chainId === NETWORKS.BASE?.chainId || network.chainId === NETWORKS.BASE_SEPOLIA?.chainId ? (
+        <img src="/base-logo.jpg" alt={network.chainName} style={{ width: '20px', height: '20px', borderRadius: '6px', objectFit: 'cover', opacity: isActive ? 1 : 0.6 }} />
       ) : network.chainId === NETWORKS.INKCHAIN?.chainId ? (
         <img src="/ink-logo.jpg" alt="InkChain" style={{ width: '20px', height: '20px', borderRadius: '6px', objectFit: 'cover', opacity: isActive ? 1 : 0.6 }} />
       ) : network.chainId === NETWORKS.SONEIUM?.chainId ? (

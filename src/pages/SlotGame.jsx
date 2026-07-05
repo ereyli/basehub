@@ -299,13 +299,25 @@ const SlotGame = () => {
 
         {/* ── Slot Machine ── */}
         <div style={{
-          background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.84))', border: '1px solid rgba(96, 165, 250, 0.12)', borderRadius: 20,
+          background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.92), rgba(2, 6, 23, 0.88))', border: '1px solid rgba(96, 165, 250, 0.18)', borderRadius: 18,
           padding: isMobile ? '20px 16px' : '28px 24px',
           marginBottom: 16, position: 'relative', overflow: 'hidden',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 18px 46px rgba(0,0,0,0.26)'
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -18px 42px rgba(2,6,23,0.48), 0 18px 46px rgba(0,0,0,0.26)'
         }}>
           {/* Top accent line */}
           <div style={{ position: 'absolute', top: 0, left: 20, right: 20, height: 2, background: `linear-gradient(90deg, transparent, ${accent}, transparent)`, borderRadius: 2 }} />
+          <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 8 }}>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <span key={i} style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: spinAnimation ? goldLight : '#334155',
+                boxShadow: spinAnimation ? `0 0 10px ${goldLight}` : 'none',
+                opacity: spinAnimation ? 0.85 : 0.55,
+              }} />
+            ))}
+          </div>
 
           {/* Reels label */}
           <div style={{ textAlign: 'center', marginBottom: 16, fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#475569' }}>
@@ -316,12 +328,15 @@ const SlotGame = () => {
           <div style={{
             display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: isMobile ? 8 : 12,
             padding: isMobile ? 14 : 20,
-            background: 'linear-gradient(180deg, rgba(2,6,23,0.82), rgba(15,23,42,0.72))', borderRadius: 14,
-            border: '1px solid rgba(148, 163, 184, 0.08)',
+            background: 'linear-gradient(180deg, rgba(2,6,23,0.94), rgba(15,23,42,0.76))', borderRadius: 12,
+            border: '1px solid rgba(148, 163, 184, 0.14)',
             marginBottom: 20,
-            boxShadow: 'inset 0 12px 28px rgba(0,0,0,0.34), inset 0 -10px 24px rgba(96,165,250,0.06)',
+            boxShadow: 'inset 0 12px 28px rgba(0,0,0,0.42), inset 0 -10px 24px rgba(96,165,250,0.08), 0 0 0 4px rgba(15,23,42,0.55)',
             perspective: 900,
+            position: 'relative',
+            overflow: 'hidden',
           }}>
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.08) 38%, transparent 58%)', pointerEvents: 'none', zIndex: 2 }} />
             {currentSymbols.map((symbol, index) => {
               let isWinning = false, isJackpot = false
               if (lastResult?.won && lastResult.symbols) {
@@ -337,7 +352,7 @@ const SlotGame = () => {
                     : isWinning
                       ? 'linear-gradient(145deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.04) 100%)'
                       : 'rgba(15, 23, 42, 0.5)',
-                  borderRadius: 14,
+                  borderRadius: 10,
                   aspectRatio: '1',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   border: isJackpot ? `1px solid rgba(245, 158, 11, 0.3)` : isWinning ? '1px solid rgba(34, 197, 94, 0.25)' : '1px solid rgba(255, 255, 255, 0.04)',
@@ -345,8 +360,9 @@ const SlotGame = () => {
                   transition: 'all 0.3s ease',
                   position: 'relative', overflow: 'hidden',
                   transformStyle: 'preserve-3d',
-                  animation: (spinAnimation && index >= stoppedReels) ? `reelSpin3d ${0.22 + index * 0.03}s cubic-bezier(0.2, 0.8, 0.2, 1) infinite` : isJackpot ? 'jackpotPulse 1s ease-in-out infinite' : isWinning ? 'winBounce 0.5s ease-in-out' : 'none',
+                  animation: (spinAnimation && index >= stoppedReels) ? `reelSpin3d ${0.28 + index * 0.04}s cubic-bezier(0.2, 0.8, 0.2, 1) infinite` : isJackpot ? 'jackpotPulse 1s ease-in-out infinite' : isWinning ? 'winBounce 0.5s ease-in-out' : 'none',
                   transform: spinAnimation && index < stoppedReels ? 'translateY(0) scale(1.02)' : undefined,
+                  zIndex: 1,
                 }}>
                   {spinAnimation && index >= stoppedReels && (
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 44%, rgba(59,130,246,0.08) 100%)', pointerEvents: 'none' }} />
@@ -557,9 +573,9 @@ const SlotGame = () => {
 
         <style>{`
           @keyframes reelSpin3d {
-            0% { transform: translateY(-8px) rotateX(18deg) scale(0.94); filter: blur(0.2px); }
-            50% { transform: translateY(8px) rotateX(-20deg) scale(1.03); filter: blur(1.2px); }
-            100% { transform: translateY(-8px) rotateX(18deg) scale(0.94); filter: blur(0.2px); }
+            0% { transform: translateY(-10px) rotateX(20deg) scale(0.94); filter: blur(0.2px); }
+            48% { transform: translateY(11px) rotateX(-22deg) scale(1.035); filter: blur(1.05px); }
+            100% { transform: translateY(-10px) rotateX(20deg) scale(0.94); filter: blur(0.2px); }
           }
           @keyframes spinIcon {
             from { transform: rotate(0deg); }

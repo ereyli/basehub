@@ -85,7 +85,7 @@ export function useDeployB20() {
 
     const activeChainId = Number(chainId)
     if (!isB20SupportedChainId(activeChainId)) {
-      throw new Error('Switch to Base before launching B20.')
+      throw new Error('Switch to Base Sepolia for B20 testing, or Base after mainnet activation.')
     }
 
     const targetChainId = activeChainId
@@ -106,7 +106,7 @@ export function useDeployB20() {
     try {
       const active = await readActivation(variant, targetChainId)
       if (!active) {
-        throw new Error('B20 is not active on this Base network yet. BaseHub will unlock this automatically when the Activation Registry flips on.')
+        throw new Error('B20 is not active on this network yet. Use Base Sepolia for testing until Base mainnet activation is enabled.')
       }
 
       const userSalt = keccak256(stringToBytes(`${address}:${Date.now()}:${name}:${symbol}:${variant}`))
@@ -121,7 +121,7 @@ export function useDeployB20() {
       const launcherAddress = getB20LauncherAddress(targetChainId)
 
       if (!launcherAddress) {
-        throw new Error('Base mainnet B20 launcher is not configured yet. Set VITE_B20_LAUNCHER_BASE after deploying BaseHubB20Launcher.')
+        throw new Error('B20 normal deploy launcher is not configured for this network. Deploy BaseHubB20Launcher and set the matching VITE_B20_LAUNCHER_* env value.')
       }
 
       let predictedAddress = null

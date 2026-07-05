@@ -1,6 +1,6 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit'
 import { createConnector } from 'wagmi'
-import { base } from 'wagmi/chains'
+import { base, baseSepolia } from 'wagmi/chains'
 import { coinbaseWallet as coinbaseConnector } from 'wagmi/connectors'
 import {
   injectedWallet,
@@ -240,7 +240,7 @@ const monad = defineChain({
 export const rainbowkitConfig = getDefaultConfig({
   appName: APP_NAME,
   projectId: REOWN_PROJECT_ID,
-  chains: [base, inkChain, tempo, soneium, katana, megaeth, arcRestnet, robinhoodChain, arbitrum, optimism, monad],
+  chains: [base, baseSepolia, inkChain, tempo, soneium, katana, megaeth, arcRestnet, robinhoodChain, arbitrum, optimism, monad],
   wallets: [
     {
       groupName: 'Recommended',

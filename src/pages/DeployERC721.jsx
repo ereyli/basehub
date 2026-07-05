@@ -6,7 +6,7 @@ import { Image, Zap, CheckCircle, ExternalLink } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
-import { getTransactionExplorerUrl, getAddressExplorerUrl } from '../config/networks'
+import { getTransactionExplorerUrl, getAddressExplorerUrl, getNetworkConfig } from '../config/networks'
 import { getFarcasterUniversalLink } from '../config/farcaster'
 
 const DeployERC721 = () => {
@@ -14,6 +14,8 @@ const DeployERC721 = () => {
   const chainId = useChainId()
   const { deployERC721, isLoading, error } = useDeployERC721()
   const navigate = useNavigate()
+  const activeNetwork = getNetworkConfig(chainId)
+  const activeNetworkName = activeNetwork?.chainName || 'the selected network'
   
   const [formData, setFormData] = useState({
     name: '',
@@ -56,14 +58,14 @@ const DeployERC721 = () => {
     <div className="deploy-nft-page">
             <Helmet>
               <title>Deploy ERC721 - BaseHub</title>
-              <meta name="description" content="Deploy your own ERC721 NFT contract on Base network." />
+              <meta name="description" content="Deploy your own ERC721 NFT contract across BaseHub-supported mainnet networks." />
             </Helmet>
             
       <div className="deploy-container">
         <BackButton />
         <h2 className="title">Deploy ERC721 Contract</h2>
         <p className="description">
-          Deploy your own ERC721 NFT contract on the Base network. Define a name and symbol, and deploy your contract.
+          Deploy your own ERC721 NFT contract on {activeNetworkName}. Define a name and symbol, then publish it from the connected wallet.
         </p>
 
         <form onSubmit={handleSubmit} className="deploy-form">
@@ -127,7 +129,7 @@ const DeployERC721 = () => {
           }}>
             <ShareButton 
               title="Deploy ERC721 - BaseHub"
-              description="Deploy your own ERC721 NFT contract on Base network"
+              description="Deploy your own ERC721 NFT contract across BaseHub-supported networks"
               gameType="deploy"
               customUrl={getFarcasterUniversalLink('/deploy/erc721')}
             />

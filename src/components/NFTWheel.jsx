@@ -1,45 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Sparkles, Trophy, Gift } from 'lucide-react'
+import soundManager from '../utils/soundEffects'
 
 // Wheel segments with their properties (visual order - 224K jackpot at top)
 // Reduced by 30% from original values
 const DEFAULT_SEGMENTS = [
-  { id: 6, xp: 224000, label: '224K', color: '#fbbf24', isJackpot: true },
-  { id: 0, xp: 3500, label: '3.5K', color: '#3b82f6' },
-  { id: 1, xp: 7000, label: '7K', color: '#10b981' },
-  { id: 2, xp: 14000, label: '14K', color: '#8b5cf6' },
-  { id: 3, xp: 28000, label: '28K', color: '#ec4899' },
-  { id: 4, xp: 56000, label: '56K', color: '#06b6d4' },
-  { id: 5, xp: 112000, label: '112K', color: '#ef4444' }
+  { id: 6, xp: 224000, label: '224K', color: '#fbbf24', rarity: 'Jackpot', rarityColor: '#facc15', isJackpot: true },
+  { id: 0, xp: 3500, label: '3.5K', color: '#3b82f6', rarity: 'Common', rarityColor: '#60a5fa' },
+  { id: 1, xp: 7000, label: '7K', color: '#10b981', rarity: 'Uncommon', rarityColor: '#34d399' },
+  { id: 2, xp: 14000, label: '14K', color: '#8b5cf6', rarity: 'Rare', rarityColor: '#a78bfa' },
+  { id: 3, xp: 28000, label: '28K', color: '#ec4899', rarity: 'Epic', rarityColor: '#f472b6' },
+  { id: 4, xp: 56000, label: '56K', color: '#06b6d4', rarity: 'Mythic', rarityColor: '#22d3ee' },
+  { id: 5, xp: 112000, label: '112K', color: '#ef4444', rarity: 'Legendary', rarityColor: '#fb7185' }
 ]
 
-let wheelAudioContext = null
 function playWheelTick(index = 0) {
-  if (typeof window === 'undefined') return
-  try {
-    const Ctx = window.AudioContext || window.webkitAudioContext
-    if (!Ctx) return
-    if (!wheelAudioContext) wheelAudioContext = new Ctx()
-    const ctx = wheelAudioContext
-    if (ctx.state === 'suspended') ctx.resume().catch(() => {})
-    const t = ctx.currentTime
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    const filter = ctx.createBiquadFilter()
-    osc.type = 'triangle'
-    osc.frequency.setValueAtTime(720 + (index % 4) * 24, t)
-    osc.frequency.exponentialRampToValueAtTime(420, t + 0.045)
-    filter.type = 'bandpass'
-    filter.frequency.setValueAtTime(980, t)
-    filter.Q.setValueAtTime(8, t)
-    gain.gain.setValueAtTime(0.055, t)
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.055)
-    osc.connect(filter)
-    filter.connect(gain)
-    gain.connect(ctx.destination)
-    osc.start(t)
-    osc.stop(t + 0.06)
-  } catch (_) {}
+  soundManager.playWheelTick(index)
 }
 
 const NFTWheel = ({ 
@@ -89,8 +65,9 @@ const NFTWheel = ({
         gradient.addColorStop(0, '#fbbf24')
         gradient.addColorStop(1, '#f59e0b')
       } else {
-        gradient.addColorStop(0, segment.color)
-        gradient.addColorStop(1, adjustColor(segment.color, -30))
+        gradient.addColorStop(0, segment.rarityColor || segment.color)
+        gradient.addColorStop(0.72, segment.color)
+        gradient.addColorStop(1, adjustColor(segment.color, -34))
       }
       ctx.fillStyle = gradient
       ctx.fill()
@@ -105,6 +82,15 @@ const NFTWheel = ({
       const textRadius = radius * 0.65
       const textX = center + textRadius * Math.cos(textAngle)
       const textY = center + textRadius * Math.sin(textAngle)
+
+      ctx.beginPath()
+      ctx.arc(center, center, radius - 7, startAngle + 0.025, endAngle - 0.025)
+      ctx.strokeStyle = segment.rarityColor || segment.color
+      ctx.lineWidth = segment.isJackpot ? 10 : 7
+      ctx.shadowColor = segment.rarityColor || segment.color
+      ctx.shadowBlur = segment.isJackpot ? 10 : 5
+      ctx.stroke()
+      ctx.shadowBlur = 0
 
       ctx.save()
       ctx.translate(textX, textY)
@@ -195,6 +181,7 @@ const NFTWheel = ({
       // Show result after spin animation completes (spinDuration = 4000ms)
       const resultTimer = setTimeout(() => {
         console.log('✅ NFTWheel: Spin complete, showing result:', winningSegmentData.label, winningSegmentData.xp, 'XP')
+        soundManager.playWheelStop(winningSegmentData?.isJackpot)
         setShowResult(true)
         
         // Call onSpinComplete callback after a brief delay to show the result
@@ -219,10 +206,10 @@ const NFTWheel = ({
       return undefined
     }
     let count = 0
-    let delay = 92
+    let delay = 74
     const schedule = () => {
       playWheelTick(count++)
-      delay = Math.min(240, delay + 8)
+      delay = Math.min(360, Math.round(delay * 1.13 + 3))
       tickRef.current = setTimeout(schedule, delay)
     }
     tickRef.current = setTimeout(schedule, delay)
@@ -257,15 +244,15 @@ const NFTWheel = ({
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      padding: '40px 20px'
+      padding: 'clamp(22px, 5vw, 40px) 12px'
     }}>
       {/* Wheel Container */}
       <div style={{
         position: 'relative',
-        width: '380px',
-        height: '380px',
-        maxWidth: '85vw',
-        maxHeight: '85vw',
+        width: 'min(340px, 70vw)',
+        height: 'min(340px, 70vw)',
+        maxWidth: '340px',
+        maxHeight: '340px',
         transform: isSpinning ? 'translateZ(0) scale(1.01)' : 'translateZ(0)',
         transition: 'transform 280ms ease'
       }}>
@@ -332,7 +319,7 @@ const NFTWheel = ({
           transform: previewSpin ? undefined : `rotate(${rotation}deg)`,
           animation: previewSpin ? 'wheelPreviewSpin 9s linear infinite' : 'none',
           transition: (isSpinning && !isResetting && !previewSpin)
-            ? `transform ${spinDuration}ms cubic-bezier(0.2, 0.8, 0.3, 1)` 
+            ? `transform ${spinDuration}ms cubic-bezier(0.08, 0.72, 0.03, 1)`
             : 'none',
           zIndex: 1
         }}>
@@ -365,12 +352,12 @@ const NFTWheel = ({
           <div style={{
             fontSize: '16px',
             fontWeight: '600',
-            color: '#94a3b8',
+            color: winningSegmentData.rarityColor || '#94a3b8',
             marginBottom: '8px',
             textTransform: 'uppercase',
             letterSpacing: '2px'
           }}>
-            {winningSegmentData.isJackpot ? 'MEGA JACKPOT!' : 'You Won!'}
+            {winningSegmentData.isJackpot ? 'MEGA JACKPOT!' : `${winningSegmentData.rarity || 'Reward'} Drop`}
           </div>
           <div style={{
             fontSize: '42px',

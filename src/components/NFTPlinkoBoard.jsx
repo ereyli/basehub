@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react'
+import soundManager from '../utils/soundEffects'
 
 const SLOT_META = [
-  { label: '3.5K', sub: 'XP', bg: 'linear-gradient(180deg, #fbbf24 0%, #d97706 100%)', glow: 'rgba(251,191,36,0.5)', text: '#0f172a' },
-  { label: '7K', sub: 'XP', bg: 'linear-gradient(180deg, #38bdf8 0%, #0891b2 100%)', glow: 'rgba(34,211,238,0.45)', text: '#0f172a' },
-  { label: 'MEGA', sub: '224K XP', bg: 'linear-gradient(180deg, #fb7185 0%, #be123c 100%)', glow: 'rgba(251,113,133,0.55)', text: '#fff' },
-  { label: '14K', sub: 'XP', bg: 'linear-gradient(180deg, #a78bfa 0%, #6d28d9 100%)', glow: 'rgba(167,139,250,0.45)', text: '#0f172a' },
-  { label: '3.5K', sub: 'XP', bg: 'linear-gradient(180deg, #34d399 0%, #059669 100%)', glow: 'rgba(52,211,153,0.45)', text: '#0f172a' },
+  { label: '3.5K', sub: 'COMMON', bg: 'linear-gradient(180deg, #60a5fa 0%, #2563eb 100%)', glow: 'rgba(96,165,250,0.5)', text: '#eff6ff', rarity: 'Common' },
+  { label: '7K', sub: 'UNCOMMON', bg: 'linear-gradient(180deg, #34d399 0%, #059669 100%)', glow: 'rgba(52,211,153,0.45)', text: '#ecfdf5', rarity: 'Uncommon' },
+  { label: 'MEGA', sub: 'JACKPOT', bg: 'linear-gradient(180deg, #fde68a 0%, #f59e0b 52%, #b45309 100%)', glow: 'rgba(251,191,36,0.65)', text: '#111827', rarity: 'Jackpot', isJackpot: true },
+  { label: '14K', sub: 'RARE', bg: 'linear-gradient(180deg, #c4b5fd 0%, #7c3aed 100%)', glow: 'rgba(167,139,250,0.5)', text: '#f5f3ff', rarity: 'Rare' },
+  { label: '28K+', sub: 'EPIC+', bg: 'linear-gradient(180deg, #f9a8d4 0%, #db2777 56%, #9f1239 100%)', glow: 'rgba(244,114,182,0.55)', text: '#fff', rarity: 'Epic+' },
 ]
 
 const NUM_SLOTS = SLOT_META.length
@@ -27,38 +28,9 @@ function mulberry32 (seed) {
   }
 }
 
-let sharedAudioCtx = null
-function getAudioContext () {
-  if (typeof window === 'undefined') return null
-  if (!sharedAudioCtx) {
-    const Ctx = window.AudioContext || window.webkitAudioContext
-    if (!Ctx) return null
-    sharedAudioCtx = new Ctx()
-  }
-  return sharedAudioCtx
-}
-
 /** Short “plink” when the ball hits a peg (stereo-ish via freq). */
-function playPegTapSound (rowIndex, pegIndex, hSpacing) {
-  const ctx = getAudioContext()
-  if (!ctx) return
-  if (ctx.state === 'suspended') {
-    ctx.resume().catch(() => {})
-  }
-  const t0 = ctx.currentTime
-  const f = 520 + rowIndex * 28 + (pegIndex % 5) * 18 + (rowIndex + pegIndex) % 3 * 12
-  const dur = 0.045 + (rowIndex % 4) * 0.004
-  const osc = ctx.createOscillator()
-  const gain = ctx.createGain()
-  osc.type = 'sine'
-  osc.frequency.setValueAtTime(f, t0)
-  osc.frequency.exponentialRampToValueAtTime(f * 0.65, t0 + dur)
-  gain.gain.setValueAtTime(0.11 * Math.min(1, 0.75 + hSpacing / 120), t0)
-  gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur)
-  osc.connect(gain)
-  gain.connect(ctx.destination)
-  osc.start(t0)
-  osc.stop(t0 + dur + 0.02)
+function playPegTapSound (rowIndex, pegIndex) {
+  soundManager.playPlinkoPeg(rowIndex, pegIndex)
 }
 
 function buildPegPositions(rows, boardWidth) {
@@ -178,6 +150,8 @@ const NFTPlinkoBoard = ({ targetSlot, isAnimating, onAnimationEnd }) => {
   const [ballPos, setBallPos] = useState(null)
   const [litPegs, setLitPegs] = useState({})
   const [landed, setLanded] = useState(false)
+  const [impact, setImpact] = useState(0)
+  const [ballTilt, setBallTilt] = useState(0)
 
   // Keep onAnimationEnd ref fresh without triggering re-renders
   useEffect(() => { onEndRef.current = onAnimationEnd }, [onAnimationEnd])
@@ -213,13 +187,19 @@ const NFTPlinkoBoard = ({ targetSlot, isAnimating, onAnimationEnd }) => {
     const a = path[si]
     const b = path[si + 1]
 
-    setBallPos({ x: lerp(a.x, b.x, st), y: lerp(a.y, b.y, st) })
+    const x = lerp(a.x, b.x, st)
+    const y = lerp(a.y, b.y, st)
+    const dx = b.x - a.x
+    const dy = Math.max(1, b.y - a.y)
+    setBallTilt(Math.max(-22, Math.min(22, (dx / dy) * 28)))
+    setBallPos({ x, y })
 
     if (b.pr >= 0 && b.pp >= 0 && st > 0.48 && st < 0.92) {
       const key = `${b.pr}-${b.pp}`
       if (lastPegSoundKeyRef.current !== key) {
         lastPegSoundKeyRef.current = key
-        playPegTapSound(b.pr, b.pp, hSpacing)
+        playPegTapSound(b.pr, b.pp)
+        setImpact((prev) => prev + 1)
       }
       setLitPegs((prev) => (prev[key] ? prev : { ...prev, [key]: true }))
     }
@@ -227,6 +207,7 @@ const NFTPlinkoBoard = ({ targetSlot, isAnimating, onAnimationEnd }) => {
     if (t >= 1) {
       animatingRef.current = false
       setLanded(true)
+      soundManager.playPlinkoLand(targetSlot === 2)
       if (!endCalledRef.current) {
         endCalledRef.current = true
         setTimeout(() => {
@@ -248,6 +229,7 @@ const NFTPlinkoBoard = ({ targetSlot, isAnimating, onAnimationEnd }) => {
       endCalledRef.current = false
       animatingRef.current = true
       setLanded(false)
+      setImpact(0)
       setLitPegs({})
       const startX = path[0]?.x ?? boardWidth / 2
       setBallPos({ x: startX, y: 0 })
@@ -274,6 +256,7 @@ const NFTPlinkoBoard = ({ targetSlot, isAnimating, onAnimationEnd }) => {
       setBallPos(null)
       setLitPegs({})
       setLanded(false)
+      setImpact(0)
     }
   }, [isAnimating, targetSlot])
 
@@ -342,21 +325,45 @@ const NFTPlinkoBoard = ({ targetSlot, isAnimating, onAnimationEnd }) => {
         )}
 
         {ballPos && (
-          <div
-            style={{
-              position: 'absolute',
-              left: ballPos.x - BALL_SIZE / 2,
-              top: ballPos.y - BALL_SIZE / 2,
-              width: BALL_SIZE,
-              height: BALL_SIZE,
-              borderRadius: '50%',
-              background: 'radial-gradient(circle at 30% 30%, #fff 0%, #22d3ee 35%, #0891b2 90%)',
-              boxShadow: '0 0 14px rgba(34,211,238,0.9), 0 0 4px rgba(255,255,255,0.4)',
-              zIndex: 10,
-              willChange: 'transform, left, top',
-              transition: 'none',
-            }}
-          />
+          <>
+            <div
+              style={{
+                position: 'absolute',
+                left: ballPos.x - BALL_SIZE * 0.65,
+                top: ballPos.y + BALL_SIZE * 0.48,
+                width: BALL_SIZE * 1.3,
+                height: BALL_SIZE * 0.42,
+                borderRadius: '50%',
+                background: 'rgba(15,23,42,0.45)',
+                filter: 'blur(3px)',
+                transform: `translateX(${Math.max(-8, Math.min(8, ballTilt * 0.12))}px) scale(${landed ? 1.55 : 1})`,
+                opacity: landed ? 0.72 : 0.38,
+                zIndex: 8,
+                pointerEvents: 'none',
+              }}
+            />
+            <div
+              key={impact}
+              style={{
+                position: 'absolute',
+                left: ballPos.x - BALL_SIZE / 2,
+                top: ballPos.y - BALL_SIZE / 2,
+                width: BALL_SIZE,
+                height: BALL_SIZE,
+                borderRadius: '50%',
+                background: 'radial-gradient(circle at 28% 24%, #fff 0%, #bae6fd 24%, #22d3ee 48%, #0e7490 100%)',
+                boxShadow: landed
+                  ? '0 0 24px rgba(34,211,238,0.95), 0 0 10px rgba(255,255,255,0.5)'
+                  : '0 0 14px rgba(34,211,238,0.9), 0 0 4px rgba(255,255,255,0.4)',
+                zIndex: 10,
+                willChange: 'transform, left, top',
+                '--tilt': `${ballTilt}deg`,
+                transform: `rotate(${ballTilt}deg) scale(${landed ? 1.16 : 1})`,
+                animation: landed ? 'plinkoBallLand 360ms cubic-bezier(0.2, 1.45, 0.4, 1)' : 'plinkoBallTap 170ms ease-out',
+                transition: 'box-shadow 0.2s',
+              }}
+            />
+          </>
         )}
       </div>
 
@@ -378,11 +385,11 @@ const NFTPlinkoBoard = ({ targetSlot, isAnimating, onAnimationEnd }) => {
               style={{
                 width: Math.max(slotW - 4, 60),
                 textAlign: 'center',
-                borderRadius: 10,
+                borderRadius: 8,
                 padding: '10px 4px',
                 background: slot.bg,
                 border: active ? '2px solid rgba(255,255,255,0.95)' : '1px solid rgba(15,23,42,0.15)',
-                boxShadow: active ? `0 0 24px ${slot.glow}, 0 0 8px ${slot.glow}` : 'inset 0 1px 0 rgba(255,255,255,0.2)',
+                boxShadow: active ? `0 0 24px ${slot.glow}, 0 0 8px ${slot.glow}` : `inset 0 1px 0 rgba(255,255,255,0.22), 0 0 10px ${slot.glow}20`,
                 transform: active ? 'scale(1.08)' : 'scale(1)',
                 transition: 'transform 0.3s, box-shadow 0.3s, border 0.3s',
               }}
@@ -397,6 +404,18 @@ const NFTPlinkoBoard = ({ targetSlot, isAnimating, onAnimationEnd }) => {
           )
         })}
       </div>
+      <style>{`
+        @keyframes plinkoBallTap {
+          0% { transform: rotate(var(--tilt, 0deg)) scale(1.16, 0.84); }
+          55% { transform: rotate(var(--tilt, 0deg)) scale(0.92, 1.1); }
+          100% { transform: rotate(var(--tilt, 0deg)) scale(1); }
+        }
+        @keyframes plinkoBallLand {
+          0% { transform: scale(1.2, 0.72); }
+          45% { transform: scale(0.9, 1.18); }
+          100% { transform: scale(1.16); }
+        }
+      `}</style>
     </div>
   )
 }

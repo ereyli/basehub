@@ -25,6 +25,21 @@ export const NETWORKS = {
     iconUrls: ['https://base.org/favicon.ico'],
     isFarcasterSupported: true, // Only Base supports Farcaster
   },
+  BASE_SEPOLIA: {
+    chainId: 84532,
+    networkKey: 'base-sepolia',
+    chainName: 'Base Sepolia',
+    isTestnet: true,
+    nativeCurrency: {
+      name: 'Ethereum',
+      symbol: 'ETH',
+      decimals: 18,
+    },
+    rpcUrls: ['https://sepolia.base.org'],
+    blockExplorerUrls: ['https://sepolia.basescan.org'],
+    iconUrls: ['https://base.org/favicon.ico'],
+    isFarcasterSupported: false,
+  },
   INKCHAIN: {
     chainId: 57073,
     networkKey: 'ink',
@@ -220,6 +235,16 @@ export const CONTRACT_ADDRESSES = {
     BASEHUB_NFT_COLLECTION_DEPLOYER: '0x8b31312A6cD06839EFE768bD3D09bE785b83574A',
     PUMPHUB_FACTORY: '0xE7c2Fe007C65349C91B8ccAC3c5BE5a7f2FDaF21',
   },
+  BASE_SEPOLIA: {
+    BASEHUB_B20_LAUNCHER:
+      typeof import.meta !== 'undefined' && import.meta.env?.VITE_B20_LAUNCHER_BASE_SEPOLIA
+        ? String(import.meta.env.VITE_B20_LAUNCHER_BASE_SEPOLIA).trim()
+        : '0x1CEb5264E638a76C8704612811B9976cB30D0883',
+    BASEHUB_B20_CURVE_LAUNCHPAD:
+      typeof import.meta !== 'undefined' && import.meta.env?.VITE_B20_CURVE_LAUNCHPAD_BASE_SEPOLIA
+        ? String(import.meta.env.VITE_B20_CURVE_LAUNCHPAD_BASE_SEPOLIA).trim()
+        : '0xCEeC271c573243a7e8FAf47C5A2CcEf223396bD9',
+  },
   INKCHAIN: {
     GM_GAME: '0x5E86e9Cd50E7F64b692b90FaE1487d2F6ED1AbA9',
     GN_GAME: '0x1fe43a182B2a4A5845B91bA29Cd7E7EEBC4b68Df',
@@ -411,6 +436,7 @@ export const getExplorerUrl = (chainId) => {
 export const getBlockExplorerDisplayName = (chainId) => {
   const cid = chainId != null ? Number(chainId) : NaN
   if (cid === NETWORKS.BASE.chainId) return 'Basescan'
+  if (cid === NETWORKS.BASE_SEPOLIA.chainId) return 'Base Sepolia Explorer'
   if (cid === NETWORKS.INKCHAIN.chainId) return 'Ink Explorer'
   if (cid === NETWORKS.SONEIUM.chainId) return 'Soneium Explorer'
   if (cid === NETWORKS.MEGAETH.chainId) return 'MegaETH Explorer'

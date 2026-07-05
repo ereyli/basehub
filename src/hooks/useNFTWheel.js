@@ -8,13 +8,13 @@ import { NFT_LUCK_SEGMENTS as WHEEL_SEGMENTS } from '../config/nftLuckSegments'
 // Visual order for the wheel (224K jackpot at top, then clockwise)
 // This MUST match the order segments are drawn on the wheel
 export const WHEEL_VISUAL_ORDER = [
-  { id: 6, xp: 224000, label: '224K', color: '#fbbf24', isJackpot: true },
-  { id: 0, xp: 3500, label: '3.5K', color: '#3b82f6' },
-  { id: 1, xp: 7000, label: '7K', color: '#10b981' },
-  { id: 2, xp: 14000, label: '14K', color: '#8b5cf6' },
-  { id: 3, xp: 28000, label: '28K', color: '#ec4899' },
-  { id: 4, xp: 56000, label: '56K', color: '#06b6d4' },
-  { id: 5, xp: 112000, label: '112K', color: '#ef4444' }
+  { id: 6, xp: 224000, label: '224K', color: '#fbbf24', rarity: 'Jackpot', rarityColor: '#facc15', isJackpot: true },
+  { id: 0, xp: 3500, label: '3.5K', color: '#3b82f6', rarity: 'Common', rarityColor: '#60a5fa' },
+  { id: 1, xp: 7000, label: '7K', color: '#10b981', rarity: 'Uncommon', rarityColor: '#34d399' },
+  { id: 2, xp: 14000, label: '14K', color: '#8b5cf6', rarity: 'Rare', rarityColor: '#a78bfa' },
+  { id: 3, xp: 28000, label: '28K', color: '#ec4899', rarity: 'Epic', rarityColor: '#f472b6' },
+  { id: 4, xp: 56000, label: '56K', color: '#06b6d4', rarity: 'Mythic', rarityColor: '#22d3ee' },
+  { id: 5, xp: 112000, label: '112K', color: '#ef4444', rarity: 'Legendary', rarityColor: '#fb7185' }
 ]
 
 const DAILY_SPIN_LIMIT = 3

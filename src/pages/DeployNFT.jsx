@@ -6,12 +6,13 @@ import { ArrowLeft, Image, Zap, CheckCircle, ExternalLink, Upload, X } from 'luc
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
-import { getTransactionExplorerUrl } from '../config/networks'
+import { getTransactionExplorerUrl, getNetworkConfig } from '../config/networks'
 import { getFarcasterUniversalLink } from '../config/farcaster'
 
 const DeployNFT = () => {
   const { isConnected } = useAccount()
   const chainId = useChainId()
+  const networkLabel = getNetworkConfig(chainId)?.chainName || 'the selected network'
   const { deployERC721, isLoading, error } = useDeployERC721()
   const navigate = useNavigate()
   
@@ -98,7 +99,7 @@ const DeployNFT = () => {
     <div className="deploy-nft-page">
         <EmbedMeta 
           title="Deploy NFT Collection - BaseHub"
-          description="Deploy your own NFT collection on Base network"
+          description="Deploy your own NFT collection across BaseHub-supported networks"
           buttonText="🖼️ Deploy NFT!"
           image="/image2.jpeg"
         />
@@ -110,7 +111,7 @@ const DeployNFT = () => {
             <Image size={32} />
           </div>
           <h1>Deploy Your NFT Collection</h1>
-          <p>Create your own NFT collection on Base network</p>
+          <p>Create your own NFT collection on {networkLabel}</p>
         </div>
 
         {!deployResult ? (
@@ -211,7 +212,7 @@ const DeployNFT = () => {
             }}>
               <ShareButton 
                 title="Deploy NFT Collection - BaseHub"
-                description="Deploy your own NFT collection on Base network"
+                description="Deploy your own NFT collection across BaseHub-supported networks"
                 gameType="deploy"
                 customUrl={getFarcasterUniversalLink('/deploy/nft')}
               />

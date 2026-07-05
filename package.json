@@ -30,6 +30,7 @@
     "deploy:erc8004-base:standalone": "ERC8004_NETWORK=base node scripts/deploy-erc8004-registrar-standalone.mjs",
     "deploy:erc8004-sepolia:standalone": "ERC8004_NETWORK=baseSepolia node scripts/deploy-erc8004-registrar-standalone.mjs",
     "deploy:b20-launcher": "node scripts/deploy-b20-launcher.mjs",
+    "deploy:b20-sepolia": "node scripts/deploy-b20-launchpad.mjs",
     "backfill:erc8004-xp": "node scripts/backfill-erc8004-xp.mjs",
     "backfill:erc8004-xp:apply": "node scripts/backfill-erc8004-xp.mjs --apply",
     "backfill:erc8004-agents": "node scripts/backfill-erc8004-agents.mjs",

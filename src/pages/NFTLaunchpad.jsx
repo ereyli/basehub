@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Upload, Wand2, Package, AlertCircle, ExternalLink, CheckCircle,
   Coins, Rocket, TrendingUp, TrendingDown, Clock, Image as ImageIcon, X, ZoomIn,
-  ArrowUpDown, Flame, Sparkles, Eye
+  ArrowUpDown, Flame, Sparkles, Eye, Star
 } from 'lucide-react'
 import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
@@ -34,10 +34,16 @@ function timeAgo(dateStr) {
   return `${Math.floor(days / 30)}mo ago`
 }
 
-function formatMintPrice(price, isTempo) {
+function getMintCurrencySymbol(chainIdOrIsTempo) {
+  if (chainIdOrIsTempo === true || Number(chainIdOrIsTempo) === NETWORKS.TEMPO.chainId) return 'PUSD'
+  if (Number(chainIdOrIsTempo) === NETWORKS.MONAD.chainId) return 'MON'
+  return 'ETH'
+}
+
+function formatMintPrice(price, chainIdOrIsTempo) {
   const p = (price ?? '0').toString().trim()
   if (p === '' || Number(p) === 0) return 'Free'
-  return isTempo ? `${p} PUSD` : `${p} ETH`
+  return `${p} ${getMintCurrencySymbol(chainIdOrIsTempo)}`
 }
 
 const NFT_CHAIN_OPTIONS = [
@@ -266,7 +272,7 @@ export default function NFTLaunchpad() {
   const [countsByChain, setCountsByChain] = useState({ 8453: 0, 57073: 0, 1868: 0, 4326: 0, 4217: 0, 4663: 0, 42161: 0, 10: 0, 143: 0 })
   const [chainStatsByContract, setChainStatsByContract] = useState({})
   const [sortBy, setSortBy] = useState('newest') // newest | most_minted | trending | least_minted | oldest | price_low | price_high | recent_activity
-  const [soldOutOnly, setSoldOutOnly] = useState(false)
+  const [collectionFilter, setCollectionFilter] = useState('all') // all | featured | free | trending | sold_out
   const [currentPage, setCurrentPage] = useState(1)
   const NFTS_PER_PAGE = 12
 
@@ -278,6 +284,10 @@ export default function NFTLaunchpad() {
     error: createError, success, contractAddress, deployTxHash, slug: deployedSlug,
     deployFeeLabel, isTempoChain, isEarlyAccessHolder,
   } = useNFTLaunchpad()
+  const currentChainOption = NFT_CHAIN_OPTIONS.find((n) => n.chainId === Number(chainId))
+  const currentNetworkLabel = currentChainOption?.label || 'current network'
+  const currentMintCurrency = getMintCurrencySymbol(chainId)
+  const isMonadChain = Number(chainId) === NETWORKS.MONAD.chainId
 
   const getProcessingLabel = () => {
     if (!loadingStep) return 'Processing...'
@@ -307,6 +317,7 @@ export default function NFTLaunchpad() {
   useEffect(() => {
     if (!supabase?.from) { setCollectionsLoading(false); return }
     let cancelled = false
+    setCollectionsLoading(true)
     let query = supabase
       .from('nft_launchpad_collections')
       .select('contract_address, deployer_address, name, symbol, supply, image_url, mint_price, slug, total_minted, is_active, created_at, chain_id')
@@ -392,36 +403,65 @@ export default function NFTLaunchpad() {
     return () => { cancelled = true }
   }, [collections, publicClient])
 
-  // Filter by sold out then sort
-  const filteredCollections = useMemo(() => {
-    const getMinted = (c) => {
-      const key = c.contract_address?.toLowerCase()
-      const chainMinted = key ? chainStatsByContract[key]?.totalMinted : undefined
-      return chainMinted ?? Number(c.total_minted || 0)
-    }
-    const getSupply = (c) => {
-      const key = c.contract_address?.toLowerCase()
-      const chainSupply = key ? chainStatsByContract[key]?.maxSupply : undefined
-      return chainSupply ?? Number(c.supply || 0)
-    }
+  const getCollectionMinted = (c) => {
+    const key = c.contract_address?.toLowerCase()
+    const chainMinted = key ? chainStatsByContract[key]?.totalMinted : undefined
+    return chainMinted ?? Number(c.total_minted || 0)
+  }
 
-    if (soldOutOnly) {
+  const getCollectionSupply = (c) => {
+    const key = c.contract_address?.toLowerCase()
+    const chainSupply = key ? chainStatsByContract[key]?.maxSupply : undefined
+    return chainSupply ?? Number(c.supply || 0)
+  }
+
+  const getTrendingScore = (c) => {
+    const ageHours = Math.max(1, (Date.now() - new Date(c.created_at).getTime()) / 3600000)
+    const minted = getCollectionMinted(c)
+    const supply = getCollectionSupply(c)
+    const freeBoost = Number(c.mint_price || 0) === 0 ? 0.25 : 0
+    const fillBoost = supply > 0 ? Math.min(1, minted / supply) : 0
+    return minted / ageHours + fillBoost + freeBoost
+  }
+
+  const featuredCollectionIds = useMemo(() => {
+    const ranked = [...collections]
+      .sort((a, b) => {
+        const scoreDiff = getTrendingScore(b) - getTrendingScore(a)
+        if (scoreDiff !== 0) return scoreDiff
+        return new Date(b.created_at) - new Date(a.created_at)
+      })
+      .slice(0, 3)
+      .map((c) => c.contract_address?.toLowerCase())
+      .filter(Boolean)
+    return new Set(ranked)
+  }, [collections, chainStatsByContract])
+
+  const filteredCollections = useMemo(() => {
+    if (collectionFilter === 'featured') {
+      return collections.filter((c) => featuredCollectionIds.has(c.contract_address?.toLowerCase()))
+    }
+    if (collectionFilter === 'free') {
+      return collections.filter((c) => Number(c.mint_price || 0) === 0)
+    }
+    if (collectionFilter === 'sold_out') {
       return collections.filter((c) => {
-        const minted = getMinted(c)
-        const supply = getSupply(c)
+        const minted = getCollectionMinted(c)
+        const supply = getCollectionSupply(c)
         return supply > 0 && minted >= supply
       })
     }
+    if (collectionFilter === 'trending') {
+      return [...collections].sort((a, b) => getTrendingScore(b) - getTrendingScore(a)).slice(0, 12)
+    }
     return collections
-  }, [collections, soldOutOnly, chainStatsByContract])
+  }, [collections, collectionFilter, featuredCollectionIds, chainStatsByContract])
 
   const sortedCollections = useMemo(() => {
     const arr = [...filteredCollections]
     const price = (c) => parseFloat(c.mint_price) || 0
     const minted = (c) => {
-      const key = c.contract_address?.toLowerCase()
-      const chainMinted = key ? chainStatsByContract[key]?.totalMinted : undefined
-      return chainMinted ?? Number(c.total_minted || 0)
+      return getCollectionMinted(c)
     }
     if (sortBy === 'newest') arr.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     else if (sortBy === 'most_minted') arr.sort((a, b) => minted(b) - minted(a))
@@ -434,9 +474,7 @@ export default function NFTLaunchpad() {
     }
     else if (sortBy === 'trending') {
       arr.sort((a, b) => {
-        const aScore = minted(a) / Math.max(1, (Date.now() - new Date(a.created_at).getTime()) / 3600000)
-        const bScore = minted(b) / Math.max(1, (Date.now() - new Date(b.created_at).getTime()) / 3600000)
-        return bScore - aScore
+        return getTrendingScore(b) - getTrendingScore(a)
       })
     }
     return arr
@@ -448,7 +486,7 @@ export default function NFTLaunchpad() {
     return sortedCollections.slice(start, start + NFTS_PER_PAGE)
   }, [sortedCollections, currentPage])
 
-  useEffect(() => { setCurrentPage(1) }, [sortBy, soldOutOnly])
+  useEffect(() => { setCurrentPage(1) }, [sortBy, collectionFilter])
   useEffect(() => { if (currentPage > totalPages) setCurrentPage(totalPages) }, [totalPages, currentPage])
 
   useEffect(() => {
@@ -557,6 +595,18 @@ export default function NFTLaunchpad() {
             <p style={{ fontSize: '14px', color: '#94a3b8', margin: 0, maxWidth: '420px', marginInline: 'auto', lineHeight: 1.5 }}>
               Deploy your NFT collection on Base, Ink, Soneium, MegaETH, Tempo, Robinhood, Arbitrum, Optimism or Monad. Set a mint price, get a shareable page, and earn from every mint.
             </p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '999px', background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)', color: '#bfdbfe', fontSize: '12px', fontWeight: 700 }}>
+                {currentChainOption?.logo && <img src={currentChainOption.logo} alt={currentNetworkLabel} style={{ width: 16, height: 16, borderRadius: '50%', objectFit: 'cover' }} />}
+                {currentNetworkLabel}
+              </div>
+              <div style={{ padding: '7px 12px', borderRadius: '999px', background: 'rgba(15,23,42,0.72)', border: '1px solid rgba(55,65,81,0.7)', color: '#cbd5e1', fontSize: '12px', fontWeight: 700 }}>
+                Deploy fee: <span style={{ color: '#f8fafc' }}>{deployFeeLabel}</span>
+              </div>
+              <div style={{ padding: '7px 12px', borderRadius: '999px', background: 'rgba(15,23,42,0.72)', border: '1px solid rgba(55,65,81,0.7)', color: '#cbd5e1', fontSize: '12px', fontWeight: 700 }}>
+                Mint currency: <span style={{ color: '#f8fafc' }}>{isTempoChain ? 'PUSD' : currentMintCurrency}</span>
+              </div>
+            </div>
             {/* Network deploy counts - compact row */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '12px', flexWrap: 'wrap' }}>
               {[
@@ -779,7 +829,7 @@ export default function NFTLaunchpad() {
 
                       <div>
                         <label style={{ fontSize: '12px', fontWeight: '600', color: '#94a3b8', marginBottom: '6px', display: 'block' }}>
-                          {isTempoChain ? 'Mint Price' : 'Mint Price (ETH)'}
+                          {isTempoChain ? 'Mint Price' : `Mint Price (${currentMintCurrency})`}
                         </label>
                         {isTempoChain ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -833,6 +883,8 @@ export default function NFTLaunchpad() {
                           <strong style={{ color: '#e2e8f0' }}>{deployFeeLabel}</strong>
                           {isTempoChain ? (
                             <span style={{ color: '#64748b' }}> (pathUSD / TIP20 — unlimited spend cap for NFT deployer)</span>
+                          ) : isMonadChain ? (
+                            <span style={{ color: '#c4b5fd', marginLeft: '4px' }}>(MON-native fee on Monad)</span>
                           ) : isEarlyAccessHolder ? (
                             <span style={{ color: '#22c55e', marginLeft: '4px' }}>(Early Access discount)</span>
                           ) : (
@@ -845,7 +897,7 @@ export default function NFTLaunchpad() {
                           {isTempoChain ? (
                             <span>Mints are <strong style={{ color: '#e2e8f0' }}>free</strong> for collectors (Tempo deploy is free-mint only).</span>
                           ) : (
-                            <span>Each mint at <strong style={{ color: '#e2e8f0' }}>{formatMintPrice(mintPrice, isTempoChain)}</strong> goes <strong style={{ color: '#22c55e' }}>directly to you</strong></span>
+                            <span>Each mint at <strong style={{ color: '#e2e8f0' }}>{formatMintPrice(mintPrice, chainId)}</strong> goes <strong style={{ color: '#22c55e' }}>directly to you</strong></span>
                           )}
                         </div>
                         <div style={{ display: 'flex', gap: '6px' }}>
@@ -867,7 +919,7 @@ export default function NFTLaunchpad() {
                           <img src={currentPreviewUrl} alt="Preview" style={{ width: '52px', height: '52px', borderRadius: '10px', objectFit: 'cover' }} />
                           <div>
                             <div style={{ fontWeight: '700', color: '#e2e8f0', fontSize: '15px' }}>{name.trim()}</div>
-                            <div style={{ fontSize: '12px', color: '#64748b' }}>{symbol || '???'} · {formatMintPrice(mintPrice, isTempoChain)} · {supply} supply</div>
+                            <div style={{ fontSize: '12px', color: '#64748b' }}>{symbol || '???'} · {formatMintPrice(mintPrice, chainId)} · {supply} supply</div>
                           </div>
                         </div>
                       </div>
@@ -911,42 +963,52 @@ export default function NFTLaunchpad() {
           {/* ═══════════ EXPLORE TAB ═══════════ */}
           {activeTab === 'explore' && (
             <div>
-              {/* Sort bar */}
+              {/* Filter bar */}
               <div style={{
                 display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap',
                 alignItems: 'center',
               }}>
-                <ArrowUpDown size={14} style={{ color: '#64748b' }} />
-                <SortPill label="Newest" icon={Clock} active={sortBy === 'newest'} onClick={() => { setSortBy('newest'); setSoldOutOnly(false); }} />
-                <SortPill label="Recently active" icon={Sparkles} active={sortBy === 'recent_activity'} onClick={() => { setSortBy('recent_activity'); setSoldOutOnly(false); }} />
-                <SortPill label="Most Minted" icon={TrendingUp} active={sortBy === 'most_minted'} onClick={() => { setSortBy('most_minted'); setSoldOutOnly(false); }} />
-                <SortPill label="Least Minted" icon={TrendingDown} active={sortBy === 'least_minted'} onClick={() => { setSortBy('least_minted'); setSoldOutOnly(false); }} />
-                <SortPill label="Trending" icon={Flame} active={sortBy === 'trending'} onClick={() => { setSortBy('trending'); setSoldOutOnly(false); }} />
-                <SortPill label="Oldest" icon={Clock} active={sortBy === 'oldest'} onClick={() => { setSortBy('oldest'); setSoldOutOnly(false); }} />
-                <SortPill label="Price: Low" icon={Coins} active={sortBy === 'price_low'} onClick={() => { setSortBy('price_low'); setSoldOutOnly(false); }} />
-                <SortPill label="Price: High" icon={Coins} active={sortBy === 'price_high'} onClick={() => { setSortBy('price_high'); setSoldOutOnly(false); }} />
-                <SortPill label="Sold out" icon={CheckCircle} active={soldOutOnly} onClick={() => setSoldOutOnly(true)} />
+                <Sparkles size={14} style={{ color: '#64748b' }} />
+                <SortPill label="All" icon={Package} active={collectionFilter === 'all'} onClick={() => setCollectionFilter('all')} />
+                <SortPill label="Featured" icon={Star} active={collectionFilter === 'featured'} onClick={() => setCollectionFilter('featured')} />
+                <SortPill label="Free mint" icon={Coins} active={collectionFilter === 'free'} onClick={() => setCollectionFilter('free')} />
+                <SortPill label="Trending" icon={Flame} active={collectionFilter === 'trending'} onClick={() => { setCollectionFilter('trending'); setSortBy('trending') }} />
+                <SortPill label="Sold out" icon={CheckCircle} active={collectionFilter === 'sold_out'} onClick={() => setCollectionFilter('sold_out')} />
               </div>
 
-              {soldOutOnly && (
+              {/* Sort bar */}
+              <div style={{
+                display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap',
+                alignItems: 'center',
+              }}>
+                <ArrowUpDown size={14} style={{ color: '#64748b' }} />
+                <SortPill label="Newest" icon={Clock} active={sortBy === 'newest'} onClick={() => setSortBy('newest')} />
+                <SortPill label="Most Minted" icon={TrendingUp} active={sortBy === 'most_minted'} onClick={() => setSortBy('most_minted')} />
+                <SortPill label="Least Minted" icon={TrendingDown} active={sortBy === 'least_minted'} onClick={() => setSortBy('least_minted')} />
+                <SortPill label="Oldest" icon={Clock} active={sortBy === 'oldest'} onClick={() => setSortBy('oldest')} />
+                <SortPill label="Price: Low" icon={Coins} active={sortBy === 'price_low'} onClick={() => setSortBy('price_low')} />
+                <SortPill label="Price: High" icon={Coins} active={sortBy === 'price_high'} onClick={() => setSortBy('price_high')} />
+              </div>
+
+              {collectionFilter !== 'all' && (
                 <div style={{ marginBottom: '16px', fontSize: '13px', color: '#94a3b8' }}>
                   {sortedCollections.length === 0
-                    ? 'No sold out collections yet.'
-                    : `Showing ${sortedCollections.length} sold out collection${sortedCollections.length === 1 ? '' : 's'}.`}
+                    ? `No ${collectionFilter.replace('_', ' ')} collections yet.`
+                    : `Showing ${sortedCollections.length} ${collectionFilter.replace('_', ' ')} collection${sortedCollections.length === 1 ? '' : 's'}.`}
                 </div>
               )}
 
               {/* Stats row */}
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px' }}>
                 <div style={{
-                  flex: 1, padding: '14px', borderRadius: '14px', textAlign: 'center',
+                  padding: '14px', borderRadius: '14px', textAlign: 'center',
                   background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(55,65,81,0.4)',
                 }}>
                   <div style={{ fontSize: '22px', fontWeight: '800', color: '#e2e8f0' }}>{collections.length}</div>
                   <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Collections</div>
                 </div>
                 <div style={{
-                  flex: 1, padding: '14px', borderRadius: '14px', textAlign: 'center',
+                  padding: '14px', borderRadius: '14px', textAlign: 'center',
                   background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(55,65,81,0.4)',
                 }}>
                   <div style={{ fontSize: '22px', fontWeight: '800', color: '#e2e8f0' }}>
@@ -958,6 +1020,28 @@ export default function NFTLaunchpad() {
                   </div>
                   <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Total Minted</div>
                 </div>
+                <div style={{
+                  padding: '14px', borderRadius: '14px', textAlign: 'center',
+                  background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(55,65,81,0.4)',
+                }}>
+                  <div style={{ fontSize: '22px', fontWeight: '800', color: '#4ade80' }}>
+                    {collections.filter((c) => Number(c.mint_price || 0) === 0).length}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Free Mint</div>
+                </div>
+                <div style={{
+                  padding: '14px', borderRadius: '14px', textAlign: 'center',
+                  background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(55,65,81,0.4)',
+                }}>
+                  <div style={{ fontSize: '22px', fontWeight: '800', color: '#f87171' }}>
+                    {collections.filter((c) => {
+                      const minted = getCollectionMinted(c)
+                      const total = getCollectionSupply(c)
+                      return total > 0 && minted >= total
+                    }).length}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Sold Out</div>
+                </div>
               </div>
 
               {/* Collections grid */}
@@ -967,9 +1051,9 @@ export default function NFTLaunchpad() {
                 <div style={{ textAlign: 'center', padding: '48px 20px' }}>
                   <Package size={40} style={{ color: '#334155', marginBottom: '12px' }} />
                   <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>
-                    {soldOutOnly ? 'No sold out collections yet.' : 'No collections yet. Be the first to launch!'}
+                    {collectionFilter !== 'all' ? `No ${collectionFilter.replace('_', ' ')} collections yet.` : 'No collections yet. Be the first to launch!'}
                   </p>
-                  {!soldOutOnly && (
+                  {collectionFilter === 'all' && (
                     <button onClick={() => setActiveTab('create')} style={{
                       marginTop: '16px', padding: '10px 20px', background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa',
                       border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '12px', fontWeight: '600', fontSize: '13px', cursor: 'pointer',
@@ -992,6 +1076,10 @@ export default function NFTLaunchpad() {
                       const saleActive = stats?.saleActive ?? Boolean(c.is_active)
                       const pct = total > 0 ? Math.min(100, Math.round((minted / total) * 100)) : 0
                       const isSoldOut = minted >= total && total > 0
+                      const isFreeMint = Number(c.mint_price || 0) === 0
+                      const isFeatured = featuredCollectionIds.has(c.contract_address?.toLowerCase())
+                      const cardChain = Number(c.chain_id || chainId)
+                      const cardChainOption = NFT_CHAIN_OPTIONS.find((n) => n.chainId === cardChain)
                       return (
                         <div
                           key={c.contract_address}
@@ -1027,6 +1115,7 @@ export default function NFTLaunchpad() {
                           {/* Image – contain so full logo is visible, not cropped */}
                           <div style={{
                             padding: '12px 14px 0',
+                            position: 'relative',
                             height: '160px',
                             display: 'flex',
                             alignItems: 'center',
@@ -1036,6 +1125,14 @@ export default function NFTLaunchpad() {
                             margin: '0 14px',
                           }}>
                             <CollectionCardImage imageUrl={c.image_url} name={c.name} />
+                            <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                              {isFeatured && (
+                                <span style={{ padding: '3px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '800', background: 'rgba(251,191,36,0.18)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.35)' }}>FEATURED</span>
+                              )}
+                              {isFreeMint && (
+                                <span style={{ padding: '3px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '800', background: 'rgba(34,197,94,0.18)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.35)' }}>FREE</span>
+                              )}
+                            </div>
                           </div>
                           {/* Info */}
                           <div style={{ padding: '14px' }}>
@@ -1057,7 +1154,7 @@ export default function NFTLaunchpad() {
                               )}
                             </div>
                             <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
-                              {c.symbol} · <strong style={{ color: '#94a3b8' }}>{formatMintPrice(c.mint_price, Number(c.chain_id) === NETWORKS.TEMPO.chainId)}</strong> · {timeAgo(c.created_at)}
+                              {cardChainOption?.label || 'Network'} · {c.symbol} · <strong style={{ color: '#94a3b8' }}>{formatMintPrice(c.mint_price, cardChain)}</strong> · {timeAgo(c.created_at)}
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#64748b' }}>
                               <span>Minted</span>

@@ -47,7 +47,7 @@ const NetworkGuard = ({ children, showWarning = false }) => {
       await switchToNetwork(NETWORKS.BASE.chainId)
     } catch (error) {
       console.error('Failed to switch network:', error)
-      alert('Network switch failed. Please manually switch to Base or InkChain network.')
+      alert('Network switch failed. Please manually switch to a BaseHub-supported network.')
     }
   }
 
@@ -68,7 +68,7 @@ const NetworkGuard = ({ children, showWarning = false }) => {
         </div>
         <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#94a3b8', lineHeight: 1.5 }}>
           You are on <strong style={{ color: '#cbd5e1' }}>{currentNetworkConfig?.chainName || 'Unknown'}</strong>.
-          BaseHub works on <strong style={{ color: '#93c5fd' }}>Base</strong> or <strong style={{ color: '#93c5fd' }}>InkChain</strong>.
+          BaseHub works on supported mainnet networks such as <strong style={{ color: '#93c5fd' }}>Base</strong>, <strong style={{ color: '#93c5fd' }}>Arbitrum</strong>, <strong style={{ color: '#93c5fd' }}>Optimism</strong>, and <strong style={{ color: '#93c5fd' }}>Monad</strong>.
         </p>
         {!isInFarcaster && (
           <button
@@ -109,7 +109,7 @@ const NetworkGuard = ({ children, showWarning = false }) => {
       }}>
         <div>
           <div style={{ fontSize: '18px', marginBottom: '8px' }}>Wrong network</div>
-          <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px' }}>Switch to Base or InkChain to continue</div>
+          <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px' }}>Switch to a supported BaseHub network to continue</div>
         </div>
       </div>
     </div>

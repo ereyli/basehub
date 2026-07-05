@@ -1,5 +1,5 @@
 import { http, createConfig } from 'wagmi'
-import { base } from 'wagmi/chains'
+import { base, baseSepolia } from 'wagmi/chains'
 import { defineChain, fallback, http as viemHttp } from 'viem'
 import { injected, metaMask } from 'wagmi/connectors'
 import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector'
@@ -194,12 +194,15 @@ const monad = defineChain({
 
 // Wagmi config with multiple wallet support
 export const config = createConfig({
-  chains: [base, inkChain, tempo, soneium, katana, megaeth, arcRestnet, robinhoodChain, arbitrum, optimism, monad],
+  chains: [base, baseSepolia, inkChain, tempo, soneium, katana, megaeth, arcRestnet, robinhoodChain, arbitrum, optimism, monad],
   dataSuffix: DATA_SUFFIX,
   transports: {
     [base.id]: fallback(
       NETWORKS.BASE.rpcUrls.map((url) => viemHttp(url, { timeout: 12000, retryCount: 1, retryDelay: 1000 })),
       { rank: false, retryCount: 2, retryDelay: 1000 }
+    ),
+    [baseSepolia.id]: fallback(
+      NETWORKS.BASE_SEPOLIA.rpcUrls.map((url) => viemHttp(url, { timeout: 30000, retryCount: 2, retryDelay: 1000 }))
     ),
     [inkChain.id]: fallback(
       NETWORKS.INKCHAIN.rpcUrls.map((url) => viemHttp(url, { timeout: 30000, retryCount: 2, retryDelay: 1000 }))

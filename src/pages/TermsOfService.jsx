@@ -29,7 +29,7 @@ const TermsOfService = () => {
             By accessing or using BaseHub ("the Platform," "we," "us," or "our"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these terms, you may not access or use the Platform.
           </p>
           <p style={{ color: '#9ca3af' }}>
-            BaseHub is a gamified smart contracts platform built on the Base network, accessible as a Farcaster miniapp and web application. These Terms apply to all users of the Platform.
+            BaseHub is a gamified multichain smart contracts platform accessible as a Farcaster miniapp and web application. These Terms apply to all users of the Platform across supported networks.
           </p>
         </section>
 
@@ -74,7 +74,7 @@ const TermsOfService = () => {
           </h2>
           <h3 style={{ color: '#e5e7eb', fontSize: '18px', marginTop: '16px', marginBottom: '8px' }}>Transaction Fees</h3>
           <p style={{ color: '#9ca3af', marginBottom: '12px' }}>
-            All blockchain transactions require gas fees paid to the Base network. These fees are:
+            All blockchain transactions require gas or native network fees paid to the selected blockchain network. These fees are:
           </p>
           <ul style={{ color: '#9ca3af', marginLeft: '24px', marginBottom: '12px' }}>
             <li>Paid directly to the network (not to BaseHub)</li>
@@ -128,7 +128,7 @@ const TermsOfService = () => {
           </p>
           <ul style={{ color: '#9ca3af', marginLeft: '24px', marginBottom: '12px' }}>
             <li>Irreversible and permanent</li>
-            <li>Publicly visible on BaseScan</li>
+            <li>Publicly visible on the relevant block explorer for the selected network</li>
             <li>Subject to network fees and confirmation times</li>
             <li>Not controlled by BaseHub</li>
           </ul>
@@ -249,4 +249,3 @@ const TermsOfService = () => {
 }
 
 export default TermsOfService
-

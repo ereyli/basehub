@@ -67,7 +67,7 @@ const DeployToken = () => {
       <div className="deploy-token-page">
                <EmbedMeta 
                  title="Deploy Token - BaseHub"
-                 description="Deploy your own ERC20 token on Base network"
+                 description="Deploy your own ERC20 token across BaseHub-supported networks"
                  buttonText="🪙 Deploy Token!"
                  image="/image2.jpeg"
                />
@@ -79,7 +79,7 @@ const DeployToken = () => {
             <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" loading="lazy" style={{ width: '60px', height: '60px', borderRadius: '16px' }} />
           </div>
           <h1>Deploy Your Token</h1>
-          <p>Create your own ERC20 token on {isTempo ? 'Tempo (one-time PUSD fee)' : 'Base network'}</p>
+          <p>Create your own ERC20 token on {isTempo ? 'Tempo (one-time PUSD fee)' : networkLabel}</p>
         </div>
 
         {!deployResult ? (
@@ -172,7 +172,7 @@ const DeployToken = () => {
             }}>
               <ShareButton 
                 title="Deploy Token - BaseHub"
-                description="Deploy your own ERC20 token on Base network"
+                description="Deploy your own ERC20 token across BaseHub-supported networks"
                 gameType="deploy"
                 customUrl={getFarcasterUniversalLink('/deploy/token')}
               />

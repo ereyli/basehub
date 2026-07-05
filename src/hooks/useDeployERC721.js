@@ -470,11 +470,11 @@ export const useDeployERC721 = () => {
   const farcasterContext = useFarcaster()
   const isInFarcaster = farcasterContext?.isInFarcaster || false
 
-  // Network validation - allow Base or InkChain
+  // Network validation - allow any BaseHub-supported network.
   const validateAndSwitchNetwork = async () => {
     if (!isCorrectNetwork) {
       // Don't auto-switch - let user choose network via RainbowKit
-      throw new Error(`❌ SUPPORTED NETWORK REQUIRED!\n\nYou are currently on ${networkName}.\nBaseHub works on Base or InkChain networks.\n\nPlease switch to a supported network using RainbowKit's network selector.`)
+      throw new Error(`❌ SUPPORTED NETWORK REQUIRED!\n\nYou are currently on ${networkName}.\nBaseHub works on supported mainnet networks such as Base, Arbitrum, Optimism, Monad, InkChain and Soneium.\n\nPlease switch to a supported network using RainbowKit's network selector.`)
     }
   }
 

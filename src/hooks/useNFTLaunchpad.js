@@ -70,7 +70,7 @@ export function useNFTLaunchpad() {
   const validateNetwork = async () => {
     if (!isCorrectNetwork) {
       throw new Error(
-        `Please switch to Base, InkChain, Soneium, MegaETH, Tempo or Robinhood. You are currently on ${networkName}. Use the network selector.`
+        `Please switch to a BaseHub-supported mainnet network. You are currently on ${networkName}. Use the network selector.`
       )
     }
   }

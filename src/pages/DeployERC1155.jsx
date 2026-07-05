@@ -6,7 +6,7 @@ import { Layers, Zap, CheckCircle, ExternalLink } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
 import BackButton from '../components/BackButton'
 import ShareButton from '../components/ShareButton'
-import { getTransactionExplorerUrl, getAddressExplorerUrl } from '../config/networks'
+import { getTransactionExplorerUrl, getAddressExplorerUrl, getNetworkConfig } from '../config/networks'
 import { getFarcasterUniversalLink } from '../config/farcaster'
 
 const DeployERC1155 = () => {
@@ -14,6 +14,8 @@ const DeployERC1155 = () => {
   const chainId = useChainId()
   const { deployERC1155, isLoading, error } = useDeployERC1155()
   const navigate = useNavigate()
+  const activeNetwork = getNetworkConfig(chainId)
+  const activeNetworkName = activeNetwork?.chainName || 'the selected network'
   
   const [formData, setFormData] = useState({
     name: '',
@@ -57,14 +59,14 @@ const DeployERC1155 = () => {
     <div className="deploy-nft-page">
             <Helmet>
               <title>Deploy ERC1155 - BaseHub</title>
-              <meta name="description" content="Deploy your own ERC1155 multi-token contract on Base network." />
+              <meta name="description" content="Deploy your own ERC1155 multi-token contract across BaseHub-supported mainnet networks." />
             </Helmet>
             
       <div className="deploy-container">
         <BackButton />
         <h2 className="title">Deploy ERC1155 Contract</h2>
         <p className="description">
-          Deploy your own ERC1155 multi-token contract on the Base network. Define a name and symbol, and deploy your contract.
+          Deploy your own ERC1155 multi-token contract on {activeNetworkName}. Define a name and symbol, then publish it from the connected wallet.
         </p>
 
         <form onSubmit={handleSubmit} className="deploy-form">
@@ -130,7 +132,7 @@ const DeployERC1155 = () => {
           }}>
             <ShareButton 
               title="Deploy ERC1155 - BaseHub"
-              description="Deploy your own ERC1155 multi-token contract on Base network"
+              description="Deploy your own ERC1155 multi-token contract across BaseHub-supported networks"
               gameType="deploy"
               customUrl={getFarcasterUniversalLink('/deploy/erc1155')}
             />

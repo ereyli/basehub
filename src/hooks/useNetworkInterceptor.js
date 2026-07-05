@@ -13,19 +13,23 @@ export const useNetworkInterceptor = () => {
       return
     }
 
-    // Check if current network is supported (Base or InkChain)
+    // Check if current network is supported by BaseHub.
     const isSupported = isNetworkSupported(chainId)
     
     if (!isSupported && !hasShownAlert) {
       const currentNetwork = getNetworkConfig(chainId)
+      const supportedNetworkNames = Object.values(NETWORKS)
+        .filter(network => network && !network.isTestnet)
+        .map(network => network.chainName)
+        .join(', ')
       console.log('🚨 UNSUPPORTED NETWORK DETECTED!')
       console.log('Current network:', currentNetwork?.chainName || `Unknown (Chain ID: ${chainId})`)
-      console.log('Supported networks: Base or InkChain')
+      console.log('Supported networks:', supportedNetworkNames)
       
       setHasShownAlert(true)
       
       // Show alert to user
-      alert(`🚫 UNSUPPORTED NETWORK!\n\nYou are currently on ${currentNetwork?.chainName || `Unknown Network (Chain ID: ${chainId})`}.\nBaseHub works on Base or InkChain networks.\n\nPlease switch to a supported network.`)
+      alert(`🚫 UNSUPPORTED NETWORK!\n\nYou are currently on ${currentNetwork?.chainName || `Unknown Network (Chain ID: ${chainId})`}.\nBaseHub works on supported mainnet networks such as Base, Arbitrum, Optimism, Monad, InkChain and Soneium.\n\nPlease switch to a supported network.`)
     } else if (isSupported) {
       setHasShownAlert(false)
     }
@@ -38,6 +42,6 @@ export const useNetworkInterceptor = () => {
     isOnBase: chainId === NETWORKS.BASE.chainId,
     isOnInkChain: chainId === NETWORKS.INKCHAIN.chainId,
     currentNetwork: currentNetwork?.chainName || `Unknown (Chain ID: ${chainId})`,
-    supportedNetworks: ['Base', 'InkChain']
+    supportedNetworks: Object.values(NETWORKS).filter(network => network && !network.isTestnet).map(network => network.chainName)
   }
 }

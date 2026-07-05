@@ -55,7 +55,7 @@ const XPShareButton = ({
     }
     
     if (gameType !== 'swap') {
-      shareText += `\n\nTotal XP: ${totalXP} (${Math.floor(totalXP / 50)} BHUP tokens)\n\nPlay on BaseHub and earn XP on Base network!`
+      shareText += `\n\nTotal XP: ${totalXP} (${Math.floor(totalXP / 50)} BHUP tokens)\n\nPlay on BaseHub and earn XP across supported mainnet networks!`
     } else {
       shareText += `\n\nPowered by BaseHub`
     }

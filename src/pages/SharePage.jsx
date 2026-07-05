@@ -531,7 +531,7 @@ const SharePage = () => {
           color: '#6b7280',
           lineHeight: '1.5'
         }}>
-          No cast was shared. Explore BaseHub to play games and earn XP on Base network!
+          No cast was shared. Explore BaseHub to play games and earn XP across supported mainnet networks!
         </p>
         <button
           onClick={() => window.location.href = '/'}

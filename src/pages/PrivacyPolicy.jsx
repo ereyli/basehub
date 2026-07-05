@@ -29,7 +29,7 @@ const PrivacyPolicy = () => {
             Welcome to BaseHub ("we," "our," or "us"). We are committed to protecting your privacy and ensuring transparency about how we collect, use, and safeguard your information. This Privacy Policy explains our practices regarding data collection and usage when you use our platform.
           </p>
           <p style={{ color: '#9ca3af' }}>
-            BaseHub is a gamified smart contracts platform built on the Base network, accessible as a Farcaster miniapp and web application. By using our services, you agree to the collection and use of information in accordance with this policy.
+            BaseHub is a gamified multichain smart contracts platform accessible as a Farcaster miniapp and web application. By using our services, you agree to the collection and use of information in accordance with this policy across supported networks.
           </p>
         </section>
 
@@ -44,8 +44,8 @@ const PrivacyPolicy = () => {
           </p>
           <ul style={{ color: '#9ca3af', marginLeft: '24px', marginBottom: '12px' }}>
             <li>Your wallet address (public key)</li>
-            <li>Transaction history on the Base network</li>
-            <li>Network information (Base Mainnet/Base Sepolia)</li>
+            <li>Transaction history on supported networks you use with BaseHub</li>
+            <li>Network information such as chain ID, selected mainnet, and connected wallet network</li>
           </ul>
 
           <h3 style={{ color: '#e5e7eb', fontSize: '18px', marginTop: '16px', marginBottom: '8px' }}>2. Game and Activity Data</h3>
@@ -119,7 +119,7 @@ const PrivacyPolicy = () => {
 
           <h3 style={{ color: '#e5e7eb', fontSize: '18px', marginTop: '16px', marginBottom: '8px' }}>Blockchain Data</h3>
           <p style={{ color: '#9ca3af' }}>
-            Transaction data is stored on the Base blockchain, which is public and immutable. This includes game transactions, NFT minting, and token deployments.
+            Transaction data is stored on the blockchain network used for that action, which is public and immutable. This includes game transactions, NFT minting, and token deployments.
           </p>
         </section>
 
@@ -132,7 +132,7 @@ const PrivacyPolicy = () => {
           </p>
           <ul style={{ color: '#9ca3af', marginLeft: '24px', marginBottom: '12px' }}>
             <li><strong style={{ color: '#e5e7eb' }}>Public Leaderboards:</strong> Your wallet address, XP, and level are displayed publicly on leaderboards</li>
-            <li><strong style={{ color: '#e5e7eb' }}>Blockchain Transparency:</strong> All transactions are publicly visible on BaseScan</li>
+            <li><strong style={{ color: '#e5e7eb' }}>Blockchain Transparency:</strong> Transactions are publicly visible on the relevant block explorer for the selected network</li>
             <li><strong style={{ color: '#e5e7eb' }}>Service Providers:</strong> We use Supabase for data storage and x402 for payment processing</li>
             <li><strong style={{ color: '#e5e7eb' }}>Legal Requirements:</strong> We may disclose data if required by law or to protect our rights</li>
           </ul>
@@ -179,7 +179,7 @@ const PrivacyPolicy = () => {
             <li><strong style={{ color: '#e5e7eb' }}>x402 (Coinbase):</strong> Payment processing for premium features</li>
             <li><strong style={{ color: '#e5e7eb' }}>Farcaster SDK:</strong> Social features and notifications</li>
             <li><strong style={{ color: '#e5e7eb' }}>Pinata/IPFS:</strong> NFT metadata and image storage</li>
-            <li><strong style={{ color: '#e5e7eb' }}>BaseScan:</strong> Blockchain explorer for transaction verification</li>
+            <li><strong style={{ color: '#e5e7eb' }}>Block explorers:</strong> Network explorers for transaction verification</li>
           </ul>
           <p style={{ color: '#9ca3af' }}>
             These services have their own privacy policies. We encourage you to review them.
@@ -223,4 +223,3 @@ const PrivacyPolicy = () => {
 }
 
 export default PrivacyPolicy
-

@@ -5,8 +5,8 @@ import { getFarcasterUniversalLink } from '../config/farcaster'
 
 const TwitterShareButton = ({ 
   title = "BaseHub",
-  description = "Your all-in-one Web3 hub on Base & InkChain. Play games, launch tokens, earn XP.",
-  hashtags = ["BaseHub", "Base", "InkChain", "Web3Gaming", "DEX", "XP"],
+  description = "Your all-in-one multichain Web3 hub. Play games, launch tokens and NFTs, swap, analyze wallets, and earn XP.",
+  hashtags = ["BaseHub", "Arbitrum", "Optimism", "Monad", "Web3Gaming", "XP"],
   style = {} 
 }) => {
   const [isCopied, setIsCopied] = useState(false)
@@ -21,7 +21,7 @@ const TwitterShareButton = ({
   }
 
   const generateTwitterContent = () => {
-    const tweetText = `🚀 ${title} – ${description}\n\n✨ Launch tokens with PumpHub (fair launch, no presale)\n🎮 Play on-chain games & spin the NFT Wheel\n💱 Swap with DEX aggregator on Base\n🔍 Analyze wallets & contract security\n🎯 Earn XP on everything – level up & unlock rewards\n🌐 Base, InkChain, Soneium, Katana\n\n#${hashtags.join(' #')}\n\n`
+    const tweetText = `🚀 ${title} – ${description}\n\n✨ Launch tokens and NFT collections\n🎮 Play on-chain games and earn XP\n💱 Swap with SwapHub on Base\n🔍 Analyze wallets, contracts, and allowances\n🏆 Climb multichain leaderboards\n🌐 Base, Arbitrum, Optimism, Monad, Ink, Soneium and more\n\n#${hashtags.join(' #')}\n\n`
     return tweetText
   }
 

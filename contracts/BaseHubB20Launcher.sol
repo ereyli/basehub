@@ -32,6 +32,7 @@ contract BaseHubB20Launcher {
     event FeeWalletUpdated(address indexed oldWallet, address indexed newWallet);
     event FeeWeiUpdated(uint256 oldFeeWei, uint256 newFeeWei);
     event OwnershipTransferred(address indexed oldOwner, address indexed newOwner);
+    event EmergencyWithdraw(address indexed recipient, uint256 amount);
 
     error NotOwner();
     error InvalidAddress();
@@ -100,5 +101,13 @@ contract BaseHubB20Launcher {
         if (newOwner == address(0)) revert InvalidAddress();
         emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
+    }
+
+    function emergencyWithdrawAll() external onlyOwner {
+        uint256 balance = address(this).balance;
+        if (balance == 0) revert FeeRequired();
+        (bool ok,) = payable(owner).call{value: balance}("");
+        if (!ok) revert RefundFailed();
+        emit EmergencyWithdraw(owner, balance);
     }
 }

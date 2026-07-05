@@ -8,7 +8,7 @@ export const AI_NFT_CONFIG = {
   PINATA_SECRET_KEY: '',
   PINATA_JWT: '',
   
-  // AI NFT Collection Contract Address (Base Mainnet)
+  // AI NFT Collection Contract Address (currently Base mainnet)
   // V2 - Tiered Pricing Model (Fixed: tokenURI before mint)
   AI_NFT_CONTRACT_ADDRESS: '0xF8278421Df4312991616bd7F9D81EE9B52f1473c',
   
@@ -53,7 +53,7 @@ export const AI_NFT_CONFIG = {
   // Metadata Configuration
   METADATA: {
     name: 'AI NFT',
-    description: 'AI-generated NFT created on Base network',
+    description: 'AI-generated NFT created with BaseHub',
     external_url: 'https://basehub.xyz',
     attributes: [
       {

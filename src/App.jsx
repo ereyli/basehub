@@ -16,6 +16,7 @@ import WalletConnect from './components/WalletConnect'
 import WebBottomNav from './components/WebBottomNav'
 import Footer from './components/Footer'
 import AssistantLauncher from './components/AssistantLauncher'
+import GlobalAppNotices from './components/GlobalAppNotices'
 import { OpenInAppProvider } from './contexts/OpenInAppContext'
 import SkeletonLoader from './components/SkeletonLoader'
 import { useNetworkInterceptor } from './hooks/useNetworkInterceptor'
@@ -55,6 +56,8 @@ import BaseGuildCompanion from './pages/BaseGuildCompanion'
 import AirdropHub from './pages/AirdropHub'
 import AgentMode from './pages/AgentMode'
 import AdminNotifications from './pages/AdminNotifications'
+import NetworkLanding from './pages/NetworkLanding'
+import TrustCenter from './pages/TrustCenter'
 
 function AgentModeGate() {
   return <AgentMode />
@@ -105,6 +108,17 @@ const queryClient = new QueryClient({
 // Global error handler component
 function GlobalErrorHandler() {
   useEffect(() => {
+    const originalConsole = {
+      log: console.log,
+      info: console.info,
+      debug: console.debug,
+    }
+    if (import.meta.env.PROD) {
+      console.log = () => {}
+      console.info = () => {}
+      console.debug = () => {}
+    }
+
     // Suppress KeyRing locked errors (Coinbase Wallet extension)
     const originalError = console.error
     console.error = (...args) => {
@@ -166,6 +180,9 @@ function GlobalErrorHandler() {
     window.addEventListener('error', handleError)
 
     return () => {
+      console.log = originalConsole.log
+      console.info = originalConsole.info
+      console.debug = originalConsole.debug
       console.error = originalError
       window.removeEventListener('unhandledrejection', handleRejection)
       window.removeEventListener('error', handleError)
@@ -229,6 +246,7 @@ function FarcasterAppContent() {
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <GlobalErrorHandler />
+      <GlobalAppNotices />
       <HomeScrollManager />
       <div className="App farcaster-app">
         {/* Loading overlay - show only, do not block Router */}
@@ -368,6 +386,10 @@ function FarcasterAppContent() {
               <Route path="/agent" element={<AgentModeGate />} />
               <Route path="/admin" element={<AdminNotifications />} />
               <Route path="/base-guild" element={<BaseGuildCompanion />} />
+              <Route path="/arbitrum" element={<NetworkLanding networkKey="arbitrum" />} />
+              <Route path="/optimism" element={<NetworkLanding networkKey="optimism" />} />
+              <Route path="/monad" element={<NetworkLanding networkKey="monad" />} />
+              <Route path="/trust" element={<TrustCenter />} />
               <Route path="/frames/:frameType" element={<FrameLanding />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
@@ -407,6 +429,7 @@ function WebAppContent() {
         <OpenInAppProvider>
         <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <GlobalErrorHandler />
+          <GlobalAppNotices />
           <HomeScrollManager />
           <ScrollToTop />
           <div className={`App web-app ${isMobile ? 'farcaster-app' : ''}`}>
@@ -446,6 +469,10 @@ function WebAppContent() {
             <Route path="/agent" element={<AgentModeGate />} />
             <Route path="/admin" element={<AdminNotifications />} />
             <Route path="/base-guild" element={<BaseGuildCompanion />} />
+            <Route path="/arbitrum" element={<NetworkLanding networkKey="arbitrum" />} />
+            <Route path="/optimism" element={<NetworkLanding networkKey="optimism" />} />
+            <Route path="/monad" element={<NetworkLanding networkKey="monad" />} />
+            <Route path="/trust" element={<TrustCenter />} />
             <Route path="/frames/:frameType" element={<FrameLanding />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />

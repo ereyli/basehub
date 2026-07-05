@@ -21,7 +21,11 @@ class SoundManager {
       numberSelect: ['chips-collide-1.ogg'],
       slotSpin: ['chips-handle-1.ogg', 'chips-handle-2.ogg'],
       slotStop: ['chips-collide-1.ogg', 'chips-collide-2.ogg'],
-      slotWin: ['chips-stack-1.ogg', 'chips-stack-2.ogg']
+      slotWin: ['chips-stack-1.ogg', 'chips-stack-2.ogg'],
+      wheelTick: ['chips-collide-1.ogg', 'chips-collide-2.ogg'],
+      wheelStop: ['chips-stack-1.ogg', 'chips-stack-2.ogg'],
+      plinkoPeg: ['chips-collide-1.ogg', 'chips-collide-2.ogg'],
+      plinkoLand: ['chips-stack-1.ogg', 'chips-stack-2.ogg']
     }
     this._setupUserGestureUnlock()
   }
@@ -306,6 +310,27 @@ class SoundManager {
   playSlotWin() {
     this._playAsset('slotWin', { volume: 0.62, playbackRate: 0.9 })
     this._playAsset('slotWin', { volume: 0.48, playbackRate: 1.04, delay: 150 })
+  }
+
+  playWheelTick(index = 0) {
+    this._playAsset('wheelTick', { volume: 0.28, playbackRate: 0.92 + (index % 5) * 0.025 })
+  }
+
+  playWheelStop(isJackpot = false) {
+    this._playAsset('wheelStop', { volume: isJackpot ? 0.72 : 0.54, playbackRate: isJackpot ? 0.86 : 0.94 })
+    if (isJackpot) this._playAsset('wheelStop', { volume: 0.48, playbackRate: 1.08, delay: 140 })
+  }
+
+  playPlinkoPeg(rowIndex = 0, pegIndex = 0) {
+    this._playAsset('plinkoPeg', {
+      volume: 0.22,
+      playbackRate: 0.86 + Math.min(0.22, rowIndex * 0.012) + (pegIndex % 3) * 0.018
+    })
+  }
+
+  playPlinkoLand(isJackpot = false) {
+    this._playAsset('plinkoLand', { volume: isJackpot ? 0.68 : 0.5, playbackRate: isJackpot ? 0.86 : 0.94 })
+    if (isJackpot) this._playAsset('plinkoLand', { volume: 0.4, playbackRate: 1.05, delay: 130 })
   }
 }
 

@@ -36,7 +36,7 @@ const Footer = () => {
               <img src="/icon.png" alt="BaseHub" className="footer-logo-img" />
             </div>
             <p className="footer-slogan">
-              Gamified smart contracts on the Base network. Play, earn, and build the future of Web3.
+              Multichain smart contracts, NFT launches, games, and XP across BaseHub-supported networks.
             </p>
           </div>
 
@@ -46,6 +46,7 @@ const Footer = () => {
               <h4 className="footer-link-title">Platform</h4>
               <Link to="/" className="footer-link" {...homeState}>Home</Link>
               <Link to="/leaderboard" className="footer-link">Leaderboard</Link>
+              <Link to="/trust" className="footer-link">Trust Center</Link>
               <a 
                 href="https://x.com/BaseHubb" 
                 target="_blank" 
@@ -54,6 +55,12 @@ const Footer = () => {
               >
                 Follow on X
               </a>
+            </div>
+            <div className="footer-link-group">
+              <h4 className="footer-link-title">Networks</h4>
+              <Link to="/arbitrum" className="footer-link">Arbitrum</Link>
+              <Link to="/optimism" className="footer-link">Optimism</Link>
+              <Link to="/monad" className="footer-link">Monad</Link>
             </div>
             <div className="footer-link-group">
               <h4 className="footer-link-title">Use in app</h4>
@@ -106,7 +113,7 @@ const Footer = () => {
               © {currentYear} BaseHub. All rights reserved.
             </p>
             <p className="footer-tagline">
-              Built on Base • Miniapp on Farcaster & Base App • Gamified for Everyone
+              Built for multichain builders • Miniapp on Farcaster & Base App • Gamified for Everyone
             </p>
           </div>
           <div className="footer-social">
@@ -138,4 +145,3 @@ const Footer = () => {
 }
 
 export default Footer
-

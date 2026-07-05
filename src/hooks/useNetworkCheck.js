@@ -25,7 +25,7 @@ export const useNetworkCheck = () => {
 
     setIsChecking(true)
     
-    // Check if user is on a supported network (Base or InkChain)
+    // Check if user is on a supported BaseHub network.
     const isSupported = isNetworkSupported(chainId)
     
     setIsCorrectNetwork(isSupported)
@@ -43,7 +43,7 @@ export const useNetworkCheck = () => {
     if (!isSupported) {
       console.warn('⚠️ UNSUPPORTED NETWORK DETECTED!')
       console.warn(`Current: ${getNetworkName(chainId)} (Chain ID: ${chainId})`)
-      console.warn(`Supported: Base (${NETWORKS.BASE.chainId}) or InkChain (${NETWORKS.INKCHAIN.chainId})`)
+      console.warn('Supported networks:', Object.values(NETWORKS).map(net => `${net.chainName} (${net.chainId})`).join(', '))
     }
   }, [isConnected, chainId])
 

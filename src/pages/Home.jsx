@@ -18,7 +18,7 @@ import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { NETWORKS, getNetworkKey, isPumpHubSupportedChainId } from '../config/networks'
 import { getProductsForHome, getProductsForHomeByNetwork, getNetworksForProductIds } from '../config/products'
-import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat, Sparkles, RotateCcw, Gift, LayoutGrid, CircleDot, Bot } from 'lucide-react'
+import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat, Sparkles, RotateCcw, Gift, LayoutGrid, CircleDot, Bot, MoreHorizontal } from 'lucide-react'
 
 const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Search, Shield, Trash2, Star, Layers, Package, Factory, Rocket, Image, Sparkles, ArrowLeftRight, Repeat, Zap, Users, LayoutGrid, CircleDot, Bot }
 
@@ -106,6 +106,7 @@ const Home = () => {
   
   // Check if mobile (for Farcaster compact + web mobile 2-column layout); reactive on resize
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
+  const [showMoreNetworks, setShowMoreNetworks] = useState(false)
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth <= 768)
     window.addEventListener('resize', onResize)
@@ -114,7 +115,7 @@ const Home = () => {
   // Mobil (hem tarayıcı hem miniapp) aynı compact layout ve kart görünümü
   const isCompactMode = isMobile
   const isWebMobile = isWeb && isMobile
-  const networksUseGrid = isWebMobile && !isMobile
+  const networksUseGrid = isWebMobile
   
   // Compact styles: Farcaster mobile (very compact) | Web mobile (2 columns, compact) | Desktop
   const compactStyles = {
@@ -782,6 +783,24 @@ const Home = () => {
   const showAgentSection = games.some(g => g.id === 'agent-mode')
   const showAgentIdentitySection = games.some(g => ['deploy-erc8004', 'agent-directory'].includes(g.id))
   const showB20LaunchpadSection = games.some(g => g.id === 'deploy-b20')
+  const homeNetworkOptions = [
+    { key: 'BASE', label: 'Base', logo: '/base-logo.jpg', chainId: NETWORKS.BASE.chainId },
+    { key: 'INK', label: 'InkChain', logo: '/ink-logo.jpg', chainId: NETWORKS.INKCHAIN.chainId },
+    { key: 'TEMPO', label: 'Tempo', logo: NETWORKS.TEMPO?.iconUrls?.[0] || '/Tempo logo.jpg', chainId: NETWORKS.TEMPO.chainId },
+    { key: 'SONE', label: 'Soneium', logo: '/soneium-logo.jpg', chainId: NETWORKS.SONEIUM.chainId },
+    { key: 'KAT', label: 'Katana', logo: '/katana-logo.jpg', chainId: NETWORKS.KATANA.chainId },
+    { key: 'MEGA', label: 'MegaETH', logo: '/megaeth-logo.jpg', chainId: NETWORKS.MEGAETH.chainId },
+    { key: 'ARB', label: 'Arbitrum', logo: '/arbitrum-logo.svg', chainId: NETWORKS.ARBITRUM.chainId },
+    { key: 'OP', label: 'Optimism', logo: '/optimism-logo.svg', chainId: NETWORKS.OPTIMISM.chainId },
+    { key: 'MON', label: 'Monad', logo: '/monad-logo.svg', chainId: NETWORKS.MONAD.chainId },
+    ...(NETWORKS.ARC_RESTNET ? [{ key: 'ARC', label: 'Arc Testnet', logo: '/arc-testnet-logo.jpg', chainId: NETWORKS.ARC_RESTNET.chainId }] : []),
+    ...(NETWORKS.ROBINHOOD ? [{ key: 'RH', label: 'Robinhood', logo: '/robinhood-testnet-logo.png', chainId: NETWORKS.ROBINHOOD.chainId }] : []),
+  ]
+  const mobilePrimaryNetworkKeys = new Set(['BASE', 'INK', 'ARB', 'OP'])
+  const activeNetworkOption = homeNetworkOptions.find((net) => net.chainId === chainId)
+  const compactNetworkOptions = isCompactMode && !showMoreNetworks
+    ? homeNetworkOptions.filter((net) => mobilePrimaryNetworkKeys.has(net.key) || net.chainId === activeNetworkOption?.chainId)
+    : homeNetworkOptions
 
   return (
     <div className="home" style={{ 
@@ -792,7 +811,7 @@ const Home = () => {
     }}>
       <EmbedMeta 
         title="BaseHub - Web3 Tools & Interactions"
-        description="Multi-chain Web3 platform. Deploy smart contracts, swap tokens, analyze wallets, and interact with blockchain to earn XP across multiple EVM networks. Available on Base and InkChain!"
+        description="Multi-chain Web3 hub for games, token deploys, NFT launches and XP across Base, Arbitrum, Optimism, Monad and more."
         buttonText="Explore BaseHub"
       />
       
@@ -842,7 +861,7 @@ const Home = () => {
               marginLeft: 'auto',
               marginRight: 'auto'
             }}>
-              {isCompactMode ? 'Web3 hub for Base, InkChain & more' : 'Games, tokens and XP on Base, InkChain and more — all in one Web3 hub.'}
+              {isCompactMode ? 'Multichain games, deploys, NFTs and XP' : 'Games, token deploys, NFT launches and XP across Base, Arbitrum, Optimism, Monad and more.'}
             </p>
 
             {/* Network Selector - miniapp (Farcaster + Base app): flex wrap 5+2; sadece web mobil tarayıcıda 2 sütun grid */}
@@ -857,19 +876,7 @@ const Home = () => {
               marginLeft: 'auto',
               marginRight: 'auto'
             }}>
-              {[
-                { key: 'BASE',  label: 'Base',     logo: '/base-logo.jpg',   chainId: NETWORKS.BASE.chainId },
-                { key: 'INK',   label: 'InkChain', logo: '/ink-logo.jpg',    chainId: NETWORKS.INKCHAIN.chainId },
-                { key: 'TEMPO', label: 'Tempo',    logo: NETWORKS.TEMPO?.iconUrls?.[0] || '/Tempo logo.jpg', chainId: NETWORKS.TEMPO.chainId },
-                { key: 'SONE',  label: 'Soneium',  logo: '/soneium-logo.jpg', chainId: NETWORKS.SONEIUM.chainId },
-                { key: 'KAT',   label: 'Katana',   logo: '/katana-logo.jpg', chainId: NETWORKS.KATANA.chainId },
-                { key: 'MEGA',  label: 'MegaETH',  logo: '/megaeth-logo.jpg', chainId: NETWORKS.MEGAETH.chainId },
-                { key: 'ARB',   label: 'Arbitrum', logo: '/arbitrum-logo.svg', chainId: NETWORKS.ARBITRUM.chainId },
-                { key: 'OP',    label: 'Optimism', logo: '/optimism-logo.svg', chainId: NETWORKS.OPTIMISM.chainId },
-                { key: 'MON',   label: 'Monad',    logo: '/monad-logo.svg', chainId: NETWORKS.MONAD.chainId },
-                ...(NETWORKS.ARC_RESTNET ? [{ key: 'ARC', label: 'Arc Testnet', logo: '/arc-testnet-logo.jpg', chainId: NETWORKS.ARC_RESTNET.chainId }] : []),
-                ...(NETWORKS.ROBINHOOD ? [{ key: 'RH', label: 'Robinhood', logo: '/robinhood-testnet-logo.png', chainId: NETWORKS.ROBINHOOD.chainId }] : []),
-              ].map((net) => {
+              {compactNetworkOptions.map((net) => {
                 // Miniapp: sadece Base kullanılır, geçiş yok; Base seçili görünsün, diğerlerine tıklanınca tepki verme
                 const isActive = isInFarcaster
                   ? net.chainId === NETWORKS.BASE.chainId
@@ -958,6 +965,33 @@ const Home = () => {
                   </button>
                 )
               })}
+              {isCompactMode && (
+                <button
+                  type="button"
+                  onClick={() => setShowMoreNetworks((v) => !v)}
+                  style={{
+                    border: '1px solid rgba(148,163,184,0.22)',
+                    background: showMoreNetworks ? 'rgba(59,130,246,0.16)' : 'rgba(15,23,42,0.9)',
+                    borderRadius: '10px',
+                    padding: '6px 8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '5px',
+                    color: '#cbd5e1',
+                    cursor: 'pointer',
+                    minWidth: '76px',
+                    flex: '1',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    fontFamily: 'Poppins, sans-serif',
+                  }}
+                  aria-expanded={showMoreNetworks}
+                >
+                  <MoreHorizontal size={16} />
+                  {showMoreNetworks ? 'Less' : 'More'}
+                </button>
+              )}
             </div>
             
             {/* Twitter Share Button for Web Users - hide on Farcaster mobile */}
@@ -969,8 +1003,8 @@ const Home = () => {
               }}>
                 <TwitterShareButton 
                   title="BaseHub"
-                  description="Your all-in-one Web3 hub on Base & InkChain. Play games, launch tokens, earn XP."
-                  hashtags={["BaseHub", "Base", "InkChain", "Web3Gaming", "DEX", "XP"]}
+                  description="Your all-in-one multichain Web3 hub. Play games, launch tokens and NFTs, and earn XP across Base, Arbitrum, Optimism, Monad and more."
+                  hashtags={["BaseHub", "Arbitrum", "Optimism", "Monad", "Web3Gaming", "NFT"]}
                 />
               </div>
             )}
@@ -1252,10 +1286,85 @@ const Home = () => {
                   {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['deploy-b20']))}
                 </div>
                 <div style={compactStyles.cardGrid}>
-                  {games.filter(g => g.id === 'deploy-b20').map((game) =>
-                    renderCompactCard(game, null, game.path, 'b20-launchpad')
-                  )}
+                  <Link
+                    to="/deploy-b20?tab=tokens"
+                    className="game-card"
+                    style={{ textDecoration: 'none', display: 'block', position: 'relative' }}
+                    state={{ fromHomeSection: 'b20-launchpad' }}
+                  >
+                    <div style={{ ...compactStyles.card('#2563eb'), height: '100%' }}>
+                      <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
+                        {isCompactMode ? (
+                          <>
+                            <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#2563eb22', border: '1px solid #2563eb44', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <TrendingUp size={18} style={{ color: 'white' }} />
+                            </div>
+                            <h3 style={{ ...compactStyles.cardTitle, color: '#60a5fa' }}>Markets</h3>
+                            <div style={compactStyles.xpBadge}>Soon</div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                              <div style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '12px', background: '#2563eb22', border: '1px solid #2563eb44', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <TrendingUp size={22} style={{ color: 'white' }} />
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <h3 style={{ ...compactStyles.cardTitle, color: '#60a5fa' }}>B20 Markets</h3>
+                                <p style={compactStyles.cardDescription}>Coming soon after mainnet contracts are deployed</p>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: 'auto' }}>
+                              <div style={compactStyles.xpBadge}>Soon</div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                  <Link
+                    to="/deploy-b20?tab=create"
+                    className="game-card"
+                    style={{ textDecoration: 'none', display: 'block', position: 'relative' }}
+                    state={{ fromHomeSection: 'b20-launchpad' }}
+                  >
+                    <div style={{ ...compactStyles.card('#22c55e'), height: '100%' }}>
+                      <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
+                        {isCompactMode ? (
+                          <>
+                            <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#22c55e22', border: '1px solid #22c55e44', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Factory size={18} style={{ color: 'white' }} />
+                            </div>
+                            <h3 style={{ ...compactStyles.cardTitle, color: '#86efac' }}>Create</h3>
+                            <div style={compactStyles.xpBadge}>Soon</div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                              <div style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '12px', background: '#22c55e22', border: '1px solid #22c55e44', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Factory size={22} style={{ color: 'white' }} />
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <h3 style={{ ...compactStyles.cardTitle, color: '#86efac' }}>Create B20</h3>
+                                <p style={compactStyles.cardDescription}>Public launch opens with the mainnet release</p>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: 'auto' }}>
+                              <div style={compactStyles.xpBadge}>Soon</div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
                 </div>
+                {!isCompactMode && (
+                  <div style={{ marginTop: '16px', padding: '12px 16px', background: 'rgba(37, 99, 235, 0.06)', border: '1px solid rgba(96, 165, 250, 0.14)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Shield size={16} style={{ color: '#93c5fd', flexShrink: 0 }} />
+                    <span style={{ color: '#8fa0bb', fontSize: '12px', fontFamily: 'Poppins, sans-serif' }}>
+                      B20 Launchpad is coming soon • Mainnet contracts will be deployed before public launch
+                    </span>
+                  </div>
+                )}
               </div>
               )}
 

@@ -50,7 +50,7 @@ const CAST_SHARE = {
   'x402-premium': 'Pay with USDC via x402 on BaseHub. Simple Web3 payments on Base.',
   'swap': 'Swap tokens on Base with SwapHub – DEX aggregator. Earn XP at $100, $1k, $10k volume milestones!',
   'flip': 'Flip a coin and earn XP on BaseHub. Simple, fun, multi-chain gaming!',
-  'dice': 'Roll the dice and win XP on BaseHub. Play across Base, InkChain and more.',
+  'dice': 'Roll the dice and win XP on BaseHub. Play across supported mainnet networks.',
   'slot': 'Spin the Crypto Slots on BaseHub. Match symbols, win XP and combos!',
   'lucky': 'Pick a number 1–10 and earn XP on BaseHub. Quick game, instant rewards.',
   'wallet-analysis': 'Get fun insights about any wallet on BaseHub. Portfolio, activity and more.',
@@ -59,7 +59,7 @@ const CAST_SHARE = {
   'base-guild-companion': 'Track your Base Guild mission progress with wallet checks and one-click actions inside BaseHub.',
   'agent-mode': 'Create an agent wallet on BaseHub and let it run BaseHub GM and GN actions from its own address.',
   'deploy': 'Deploy your own ERC20 token on BaseHub. No code – multi-chain in one click.',
-  'deploy-b20': 'Base-native B20 token launches are coming soon to BaseHub on Base mainnet.',
+  'deploy-b20': 'B20 Launchpad is coming soon on BaseHub. Public launches open after mainnet contracts are deployed.',
   'deploy-erc721': 'Deploy your own NFT collection (ERC721) on BaseHub. Base, Ink, Soneium and more.',
   'deploy-erc1155': 'Deploy multi-token contracts (ERC1155) on BaseHub. One contract, many assets.',
   'deploy-erc8004': 'Register a trustless ERC-8004 AI agent identity on BaseHub and earn 5,000 XP.',
@@ -86,7 +86,7 @@ const PRODUCTS_ALL = [
   { id: 'allowance-cleaner', path: '/allowance-cleaner', label: 'Allowance Cleaner', title: 'Allowance Cleaner', description: 'Scan and revoke risky token approvals', castShareText: CAST_SHARE['allowance-cleaner'], category: CATEGORIES.ANALYSIS, color: '#8b5cf6', icon: 'Trash2', xpReward: '300 XP', bonusXP: '0.1 USDC', networks: ['base'], isX402: true },
   { id: 'base-guild-companion', path: '/base-guild', label: 'Base Guild', title: 'Base Guild Companion', description: 'Complete Base Guild-style missions with one-click actions and wallet checks', castShareText: CAST_SHARE['base-guild-companion'], category: CATEGORIES.GUILD, color: '#2563eb', icon: 'Shield', xpReward: '500 XP', bonusXP: 'Community bonus', networks: ['base'] },
   { id: 'agent-mode', path: '/agent', label: 'Agent', title: 'Agent Mode (Beta)', description: 'Create a delegated agent wallet and let it run approved BaseHub actions with your limits', castShareText: CAST_SHARE['agent-mode'], category: CATEGORIES.AGENT, color: '#60a5fa', icon: 'Bot', xpReward: 'Setup', bonusXP: 'Agent', networks: ['base'] },
-  { id: 'deploy-b20', path: '/deploy-b20', label: 'B20', title: 'B20 Launchpad', description: 'Base-native B20 asset and stablecoin launches', castShareText: CAST_SHARE['deploy-b20'], category: CATEGORIES.DEPLOY, color: '#2563eb', icon: 'Rocket', iconImage: '/crypto-logos/basahub logo/B20.svg', xpReward: '5000 XP', bonusXP: 'Coming Soon', networks: ['base'] },
+  { id: 'deploy-b20', path: '/deploy-b20', label: 'B20', title: 'B20 Launchpad', description: 'B20 launches are coming soon after mainnet contracts are deployed', castShareText: CAST_SHARE['deploy-b20'], category: CATEGORIES.DEPLOY, color: '#2563eb', icon: 'Rocket', iconImage: '/crypto-logos/basahub logo/B20.svg', xpReward: 'Soon', bonusXP: 'Mainnet next', networks: ['base'] },
   { id: 'deploy', path: '/deploy', label: 'Deploy Token', title: 'Deploy Token', description: 'Create your own ERC20 token', castShareText: CAST_SHARE['deploy'], category: CATEGORIES.DEPLOY, color: '#f59e0b', icon: 'Coins', iconImage: '/crypto-logos/basahub logo/ERC20.png', xpReward: '850 XP', bonusXP: null, networks: FULL_EVM_NETWORKS },
   { id: 'deploy-erc721', path: '/deploy-erc721', label: 'ERC721', title: 'Deploy ERC721', description: 'Deploy your own NFT contract', castShareText: CAST_SHARE['deploy-erc721'], category: CATEGORIES.DEPLOY, color: '#06b6d4', icon: 'Package', iconImage: '/crypto-logos/basahub logo/ERC-721.png', xpReward: '850 XP', bonusXP: null, networks: FULL_EVM_NETWORKS },
   { id: 'deploy-erc1155', path: '/deploy-erc1155', label: 'ERC1155', title: 'Deploy ERC1155', description: 'Deploy multi-token contract', category: CATEGORIES.DEPLOY, color: '#8b5cf6', icon: 'Factory', iconImage: '/crypto-logos/basahub logo/ERC-1155.png', xpReward: '850 XP', bonusXP: null, networks: FULL_EVM_NETWORKS },
@@ -105,7 +105,7 @@ export function getProductById(id) {
 }
 
 /** List of networks supported in the category (union of product networks). Returns in a fixed order for consistency. */
-const NETWORK_ORDER = ['base', 'ink', 'tempo', 'soneium', 'katana', 'megaeth', 'arbitrum', 'optimism', 'monad', 'arc-restnet', 'robinhood']
+const NETWORK_ORDER = ['base', 'base-sepolia', 'ink', 'tempo', 'soneium', 'katana', 'megaeth', 'arbitrum', 'optimism', 'monad', 'arc-restnet', 'robinhood']
 export function getNetworksForProductIds(productIds) {
   const set = new Set()
   PRODUCTS.filter(p => productIds && productIds.includes(p.id)).forEach(p => {

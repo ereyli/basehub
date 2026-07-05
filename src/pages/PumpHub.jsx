@@ -5,7 +5,8 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { 
   Rocket, TrendingUp, Users, Zap, Search, Filter, Plus, ArrowLeft, 
   ExternalLink, Copy, Check, Flame, Clock, BarChart3, Globe, Star,
-  ChevronDown, ChevronUp, RefreshCw, Wallet, AlertCircle, X, ArrowUpRight, Share2, Link2
+  ChevronDown, ChevronUp, RefreshCw, Wallet, AlertCircle, X, ArrowUpRight, Share2, Link2,
+  Image, Upload, LineChart, Activity
 } from 'lucide-react'
 import { createChart, CandlestickSeries } from 'lightweight-charts'
 import NetworkGuard from '../components/NetworkGuard'
@@ -186,6 +187,223 @@ const toFastGateway = (url, gatewayIndex = 0) => {
   const ipfs = extractIPFSParts(url)
   if (ipfs?.cid) return FAST_GATEWAYS[gatewayIndex % FAST_GATEWAYS.length] + ipfs.cid + (ipfs.path || '')
   return url
+}
+
+const pumpLaunchStyles = {
+  grid: (isMobile) => ({
+    maxWidth: 1120,
+    margin: '0 auto',
+    paddingBottom: isMobile ? 90 : 0,
+    display: 'grid',
+    gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) minmax(300px, 380px)',
+    gap: isMobile ? 12 : 16,
+    alignItems: 'start',
+  }),
+  panel: {
+    border: '1px solid rgba(96, 165, 250, 0.18)',
+    background: 'linear-gradient(180deg, #0d1728 0%, #091323 100%)',
+    borderRadius: 12,
+    padding: 20,
+    boxShadow: '0 18px 48px rgba(2, 6, 23, 0.26)',
+  },
+  form: {
+    display: 'grid',
+    gap: 14,
+  },
+  panelHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 4,
+  },
+  kicker: {
+    margin: 0,
+    color: '#93c5fd',
+    fontSize: 12,
+    fontWeight: 900,
+    textTransform: 'uppercase',
+  },
+  title: {
+    margin: '4px 0 0',
+    color: '#fff',
+    fontSize: 22,
+    lineHeight: 1.2,
+    letterSpacing: 0,
+  },
+  feePill: {
+    border: '1px solid rgba(96, 165, 250, 0.35)',
+    background: 'rgba(37, 99, 235, 0.18)',
+    color: '#bfdbfe',
+    borderRadius: 999,
+    padding: '7px 10px',
+    fontSize: 13,
+    fontWeight: 900,
+    whiteSpace: 'nowrap',
+  },
+  twoCol: (isMobile) => ({
+    display: 'grid',
+    gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.3fr) minmax(120px, 0.7fr)',
+    gap: 12,
+  }),
+  label: {
+    display: 'grid',
+    gap: 7,
+    color: '#cbd5e1',
+    fontSize: 14,
+    fontWeight: 800,
+  },
+  input: {
+    width: '100%',
+    border: '1px solid rgba(148, 163, 184, 0.22)',
+    borderRadius: 8,
+    background: '#0b1324',
+    color: '#e5e7eb',
+    padding: '12px 13px',
+    fontSize: 15,
+    outline: 'none',
+    boxSizing: 'border-box',
+  },
+  logoUploader: (hasError) => ({
+    display: 'grid',
+    gridTemplateColumns: '56px minmax(0, 1fr) auto',
+    alignItems: 'center',
+    gap: 12,
+    border: hasError ? '1px solid rgba(248, 113, 113, 0.58)' : '1px solid rgba(96, 165, 250, 0.22)',
+    borderRadius: 8,
+    background: '#08111f',
+    padding: 12,
+  }),
+  logoPreview: {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+    display: 'grid',
+    placeItems: 'center',
+    overflow: 'hidden',
+    background: '#0f1b2e',
+    color: '#60a5fa',
+    position: 'relative',
+    padding: 7,
+    boxSizing: 'border-box',
+  },
+  logoImage: {
+    display: 'block',
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain',
+    objectPosition: 'center',
+  },
+  logoBody: {
+    display: 'grid',
+    gap: 3,
+    minWidth: 0,
+  },
+  logoBodyTitle: {
+    color: '#e5e7eb',
+    fontWeight: 900,
+  },
+  logoBodyText: {
+    color: '#8fa0bb',
+    fontSize: 13,
+  },
+  uploadButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    border: '1px solid rgba(96, 165, 250, 0.34)',
+    borderRadius: 8,
+    background: '#12315d',
+    color: '#dbeafe',
+    padding: '10px 12px',
+    fontWeight: 900,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
+  hiddenInput: {
+    display: 'none',
+  },
+  range: {
+    width: '100%',
+    accentColor: '#60a5fa',
+  },
+  rangeMeta: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    color: '#8fa0bb',
+    fontSize: 12,
+    fontWeight: 700,
+  },
+  facts: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: 10,
+  },
+  fact: {
+    display: 'grid',
+    gridTemplateColumns: '18px minmax(0, 1fr) auto',
+    alignItems: 'center',
+    gap: 8,
+    border: '1px solid rgba(148, 163, 184, 0.12)',
+    borderRadius: 8,
+    background: '#08111f',
+    padding: '10px 12px',
+    color: '#a8b3c7',
+  },
+  sidePanel: {
+    border: '1px solid rgba(96, 165, 250, 0.18)',
+    background: '#0d1728',
+    borderRadius: 12,
+    padding: 18,
+    minHeight: 320,
+  },
+  sideList: {
+    display: 'grid',
+    gap: 10,
+    marginTop: 14,
+  },
+  primaryButton: {
+    minHeight: 46,
+    width: '100%',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    border: 0,
+    borderRadius: 8,
+    background: '#2f7df4',
+    color: '#fff',
+    padding: '12px 16px',
+    fontWeight: 900,
+    fontSize: 15,
+    cursor: 'pointer',
+  },
+  disabledButton: {
+    opacity: 0.55,
+    cursor: 'not-allowed',
+    background: 'rgba(148, 163, 184, 0.16)',
+  },
+  errorLine: {
+    margin: 0,
+    border: '1px solid rgba(248, 113, 113, 0.32)',
+    borderRadius: 8,
+    background: 'rgba(127, 29, 29, 0.16)',
+    color: '#fca5a5',
+    padding: '10px 12px',
+    fontSize: 13,
+    fontWeight: 800,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    inset: 0,
+    display: 'grid',
+    placeItems: 'center',
+    background: 'rgba(2, 6, 23, 0.72)',
+  },
 }
 
 // ============================================
@@ -2138,11 +2356,13 @@ const PumpHub = () => {
             <div style={{
               width: isMobile ? '48px' : '60px',
               height: isMobile ? '48px' : '60px',
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+              borderRadius: '14px',
+              background: '#12315d',
+              border: '1px solid rgba(96, 165, 250, 0.32)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              boxShadow: '0 14px 32px rgba(15, 23, 42, 0.32)'
             }}>
               <Rocket size={isMobile ? 24 : 32} color="#fff" />
             </div>
@@ -2160,7 +2380,7 @@ const PumpHub = () => {
                 margin: 0,
                 fontSize: isMobile ? 12 : 14
               }}>
-                Launch and trade meme tokens on Base
+                Launch and trade bonding-curve tokens on Base and Tempo
               </p>
             </div>
             {isInFarcaster && sdk?.actions?.composeCast && (
@@ -2208,14 +2428,18 @@ const PumpHub = () => {
               <div
                 key={label}
                 style={{
-                  background: 'linear-gradient(145deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%)',
+                  background: '#0d1728',
                   borderRadius: isMobile ? 10 : 12,
                   padding: isMobile ? 12 : 16,
-                  border: '1px solid rgba(59, 130, 246, 0.2)'
+                  border: '1px solid rgba(96, 165, 250, 0.18)',
+                  minHeight: isMobile ? 76 : 86,
+                  display: 'grid',
+                  alignContent: 'center',
+                  gap: 6
                 }}
               >
-                <div style={{ color: '#9ca3af', fontSize: isMobile ? 11 : 12, marginBottom: 4 }}>{label}</div>
-                <div style={{ color, fontSize: isMobile ? 16 : 20, fontWeight: 'bold' }}>{value}</div>
+                <div style={{ color: '#8fa0bb', fontSize: isMobile ? 10 : 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0 }}>{label}</div>
+                <div style={{ color, fontSize: isMobile ? 17 : 22, fontWeight: 900, lineHeight: 1.1 }}>{value}</div>
               </div>
             ))}
           </div>
@@ -2676,291 +2900,207 @@ const PumpHub = () => {
           
           {/* Create Token Tab */}
           {activeTab === 'create' && (
-            <div style={{
-              maxWidth: isMobile ? '100%' : 600,
-              margin: '0 auto',
-              paddingBottom: isMobile ? 80 : 0
-            }}>
-              <div style={{
-                background: 'linear-gradient(145deg, rgba(30, 30, 40, 0.95) 0%, rgba(20, 20, 30, 0.98) 100%)',
-                borderRadius: isMobile ? 16 : 20,
-                padding: isMobile ? 16 : 30,
-                border: '1px solid rgba(59, 130, 246, 0.2)'
-              }}>
-                <h2 style={{ 
-                  color: '#fff', 
-                  marginBottom: isMobile ? 20 : 24,
-                  fontSize: isMobile ? 20 : 24
-                }}>
-                  🚀 Launch Your Token
-                </h2>
-                
-                <form onSubmit={handleCreateToken}>
-                  {/* Logo upload - required */}
-                  <div style={{ marginBottom: '20px' }}>
-                    <label style={{ color: '#9ca3af', fontSize: '14px', marginBottom: '8px', display: 'block' }}>
-                      Token Logo <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '16px'
-                    }}>
-                      <div style={{
-                        width: '80px',
-                        height: '80px',
-                        borderRadius: '16px',
-                        background: logoPreview ? 'transparent' : 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.1))',
-                        border: logoError ? '2px solid #ef4444' : '2px dashed rgba(59, 130, 246, 0.4)',
-                        boxShadow: logoError ? '0 0 0 2px rgba(239, 68, 68, 0.2)' : 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        overflow: 'hidden',
-                        cursor: 'pointer',
-                        position: 'relative'
-                      }}
-                      onClick={() => document.getElementById('logo-input').click()}
-                      >
-                        {logoPreview ? (
-                          <img src={logoPreview} alt="Logo preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                          <Plus size={24} color={logoError ? '#ef4444' : '#3b82f6'} />
-                        )}
-                        {isUploadingLogo && (
-                          <div style={{
-                            position: 'absolute',
-                            inset: 0,
-                            background: 'rgba(0,0,0,0.7)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            <RefreshCw size={20} color="#fff" className="animate-spin" />
-                          </div>
-                        )}
-                      </div>
-                      <input
-                        id="logo-input"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLogoChange}
-                        style={{ display: 'none' }}
-                      />
-                      <div>
-                        <div style={{ color: '#fff', fontSize: '14px', marginBottom: '4px' }}>
-                          {isUploadingLogo ? 'Uploading to IPFS...' : formData.logoUrl ? '✅ Logo uploaded!' : 'Click to upload'}
-                        </div>
-                        <div style={{ color: '#9ca3af', fontSize: '12px' }}>
-                          PNG, JPG up to 2MB
-                        </div>
-                        {logoError && (
-                          <div style={{ color: '#f87171', fontSize: '12px', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <AlertCircle size={14} /> Logo is required to launch
-                          </div>
-                        )}
-                      </div>
-                    </div>
+            <div style={pumpLaunchStyles.grid(isMobile)}>
+              <form onSubmit={handleCreateToken} style={{ ...pumpLaunchStyles.panel, ...pumpLaunchStyles.form }}>
+                <div style={pumpLaunchStyles.panelHeader}>
+                  <div>
+                    <p style={pumpLaunchStyles.kicker}>Bonding curve</p>
+                    <h2 style={pumpLaunchStyles.title}>Curve Launch</h2>
                   </div>
-                  
-                  {/* Token name */}
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ color: '#9ca3af', fontSize: '14px', marginBottom: '8px', display: 'block' }}>
-                      Token Name *
-                    </label>
+                  <span style={pumpLaunchStyles.feePill}>0.001 ETH create</span>
+                </div>
+
+                <div style={pumpLaunchStyles.logoUploader(logoError)}>
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById('pumphub-logo-input')?.click()}
+                    style={{ ...pumpLaunchStyles.logoPreview, border: 0, cursor: 'pointer', padding: 0 }}
+                    aria-label="Upload token logo"
+                  >
+                    {logoPreview ? (
+                      <img src={logoPreview} alt="Token logo preview" style={pumpLaunchStyles.logoImage} />
+                    ) : (
+                      <Image size={24} />
+                    )}
+                    {isUploadingLogo && (
+                      <span style={pumpLaunchStyles.loadingOverlay}>
+                        <RefreshCw size={18} color="#fff" className="animate-spin" />
+                      </span>
+                    )}
+                  </button>
+                  <div style={pumpLaunchStyles.logoBody}>
+                    <strong style={pumpLaunchStyles.logoBodyTitle}>Token logo</strong>
+                    <span style={pumpLaunchStyles.logoBodyText}>
+                      {isUploadingLogo ? 'Uploading to IPFS' : formData.logoUrl ? 'Uploaded to IPFS' : 'PNG, JPG or GIF'}
+                    </span>
+                  </div>
+                  <label style={pumpLaunchStyles.uploadButton}>
+                    <Upload size={16} />
+                    {isUploadingLogo ? 'Uploading' : 'Upload'}
+                    <input
+                      id="pumphub-logo-input"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoChange}
+                      disabled={isLoading || isUploadingLogo}
+                      style={pumpLaunchStyles.hiddenInput}
+                    />
+                  </label>
+                </div>
+
+                <div style={pumpLaunchStyles.twoCol(isMobile)}>
+                  <label style={pumpLaunchStyles.label}>
+                    <span>Token name</span>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="e.g., Pepe Token"
+                      placeholder="Pepe Token"
                       maxLength={32}
                       required
-                      style={{
-                        width: '100%',
-                        padding: '14px',
-                        borderRadius: '10px',
-                        border: '1px solid rgba(59, 130, 246, 0.3)',
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        color: '#fff',
-                        fontSize: '16px',
-                        outline: 'none'
-                      }}
+                      style={pumpLaunchStyles.input}
                     />
-                  </div>
-                  
-                  {/* Token symbol */}
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ color: '#9ca3af', fontSize: '14px', marginBottom: '8px', display: 'block' }}>
-                      Token Symbol *
-                    </label>
+                  </label>
+                  <label style={pumpLaunchStyles.label}>
+                    <span>Symbol</span>
                     <input
                       type="text"
                       value={formData.symbol}
                       onChange={(e) => setFormData(prev => ({ ...prev, symbol: e.target.value.toUpperCase() }))}
-                      placeholder="e.g., PEPE"
+                      placeholder="PEPE"
                       maxLength={8}
                       required
-                      style={{
-                        width: '100%',
-                        minHeight: isMobile ? 48 : undefined,
-                        padding: isMobile ? 16 : 14,
-                        borderRadius: 10,
-                        border: '1px solid rgba(59, 130, 246, 0.3)',
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        color: '#fff',
-                        fontSize: isMobile ? 16 : 16,
-                        outline: 'none',
-                        textTransform: 'uppercase'
-                      }}
+                      style={{ ...pumpLaunchStyles.input, textTransform: 'uppercase' }}
                     />
+                  </label>
+                </div>
+
+                <label style={pumpLaunchStyles.label}>
+                  <span>Description</span>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Short launch description"
+                    maxLength={256}
+                    rows={3}
+                    style={{ ...pumpLaunchStyles.input, minHeight: 76, resize: 'vertical' }}
+                  />
+                </label>
+
+                <label style={pumpLaunchStyles.label}>
+                  <span>Creator allocation: {Number(formData.creatorAllocation).toFixed(2)}%</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="10"
+                    step="0.5"
+                    value={formData.creatorAllocation}
+                    onChange={(e) => setFormData(prev => ({ ...prev, creatorAllocation: parseFloat(e.target.value) }))}
+                    style={pumpLaunchStyles.range}
+                  />
+                  <div style={pumpLaunchStyles.rangeMeta}>
+                    <span>0%</span>
+                    <span>Max 10%</span>
                   </div>
-                  
-                  {/* Description */}
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ color: '#9ca3af', fontSize: '14px', marginBottom: '8px', display: 'block' }}>
-                      Description
-                    </label>
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Tell us about your token..."
-                      maxLength={256}
-                      rows={isMobile ? 3 : 3}
-                      style={{
-                        width: '100%',
-                        padding: isMobile ? 16 : 14,
-                        borderRadius: 10,
-                        border: '1px solid rgba(59, 130, 246, 0.3)',
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        color: '#fff',
-                        fontSize: isMobile ? 16 : 14,
-                        outline: 'none',
-                        resize: 'vertical'
-                      }}
-                    />
+                </label>
+
+                <div style={pumpLaunchStyles.facts}>
+                  <div style={pumpLaunchStyles.fact}>
+                    <Flame size={16} />
+                    <span>Supply</span>
+                    <strong>1B</strong>
                   </div>
-                  
-                  {/* Creator allocation */}
-                  <div style={{ marginBottom: '24px' }}>
-                    <label style={{ color: '#9ca3af', fontSize: '14px', marginBottom: '8px', display: 'block' }}>
-                      Creator Allocation: {formData.creatorAllocation}%
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="10"
-                      step="0.5"
-                      value={formData.creatorAllocation}
-                      onChange={(e) => setFormData(prev => ({ ...prev, creatorAllocation: parseFloat(e.target.value) }))}
-                      style={{
-                        width: '100%',
-                        accentColor: '#3b82f6'
-                      }}
-                    />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
-                      <span>0%</span>
-                      <span>Max 10%</span>
-                    </div>
+                  <div style={pumpLaunchStyles.fact}>
+                    <LineChart size={16} />
+                    <span>Graduation</span>
+                    <strong>5 ETH</strong>
                   </div>
-                  
-                  {/* Info box */}
-                  <div style={{
-                    padding: '16px',
-                    background: 'rgba(59, 130, 246, 0.1)',
-                    borderRadius: '12px',
-                    border: '1px solid rgba(59, 130, 246, 0.2)',
-                    marginBottom: '24px'
-                  }}>
-                    <div style={{ color: '#60a5fa', fontWeight: '600', marginBottom: '8px' }}>
-                      ℹ️ Token Launch Details
-                    </div>
-                    <ul style={{ color: '#9ca3af', fontSize: '13px', margin: 0, paddingLeft: '20px' }}>
-                      <li>Total Supply: 1,000,000,000 tokens</li>
-                      <li>Initial Market Cap: ~$3,000 USD</li>
-                      <li>Creation Fee: 0.001 ETH</li>
-                      <li>Trading Fee: 0.6% (50% to creator, 50% to platform)</li>
-                      <li>LP locks at 5 ETH accumulated</li>
-                    </ul>
+                  <div style={pumpLaunchStyles.fact}>
+                    <Activity size={16} />
+                    <span>Trading fee</span>
+                    <strong>0.6%</strong>
                   </div>
-                  
-                  {logoError && (
-                    <div style={{
-                      marginBottom: '16px',
-                      padding: '12px 16px',
-                      background: 'rgba(239, 68, 68, 0.12)',
-                      borderRadius: '10px',
-                      border: '1px solid rgba(239, 68, 68, 0.4)',
-                      color: '#f87171',
-                      fontSize: '14px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}>
-                      <AlertCircle size={18} />
-                      Logo is required. Please upload a token logo above to launch.
-                    </div>
+                  <div style={pumpLaunchStyles.fact}>
+                    <Wallet size={16} />
+                    <span>Creator split</span>
+                    <strong>50%</strong>
+                  </div>
+                </div>
+
+                {logoError && (
+                  <p style={pumpLaunchStyles.errorLine}>
+                    <AlertCircle size={16} />
+                    Logo is required before launch.
+                  </p>
+                )}
+
+                {error && (
+                  <p style={pumpLaunchStyles.errorLine}>
+                    <AlertCircle size={16} />
+                    {error}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={!isConnected || isLoading || isUploadingLogo}
+                  style={{
+                    ...pumpLaunchStyles.primaryButton,
+                    ...(!isConnected || isLoading || isUploadingLogo ? pumpLaunchStyles.disabledButton : {}),
+                  }}
+                >
+                  {!isConnected ? (
+                    <>
+                      <Wallet size={18} />
+                      Connect Wallet
+                    </>
+                  ) : isLoading ? (
+                    <>
+                      <RefreshCw size={18} className="animate-spin" />
+                      Creating token
+                    </>
+                  ) : (
+                    <>
+                      <Rocket size={18} />
+                      Launch curve
+                    </>
                   )}
-                  
-                  {/* Submit button */}
-                  <button
-                    type="submit"
-                    disabled={!isConnected || isLoading || isUploadingLogo}
-                    style={{
-                      width: '100%',
-                      minHeight: isMobile ? 52 : undefined,
-                      padding: isMobile ? 18 : 16,
-                      borderRadius: 12,
-                      border: logoError ? '2px solid #ef4444' : 'none',
-                      boxShadow: logoError ? '0 0 0 1px rgba(239, 68, 68, 0.3)' : 'none',
-                      background: !isConnected || isLoading || isUploadingLogo
-                        ? 'rgba(255,255,255,0.1)'
-                        : 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                      color: '#fff',
-                      fontWeight: 'bold',
-                      fontSize: isMobile ? 18 : 18,
-                      cursor: !isConnected || isLoading || isUploadingLogo ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '10px'
-                    }}
-                  >
-                    {!isConnected ? (
-                      <>
-                        <Wallet size={20} />
-                        Connect Wallet
-                      </>
-                    ) : isLoading ? (
-                      <>
-                        <RefreshCw size={20} className="animate-spin" />
-                        Creating Token...
-                      </>
-                    ) : (
-                      <>
-                        <Rocket size={20} />
-                        Launch Token (0.001 ETH)
-                      </>
-                    )}
-                  </button>
-                  
-                  {error && (
-                    <div style={{
-                      marginTop: '16px',
-                      padding: '12px',
-                      background: 'rgba(239, 68, 68, 0.1)',
-                      borderRadius: '10px',
-                      color: '#ef4444',
-                      fontSize: '14px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}>
-                      <AlertCircle size={18} />
-                      {error}
-                    </div>
-                  )}
-                </form>
-              </div>
+                </button>
+              </form>
+
+              <aside style={pumpLaunchStyles.sidePanel}>
+                <div style={pumpLaunchStyles.panelHeader}>
+                  <div>
+                    <p style={pumpLaunchStyles.kicker}>Market setup</p>
+                    <h2 style={pumpLaunchStyles.title}>After launch</h2>
+                  </div>
+                </div>
+                <div style={pumpLaunchStyles.sideList}>
+                  <div style={pumpLaunchStyles.fact}>
+                    <Search size={16} />
+                    <span>Listing</span>
+                    <strong>Tokens tab</strong>
+                  </div>
+                  <div style={pumpLaunchStyles.fact}>
+                    <BarChart3 size={16} />
+                    <span>Charts</span>
+                    <strong>Live market</strong>
+                  </div>
+                  <div style={pumpLaunchStyles.fact}>
+                    <TrendingUp size={16} />
+                    <span>Trading</span>
+                    <strong>Buy / Sell</strong>
+                  </div>
+                  <div style={pumpLaunchStyles.fact}>
+                    <Clock size={16} />
+                    <span>Status</span>
+                    <strong>New</strong>
+                  </div>
+                </div>
+                <p style={{ margin: '16px 0 0', color: '#8fa0bb', lineHeight: 1.55, fontSize: 14 }}>
+                  Newly launched tokens appear in the Tokens tab with chart, progress, volume and trading actions.
+                </p>
+              </aside>
             </div>
           )}
         </div>
