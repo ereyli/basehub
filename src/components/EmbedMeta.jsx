@@ -29,7 +29,7 @@ const EmbedMeta = ({
     button: {
       title: buttonText,
       action: {
-        type: "launch_frame",
+        type: "launch_miniapp",
         name: "BaseHub",
         url: fullUrl,
         splashImageUrl: FARCASTER_SPLASH_IMAGE,

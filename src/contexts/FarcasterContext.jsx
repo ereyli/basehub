@@ -49,7 +49,6 @@ export const FarcasterProvider = ({ children }) => {
            window.location.href.includes('farcaster.xyz') ||
            window.location.href.includes('warpcast.com'))
         
-        setIsInFarcaster(actuallyInFarcaster)
         console.log('🔍 Farcaster environment check:', actuallyInFarcaster)
         
         // Wait a bit for SDK to load properly
@@ -58,6 +57,7 @@ export const FarcasterProvider = ({ children }) => {
         // SDK-based miniapp/Base detection: Base app often has generic mobile UA, so we use sdk.isInMiniApp() + context.client.clientFid
         try {
           const inMiniApp = await sdk.isInMiniApp()
+          setIsInFarcaster(actuallyInFarcaster || inMiniApp)
           if (inMiniApp) {
             const context = await sdk.context
             const isBaseApp = context?.client?.clientFid === BASE_APP_CLIENT_FID
@@ -67,6 +67,7 @@ export const FarcasterProvider = ({ children }) => {
             setMiniappDetectionFromSDK(false, false)
           }
         } catch (sdkErr) {
+          setIsInFarcaster(actuallyInFarcaster)
           setMiniappDetectionFromSDK(false, false)
           console.log('ℹ️ SDK miniapp check skipped:', sdkErr?.message)
         }

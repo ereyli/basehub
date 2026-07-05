@@ -125,7 +125,7 @@ export default function FrameLanding() {
     button: {
       title: config.buttonText,
       action: {
-        type: 'launch_frame',
+        type: 'launch_miniapp',
         name: 'BaseHub',
         url: launchUrl,
         splashImageUrl: FARCASTER_SPLASH_IMAGE,
