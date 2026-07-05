@@ -2,13 +2,15 @@ import React from 'react'
 import { Helmet } from 'react-helmet-async'
 import { getFarcasterUniversalLink } from '../config/farcaster'
 
-// Web (X, etc.) share image: basehub.fun + cache-bust. Farcaster embed keeps relative/current domain.
-const WEB_OG_IMAGE = 'https://basehub.fun/image2.jpeg?v=4'
+const FARCASTER_EMBED_IMAGE = 'https://basehub.fun/farcaster-image.jpg?v=1'
+const FARCASTER_SPLASH_IMAGE = 'https://basehub.fun/farcaster-splash.png?v=1'
+// Web (X, etc.) share image: basehub.fun + cache-bust.
+const WEB_OG_IMAGE = FARCASTER_EMBED_IMAGE
 
 const EmbedMeta = ({ 
   title, 
   description, 
-  image = "/image2.jpeg", 
+  image = "/farcaster-image.jpg",
   url, 
   buttonText = "Play BaseHub",
   gameType = "game"
@@ -23,14 +25,14 @@ const EmbedMeta = ({
 
   const embedContent = {
     version: "1",
-    imageUrl: image,
+    imageUrl: FARCASTER_EMBED_IMAGE,
     button: {
       title: buttonText,
       action: {
-        type: "launch_miniapp",
+        type: "launch_frame",
         name: "BaseHub",
         url: fullUrl,
-        splashImageUrl: "/basehub-icon.png",
+        splashImageUrl: FARCASTER_SPLASH_IMAGE,
         splashBackgroundColor: "#4A90E2"
       }
     }

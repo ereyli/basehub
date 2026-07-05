@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { getFarcasterUniversalLink } from '../config/farcaster'
 
-const WEB_OG_IMAGE = 'https://basehub.fun/image2.jpeg?v=4'
+const WEB_OG_IMAGE = 'https://basehub.fun/farcaster-image.jpg?v=1'
+const FARCASTER_SPLASH_IMAGE = 'https://basehub.fun/farcaster-splash.png?v=1'
 
 const FRAME_CONFIG = {
   'launch-token': {
@@ -124,10 +125,10 @@ export default function FrameLanding() {
     button: {
       title: config.buttonText,
       action: {
-        type: 'launch_miniapp',
+        type: 'launch_frame',
         name: 'BaseHub',
         url: launchUrl,
-        splashImageUrl: 'https://basehub.fun/basehub-icon.png?v=1',
+        splashImageUrl: FARCASTER_SPLASH_IMAGE,
         splashBackgroundColor: '#4A90E2',
       },
     },
