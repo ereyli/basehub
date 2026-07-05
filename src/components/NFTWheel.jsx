@@ -30,6 +30,7 @@ const NFTWheel = ({
   const [isResetting, setIsResetting] = useState(false)
   const canvasRef = useRef(null)
   const tickRef = useRef(null)
+  const spinStartRef = useRef(null)
   const spinDuration = 4000
 
   const segmentCount = segments.length
@@ -144,6 +145,7 @@ const NFTWheel = ({
     if (isSpinning && winningSegment !== null) {
       console.log('🎰 NFTWheel: Starting spin animation for segment ID:', winningSegment)
       setShowResult(false)
+      spinStartRef.current = performance.now()
       
       // Find visual index of winning segment in the segments array
       const visualIndex = segments.findIndex(seg => seg.id === winningSegment)
@@ -181,6 +183,11 @@ const NFTWheel = ({
       // Show result after spin animation completes (spinDuration = 4000ms)
       const resultTimer = setTimeout(() => {
         console.log('✅ NFTWheel: Spin complete, showing result:', winningSegmentData.label, winningSegmentData.xp, 'XP')
+        if (tickRef.current) {
+          clearTimeout(tickRef.current)
+          tickRef.current = null
+        }
+        spinStartRef.current = null
         soundManager.playWheelStop(winningSegmentData?.isJackpot)
         setShowResult(true)
         
@@ -200,24 +207,36 @@ const NFTWheel = ({
   }, [isSpinning, winningSegment]) // Only depend on these two values
 
   useEffect(() => {
-    if (!isSpinning) {
-      if (tickRef.current) clearInterval(tickRef.current)
+    if (!isSpinning || winningSegment === null) {
+      if (tickRef.current) clearTimeout(tickRef.current)
       tickRef.current = null
+      spinStartRef.current = null
       return undefined
     }
+
+    if (!spinStartRef.current) spinStartRef.current = performance.now()
     let count = 0
-    let delay = 74
+
     const schedule = () => {
+      const elapsed = performance.now() - spinStartRef.current
+      const progress = Math.min(elapsed / spinDuration, 1)
+      if (progress >= 0.985) {
+        tickRef.current = null
+        return
+      }
+
       playWheelTick(count++)
-      delay = Math.min(360, Math.round(delay * 1.13 + 3))
+      const delay = Math.round(42 + Math.pow(progress, 2.35) * 360)
       tickRef.current = setTimeout(schedule, delay)
     }
-    tickRef.current = setTimeout(schedule, delay)
+
+    tickRef.current = setTimeout(schedule, 42)
     return () => {
       if (tickRef.current) clearTimeout(tickRef.current)
       tickRef.current = null
+      spinStartRef.current = null
     }
-  }, [isSpinning])
+  }, [isSpinning, winningSegment, spinDuration])
 
   // Reset rotation when winningSegment becomes null (after result is shown)
   useEffect(() => {
@@ -297,11 +316,11 @@ const NFTWheel = ({
 
         <div style={{
           position: 'absolute',
-          inset: '-28px',
+          inset: 0,
           borderRadius: '50%',
-          background: 'radial-gradient(circle at 50% 38%, rgba(255,255,255,0.16), transparent 30%), radial-gradient(circle, rgba(15,23,42,0) 52%, rgba(15,23,42,0.72) 72%)',
+          background: 'radial-gradient(circle at 34% 24%, rgba(255,255,255,0.18), transparent 27%), linear-gradient(105deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.04) 34%, transparent 55%)',
           pointerEvents: 'none',
-          zIndex: 2
+          zIndex: 3
         }} />
 
         {/* Wheel */}
