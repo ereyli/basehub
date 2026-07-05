@@ -219,19 +219,21 @@ export const useX402Payment = () => {
       // Award 500 XP for successful x402 payment
       if (address) {
         try {
+          await updateQuestProgress('x402Payment', 1)
+          console.log('✅ Quest progress updated: x402Payment +1')
+        } catch (questError) {
+          console.error('⚠️ Error updating x402 quest progress:', questError)
+        }
+
+        try {
           console.log('🎁 Awarding 500 XP for successful x402 payment...')
           
           // Add XP (500 XP for x402 payment)
           await addXP(address, 500, 'X402_PAYMENT', chainId ?? 8453, false, transactionHash || null)
           console.log('✅ 500 XP added successfully')
           console.log('✅ Transaction recorded successfully')
-          
-          // Update quest progress
-          await updateQuestProgress('x402Payment', 1)
-          console.log('✅ Quest progress updated: x402Payment +1')
-          
         } catch (xpError) {
-          console.error('⚠️ Error awarding XP or updating quest progress:', xpError)
+          console.error('⚠️ Error awarding x402 XP:', xpError)
           // Don't throw error - XP is not critical for payment flow
         }
       } else {

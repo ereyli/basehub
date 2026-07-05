@@ -2937,13 +2937,13 @@ export default function SwapInterface() {
             recordSentForHashRef.current = txHash;
             swapToRecordRef.current = { hash: txHash, amount: swapAmountUSD };
             console.log('🎉 Recording swap volume:', { swapAmountUSD, hash: txHash.slice(0, 12) + '...' });
+            updateQuestProgress?.('swapsCompleted', 1);
             setTimeout(() => {
               recordSwapTransaction(address, swapAmountUSD, txHash)
                 .then((awarded) => {
                   const from100 = awarded?.xpFromPer100 ?? 0;
                   const fromMilestones = awarded?.xpFromMilestones ?? 0;
                   console.log('✅ Swap volume recorded to Supabase');
-                  updateQuestProgress?.('swapsCompleted', 1);
                   if (typeof window !== 'undefined') {
                     setTimeout(() => window.dispatchEvent(new CustomEvent('basehub-swap-recorded')), 400);
                     setTimeout(() => window.dispatchEvent(new CustomEvent('basehub-swap-recorded')), 2500);
