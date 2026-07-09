@@ -890,8 +890,7 @@ export default function SwapInterface() {
   const swapClient = React.useMemo(() => createPublicClient({
     chain: base,
     transport: fallback([
-      http('https://base-mainnet.g.alchemy.com/v2/EXk1VtDVCaeNBRAWsi7WA', { timeout: 10_000, retryCount: 2, retryDelay: 800 }),
-      http('https://base.drpc.org', { timeout: 12_000, retryCount: 1, retryDelay: 1000 }),
+      http('https://mainnet.base.org', { timeout: 12_000, retryCount: 1, retryDelay: 1000 }),
       http('https://base-rpc.publicnode.com', { timeout: 12_000, retryCount: 1, retryDelay: 1000 }),
       http('https://1rpc.io/base', { timeout: 12_000, retryCount: 1, retryDelay: 1000 }),
     ], { rank: false, retryCount: 2, retryDelay: 1000 }),

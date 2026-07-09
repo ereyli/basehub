@@ -16,7 +16,7 @@ export const NETWORKS = {
       decimals: 18,
     },
     rpcUrls: [
-      'https://base.drpc.org',
+      'https://mainnet.base.org',
       'https://base-rpc.publicnode.com',
       'https://1rpc.io/base',
       'https://base.meowrpc.com',

@@ -97,7 +97,7 @@ export const useWallet = () => {
         symbol: 'ETH',
         decimals: 18,
       },
-      rpcUrls: ['https://base.drpc.org'],
+      rpcUrls: ['https://mainnet.base.org'],
       blockExplorerUrls: ['https://basescan.org'],
     }
     
