@@ -31,6 +31,7 @@ import { useDeployB20 } from '../hooks/useDeployB20'
 import { useB20Launchpad } from '../hooks/useB20Launchpad'
 import { uploadToIPFS } from '../utils/pinata'
 import { getTransactionExplorerUrl, NETWORKS } from '../config/networks'
+import { supabase } from '../config/supabase'
 import {
   B20_CURVE_CREATE_FEE_ETH,
   B20_CURVE_GRADUATION_ETH,
@@ -48,6 +49,7 @@ const B20_LOGO_SRC = '/crypto-logos/basahub logo/B20.svg'
 const ETH_PRICE_USD = 3000
 const B20_PUBLIC_SOON = false
 const B20_CACHE_PREFIX = 'basehub:b20:curve-tokens'
+const B20_SUPABASE_TABLE = 'b20_tokens'
 const BASE_LOG_CLIENT = createPublicClient({
   transport: viemFallback([
     viemHttp('https://mainnet.base.org', { timeout: 12000, retryCount: 1, retryDelay: 500 }),
@@ -197,6 +199,101 @@ function reviveB20Token(token) {
       graduatedAt: reviveBigInt(token.stats.graduatedAt),
     } : token.stats,
     createdAtMs: Number(token.createdAtMs || 0),
+  }
+}
+
+function b20TokenFromRow(row) {
+  if (!row?.token_address) return null
+  const createdAtMs = row.created_at ? new Date(row.created_at).getTime() : 0
+  const realETH = parseEther(normalizeDecimalInput(row.real_eth || '0', 18) || '0')
+  const virtualETH = parseEther(normalizeDecimalInput(row.virtual_eth || '1', 18) || '1')
+  const virtualTokens = parseUnits(normalizeDecimalInput(row.virtual_tokens || '0', 18) || '0', 18)
+  const volume = parseEther(normalizeDecimalInput(row.total_volume || '0', 18) || '0')
+  return {
+    address: row.token_address,
+    name: row.name || 'B20 Token',
+    symbol: row.symbol || 'B20',
+    description: row.description || '',
+    image: row.image_uri || '',
+    core: {
+      creator: row.creator || '',
+      virtualETH,
+      virtualTokens,
+      realETH,
+      creatorAllocation: BigInt(row.creator_allocation || 0),
+      createdAt: BigInt(createdAtMs > 0 ? Math.floor(createdAtMs / 1000) : 0),
+      pair: row.uniswap_pair || undefined,
+      graduated: Boolean(row.graduated),
+    },
+    stats: {
+      buys: BigInt(row.total_buys || 0),
+      sells: BigInt(row.total_sells || 0),
+      volume,
+      holders: BigInt(row.holder_count || 0),
+      graduatedAt: BigInt(row.graduated_at || 0),
+    },
+    progress: Number(row.progress || 0),
+    realEthLabel: String(row.real_eth || '0'),
+    volumeLabel: String(row.total_volume || '0'),
+    holdersLabel: Number(row.holder_count || 0).toLocaleString(),
+    createdAtMs,
+    _fromSupabase: true,
+  }
+}
+
+function b20TokenToRow(token, chainId, launchpadAddress) {
+  const createdAtMs = Number(token.createdAtMs || 0)
+  return {
+    token_address: String(token.address || '').toLowerCase(),
+    chain_id: Number(chainId || NETWORKS.BASE.chainId),
+    launchpad_address: String(launchpadAddress || '').toLowerCase(),
+    creator: token.core?.creator ? String(token.core.creator).toLowerCase() : null,
+    name: token.name || 'B20 Token',
+    symbol: token.symbol || 'B20',
+    description: token.description || '',
+    image_uri: token.image || '',
+    creator_allocation: Number(token.core?.creatorAllocation || 0n),
+    virtual_eth: formatEther(token.core?.virtualETH || 0n),
+    virtual_tokens: formatUnits(token.core?.virtualTokens || 0n, 18),
+    real_eth: formatEther(token.core?.realETH || 0n),
+    graduated: Boolean(token.core?.graduated),
+    uniswap_pair: token.core?.pair || null,
+    progress: Number(token.progress || 0),
+    total_buys: Number(token.stats?.buys || 0n),
+    total_sells: Number(token.stats?.sells || 0n),
+    total_volume: formatEther(token.stats?.volume || 0n),
+    holder_count: Number(token.stats?.holders || 0n),
+    graduated_at: Number(token.stats?.graduatedAt || 0n),
+    created_at: createdAtMs > 0 ? new Date(createdAtMs).toISOString() : new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }
+}
+
+async function readSupabaseB20Tokens(chainId, launchpadAddress) {
+  if (!supabase?.from || !launchpadAddress) return []
+  try {
+    const { data, error } = await supabase
+      .from(B20_SUPABASE_TABLE)
+      .select('*')
+      .eq('chain_id', Number(chainId || NETWORKS.BASE.chainId))
+      .eq('launchpad_address', String(launchpadAddress).toLowerCase())
+      .order('created_at', { ascending: false })
+      .limit(500)
+    if (error || !Array.isArray(data)) return []
+    return data.map(b20TokenFromRow).filter(Boolean)
+  } catch {
+    return []
+  }
+}
+
+async function upsertSupabaseB20Tokens(chainId, launchpadAddress, tokens) {
+  if (!supabase?.from || !launchpadAddress || !Array.isArray(tokens) || tokens.length === 0) return
+  try {
+    await supabase
+      .from(B20_SUPABASE_TABLE)
+      .upsert(tokens.map((token) => b20TokenToRow(token, chainId, launchpadAddress)), { onConflict: 'token_address' })
+  } catch {
+    /* Supabase cache is best-effort. */
   }
 }
 
@@ -467,12 +564,18 @@ export default function DeployB20() {
     }
     setIsRefreshing(true)
     try {
+      const supabaseTokens = await readSupabaseB20Tokens(chainId, launchpadAddress)
+      if (tokens.length === 0 && supabaseTokens.length > 0) {
+        setTokens(supabaseTokens)
+        writeCachedB20Tokens(chainId, launchpadAddress, supabaseTokens)
+      }
       const nextTokens = await fetchTokens()
-      if (nextTokens.length > 0 || cachedTokens.length === 0) {
+      if (nextTokens.length > 0 || (cachedTokens.length === 0 && supabaseTokens.length === 0)) {
         setTokens(nextTokens)
       }
       if (nextTokens.length > 0) {
         writeCachedB20Tokens(chainId, launchpadAddress, nextTokens)
+        upsertSupabaseB20Tokens(chainId, launchpadAddress, nextTokens)
       }
       setSelectedToken((current) => {
         if (!nextTokens.length) return null
@@ -481,8 +584,9 @@ export default function DeployB20() {
       })
     } catch (err) {
       console.warn('B20 token refresh failed:', err)
-      if (tokens.length === 0 && cachedTokens.length > 0) {
-        setTokens(cachedTokens)
+      if (tokens.length === 0) {
+        const fallbackTokens = cachedTokens.length > 0 ? cachedTokens : await readSupabaseB20Tokens(chainId, launchpadAddress)
+        if (fallbackTokens.length > 0) setTokens(fallbackTokens)
       }
     } finally {
       setIsRefreshing(false)
@@ -559,6 +663,41 @@ export default function DeployB20() {
       setCurveForm(initialCurveForm)
       setLogoPreview('')
       setActiveTab('tokens')
+      if (result.tokenAddress && launchpadAddress) {
+        const nowMs = Date.now()
+        const creatorAllocation = BigInt(Math.max(0, Math.min(1000, Math.round(Number(curveForm.creatorAllocationBps || 0)))))
+        const creatorTokens = (parseUnits('1000000000', 18) * creatorAllocation) / 10000n
+        const optimisticToken = {
+          address: result.tokenAddress,
+          name: curveForm.name,
+          symbol: curveForm.symbol,
+          description: curveForm.description,
+          image: curveForm.image,
+          core: {
+            creator: address,
+            virtualETH: parseEther('1'),
+            virtualTokens: parseUnits('1000000000', 18) - creatorTokens,
+            realETH: 0n,
+            creatorAllocation,
+            createdAt: BigInt(Math.floor(nowMs / 1000)),
+            pair: undefined,
+            graduated: false,
+          },
+          stats: { buys: 0n, sells: 0n, volume: 0n, holders: 0n, graduatedAt: 0n },
+          progress: 0,
+          realEthLabel: '0.0000',
+          volumeLabel: '0.0000',
+          holdersLabel: '0',
+          createdAtMs: nowMs,
+        }
+        setTokens((prev) => {
+          const withoutDuplicate = prev.filter((token) => String(token.address).toLowerCase() !== String(result.tokenAddress).toLowerCase())
+          const next = [optimisticToken, ...withoutDuplicate]
+          writeCachedB20Tokens(chainId, launchpadAddress, next)
+          upsertSupabaseB20Tokens(chainId, launchpadAddress, [optimisticToken])
+          return next
+        })
+      }
       await loadTokens()
     } catch (err) {
       setStatus({ type: 'error', text: err.shortMessage || err.message || 'Curve launch failed.' })
