@@ -27,6 +27,7 @@ import {
 import { createChart, CandlestickSeries } from 'lightweight-charts'
 import { Helmet } from 'react-helmet-async'
 import BackButton from '../components/BackButton'
+import { LaunchpadProgress, LaunchpadStatStrip, LaunchpadTrustStrip, TokenGridSkeleton } from '../components/LaunchpadPrimitives'
 import { useDeployB20 } from '../hooks/useDeployB20'
 import { useB20Launchpad } from '../hooks/useB20Launchpad'
 import { uploadToIPFS } from '../utils/pinata'
@@ -90,7 +91,6 @@ const responsiveCss = `
     grid-template-columns: 1fr !important;
   }
 
-  .b20-status-panel,
   .b20-two-col,
   .b20-market-stats,
   .b20-launch-facts,
@@ -101,6 +101,12 @@ const responsiveCss = `
 
   .b20-browser-controls {
     grid-template-columns: 1fr !important;
+  }
+
+  .b20-status-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    border-left: 0 !important;
+    border-top: 1px solid rgba(148, 163, 184, 0.14) !important;
   }
 
   .b20-notice,
@@ -124,7 +130,6 @@ const responsiveCss = `
     font-size: 32px !important;
   }
 
-  .b20-status-panel,
   .b20-two-col,
   .b20-market-stats,
   .b20-launch-facts,
@@ -828,6 +833,16 @@ export default function DeployB20() {
           )}
         </section>
 
+        <LaunchpadTrustStrip
+          accent="#60a5fa"
+          items={[
+            { label: 'Verified launch contracts' },
+            { label: 'LP burned at graduation' },
+            { label: 'Creator fee enabled' },
+            { label: 'Base mainnet settlement' },
+          ]}
+        />
+
         {status && (
           <section className="b20-feedback" style={{ ...styles.feedback, ...(status.type === 'error' ? styles.feedbackError : styles.feedbackSuccess) }}>
             {status.type === 'error' ? <AlertTriangle size={18} /> : <CheckCircle2 size={18} />}
@@ -840,12 +855,17 @@ export default function DeployB20() {
           </section>
         )}
 
-        <section className="b20-platform-stats" style={styles.platformStats}>
-          <StatCard label="Total Tokens" value={platformStats.totalTokens.toLocaleString()} />
-          <StatCard label="Graduated" value={platformStats.graduated.toLocaleString()} tone="blue" />
-          <StatCard label="Total Volume" value={`${platformStats.totalVolumeETH.toFixed(2)} ETH`} tone="blue" />
-          <StatCard label="Trading Fee" value={platformStats.tradingFee} tone="blue" />
-        </section>
+        <div style={{ margin: '14px 0 18px' }}>
+          <LaunchpadStatStrip
+            accent="#3b82f6"
+            items={[
+              { label: 'Total Tokens', value: platformStats.totalTokens.toLocaleString() },
+              { label: 'Graduated', value: platformStats.graduated.toLocaleString(), tone: '#60a5fa' },
+              { label: 'Total Volume', value: `${platformStats.totalVolumeETH.toFixed(2)} ETH`, tone: '#60a5fa' },
+              { label: 'Trading Fee', value: platformStats.tradingFee, tone: '#60a5fa' },
+            ]}
+          />
+        </div>
 
         <section style={styles.tabBar}>
           <button
@@ -1416,6 +1436,27 @@ function B20TradePanel({
   const tokenSymbol = token?.symbol || 'B20'
   const normalizedAmount = normalizeDecimalInput(amount, 18)
   const amountRaw = tradeMode === 'sell' ? parseTokenAmountSafe(amount) : 0n
+  const amountNumber = Number(normalizedAmount || 0)
+  const reserveEth = Number(formatEther(token?.core?.virtualETH || 0n))
+  const reserveTokens = Number(formatUnits(token?.core?.virtualTokens || 0n, 18))
+  const feeMultiplier = 1 - (B20_CURVE_TRADING_FEE_BPS / 10000)
+  const estimatedReceive = useMemo(() => {
+    if (!Number.isFinite(amountNumber) || amountNumber <= 0 || reserveEth <= 0 || reserveTokens <= 0) return 0
+    if (tradeMode === 'buy') {
+      const netEth = amountNumber * feeMultiplier
+      return (reserveTokens * netEth) / (reserveEth + netEth)
+    }
+    const grossEth = (reserveEth * amountNumber) / (reserveTokens + amountNumber)
+    return grossEth * feeMultiplier
+  }, [amountNumber, feeMultiplier, reserveEth, reserveTokens, tradeMode])
+  const priceImpact = useMemo(() => {
+    if (estimatedReceive <= 0 || amountNumber <= 0 || reserveEth <= 0 || reserveTokens <= 0) return 0
+    const spotPrice = reserveEth / reserveTokens
+    const averagePrice = tradeMode === 'buy'
+      ? (amountNumber * feeMultiplier) / estimatedReceive
+      : (estimatedReceive / feeMultiplier) / amountNumber
+    return Math.max(0, tradeMode === 'buy' ? ((averagePrice / spotPrice) - 1) * 100 : (1 - (averagePrice / spotPrice)) * 100)
+  }, [amountNumber, estimatedReceive, feeMultiplier, reserveEth, reserveTokens, tradeMode])
   const sellAmountTooHigh = tradeMode === 'sell' && amountRaw > maxSellableRaw
   const disabled =
     !isConnected ||
@@ -1502,6 +1543,17 @@ function B20TradePanel({
             {value}
           </button>
         ))}
+      </div>
+
+      <div style={styles.tradePreview}>
+        <div style={{ padding: '10px 4px', display: 'grid', gap: 3 }}>
+          <span>Estimated received</span>
+          <strong style={{ color: '#f8fafc', fontSize: 13 }}>{estimatedReceive > 0 ? `${formatNumber(estimatedReceive, 4)} ${tradeMode === 'buy' ? tokenSymbol : 'ETH'}` : '-'}</strong>
+        </div>
+        <div style={{ padding: '10px 4px 10px 12px', borderLeft: '1px solid rgba(148, 163, 184, 0.12)', display: 'grid', gap: 3 }}>
+          <span>Price impact</span>
+          <strong style={{ color: priceImpact > 5 ? '#fbbf24' : '#86efac', fontSize: 13 }}>{estimatedReceive > 0 ? `${priceImpact.toFixed(2)}%` : '-'}</strong>
+        </div>
       </div>
 
       <button type="submit" disabled={disabled} style={{ ...styles.proTradeButton, ...(tradeMode === 'sell' ? styles.proSellButton : {}) }}>
@@ -1685,11 +1737,7 @@ function TokenBrowser({
           ) : null}
         />
       ) : isRefreshing && tokens.length === 0 ? (
-        <EmptyState
-          icon={<RefreshCw size={28} />}
-          title="Loading B20 markets"
-          text={`Reading launches, stats, and curve progress from ${networkLabel}.`}
-        />
+        <TokenGridSkeleton count={6} accent="#3b82f6" />
       ) : tokens.length === 0 ? (
         <div style={styles.emptyMarket}>
           <Rocket size={42} />
@@ -1719,12 +1767,15 @@ function B20TokenCard({ token, active, onClick, featured = false }) {
   const volume = Number(token.volumeLabel || 0)
   const volumeLabel = volume > 0 && volume < 0.0001 ? '<0.0001' : volume.toFixed(4)
   return (
-    <button type="button" onClick={onClick} style={{ ...styles.marketCard, ...(featured ? styles.marketCardFeatured : {}), ...(active ? styles.marketCardActive : {}) }}>
+    <button type="button" onClick={onClick} className={`launchpad-token-card${featured ? ' launchpad-featured-card' : ''}`} style={{ ...styles.marketCard, ...(featured ? styles.marketCardFeatured : {}), ...(active ? styles.marketCardActive : {}) }}>
       <div style={styles.marketCardTop}>
         <TokenAvatar image={token.image} symbol={token.symbol} size={72} />
         <div style={styles.marketCardName}>
           <strong>{token.name}</strong>
-          <span>${token.symbol}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <img src="/base-logo.jpg" alt="" aria-hidden="true" style={{ width: 16, height: 16, borderRadius: '50%', objectFit: 'cover' }} />
+            ${token.symbol}
+          </span>
           {featured && <em style={styles.trendingBadge}>Trending</em>}
         </div>
         <div style={styles.marketCap}>
@@ -1746,6 +1797,9 @@ function B20TokenCard({ token, active, onClick, featured = false }) {
           <span style={styles.marketCardStatLabel}>Progress</span>
           <strong style={styles.marketCardStatValue}>{token.progress.toFixed(1)}%</strong>
         </div>
+      </div>
+      <div style={{ marginTop: 12 }}>
+        <LaunchpadProgress value={token.progress} graduated={token.core?.graduated} accent="#3b82f6" />
       </div>
     </button>
   )
@@ -1992,17 +2046,18 @@ const styles = {
   },
   hero: {
     display: 'grid',
-    gridTemplateColumns: 'minmax(0, 1.35fr) minmax(280px, 0.65fr)',
-    gap: 14,
-    alignItems: 'stretch',
+    gridTemplateColumns: 'minmax(0, 1.15fr) minmax(420px, 0.85fr)',
+    gap: 20,
+    alignItems: 'center',
     maxWidth: 1280,
     margin: '0 auto 18px',
-  },
-  heroLeft: {
     border: '1px solid rgba(96, 165, 250, 0.18)',
     background: 'linear-gradient(180deg, #0f1c31 0%, #0b1425 100%)',
     borderRadius: 8,
-    padding: 22,
+    padding: 18,
+  },
+  heroLeft: {
+    minWidth: 0,
   },
   brandRow: {
     display: 'flex',
@@ -2027,12 +2082,12 @@ const styles = {
   },
   title: {
     margin: '2px 0 0',
-    fontSize: 42,
+    fontSize: 34,
     lineHeight: 1.05,
     letterSpacing: 0,
   },
   subtitle: {
-    margin: '12px 0 18px',
+    margin: '8px 0 0',
     color: '#a8b3c7',
     fontSize: 15,
     lineHeight: 1.5,
@@ -2063,19 +2118,14 @@ const styles = {
   statusPanel: {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    gap: 12,
-    border: '1px solid rgba(96, 165, 250, 0.16)',
-    background: '#0d1728',
-    borderRadius: 8,
-    padding: 16,
+    gap: 0,
+    borderLeft: '1px solid rgba(148, 163, 184, 0.14)',
   },
   metric: {
     display: 'grid',
-    gap: 8,
-    border: '1px solid rgba(148, 163, 184, 0.12)',
-    background: '#08111f',
-    borderRadius: 8,
-    padding: '13px 14px',
+    gap: 5,
+    borderBottom: '1px solid rgba(148, 163, 184, 0.12)',
+    padding: '10px 14px',
     minWidth: 0,
   },
   metricLabel: {
@@ -2326,8 +2376,8 @@ const styles = {
     display: 'grid',
     gap: 16,
     border: '1px solid rgba(59, 130, 246, 0.22)',
-    borderTop: '4px solid rgba(59, 130, 246, 0.28)',
-    borderRadius: 14,
+    borderTop: '3px solid rgba(59, 130, 246, 0.38)',
+    borderRadius: 8,
     background: 'linear-gradient(145deg, rgba(18, 18, 28, 0.98), rgba(13, 17, 31, 0.98))',
     color: '#fff',
     padding: 18,
@@ -2377,18 +2427,16 @@ const styles = {
     display: 'grid',
     gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
     gap: 8,
-    borderRadius: 10,
-    background: 'rgba(0, 0, 0, 0.24)',
-    padding: 10,
+    borderTop: '1px solid rgba(148, 163, 184, 0.12)',
+    borderBottom: '1px solid rgba(148, 163, 184, 0.12)',
+    padding: '10px 0',
   },
   marketCardStat: {
     minWidth: 0,
     display: 'grid',
     gap: 3,
     alignContent: 'center',
-    borderRadius: 8,
-    background: 'rgba(8, 17, 31, 0.88)',
-    padding: '9px 8px',
+    padding: '5px 8px',
     textAlign: 'center',
   },
   marketCardStatLabel: {
@@ -2969,7 +3017,7 @@ const styles = {
     display: 'grid',
     gap: 14,
     background: 'linear-gradient(145deg, rgba(30, 30, 40, 0.95) 0%, rgba(20, 20, 30, 0.98) 100%)',
-    borderRadius: 16,
+    borderRadius: 8,
     padding: 16,
     border: '1px solid rgba(59, 130, 246, 0.2)',
     alignSelf: 'start',
@@ -3061,6 +3109,14 @@ const styles = {
     color: '#60a5fa',
     fontWeight: 900,
     cursor: 'pointer',
+  },
+  tradePreview: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    borderTop: '1px solid rgba(148, 163, 184, 0.12)',
+    borderBottom: '1px solid rgba(148, 163, 184, 0.12)',
+    color: '#7f8da5',
+    fontSize: 10,
   },
   proTradeButton: {
     width: '100%',

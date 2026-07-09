@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAccount, useReadContract, usePublicClient, useBalance, useChainId, useSwitchChain } from 'wagmi'
-import { formatEther, formatUnits, parseEther } from 'viem'
+import { formatEther, formatUnits, parseEther, parseUnits } from 'viem'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { 
   Rocket, TrendingUp, Users, Zap, Search, Filter, Plus, ArrowLeft, 
@@ -17,6 +17,7 @@ import { getFarcasterUniversalLink } from '../config/farcaster'
 import { supabase } from '../config/supabase'
 import { uploadToIPFS } from '../utils/pinata'
 import { NETWORKS, getPumpHubFactoryAddress, getNetworkConfig } from '../config/networks'
+import { LaunchpadProgress, LaunchpadStatStrip, LaunchpadTrustStrip, TokenGridSkeleton } from '../components/LaunchpadPrimitives'
 
 // Contract ABI for reading tokens
 const PUMPHUB_FACTORY_ABI = [
@@ -502,7 +503,12 @@ const TokenImage = ({ src, alt, size = 64, borderRadius = '14px' }) => {
 // ============================================
 // TOKEN CARD COMPONENT
 // ============================================
-const TokenCard = ({ token, onClick, isMobile = false }) => {
+const pumpTokenTxCount = (token) => parseInt(token?.buys || 0) + parseInt(token?.sells || 0)
+const pumpTrendScore = (token) => (parseFloat(token?.volume || 0) * 1000) + (pumpTokenTxCount(token) * 3) + (parseFloat(token?.realETH || 0) * 20)
+const isTrendingPumpToken = (token) => pumpTrendScore(token) > 2
+
+const TokenCard = ({ token, onClick, isMobile = false, featured = false }) => {
+  const chainId = useChainId()
   const virtualETH = parseFloat(token.virtualETH || 1)
   const realETH = parseFloat(token.realETH || 0)
   const marketCapETH = virtualETH + realETH
@@ -517,16 +523,23 @@ const TokenCard = ({ token, onClick, isMobile = false }) => {
   const isNeutral = changePercent === 0
 
   const imgSize = isMobile ? 56 : 72
+  const networkLogo = Number(chainId) === NETWORKS.ROBINHOOD.chainId
+    ? '/robinhood-testnet-logo.png'
+    : '/base-logo.jpg'
 
   return (
     <div 
       onClick={onClick}
+      className={`launchpad-token-card${featured ? ' launchpad-featured-card' : ''}`}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => { if ((event.key === 'Enter' || event.key === ' ') && onClick) { event.preventDefault(); onClick() } }}
       style={{
         background: 'linear-gradient(145deg, rgba(30, 30, 40, 0.9) 0%, rgba(20, 20, 30, 0.95) 100%)',
-        borderRadius: isMobile ? '14px' : '18px',
+        borderRadius: 8,
         padding: isMobile ? '14px' : '18px',
         cursor: 'pointer',
-        border: '1px solid rgba(59, 130, 246, 0.2)',
+        border: featured ? '1px solid rgba(34, 197, 94, 0.45)' : '1px solid rgba(59, 130, 246, 0.2)',
         transition: 'all 0.3s ease',
         position: 'relative',
         overflow: 'hidden'
@@ -539,23 +552,9 @@ const TokenCard = ({ token, onClick, isMobile = false }) => {
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = 'translateY(0)'
         e.currentTarget.style.boxShadow = 'none'
-        e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.2)'
+        e.currentTarget.style.borderColor = featured ? 'rgba(34, 197, 94, 0.45)' : 'rgba(59, 130, 246, 0.2)'
       }}
     >
-      {/* Progress bar at top */}
-      <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
-        background: 'rgba(59, 130, 246, 0.2)', borderRadius: '18px 18px 0 0'
-      }}>
-        <div style={{
-          width: `${progress}%`, height: '100%',
-          background: progress >= 100 
-            ? 'linear-gradient(90deg, #10b981, #34d399)' 
-            : 'linear-gradient(90deg, #3b82f6, #60a5fa)',
-          borderRadius: '18px 18px 0 0', transition: 'width 0.5s ease'
-        }} />
-      </div>
-      
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '12px' : '14px', marginTop: '4px' }}>
         <TokenImage src={token.image} alt={token.name} size={imgSize} />
@@ -572,6 +571,7 @@ const TokenCard = ({ token, onClick, isMobile = false }) => {
             fontSize: isMobile ? '12px' : '13px', color: '#9ca3af',
             display: 'flex', alignItems: 'center', gap: '6px'
           }}>
+            <img src={networkLogo} alt="" aria-hidden="true" style={{ width: 16, height: 16, borderRadius: '50%', objectFit: 'cover' }} />
             ${token.symbol || '???'}
             {token.graduated && (
               <span style={{
@@ -580,6 +580,9 @@ const TokenCard = ({ token, onClick, isMobile = false }) => {
               }}>
                 GRADUATED
               </span>
+            )}
+            {featured && !token.graduated && (
+              <span style={{ color: '#86efac', fontSize: 10, fontWeight: 800 }}>TRENDING</span>
             )}
           </div>
         </div>
@@ -617,6 +620,9 @@ const TokenCard = ({ token, onClick, isMobile = false }) => {
           <div style={{ color: '#9ca3af' }}>Progress</div>
           <div style={{ color: progress >= 100 ? '#10b981' : '#3b82f6', fontWeight: '600' }}>{progress.toFixed(1)}%</div>
         </div>
+      </div>
+      <div style={{ marginTop: 12 }}>
+        <LaunchpadProgress value={progress} graduated={token.graduated} accent="#3b82f6" />
       </div>
     </div>
   )
@@ -874,7 +880,7 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt, isMobi
   return (
     <div style={{
       background: 'linear-gradient(145deg, rgba(30, 30, 40, 0.95) 0%, rgba(20, 20, 30, 0.98) 100%)',
-      borderRadius: isMobile ? 14 : 16,
+      borderRadius: 8,
       padding: isMobile ? 10 : 16,
       border: '1px solid rgba(59, 130, 246, 0.2)',
       minWidth: 0,
@@ -1235,6 +1241,30 @@ const TokenTradePanel = ({ tokenData, tokenAddress, factoryAddress, buyTokens, s
   const userETHBalance = ethBalance ? formatEther(ethBalance.value) : '0'
   const isCreator = tokenData?.tokenData?.creator?.toLowerCase() === address?.toLowerCase()
   const creatorFeesBalance = creatorFees ? formatEther(creatorFees) : '0'
+  const reserveEth = Number(tokenData?.tokenData?.virtualETH || 0)
+  const reserveTokens = Number(tokenData?.tokenData?.virtualTokens || 0)
+  const amountNumber = Number(amount || 0)
+  const feeMultiplier = 0.994
+  const estimatedReceive = useMemo(() => {
+    if (!Number.isFinite(amountNumber) || amountNumber <= 0 || reserveEth <= 0 || reserveTokens <= 0) return 0
+    if (tradeMode === 'buy') {
+      const netEth = amountNumber * feeMultiplier
+      return (reserveTokens * netEth) / (reserveEth + netEth)
+    }
+    const grossEth = (reserveEth * amountNumber) / (reserveTokens + amountNumber)
+    return grossEth * feeMultiplier
+  }, [amountNumber, reserveEth, reserveTokens, tradeMode])
+  const priceImpact = useMemo(() => {
+    if (estimatedReceive <= 0 || amountNumber <= 0 || reserveEth <= 0 || reserveTokens <= 0) return 0
+    const spotPrice = reserveEth / reserveTokens
+    const averagePrice = tradeMode === 'buy'
+      ? (amountNumber * feeMultiplier) / estimatedReceive
+      : (estimatedReceive / feeMultiplier) / amountNumber
+    const impact = tradeMode === 'buy'
+      ? ((averagePrice / spotPrice) - 1) * 100
+      : (1 - (averagePrice / spotPrice)) * 100
+    return Math.max(0, impact)
+  }, [amountNumber, estimatedReceive, reserveEth, reserveTokens, tradeMode])
   
   const handleTrade = async () => {
     if (!amount || parseFloat(amount) <= 0) return
@@ -1243,9 +1273,15 @@ const TokenTradePanel = ({ tokenData, tokenAddress, factoryAddress, buyTokens, s
     setIsProcessing(true)
     try {
       if (tradeMode === 'buy') {
-        await buyTokens(tokenAddress, amount)
+        const minTokensOut = estimatedReceive > 0
+          ? parseUnits((estimatedReceive * 0.99).toFixed(18), 18)
+          : 0n
+        await buyTokens(tokenAddress, amount, minTokensOut)
       } else {
-        await sellTokens(tokenAddress, amount)
+        const minETHOut = estimatedReceive > 0
+          ? parseEther((estimatedReceive * 0.99).toFixed(18))
+          : 0n
+        await sellTokens(tokenAddress, amount, minETHOut)
       }
       setAmount('')
     } catch (err) {
@@ -1285,7 +1321,7 @@ const TokenTradePanel = ({ tokenData, tokenAddress, factoryAddress, buyTokens, s
   return (
     <div style={{
       background: 'linear-gradient(145deg, rgba(30, 30, 40, 0.95) 0%, rgba(20, 20, 30, 0.98) 100%)',
-      borderRadius: isMobile ? 16 : 16,
+      borderRadius: 8,
       padding: isMobile ? 14 : 16,
       paddingBottom: isMobile ? Math.max(pad + 60, 100) : pad,
       border: '1px solid rgba(59, 130, 246, 0.2)',
@@ -1336,6 +1372,19 @@ const TokenTradePanel = ({ tokenData, tokenAddress, factoryAddress, buyTokens, s
         >
           Sell
         </button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: '1px solid rgba(148, 163, 184, 0.12)', borderBottom: '1px solid rgba(148, 163, 184, 0.12)', marginBottom: isMobile ? 16 : 12 }}>
+          <div style={{ padding: '10px 4px', display: 'grid', gap: 3 }}>
+            <span style={{ color: '#7f8da5', fontSize: 10, fontWeight: 700 }}>Estimated received</span>
+            <strong style={{ color: '#f8fafc', fontSize: 13 }}>
+              {estimatedReceive > 0 ? `${formatNumber(estimatedReceive)} ${tradeMode === 'buy' ? tokenData?.tokenMeta?.symbol || 'TOKEN' : 'ETH'}` : '-'}
+            </strong>
+          </div>
+          <div style={{ padding: '10px 4px 10px 12px', borderLeft: '1px solid rgba(148, 163, 184, 0.12)', display: 'grid', gap: 3 }}>
+            <span style={{ color: '#7f8da5', fontSize: 10, fontWeight: 700 }}>Price impact</span>
+            <strong style={{ color: priceImpact > 5 ? '#fbbf24' : '#86efac', fontSize: 13 }}>{estimatedReceive > 0 ? `${priceImpact.toFixed(2)}%` : '-'}</strong>
+          </div>
       </div>
       
       {/* Balance display */}
@@ -1441,6 +1490,11 @@ const TokenTradePanel = ({ tokenData, tokenAddress, factoryAddress, buyTokens, s
          isLoading || isProcessing ? 'Processing...' :
          tradeMode === 'buy' ? `Buy ${tokenData?.tokenMeta?.symbol || 'TOKEN'}` : `Sell ${tokenData?.tokenMeta?.symbol || 'TOKEN'}`}
       </button>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '11px 2px 0', color: '#7f8da5', fontSize: 11 }}>
+        <span>Trading fee <strong style={{ color: '#cbd5e1' }}>0.6%</strong></span>
+        <span>Slippage protection <strong style={{ color: '#cbd5e1' }}>1%</strong></span>
+      </div>
       
       {/* Creator claim section */}
       {isCreator && parseFloat(creatorFeesBalance) > 0 && (
@@ -2223,6 +2277,8 @@ const PumpHub = () => {
     // Category filter
     if (category === 'graduated') {
       result = result.filter(t => t.graduated)
+    } else if (category === 'trending') {
+      result = result.filter(isTrendingPumpToken)
     } else if (category === 'new') {
       const oneDayAgo = Date.now() / 1000 - 86400
       result = result.filter(t => parseInt(t.createdAt || 0) > oneDayAgo)
@@ -2250,6 +2306,13 @@ const PumpHub = () => {
     
     return result
   }, [tokens, searchQuery, category, sortBy])
+
+  const trendingTokens = useMemo(() => (
+    [...tokens]
+      .filter(isTrendingPumpToken)
+      .sort((a, b) => pumpTrendScore(b) - pumpTrendScore(a))
+      .slice(0, 3)
+  ), [tokens])
 
   // Pagination: show 10 tokens per page
   const totalPages = Math.max(1, Math.ceil(filteredTokens.length / TOKENS_PER_PAGE))
@@ -2503,37 +2566,29 @@ const PumpHub = () => {
               </span>
             )}
           </div>
+
+          <LaunchpadTrustStrip
+            accent={chainId === NETWORKS.ROBINHOOD.chainId ? '#c7ff00' : '#60a5fa'}
+            items={[
+              { label: 'Verified factory' },
+              { label: 'LP burned at graduation' },
+              { label: 'Creator fee enabled' },
+              { label: 'Uniswap V2 liquidity' },
+            ]}
+          />
           
           {/* Platform Stats */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-            gap: isMobile ? 8 : 12,
-            marginBottom: isMobile ? 16 : 20
-          }}>
-            {[
-              { label: 'Total Tokens', value: platformStats ? platformStats.totalTokens : '0', color: '#fff' },
-              { label: 'Graduated', value: platformStats ? platformStats.graduated : '0', color: '#3b82f6' },
-              { label: 'Total Volume', value: platformStats ? `${platformStats.totalVolumeETH.toFixed(2)} ETH` : '0 ETH', color: '#3b82f6' },
-              { label: 'Trading Fee', value: '0.6%', color: '#3b82f6' }
-            ].map(({ label, value, color }) => (
-              <div
-                key={label}
-                style={{
-                  background: '#0d1728',
-                  borderRadius: isMobile ? 10 : 12,
-                  padding: isMobile ? 12 : 16,
-                  border: '1px solid rgba(96, 165, 250, 0.18)',
-                  minHeight: isMobile ? 76 : 86,
-                  display: 'grid',
-                  alignContent: 'center',
-                  gap: 6
-                }}
-              >
-                <div style={{ color: '#8fa0bb', fontSize: isMobile ? 10 : 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0 }}>{label}</div>
-                <div style={{ color, fontSize: isMobile ? 17 : 22, fontWeight: 900, lineHeight: 1.1 }}>{value}</div>
-              </div>
-            ))}
+          <div style={{ margin: isMobile ? '12px 0 16px' : '14px 0 20px' }}>
+            <LaunchpadStatStrip
+              compact={isMobile}
+              accent={chainId === NETWORKS.ROBINHOOD.chainId ? '#c7ff00' : '#3b82f6'}
+              items={[
+                { label: 'Total Tokens', value: platformStats ? platformStats.totalTokens : '0' },
+                { label: 'Graduated', value: platformStats ? platformStats.graduated : '0', tone: '#60a5fa' },
+                { label: 'Total Volume', value: platformStats ? `${platformStats.totalVolumeETH.toFixed(2)} ETH` : '0 ETH', tone: '#60a5fa' },
+                { label: 'Trading Fee', value: '0.6%', tone: '#60a5fa' },
+              ]}
+            />
           </div>
           
           {/* Tabs */}
@@ -2758,6 +2813,22 @@ const PumpHub = () => {
                 </>
               ) : (
                 <>
+                  {trendingTokens.length > 0 && category !== 'trending' && (
+                    <section style={{ marginBottom: isMobile ? 16 : 20 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', gap: 12, marginBottom: 10 }}>
+                        <div>
+                          <div style={{ color: '#86efac', fontSize: 10, fontWeight: 900, textTransform: 'uppercase' }}>Trending now</div>
+                          <h2 style={{ margin: '3px 0 0', color: '#f8fafc', fontSize: isMobile ? 17 : 20 }}>High activity launches</h2>
+                        </div>
+                        {!isMobile && <span style={{ color: '#64748b', fontSize: 11 }}>Volume, trades and curve progress</span>}
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
+                        {trendingTokens.map((token) => (
+                          <TokenCard key={`trending-${token.address}`} token={token} featured isMobile={isMobile} onClick={() => setSelectedTokenAndUrl(token.address)} />
+                        ))}
+                      </div>
+                    </section>
+                  )}
                   {/* Search and filters */}
                   <div style={{
                     display: 'flex',
@@ -2830,6 +2901,7 @@ const PumpHub = () => {
                   }}>
                     {[
                       { id: 'all', label: 'All', icon: Globe },
+                      { id: 'trending', label: 'Trending', icon: Flame },
                       { id: 'new', label: 'New', icon: Zap },
                       { id: 'graduated', label: 'Graduated', icon: Star }
                     ].map(cat => (
@@ -2860,17 +2932,7 @@ const PumpHub = () => {
                   
                   {/* Token grid */}
                   {loadingTokens ? (
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: isMobile ? 40 : 60,
-                      color: '#9ca3af',
-                      fontSize: isMobile ? 14 : undefined
-                    }}>
-                      <RefreshCw size={isMobile ? 22 : 24} className="animate-spin" style={{ marginRight: 12 }} />
-                      Loading tokens...
-                    </div>
+                    <TokenGridSkeleton count={isMobile ? 3 : 6} accent="#3b82f6" />
                   ) : filteredTokens.length === 0 ? (
                     <div style={{
                       textAlign: 'center',
