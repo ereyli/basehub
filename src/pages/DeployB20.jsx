@@ -826,13 +826,17 @@ function B20ChartPanel({ token, launchpadAddress }) {
   const chartRef = useRef(null)
   const seriesRef = useRef(null)
   const publicClient = usePublicClient()
+  const chainId = useChainId()
   const [tradeHistory, setTradeHistory] = useState([])
   const [loadingTrades, setLoadingTrades] = useState(true)
   const marketCapUSD = tokenMarketCapUSD(token)
   const realEth = Number(token?.realEthLabel || 0)
   const txns = tokenTxCount(token)
   const createdAt = token?.createdAtMs || Date.now()
-  const explorerUrl = token?.address ? `${NETWORKS.BASE_SEPOLIA.blockExplorerUrls[0]}/address/${token.address}` : null
+  const activeExplorer = Number(chainId) === NETWORKS.BASE_SEPOLIA.chainId
+    ? NETWORKS.BASE_SEPOLIA.blockExplorerUrls[0]
+    : NETWORKS.BASE.blockExplorerUrls[0]
+  const explorerUrl = token?.address ? `${activeExplorer}/address/${token.address}` : null
 
   useEffect(() => {
     let cancelled = false
@@ -844,12 +848,9 @@ function B20ChartPanel({ token, launchpadAddress }) {
       setLoadingTrades(true)
       try {
         const latestBlock = await publicClient.getBlockNumber()
-        const estimatedBlocksSinceCreated = Math.ceil(Math.max(Date.now() - createdAt, 0) / 2000) + 5000
-        const primaryLookback = Math.min(Math.max(estimatedBlocksSinceCreated, 5000), 60000)
-        const fallbackLookback = txns > 0 ? 120000 : primaryLookback
-        const fromBlock = latestBlock > BigInt(fallbackLookback) ? latestBlock - BigInt(fallbackLookback) : 0n
-        const chunkSize = 1800n
-        const getLogsChunked = async (event) => {
+        const lookbackTiers = txns > 0 ? [10000n, 25000n] : [5000n]
+        const chunkSize = 1500n
+        const getLogsChunked = async (event, fromBlock) => {
           const chunks = []
           for (let start = fromBlock; start <= latestBlock; start += chunkSize + 1n) {
             const end = start + chunkSize > latestBlock ? latestBlock : start + chunkSize
@@ -877,10 +878,18 @@ function B20ChartPanel({ token, launchpadAddress }) {
           }
           return logs
         }
-        const [buyLogs, sellLogs] = await Promise.all([
-          getLogsChunked(parseAbiItem('event TB(address indexed t, address indexed b, uint256 e, uint256 o, uint256 f)')),
-          getLogsChunked(parseAbiItem('event TS2(address indexed t, address indexed s, uint256 i, uint256 o, uint256 f)')),
-        ])
+
+        let buyLogs = []
+        let sellLogs = []
+        for (const lookback of lookbackTiers) {
+          const fromBlock = latestBlock > lookback ? latestBlock - lookback : 0n
+          ;[buyLogs, sellLogs] = await Promise.all([
+            getLogsChunked(parseAbiItem('event TB(address indexed t, address indexed b, uint256 e, uint256 o, uint256 f)'), fromBlock),
+            getLogsChunked(parseAbiItem('event TS2(address indexed t, address indexed s, uint256 i, uint256 o, uint256 f)'), fromBlock),
+          ])
+          if (buyLogs.length + sellLogs.length > 0 || lookback === lookbackTiers[lookbackTiers.length - 1]) break
+        }
+
         const logs = [
           ...buyLogs.map((log) => ({
             type: 'buy',
@@ -933,18 +942,19 @@ function B20ChartPanel({ token, launchpadAddress }) {
     return () => {
       cancelled = true
     }
-  }, [createdAt, launchpadAddress, publicClient, token?.address, txns])
+  }, [launchpadAddress, publicClient, token?.address, txns])
 
   const chartData = useMemo(() => {
-    const bucketMs = 24 * 60 * 60 * 1000
     const now = Date.now()
-    const start = new Date(createdAt || now)
-    start.setHours(0, 0, 0, 0)
+    const firstTradeAt = tradeHistory[0]?.timestamp || createdAt || now
+    const ageMs = Math.max(now - firstTradeAt, 0)
+    const bucketMs = ageMs <= 48 * 60 * 60 * 1000 ? 30 * 60 * 1000 : 24 * 60 * 60 * 1000
+    const maxBuckets = ageMs <= 48 * 60 * 60 * 1000 ? 96 : 30
+    const startMs = Math.floor(firstTradeAt / bucketMs) * bucketMs
     const base = ETH_PRICE_USD
-    const maxBuckets = 30
     const data = []
     let open = base
-    let bucketStart = start.getTime()
+    let bucketStart = startMs
 
     for (let index = 0; index < maxBuckets && bucketStart <= now; index++) {
       const bucketEnd = Math.min(bucketStart + bucketMs, now + 1)
@@ -962,9 +972,8 @@ function B20ChartPanel({ token, launchpadAddress }) {
         low = Math.min(low, close)
       })
 
-      const date = new Date(bucketStart)
       data.push({
-        time: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+        time: Math.floor(bucketStart / 1000),
         open,
         high,
         low,
@@ -975,9 +984,8 @@ function B20ChartPanel({ token, launchpadAddress }) {
     }
 
     if (data.length === 0) {
-      const date = new Date()
       data.push({
-        time: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+        time: Math.floor(now / 1000),
         open: base,
         high: base,
         low: base,
@@ -1108,7 +1116,7 @@ function B20ChartPanel({ token, launchpadAddress }) {
                 <span>{Number(trade.ethAmount || 0).toFixed(4)} ETH</span>
                 <span>{timeAgo(trade.timestamp)}</span>
                 <a
-                  href={`${NETWORKS.BASE_SEPOLIA.blockExplorerUrls[0]}/tx/${trade.txHash}`}
+                  href={`${activeExplorer}/tx/${trade.txHash}`}
                   target="_blank"
                   rel="noreferrer"
                   style={styles.txLink}
