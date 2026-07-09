@@ -35,10 +35,17 @@ module.exports = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 1868,
     },
+    robinhood: {
+      type: "http",
+      url: process.env.ROBINHOOD_RPC_URL || "https://rpc.mainnet.chain.robinhood.com",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 4663,
+    },
   },
   etherscan: {
     apiKey: {
       base: process.env.BASESCAN_API_KEY || "",
+      robinhood: "empty",
     },
     customChains: [
       {
@@ -47,6 +54,14 @@ module.exports = {
         urls: {
           apiURL: "https://api.basescan.org/api",
           browserURL: "https://basescan.org"
+        }
+      },
+      {
+        network: "robinhood",
+        chainId: 4663,
+        urls: {
+          apiURL: "https://robinhoodchain.blockscout.com/api",
+          browserURL: "https://robinhoodchain.blockscout.com"
         }
       }
     ]

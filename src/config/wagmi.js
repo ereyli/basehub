@@ -230,11 +230,10 @@ export const config = createConfig({
       retryCount: 3,
       retryDelay: 1000,
     }),
-    [robinhoodChain.id]: http(NETWORKS.ROBINHOOD.rpcUrls[0], {
-      timeout: 30000,
-      retryCount: 3,
-      retryDelay: 1000,
-    }),
+    [robinhoodChain.id]: fallback(
+      NETWORKS.ROBINHOOD.rpcUrls.map((url) => viemHttp(url, { timeout: 30000, retryCount: 2, retryDelay: 1000 })),
+      { rank: false, retryCount: 2, retryDelay: 1000 }
+    ),
     [arbitrum.id]: fallback(
       NETWORKS.ARBITRUM.rpcUrls.map((url) => viemHttp(url, { timeout: 30000, retryCount: 2, retryDelay: 1000 }))
     ),

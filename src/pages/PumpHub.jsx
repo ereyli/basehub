@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { useAccount, useReadContract, usePublicClient, useBalance, useChainId } from 'wagmi'
+import { useAccount, useReadContract, usePublicClient, useBalance, useChainId, useSwitchChain } from 'wagmi'
 import { formatEther, formatUnits, parseEther } from 'viem'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { 
@@ -16,7 +16,7 @@ import { useFarcaster } from '../contexts/FarcasterContext'
 import { getFarcasterUniversalLink } from '../config/farcaster'
 import { supabase } from '../config/supabase'
 import { uploadToIPFS } from '../utils/pinata'
-import { getPumpHubFactoryAddress } from '../config/networks'
+import { NETWORKS, getPumpHubFactoryAddress, getNetworkConfig } from '../config/networks'
 
 // Contract ABI for reading tokens
 const PUMPHUB_FACTORY_ABI = [
@@ -662,6 +662,7 @@ const MiniTokenCard = ({ token, onClick, isSelected, isMobile = false }) => {
 // TOKEN CHART PANEL
 // ============================================
 const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt, isMobile = false }) => {
+  const chainId = useChainId()
   const [tradeHistory, setTradeHistory] = useState([])
   const [loadingTrades, setLoadingTrades] = useState(true)
   
@@ -678,6 +679,7 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt, isMobi
           .from('token_trades')
           .select('*')
           .eq('token_address', tokenAddress.toLowerCase())
+          .eq('chain_id', Number(chainId))
           .order('created_at', { ascending: true })
         
         if (error) {
@@ -693,7 +695,7 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt, isMobi
     }
     
     fetchTrades()
-  }, [tokenAddress, lastTradeConfirmedAt])
+  }, [tokenAddress, lastTradeConfirmedAt, chainId])
   
   // Calculate market cap
   const virtualETH = parseFloat(tokenData?.tokenData?.virtualETH || tokenData?.virtualETH || 1)
@@ -1699,6 +1701,8 @@ const PumpHub = () => {
   const chainId = useChainId()
   const pumphubFactoryAddress = useMemo(() => getPumpHubFactoryAddress(chainId), [chainId])
   const publicClient = usePublicClient()
+  const { switchChain } = useSwitchChain()
+  const activeNetwork = getNetworkConfig(chainId)
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   
@@ -1745,6 +1749,22 @@ const PumpHub = () => {
   const [sortBy, setSortBy] = useState('newest')
   const [category, setCategory] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
+  const previousPumpChainRef = useRef(chainId)
+
+  useEffect(() => {
+    if (previousPumpChainRef.current === chainId) return
+    previousPumpChainRef.current = chainId
+    setSelectedToken(null)
+    setSelectedTokenData(null)
+    setTokens([])
+    setTotalTokensOnChain(null)
+    setLoadingTokens(true)
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      next.delete('token')
+      return next
+    }, { replace: true })
+  }, [chainId, setSearchParams])
   
   const TOKENS_PER_PAGE = 12
   
@@ -1837,6 +1857,15 @@ const PumpHub = () => {
 
     const fetchTokens = async () => {
       try {
+        if (!pumphubFactoryAddress) {
+          if (!cancelled) {
+            setTokens([])
+            setTotalTokensOnChain(null)
+            setLoadingTokens(false)
+          }
+          return
+        }
+
         // Step 1: Try Supabase first for instant display while RPC loads in background
         let sbMap = {}
         let sbTokensList = []
@@ -1845,6 +1874,8 @@ const PumpHub = () => {
             const { data: sbRows } = await supabase
               .from('pumphub_tokens')
               .select('*')
+              .eq('chain_id', Number(chainId))
+              .eq('factory_address', pumphubFactoryAddress.toLowerCase())
               .order('created_at', { ascending: false })
               .limit(500)
             if (sbRows?.length > 0) {
@@ -1886,11 +1917,6 @@ const PumpHub = () => {
             if (sbTokensList.length === 0) setTokens([])
             setLoadingTokens(false)
           }
-          return
-        }
-
-        if (!pumphubFactoryAddress) {
-          if (!cancelled) setLoadingTokens(false)
           return
         }
 
@@ -1972,6 +1998,8 @@ const PumpHub = () => {
             const { data: sbRows } = await supabase
               .from('pumphub_tokens')
               .select('*')
+              .eq('chain_id', Number(chainId))
+              .eq('factory_address', pumphubFactoryAddress.toLowerCase())
               .in('token_address', lowerAddrs)
             if (sbRows) sbRows.forEach(r => { sbMap[(r.token_address || '').toLowerCase()] = r })
           } catch (_) {}
@@ -2067,6 +2095,8 @@ const PumpHub = () => {
 
           const onChainCreatedAt = core[5] ? Number(core[5]) : 0
           upsertRows.push({
+            chain_id: Number(chainId),
+            factory_address: pumphubFactoryAddress.toLowerCase(),
             token_address: addr,
             creator: (core[0] || sbRow?.creator || '').toLowerCase(),
             name: bestName,
@@ -2095,7 +2125,7 @@ const PumpHub = () => {
         // Step 6: Upsert all token data back to Supabase (background, best-effort)
         if (supabase?.from && upsertRows.length > 0) {
           try {
-            await supabase.from('pumphub_tokens').upsert(upsertRows, { onConflict: 'token_address' })
+            await supabase.from('pumphub_tokens').upsert(upsertRows, { onConflict: 'chain_id,token_address' })
           } catch (e) {
             console.error('Supabase sync upsert failed:', e)
           }
@@ -2109,7 +2139,7 @@ const PumpHub = () => {
 
     fetchTokens()
     return () => { cancelled = true }
-  }, [publicClient, parseOnChainToken, pumphubFactoryAddress])
+  }, [publicClient, parseOnChainToken, pumphubFactoryAddress, chainId])
   
   // Fetch selected token data (with retry on 429 rate limit)
   useEffect(() => {
@@ -2380,7 +2410,7 @@ const PumpHub = () => {
                 margin: 0,
                 fontSize: isMobile ? 12 : 14
               }}>
-                Launch and trade bonding-curve tokens on Base and Tempo
+                Launch and trade bonding-curve tokens on Base and Robinhood
               </p>
             </div>
             {isInFarcaster && sdk?.actions?.composeCast && (
@@ -2409,6 +2439,49 @@ const PumpHub = () => {
                 <Share2 size={18} />
                 {isSharingCast ? 'Sharing...' : 'Share on Farcaster'}
               </button>
+            )}
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            marginBottom: isMobile ? 14 : 18,
+            padding: 6,
+            width: 'fit-content',
+            maxWidth: '100%',
+            borderRadius: 10,
+            background: '#091323',
+            border: '1px solid rgba(96, 165, 250, 0.18)',
+          }}>
+            {[NETWORKS.BASE, NETWORKS.ROBINHOOD].map((network) => {
+              const isActive = chainId === network.chainId
+              return (
+                <button
+                  key={network.chainId}
+                  type="button"
+                  onClick={() => !isActive && switchChain({ chainId: network.chainId })}
+                  aria-pressed={isActive}
+                  style={{
+                    minHeight: 40,
+                    padding: isMobile ? '9px 12px' : '9px 16px',
+                    border: isActive ? '1px solid rgba(96, 165, 250, 0.65)' : '1px solid transparent',
+                    borderRadius: 8,
+                    background: isActive ? '#173b72' : 'transparent',
+                    color: isActive ? '#fff' : '#94a3b8',
+                    fontSize: 13,
+                    fontWeight: 800,
+                    cursor: isActive ? 'default' : 'pointer',
+                  }}
+                >
+                  {network.chainName}
+                </button>
+              )
+            })}
+            {!isMobile && (
+              <span style={{ color: '#64748b', fontSize: 12, padding: '0 8px', whiteSpace: 'nowrap' }}>
+                {pumphubFactoryAddress ? `${activeNetwork.chainName} live` : 'Select a live market'}
+              </span>
             )}
           </div>
           

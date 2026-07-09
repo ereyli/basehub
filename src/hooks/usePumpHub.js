@@ -308,6 +308,8 @@ export const usePumpHub = () => {
       const { data, error } = await supabase
         .from('pumphub_tokens')
         .upsert({
+          chain_id: Number(chainId),
+          factory_address: factoryAddress.toLowerCase(),
           token_address: tokenAddress.toLowerCase(),
           creator: tokenData.creator?.toLowerCase() || address?.toLowerCase(),
           name: tokenData.name,
@@ -329,7 +331,7 @@ export const usePumpHub = () => {
           holder_count: tokenData.holderCount || 0,
           updated_at: new Date().toISOString()
         }, {
-          onConflict: 'token_address'
+          onConflict: 'chain_id,token_address'
         })
 
       if (error) {
@@ -353,6 +355,8 @@ export const usePumpHub = () => {
       const { data, error } = await supabase
         .from('token_trades')
         .insert({
+          chain_id: Number(chainId),
+          factory_address: factoryAddress.toLowerCase(),
           token_address: tradeData.tokenAddress?.toLowerCase(),
           trader_address: tradeData.traderAddress?.toLowerCase(),
           trade_type: tradeData.tradeType, // 'buy' or 'sell'
@@ -380,7 +384,7 @@ export const usePumpHub = () => {
     }
 
     if (!factoryAddress) {
-      throw new Error('Please switch to Base or Tempo. On Tempo, set VITE_PUMPHUB_FACTORY_TEMPO after deploying PumpHubFactory.')
+      throw new Error('Please switch to a PumpHub-supported network: Base, Robinhood, or Tempo.')
     }
 
     try {
@@ -593,7 +597,7 @@ export const usePumpHub = () => {
     }
 
     if (!factoryAddress) {
-      throw new Error('Please switch to Base or Tempo (PumpHub must be deployed on this network).')
+      throw new Error('Please switch to a PumpHub-supported network: Base, Robinhood, or Tempo.')
     }
 
     try {
@@ -648,7 +652,7 @@ export const usePumpHub = () => {
     }
 
     if (!factoryAddress) {
-      throw new Error('Please switch to Base or Tempo (PumpHub must be deployed on this network).')
+      throw new Error('Please switch to a PumpHub-supported network: Base, Robinhood, or Tempo.')
     }
 
     if (!publicClient || !address) {
@@ -803,7 +807,7 @@ export const usePumpHub = () => {
       throw new Error('Please connect your wallet')
     }
     if (!factoryAddress) {
-      throw new Error('Please switch to Base or Tempo (PumpHub must be deployed on this network).')
+      throw new Error('Please switch to a PumpHub-supported network: Base, Robinhood, or Tempo.')
     }
 
     try {
@@ -849,7 +853,7 @@ export const usePumpHub = () => {
       throw new Error('Please connect your wallet')
     }
     if (!factoryAddress) {
-      throw new Error('Please switch to Base or Tempo (PumpHub must be deployed on this network).')
+      throw new Error('Please switch to a PumpHub-supported network: Base, Robinhood, or Tempo.')
     }
 
     try {
@@ -949,6 +953,7 @@ export const usePumpHub = () => {
           updated_at: new Date().toISOString()
         })
         .eq('token_address', tokenAddress.toLowerCase())
+        .eq('chain_id', Number(chainId))
     } catch (err) {
       console.error('Error updating token stats:', err)
     }

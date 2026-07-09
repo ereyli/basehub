@@ -18,8 +18,8 @@ contract PumpHubFactory is Ownable, ReentrancyGuard {
     uint256 constant BP = 10000;
     uint256 constant IVE = 1e18;
     
-    address constant ROUTER = 0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24;
-    address constant WETH = 0x4200000000000000000000000000000000000006;
+    address public immutable ROUTER;
+    address public immutable WETH;
     address constant DEAD = 0x000000000000000000000000000000000000dEaD;
     
     uint256 public totalTokensCreated;
@@ -58,7 +58,11 @@ contract PumpHubFactory is Ownable, ReentrancyGuard {
     error E();
     modifier notPaused() { if(paused) revert E(); _; }
     
-    constructor() Ownable(msg.sender) {}
+    constructor(address router_, address weth_, address initialOwner_) Ownable(initialOwner_) {
+        if (router_ == address(0) || weth_ == address(0) || initialOwner_ == address(0)) revert E();
+        ROUTER = router_;
+        WETH = weth_;
+    }
     
     function setPaused(bool p) external onlyOwner { paused = p; }
     

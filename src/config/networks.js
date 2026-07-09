@@ -160,7 +160,10 @@ export const NETWORKS = {
       symbol: 'ETH',
       decimals: 18,
     },
-    rpcUrls: ['https://rpc.mainnet.chain.robinhood.com'],
+    rpcUrls: [
+      envRpc('VITE_ROBINHOOD_RPC_URL'),
+      'https://rpc.mainnet.chain.robinhood.com',
+    ].filter(Boolean),
     blockExplorerUrls: ['https://robinhoodchain.blockscout.com'],
     iconUrls: ['/robinhood-testnet-logo.png'],
     isFarcasterSupported: false,
@@ -336,6 +339,10 @@ export const CONTRACT_ADDRESSES = {
     SLOT_GAME: '0xc64006e31Dd09Df82B6513A9Cba20A52341EF1dB',
     BASEHUB_DEPLOYER: '0x71Bc04A2e357279c75EB1E2c133f08Ca9097d9bF',
     BASEHUB_NFT_COLLECTION_DEPLOYER: '0x71Bc04A2e357279c75EB1E2c133f08Ca9097d9bF',
+    PUMPHUB_FACTORY:
+      typeof import.meta !== 'undefined' && import.meta.env?.VITE_PUMPHUB_FACTORY_ROBINHOOD
+        ? String(import.meta.env.VITE_PUMPHUB_FACTORY_ROBINHOOD).trim()
+        : '0x1CEb5264E638a76C8704612811B9976cB30D0883',
   },
   ARBITRUM: {
     DICE_ROLL: '0xCD8cBAc71195fe2f2a81dbbbE4AE4Fff5278102C',
@@ -369,7 +376,7 @@ export const CONTRACT_ADDRESSES = {
   },
 }
 
-/** PumpHub factory for Base / Tempo (Tempo requires VITE_PUMPHUB_FACTORY_TEMPO). */
+/** PumpHub factory for each supported PumpHub mainnet. */
 export const getPumpHubFactoryAddress = (chainId) => {
   if (chainId == null) return null
   const cid = Number(chainId)
@@ -379,6 +386,11 @@ export const getPumpHubFactoryAddress = (chainId) => {
   }
   if (cid === NETWORKS.TEMPO.chainId) {
     const raw = CONTRACT_ADDRESSES.TEMPO?.PUMPHUB_FACTORY
+    if (raw && /^0x[a-fA-F0-9]{40}$/.test(String(raw))) return String(raw)
+    return null
+  }
+  if (cid === NETWORKS.ROBINHOOD.chainId) {
+    const raw = CONTRACT_ADDRESSES.ROBINHOOD?.PUMPHUB_FACTORY
     if (raw && /^0x[a-fA-F0-9]{40}$/.test(String(raw))) return String(raw)
     return null
   }

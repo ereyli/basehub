@@ -1,0 +1,16 @@
+{
+  "chainId": 4663,
+  "network": "Robinhood Chain",
+  "factoryAddress": "0x1CEb5264E638a76C8704612811B9976cB30D0883",
+  "deploymentTransaction": "0x63cb039aff41e6d3141580a77b8c521497a111002a9359dcb9a5b5df02ea132f",
+  "deployer": "0x3782fc55C0E2C464f0f1413Ab623D88155c91287",
+  "owner": "0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe",
+  "feeWallet": "0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe",
+  "uniswapV2Router": "0x89e5DB8B5aA49aA85AC63f691524311AEB649eba",
+  "uniswapV2Factory": "0x8bcEaA40B9AcdfAedF85AdF4FF01F5Ad6517937f",
+  "weth": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+  "creationFeeEth": "0.001",
+  "graduationThresholdEth": "5",
+  "tradingFeeBps": 60,
+  "deployedAt": "2026-07-09T22:20:35.794Z"
+}
