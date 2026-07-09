@@ -12,9 +12,13 @@ import {
   stringToBytes,
 } from 'viem'
 import { config, DATA_SUFFIX } from '../config/wagmi'
+import { NETWORKS } from '../config/networks'
+import { addXP } from '../utils/xpUtils'
 import {
   B20_CURVE_CREATE_FEE_ETH,
   B20_CURVE_ERC20_ABI,
+  B20_XP_GAME_TYPE,
+  B20_XP_REWARD,
   BASEHUB_B20_CURVE_LAUNCHPAD_ABI,
   getB20CurveLaunchpadAddress,
   isB20SupportedChainId,
@@ -22,6 +26,24 @@ import {
 } from '../config/b20'
 
 const RECEIPT_TIMEOUT_MS = 90000
+const TOKEN_BATCH_SIZE = 40
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function withRetry(fn, { attempts = 4, delayMs = 500 } = {}) {
+  let lastError
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      return await fn()
+    } catch (err) {
+      lastError = err
+      if (attempt < attempts - 1) await sleep(delayMs * (attempt + 1))
+    }
+  }
+  throw lastError
+}
 
 function cleanName(value) {
   return String(value || '').trim().slice(0, 32)
@@ -166,47 +188,39 @@ export function useB20Launchpad() {
 
   const fetchTokens = useCallback(async () => {
     if (!publicClient || !launchpadAddress) return []
-    let count = 0n
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        count = await publicClient.readContract({
-          address: launchpadAddress,
-          abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI,
-          functionName: 'getAllTokensCount',
-        })
-        break
-      } catch (err) {
-        if (attempt === 2) throw err
-        await new Promise((resolve) => setTimeout(resolve, 450 * (attempt + 1)))
-      }
-    }
+    const readLaunchpad = (functionName, args = []) => withRetry(() => publicClient.readContract({
+      address: launchpadAddress,
+      abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI,
+      functionName,
+      args,
+    }))
+
+    const count = await readLaunchpad('getAllTokensCount')
 
     const total = Number(count || 0n)
     if (!total) return []
 
-    const tokenAddresses = []
-    const batchSize = 80
-    for (let offset = 0; offset < total; offset += batchSize) {
-      const limit = Math.min(batchSize, total - offset)
-      let batch = []
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          batch = await publicClient.readContract({
-            address: launchpadAddress,
-            abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI,
-            functionName: 'getTokens',
-            args: [BigInt(offset), BigInt(limit)],
-          })
-          break
-        } catch (err) {
-          const message = String(err?.message || '').toLowerCase()
-          const rateLimited = message.includes('429') || message.includes('rate limit') || message.includes('too many requests')
-          if (rateLimited || attempt === 2) break
-          await new Promise((resolve) => setTimeout(resolve, 600 * (attempt + 1)))
-        }
+    const readTokenBatch = async (offset, limit) => {
+      try {
+        return await readLaunchpad('getTokens', [BigInt(offset), BigInt(limit)])
+      } catch (err) {
+        if (limit <= 1) throw err
+        const leftLimit = Math.floor(limit / 2)
+        const rightLimit = limit - leftLimit
+        const [left, right] = await Promise.all([
+          readTokenBatch(offset, leftLimit),
+          readTokenBatch(offset + leftLimit, rightLimit),
+        ])
+        return [...left, ...right]
       }
+    }
+
+    const tokenAddresses = []
+    for (let offset = 0; offset < total; offset += TOKEN_BATCH_SIZE) {
+      const limit = Math.min(TOKEN_BATCH_SIZE, total - offset)
+      const batch = await readTokenBatch(offset, limit)
       if (Array.isArray(batch) && batch.length > 0) tokenAddresses.push(...batch)
-      if (offset + batchSize < total) await new Promise((resolve) => setTimeout(resolve, 250))
+      if (offset + TOKEN_BATCH_SIZE < total) await sleep(150)
     }
 
     const uniqueAddresses = Array.from(new Set(tokenAddresses.map((item) => String(item).toLowerCase())))
@@ -240,20 +254,33 @@ export function useB20Launchpad() {
       }
     }
 
+    const hydrateSingleToken = async (tokenAddress) => {
+      const [meta, core, stats, progress] = await Promise.all([
+        readLaunchpad('getTokenMeta', [tokenAddress]),
+        readLaunchpad('tokenCore', [tokenAddress]),
+        readLaunchpad('tokenStats', [tokenAddress]),
+        readLaunchpad('getGraduationProgress', [tokenAddress]).catch(() => 0n),
+      ])
+      return hydrateToken(tokenAddress, meta, core, stats, progress)
+    }
+
     const enriched = []
     for (let index = 0; index < uniqueAddresses.length; index++) {
       const metaResult = results[index * 4]
       const coreResult = results[index * 4 + 1]
       const statsResult = results[index * 4 + 2]
       const progressResult = results[index * 4 + 3]
-      if (metaResult?.status === 'failure' || coreResult?.status === 'failure' || statsResult?.status === 'failure') continue
-      enriched.push(hydrateToken(
-        uniqueAddresses[index],
-        metaResult?.result,
-        coreResult?.result,
-        statsResult?.result,
-        progressResult?.status === 'failure' ? 0n : progressResult?.result
-      ))
+      if (metaResult?.status === 'failure' || coreResult?.status === 'failure' || statsResult?.status === 'failure') {
+        enriched.push(await hydrateSingleToken(uniqueAddresses[index]))
+      } else {
+        enriched.push(hydrateToken(
+          uniqueAddresses[index],
+          metaResult?.result,
+          coreResult?.result,
+          statsResult?.result,
+          progressResult?.status === 'failure' ? 0n : progressResult?.result
+        ))
+      }
     }
 
     return enriched.sort((a, b) => Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0))
@@ -299,11 +326,23 @@ export function useB20Launchpad() {
         dataSuffix: DATA_SUFFIX,
       })
       const receipt = await waitForTx(hash, Number(chainId)).catch(() => null)
+
+      let xpEarned = 0
+      if (Number(chainId) === NETWORKS.BASE.chainId) {
+        try {
+          await addXP(address, B20_XP_REWARD, B20_XP_GAME_TYPE, Number(chainId), false, hash)
+          xpEarned = B20_XP_REWARD
+        } catch (xpError) {
+          console.error('B20 curve XP award failed:', xpError)
+        }
+      }
+
       return {
         txHash: hash,
         tokenAddress: getCreatedToken(receipt) || predictedToken,
         predictedToken,
         fee: `${B20_CURVE_CREATE_FEE_ETH} ETH`,
+        xpEarned,
       }
     } catch (err) {
       setError(err.shortMessage || err.message || 'B20 curve launch failed')

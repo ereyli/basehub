@@ -4,6 +4,12 @@ import tempoLogo from '../../Tempo logo.jpg'
 // Mainnet + Testnet. When adding testnet networks, also add them to CONTRACT_ADDRESSES.
 // Keys used in product.networks: 'base', 'ink', 'soneium', 'katana', 'tempo', 'arbitrum', 'optimism', 'monad' (+ testnet keys)
 
+const envRpc = (key) => (
+  typeof import.meta !== 'undefined' && import.meta.env?.[key]
+    ? String(import.meta.env[key]).trim()
+    : ''
+)
+
 export const NETWORKS = {
   BASE: {
     chainId: 8453,
@@ -16,11 +22,12 @@ export const NETWORKS = {
       decimals: 18,
     },
     rpcUrls: [
+      envRpc('VITE_BASE_RPC_URL'),
       'https://mainnet.base.org',
       'https://base-rpc.publicnode.com',
       'https://1rpc.io/base',
       'https://base.meowrpc.com',
-    ],
+    ].filter(Boolean),
     blockExplorerUrls: ['https://basescan.org'],
     iconUrls: ['https://base.org/favicon.ico'],
     isFarcasterSupported: true, // Only Base supports Farcaster

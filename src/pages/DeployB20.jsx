@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAccount, useBalance, useChainId, usePublicClient, useReadContract, useSwitchChain } from 'wagmi'
-import { formatEther, formatUnits, parseAbiItem, parseUnits } from 'viem'
+import { createPublicClient, fallback as viemFallback, formatEther, formatUnits, http as viemHttp, parseAbiItem, parseUnits } from 'viem'
 import {
   Activity,
   AlertTriangle,
@@ -47,6 +47,13 @@ import {
 const B20_LOGO_SRC = '/crypto-logos/basahub logo/B20.svg'
 const ETH_PRICE_USD = 3000
 const B20_PUBLIC_SOON = false
+const BASE_LOG_CLIENT = createPublicClient({
+  transport: viemFallback([
+    viemHttp('https://mainnet.base.org', { timeout: 12000, retryCount: 1, retryDelay: 500 }),
+    viemHttp('https://base-rpc.publicnode.com', { timeout: 12000, retryCount: 1, retryDelay: 500 }),
+    viemHttp('https://1rpc.io/base', { timeout: 12000, retryCount: 1, retryDelay: 500 }),
+  ], { rank: false, retryCount: 1, retryDelay: 500 }),
+})
 
 const initialNormalForm = {
   variant: 'asset',
@@ -146,6 +153,23 @@ function formatNumber(value, maximumFractionDigits = 2) {
   if (number >= 1_000_000) return `${(number / 1_000_000).toFixed(2)}M`
   if (number >= 1_000) return `${(number / 1_000).toFixed(2)}K`
   return number.toLocaleString(undefined, { maximumFractionDigits })
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function withRetry(fn, { attempts = 3, delayMs = 500 } = {}) {
+  let lastError
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      return await fn()
+    } catch (err) {
+      lastError = err
+      if (attempt < attempts - 1) await sleep(delayMs * (attempt + 1))
+    }
+  }
+  throw lastError
 }
 
 function normalizeDecimalInput(value, decimals = 18) {
@@ -427,7 +451,7 @@ export default function DeployB20() {
       const result = await deployB20(normalForm)
       setStatus({
         type: 'success',
-        text: `B20 deployed: ${shortAddress(result.tokenAddress || result.predictedAddress)}`,
+        text: `B20 deployed: ${shortAddress(result.tokenAddress || result.predictedAddress)}${result.xpEarned ? ` • ${result.xpEarned.toLocaleString()} XP` : ''}`,
         txHash: result.txHash,
       })
       setNormalForm(initialNormalForm)
@@ -447,7 +471,7 @@ export default function DeployB20() {
       const result = await createCurveToken(curveForm)
       setStatus({
         type: 'success',
-        text: `Curve B20 launched: ${shortAddress(result.tokenAddress)}`,
+        text: `Curve B20 launched: ${shortAddress(result.tokenAddress)}${result.xpEarned ? ` • ${result.xpEarned.toLocaleString()} XP` : ''}`,
         txHash: result.txHash,
       })
       setCurveForm(initialCurveForm)
@@ -847,34 +871,23 @@ function B20ChartPanel({ token, launchpadAddress }) {
       }
       setLoadingTrades(true)
       try {
-        const latestBlock = await publicClient.getBlockNumber()
-        const lookbackTiers = txns > 0 ? [10000n, 25000n] : [5000n]
-        const chunkSize = 1500n
+        const logClient = Number(chainId) === NETWORKS.BASE.chainId ? BASE_LOG_CLIENT : publicClient
+        const latestBlock = await logClient.getBlockNumber()
+        const lookbackTiers = txns > 0 ? [25000n, 100000n, 500000n] : [10000n]
+        const chunkSize = 2000n
         const getLogsChunked = async (event, fromBlock) => {
-          const chunks = []
+          const logs = []
           for (let start = fromBlock; start <= latestBlock; start += chunkSize + 1n) {
             const end = start + chunkSize > latestBlock ? latestBlock : start + chunkSize
-            chunks.push({ start, end })
-          }
-
-          const logs = []
-          const batchSize = 6
-          for (let index = 0; index < chunks.length; index += batchSize) {
-            const batch = chunks.slice(index, index + batchSize)
-            const results = await Promise.all(batch.map(async ({ start, end }) => {
-              try {
-                return await publicClient.getLogs({
-                  address: launchpadAddress,
-                  event,
-                  args: { t: token.address },
-                  fromBlock: start,
-                  toBlock: end,
-                })
-              } catch {
-                return []
-              }
-            }))
-            logs.push(...results.flat())
+            const chunkLogs = await withRetry(() => logClient.getLogs({
+              address: launchpadAddress,
+              event,
+              args: { t: token.address },
+              fromBlock: start,
+              toBlock: end,
+            }), { attempts: 3, delayMs: 350 }).catch(() => [])
+            logs.push(...chunkLogs)
+            if (start + chunkSize <= latestBlock) await sleep(80)
           }
           return logs
         }
@@ -915,7 +928,7 @@ function B20ChartPanel({ token, launchpadAddress }) {
         const blockTimes = new Map()
         await Promise.all(recentBlocks.map(async (blockNumber) => {
           try {
-            const block = await publicClient.getBlock({ blockNumber: BigInt(blockNumber) })
+            const block = await logClient.getBlock({ blockNumber: BigInt(blockNumber) })
             blockTimes.set(blockNumber, Number(block.timestamp) * 1000)
           } catch {
             blockTimes.set(blockNumber, Date.now())
