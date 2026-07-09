@@ -2456,6 +2456,9 @@ const PumpHub = () => {
           }}>
             {[NETWORKS.BASE, NETWORKS.ROBINHOOD].map((network) => {
               const isActive = chainId === network.chainId
+              const logoSrc = network.chainId === NETWORKS.BASE.chainId
+                ? '/base-logo.jpg'
+                : '/robinhood-testnet-logo.png'
               return (
                 <button
                   key={network.chainId}
@@ -2472,8 +2475,24 @@ const PumpHub = () => {
                     fontSize: 13,
                     fontWeight: 800,
                     cursor: isActive ? 'default' : 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
                   }}
                 >
+                  <img
+                    src={logoSrc}
+                    alt=""
+                    aria-hidden="true"
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      flexShrink: 0,
+                    }}
+                  />
                   {network.chainName}
                 </button>
               )
