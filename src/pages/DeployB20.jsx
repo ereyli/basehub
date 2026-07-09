@@ -418,6 +418,17 @@ function tokenTxCount(token) {
   return Number(token?.stats?.buys || 0n) + Number(token?.stats?.sells || 0n)
 }
 
+function b20TrendScore(token) {
+  const volume = Number(token?.volumeLabel || 0)
+  const txns = tokenTxCount(token)
+  const progress = Number(token?.progress || 0)
+  return (volume * 1000) + (txns * 3) + progress
+}
+
+function isTrendingB20Token(token) {
+  return b20TrendScore(token) > 0 && (Number(token?.volumeLabel || 0) >= 0.001 || tokenTxCount(token) >= 3 || Number(token?.progress || 0) > 0)
+}
+
 function modeCopy(mode) {
   if (mode === 'curve') {
     return 'Bonding curve, live markets, creator fees.'
@@ -532,6 +543,8 @@ export default function DeployB20() {
     }
     if (category === 'graduated') {
       result = result.filter((token) => token.core?.graduated)
+    } else if (category === 'trending') {
+      result = result.filter(isTrendingB20Token)
     } else if (category === 'new') {
       const oneDayAgo = Date.now() - 86400000
       result = result.filter((token) => Number(token.createdAtMs || 0) > oneDayAgo)
@@ -1579,6 +1592,12 @@ function TokenBrowser({
   networkLabel,
 }) {
   const graduatedCount = tokens.filter((token) => token.core?.graduated).length
+  const trendingTokens = useMemo(() => (
+    tokens
+      .filter(isTrendingB20Token)
+      .sort((a, b) => b20TrendScore(b) - b20TrendScore(a))
+      .slice(0, 4)
+  ), [tokens])
   return (
     <section style={styles.browserPanel}>
       <div className="b20-browser-heading" style={styles.browserHeading}>
@@ -1617,6 +1636,7 @@ function TokenBrowser({
       <div style={styles.categoryBar}>
         {[
           { id: 'all', label: 'All', icon: Globe },
+          { id: 'trending', label: 'Trending', icon: Flame },
           { id: 'new', label: 'New', icon: Zap },
           { id: 'graduated', label: 'Graduated', icon: Star },
         ].map((item) => (
@@ -1630,6 +1650,28 @@ function TokenBrowser({
           </button>
         ))}
       </div>
+
+      {trendingTokens.length > 0 && category !== 'trending' && (
+        <section style={styles.trendingPanel}>
+          <div style={styles.trendingHeader}>
+            <div>
+              <p style={styles.panelKicker}>Trending</p>
+              <h3 style={styles.trendingTitle}>High activity B20 launches</h3>
+            </div>
+            <span style={styles.trendingHint}>Ranked by volume, txns, and curve progress</span>
+          </div>
+          <div className="b20-token-grid" style={styles.trendingGrid}>
+            {trendingTokens.map((token) => (
+              <B20TokenCard
+                key={`trending-${token.address}`}
+                token={token}
+                onClick={() => setSelectedToken(token)}
+                featured
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {!launchpadAddress ? (
         <EmptyState
@@ -1672,17 +1714,18 @@ function TokenBrowser({
   )
 }
 
-function B20TokenCard({ token, active, onClick }) {
+function B20TokenCard({ token, active, onClick, featured = false }) {
   const txns = tokenTxCount(token)
   const volume = Number(token.volumeLabel || 0)
   const volumeLabel = volume > 0 && volume < 0.0001 ? '<0.0001' : volume.toFixed(4)
   return (
-    <button type="button" onClick={onClick} style={{ ...styles.marketCard, ...(active ? styles.marketCardActive : {}) }}>
+    <button type="button" onClick={onClick} style={{ ...styles.marketCard, ...(featured ? styles.marketCardFeatured : {}), ...(active ? styles.marketCardActive : {}) }}>
       <div style={styles.marketCardTop}>
         <TokenAvatar image={token.image} symbol={token.symbol} size={72} />
         <div style={styles.marketCardName}>
           <strong>{token.name}</strong>
           <span>${token.symbol}</span>
+          {featured && <em style={styles.trendingBadge}>Trending</em>}
         </div>
         <div style={styles.marketCap}>
           <strong>{formatMarketCap(tokenMarketCapUSD(token))}</strong>
@@ -2242,6 +2285,37 @@ const styles = {
     background: 'rgba(59, 130, 246, 0.18)',
     color: '#60a5fa',
   },
+  trendingPanel: {
+    border: '1px solid rgba(34, 197, 94, 0.2)',
+    borderRadius: 14,
+    background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.11), rgba(37, 99, 235, 0.08))',
+    padding: 16,
+    marginBottom: 18,
+  },
+  trendingHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    gap: 14,
+    marginBottom: 14,
+  },
+  trendingTitle: {
+    margin: '2px 0 0',
+    color: '#f8fafc',
+    fontSize: 20,
+    lineHeight: 1.15,
+  },
+  trendingHint: {
+    color: '#86efac',
+    fontSize: 12,
+    fontWeight: 800,
+    textAlign: 'right',
+  },
+  trendingGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+    gap: 12,
+  },
   tokenGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
@@ -2264,6 +2338,11 @@ const styles = {
     borderColor: '#60a5fa',
     boxShadow: '0 0 0 1px rgba(96, 165, 250, 0.25)',
   },
+  marketCardFeatured: {
+    borderColor: 'rgba(34, 197, 94, 0.42)',
+    borderTopColor: '#22c55e',
+    boxShadow: '0 16px 38px rgba(22, 163, 74, 0.08)',
+  },
   marketCardTop: {
     display: 'grid',
     gridTemplateColumns: '72px minmax(0, 1fr) auto',
@@ -2274,6 +2353,19 @@ const styles = {
     display: 'grid',
     gap: 6,
     minWidth: 0,
+  },
+  trendingBadge: {
+    justifySelf: 'start',
+    border: '1px solid rgba(34, 197, 94, 0.32)',
+    borderRadius: 999,
+    background: 'rgba(34, 197, 94, 0.12)',
+    color: '#86efac',
+    padding: '3px 7px',
+    fontSize: 10,
+    fontStyle: 'normal',
+    fontWeight: 900,
+    textTransform: 'uppercase',
+    letterSpacing: 0,
   },
   marketCap: {
     display: 'grid',
