@@ -1399,11 +1399,11 @@ const Home = () => {
                     <Rocket size={compactStyles.iconSize} />
                   </div>
                   <h2 style={compactStyles.categoryTitle}>PUMPHUB</h2>
-                  {!isCompactMode && renderNetworkLogos(['base', 'tempo'])}
+                  {!isCompactMode && renderNetworkLogos(['base', 'robinhood'])}
                 </div>
                 {!isCompactMode && (
                   <p style={{ color: '#9ca3af', fontSize: '15px', marginBottom: '24px', lineHeight: '1.6', fontFamily: 'Poppins, sans-serif' }}>
-                    Launch your own token with bonding curve on Base or Tempo. Fair launch, no presale. 0.3% trade fee goes to creator. Graduates to Uniswap-supported liquidity.
+                    Launch your own token with bonding curve on Base or Robinhood Chain. Fair launch, no presale. 0.3% trade fee goes to creator. Graduates to Uniswap-supported liquidity.
                   </p>
                 )}
                 <div style={compactStyles.cardGrid}>
