@@ -46,7 +46,7 @@ import {
 
 const B20_LOGO_SRC = '/crypto-logos/basahub logo/B20.svg'
 const ETH_PRICE_USD = 3000
-const B20_PUBLIC_SOON = true
+const B20_PUBLIC_SOON = false
 
 const initialNormalForm = {
   variant: 'asset',
@@ -318,8 +318,7 @@ export default function DeployB20() {
 
   const normalLauncherAddress = useMemo(() => getB20LauncherAddress(chainId), [chainId])
   const isBusy = normalLoading || curveLoading || isSwitching
-  const isBaseSepoliaActive = Number(chainId) === NETWORKS.BASE_SEPOLIA.chainId
-  const needsBaseSepoliaForCurve = !launchpadAddress && !isBaseSepoliaActive
+  const needsBaseNetworkForCurve = !launchpadAddress && !isSupported
   const platformStats = useMemo(() => {
     const totalVolume = tokens.reduce((sum, token) => sum + Number(token.volumeLabel || 0), 0)
     return {
@@ -417,8 +416,8 @@ export default function DeployB20() {
     if (tab === 'create' || tab === 'tokens') setActiveTab(tab)
   }, [searchParams])
 
-  const switchToBaseSepolia = async () => {
-    await switchChainAsync({ chainId: NETWORKS.BASE_SEPOLIA.chainId })
+  const switchToBaseNetwork = async () => {
+    await switchChainAsync({ chainId: NETWORKS.BASE.chainId })
   }
 
   const handleNormalSubmit = async (event) => {
@@ -558,13 +557,15 @@ export default function DeployB20() {
         <section className="b20-notice" style={styles.notice}>
           <ShieldCheck size={18} />
           <span>
-            {isBaseSepoliaActive
-              ? 'Base Sepolia test market. Mainnet opens after B20 activation is confirmed.'
-              : 'B20 curve launch is live on Base Sepolia for testing. Switch networks before creating or trading curve tokens.'}
+            {isSupported
+              ? isTestnet
+                ? 'Base Sepolia test market is available for dry runs before production launches.'
+                : 'B20 Launchpad is live on Base mainnet for direct deploys, curve launches, and trading.'
+              : 'B20 Launchpad is live on Base mainnet. Switch networks before creating or trading curve tokens.'}
           </span>
-          {!isBaseSepoliaActive && (
-            <button type="button" onClick={switchToBaseSepolia} disabled={isBusy} className="b20-small-button" style={styles.smallButton}>
-              Switch to Base Sepolia
+          {!isSupported && (
+            <button type="button" onClick={switchToBaseNetwork} disabled={isBusy} className="b20-small-button" style={styles.smallButton}>
+              Switch to Base
             </button>
           )}
         </section>
@@ -622,10 +623,11 @@ export default function DeployB20() {
             isRefreshing={isRefreshing}
             loadTokens={loadTokens}
             launchpadAddress={launchpadAddress}
-            needsBaseSepolia={needsBaseSepoliaForCurve}
-            onSwitchNetwork={switchToBaseSepolia}
+            needsBaseSepolia={needsBaseNetworkForCurve}
+            onSwitchNetwork={switchToBaseNetwork}
             isBusy={isBusy}
             setActiveTab={setActiveTab}
+            networkLabel={activeNetworkLabel}
           />
         )}
 
@@ -668,8 +670,8 @@ export default function DeployB20() {
                 isBusy={isBusy}
                 isSwitching={isSwitching}
                 launchpadAddress={launchpadAddress}
-                needsBaseSepolia={needsBaseSepoliaForCurve}
-                onSwitchNetwork={switchToBaseSepolia}
+                needsBaseSepolia={needsBaseNetworkForCurve}
+                onSwitchNetwork={switchToBaseNetwork}
                 error={curveError}
               />
             )}
@@ -689,10 +691,10 @@ export default function DeployB20() {
             {!launchpadAddress ? (
               <EmptyState
                 icon={<AlertTriangle size={22} />}
-                title={needsBaseSepoliaForCurve ? 'Switch to Base Sepolia' : 'Curve contract not configured'}
-                text={needsBaseSepoliaForCurve ? 'B20 curve markets are deployed on Base Sepolia for this test launch.' : 'Set the curve launchpad address to list and trade B20 markets.'}
-                action={needsBaseSepoliaForCurve ? (
-                  <button type="button" onClick={switchToBaseSepolia} disabled={isBusy} style={styles.primaryButton}>
+                title={needsBaseNetworkForCurve ? 'Switch to Base' : 'Curve contract not configured'}
+                text={needsBaseNetworkForCurve ? 'B20 curve markets are deployed on Base mainnet and Base Sepolia testing.' : 'Set the curve launchpad address to list and trade B20 markets.'}
+                action={needsBaseNetworkForCurve ? (
+                  <button type="button" onClick={switchToBaseNetwork} disabled={isBusy} style={styles.primaryButton}>
                     <Zap size={18} /> Switch network
                   </button>
                 ) : null}
@@ -1332,6 +1334,7 @@ function TokenBrowser({
   onSwitchNetwork,
   isBusy,
   setActiveTab,
+  networkLabel,
 }) {
   const graduatedCount = tokens.filter((token) => token.core?.graduated).length
   return (
@@ -1389,8 +1392,8 @@ function TokenBrowser({
       {!launchpadAddress ? (
         <EmptyState
           icon={<AlertTriangle size={28} />}
-          title={needsBaseSepolia ? 'Switch to Base Sepolia' : 'Curve contract not configured'}
-          text={needsBaseSepolia ? 'B20 curve launches are deployed on Base Sepolia for testing.' : 'Curve markets are unavailable on the current network.'}
+          title={needsBaseSepolia ? 'Switch to Base' : 'Curve contract not configured'}
+          text={needsBaseSepolia ? 'B20 curve launches are deployed on Base mainnet. Base Sepolia remains available for testing.' : 'Curve markets are unavailable on the current network.'}
           action={needsBaseSepolia ? (
             <button type="button" onClick={onSwitchNetwork} disabled={isBusy} style={styles.primaryButton}>
               <Zap size={18} /> Switch network
@@ -1401,7 +1404,7 @@ function TokenBrowser({
         <EmptyState
           icon={<RefreshCw size={28} />}
           title="Loading B20 markets"
-          text="Reading launches, stats, and curve progress from Base Sepolia."
+          text={`Reading launches, stats, and curve progress from ${networkLabel}.`}
         />
       ) : tokens.length === 0 ? (
         <div style={styles.emptyMarket}>
@@ -1598,12 +1601,12 @@ function CurveCreateForm({
         <ConfigLine icon={<Flame size={16} />} label="Supply" value={B20_CURVE_TOTAL_SUPPLY} />
         <ConfigLine icon={<LineChart size={16} />} label="Graduation" value={`${B20_CURVE_GRADUATION_ETH} ETH`} />
         <ConfigLine icon={<Activity size={16} />} label="Trading fee" value={`${B20_CURVE_TRADING_FEE_BPS / 100}%`} />
-        <ConfigLine icon={<Wallet size={16} />} label="Launchpad" value={launchpadAddress ? shortAddress(launchpadAddress) : needsBaseSepolia ? 'Base Sepolia' : 'Not configured'} />
+        <ConfigLine icon={<Wallet size={16} />} label="Launchpad" value={launchpadAddress ? shortAddress(launchpadAddress) : needsBaseSepolia ? 'Base' : 'Not configured'} />
       </div>
       {error && <p style={styles.errorLine}>{error}</p>}
       {needsBaseSepolia ? (
         <button type="button" onClick={onSwitchNetwork} disabled={isBusy || isSwitching} style={styles.primaryButton}>
-          <Zap size={18} /> {isSwitching ? 'Switching network' : 'Switch to Base Sepolia'}
+          <Zap size={18} /> {isSwitching ? 'Switching network' : 'Switch to Base'}
         </button>
       ) : (
         <button type="submit" disabled={isBusy || isUploadingLogo || !form.image || !launchpadAddress} style={styles.primaryButton}>

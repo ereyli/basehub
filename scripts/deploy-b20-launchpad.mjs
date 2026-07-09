@@ -7,9 +7,26 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const DEFAULT_BASE_SEPOLIA_RPC = 'https://sepolia.base.org'
+const NETWORKS = {
+  base: {
+    chainId: 8453n,
+    rpcUrl: 'https://mainnet.base.org',
+    explorer: 'https://basescan.org',
+    envSuffix: 'BASE',
+    deploymentFile: 'base-b20-launchpad.json',
+  },
+  baseSepolia: {
+    chainId: 84532n,
+    rpcUrl: 'https://sepolia.base.org',
+    explorer: 'https://sepolia.basescan.org',
+    envSuffix: 'BASE_SEPOLIA',
+    deploymentFile: 'base-sepolia-b20-launchpad.json',
+  },
+}
 const DEFAULT_FEE_WALLET = '0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe'
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+const BASE_UNISWAP_V2_ROUTER = '0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24'
+const BASE_WETH = '0x4200000000000000000000000000000000000006'
 const KEYSTORE_PATH = process.env.KEYSTORE_PATH || '.secrets/robinhood-deployer.json'
 const KEYSTORE_PASSWORD_PATH = process.env.KEYSTORE_PASSWORD_PATH || '.secrets/robinhood-deployer.pass'
 
@@ -64,7 +81,15 @@ async function transferOwnerIfNeeded(contract, nextOwner, label) {
   const tx = await contract.transferOwnership(nextOwner)
   console.log(`${label} transferOwnership tx:`, tx.hash)
   await tx.wait(1)
-  console.log(`${label} owner:`, await contract.owner())
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const confirmedOwner = await contract.owner()
+    if (confirmedOwner.toLowerCase() === nextOwner.toLowerCase()) {
+      console.log(`${label} owner:`, confirmedOwner)
+      return tx.hash
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+  }
+  console.log(`${label} owner pending confirmation, latest read:`, await contract.owner())
   return tx.hash
 }
 
@@ -99,10 +124,17 @@ async function estimateDeployCost(wallet, compiled, deployments) {
 
 async function main() {
   const dryRun = process.argv.includes('--dry-run')
-  const rpcUrl = process.env.RPC_URL || process.env.BASE_SEPOLIA_RPC_URL || DEFAULT_BASE_SEPOLIA_RPC
+  const networkArg = process.argv.find((arg) => arg.startsWith('--network='))?.split('=')[1]
+  const networkName = process.env.B20_DEPLOY_NETWORK || networkArg || 'baseSepolia'
+  const target = NETWORKS[networkName]
+  if (!target) throw new Error(`Unsupported B20 deploy network: ${networkName}`)
+
+  const rpcUrl = process.env.RPC_URL
+    || (networkName === 'base' ? process.env.BASE_RPC_URL : process.env.BASE_SEPOLIA_RPC_URL)
+    || target.rpcUrl
   const feeWallet = process.env.FEE_WALLET || DEFAULT_FEE_WALLET
-  const router = process.env.B20_ROUTER || ZERO_ADDRESS
-  const weth = process.env.B20_WETH || ZERO_ADDRESS
+  const router = process.env.B20_ROUTER || (networkName === 'base' ? BASE_UNISWAP_V2_ROUTER : ZERO_ADDRESS)
+  const weth = process.env.B20_WETH || (networkName === 'base' ? BASE_WETH : ZERO_ADDRESS)
 
   if (!ethers.isAddress(feeWallet)) throw new Error('FEE_WALLET is not a valid address')
   if (!ethers.isAddress(router) || !ethers.isAddress(weth)) throw new Error('B20_ROUTER/B20_WETH must be valid addresses')
@@ -116,6 +148,7 @@ async function main() {
   const balance = await provider.getBalance(wallet.address)
 
   console.log('Deploying BaseHub B20 launchpad contracts')
+  console.log('Network:', networkName)
   console.log('Chain ID:', network.chainId.toString())
   console.log('Deployer:', wallet.address)
   console.log('Fee Wallet:', feeWallet)
@@ -123,8 +156,8 @@ async function main() {
   console.log('WETH:', weth)
   console.log('Balance:', ethers.formatEther(balance), 'ETH')
 
-  if (network.chainId !== 84532n) {
-    throw new Error(`Expected Base Sepolia chain ID 84532, got ${network.chainId.toString()}`)
+  if (network.chainId !== target.chainId) {
+    throw new Error(`Expected chain ID ${target.chainId.toString()}, got ${network.chainId.toString()}`)
   }
 
   const compiled = compileContracts()
@@ -155,16 +188,17 @@ async function main() {
   const curveOwnershipTx = await transferOwnerIfNeeded(curve, feeWallet, 'BaseHubB20BondingLaunchpad')
 
   console.log('\nAdd these to Vercel/local env:')
-  console.log(`VITE_B20_LAUNCHER_BASE_SEPOLIA=${launcherAddress}`)
-  console.log(`VITE_B20_CURVE_LAUNCHPAD_BASE_SEPOLIA=${curveAddress}`)
+  console.log(`VITE_B20_LAUNCHER_${target.envSuffix}=${launcherAddress}`)
+  console.log(`VITE_B20_CURVE_LAUNCHPAD_${target.envSuffix}=${curveAddress}`)
 
   const outDir = path.resolve('deployments')
   fs.mkdirSync(outDir, { recursive: true })
-  const outPath = path.join(outDir, 'base-sepolia-b20-launchpad.json')
+  const outPath = path.join(outDir, target.deploymentFile)
   fs.writeFileSync(outPath, JSON.stringify({
-    chainId: 84532,
+    chainId: Number(target.chainId),
+    network: networkName,
     rpcUrl,
-    explorer: 'https://sepolia.basescan.org',
+    explorer: target.explorer,
     deployer: wallet.address,
     feeWallet,
     router,
@@ -183,7 +217,9 @@ async function main() {
   console.log('Saved:', outPath)
 }
 
-main().catch((err) => {
-  console.error(err.message || err)
-  process.exit(1)
-})
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err) => {
+    console.error(err.message || err)
+    process.exit(1)
+  })
+}

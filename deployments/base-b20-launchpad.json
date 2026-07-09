@@ -1,0 +1,20 @@
+{
+  "chainId": 8453,
+  "network": "base",
+  "rpcUrl": "https://mainnet.base.org",
+  "explorer": "https://basescan.org",
+  "deployer": "0x3782fc55C0E2C464f0f1413Ab623D88155c91287",
+  "feeWallet": "0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe",
+  "router": "0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24",
+  "weth": "0x4200000000000000000000000000000000000006",
+  "owner": "0x7d2Ceb7a0e0C39A3d0f7B5b491659fDE4bb7BCFe",
+  "deployedAt": "2026-07-09T00:43:51.522Z",
+  "contracts": {
+    "BASEHUB_B20_LAUNCHER": "0x166011AB63AA872cf9E1d7d0f7a1ddfa32e2f7b9",
+    "BASEHUB_B20_CURVE_LAUNCHPAD": "0x71e90F79B07c42DAF99C5BBEd1B5E5C7b52a2129"
+  },
+  "ownershipTransfers": {
+    "BASEHUB_B20_LAUNCHER": "0xf487fdf42669da87c4fb6f6c052fc36bd1cd5da0bca94c030bcf3452e5d18eb1",
+    "BASEHUB_B20_CURVE_LAUNCHPAD": "0xd7467a52c46dd25b0ea736a29ac962c778cf46a1224787e62a8376a29eb1030f"
+  }
+}

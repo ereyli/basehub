@@ -1300,7 +1300,7 @@ const Home = () => {
                               <TrendingUp size={18} style={{ color: 'white' }} />
                             </div>
                             <h3 style={{ ...compactStyles.cardTitle, color: '#60a5fa' }}>Markets</h3>
-                            <div style={compactStyles.xpBadge}>Soon</div>
+                            <div style={compactStyles.xpBadge}>Live</div>
                           </>
                         ) : (
                           <>
@@ -1310,11 +1310,11 @@ const Home = () => {
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <h3 style={{ ...compactStyles.cardTitle, color: '#60a5fa' }}>B20 Markets</h3>
-                                <p style={compactStyles.cardDescription}>Coming soon after mainnet contracts are deployed</p>
+                                <p style={compactStyles.cardDescription}>Browse and trade curve-launched B20 tokens on Base</p>
                               </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: 'auto' }}>
-                              <div style={compactStyles.xpBadge}>Soon</div>
+                              <div style={compactStyles.xpBadge}>Base mainnet</div>
                             </div>
                           </>
                         )}
@@ -1335,7 +1335,7 @@ const Home = () => {
                               <Factory size={18} style={{ color: 'white' }} />
                             </div>
                             <h3 style={{ ...compactStyles.cardTitle, color: '#86efac' }}>Create</h3>
-                            <div style={compactStyles.xpBadge}>Soon</div>
+                            <div style={compactStyles.xpBadge}>5000 XP</div>
                           </>
                         ) : (
                           <>
@@ -1345,11 +1345,11 @@ const Home = () => {
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <h3 style={{ ...compactStyles.cardTitle, color: '#86efac' }}>Create B20</h3>
-                                <p style={compactStyles.cardDescription}>Public launch opens with the mainnet release</p>
+                                <p style={compactStyles.cardDescription}>Direct deploy or fair bonding-curve launch on Base</p>
                               </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: 'auto' }}>
-                              <div style={compactStyles.xpBadge}>Soon</div>
+                              <div style={compactStyles.xpBadge}>5000 XP</div>
                             </div>
                           </>
                         )}
@@ -1361,7 +1361,7 @@ const Home = () => {
                   <div style={{ marginTop: '16px', padding: '12px 16px', background: 'rgba(37, 99, 235, 0.06)', border: '1px solid rgba(96, 165, 250, 0.14)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <Shield size={16} style={{ color: '#93c5fd', flexShrink: 0 }} />
                     <span style={{ color: '#8fa0bb', fontSize: '12px', fontFamily: 'Poppins, sans-serif' }}>
-                      B20 Launchpad is coming soon • Mainnet contracts will be deployed before public launch
+                      Base mainnet B20 launches • 0.001 ETH curve create • 0.6% trading fee • 5 ETH graduation
                     </span>
                   </div>
                 )}
