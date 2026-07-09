@@ -47,6 +47,7 @@ import {
 const B20_LOGO_SRC = '/crypto-logos/basahub logo/B20.svg'
 const ETH_PRICE_USD = 3000
 const B20_PUBLIC_SOON = false
+const B20_CACHE_PREFIX = 'basehub:b20:curve-tokens'
 const BASE_LOG_CLIENT = createPublicClient({
   transport: viemFallback([
     viemHttp('https://mainnet.base.org', { timeout: 12000, retryCount: 1, retryDelay: 500 }),
@@ -153,6 +154,75 @@ function formatNumber(value, maximumFractionDigits = 2) {
   if (number >= 1_000_000) return `${(number / 1_000_000).toFixed(2)}M`
   if (number >= 1_000) return `${(number / 1_000).toFixed(2)}K`
   return number.toLocaleString(undefined, { maximumFractionDigits })
+}
+
+function b20CacheKey(chainId, launchpadAddress) {
+  return `${B20_CACHE_PREFIX}:${Number(chainId || 0)}:${String(launchpadAddress || '').toLowerCase()}`
+}
+
+function stringifyBigInt(value) {
+  return typeof value === 'bigint' ? value.toString() : value
+}
+
+function serializeB20Token(token) {
+  return JSON.parse(JSON.stringify(token, (_, value) => stringifyBigInt(value)))
+}
+
+function reviveB20Token(token) {
+  if (!token) return null
+  const reviveBigInt = (value) => {
+    try {
+      return BigInt(value || 0)
+    } catch {
+      return 0n
+    }
+  }
+  return {
+    ...token,
+    core: token.core ? {
+      ...token.core,
+      virtualETH: reviveBigInt(token.core.virtualETH),
+      virtualTokens: reviveBigInt(token.core.virtualTokens),
+      realETH: reviveBigInt(token.core.realETH),
+      creatorAllocation: reviveBigInt(token.core.creatorAllocation),
+      createdAt: reviveBigInt(token.core.createdAt),
+      graduated: Boolean(token.core.graduated),
+    } : token.core,
+    stats: token.stats ? {
+      ...token.stats,
+      buys: reviveBigInt(token.stats.buys),
+      sells: reviveBigInt(token.stats.sells),
+      volume: reviveBigInt(token.stats.volume),
+      holders: reviveBigInt(token.stats.holders),
+      graduatedAt: reviveBigInt(token.stats.graduatedAt),
+    } : token.stats,
+    createdAtMs: Number(token.createdAtMs || 0),
+  }
+}
+
+function readCachedB20Tokens(chainId, launchpadAddress) {
+  if (typeof window === 'undefined' || !window.localStorage || !launchpadAddress) return []
+  try {
+    const raw = window.localStorage.getItem(b20CacheKey(chainId, launchpadAddress))
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed?.tokens)) return []
+    return parsed.tokens.map(reviveB20Token).filter(Boolean)
+  } catch {
+    return []
+  }
+}
+
+function writeCachedB20Tokens(chainId, launchpadAddress, tokens) {
+  if (typeof window === 'undefined' || !window.localStorage || !launchpadAddress || !Array.isArray(tokens)) return
+  try {
+    window.localStorage.setItem(b20CacheKey(chainId, launchpadAddress), JSON.stringify({
+      updatedAt: Date.now(),
+      tokens: tokens.map(serializeB20Token),
+    }))
+  } catch {
+    /* ignore cache failures */
+  }
 }
 
 function sleep(ms) {
@@ -391,17 +461,29 @@ export default function DeployB20() {
       setSelectedToken(null)
       return
     }
+    const cachedTokens = readCachedB20Tokens(chainId, launchpadAddress)
+    if (tokens.length === 0 && cachedTokens.length > 0) {
+      setTokens(cachedTokens)
+    }
     setIsRefreshing(true)
     try {
       const nextTokens = await fetchTokens()
-      setTokens(nextTokens)
+      if (nextTokens.length > 0 || cachedTokens.length === 0) {
+        setTokens(nextTokens)
+      }
+      if (nextTokens.length > 0) {
+        writeCachedB20Tokens(chainId, launchpadAddress, nextTokens)
+      }
       setSelectedToken((current) => {
         if (!nextTokens.length) return null
         if (!current) return null
         return nextTokens.find((item) => String(item.address).toLowerCase() === String(current.address).toLowerCase()) || null
       })
     } catch (err) {
-      setStatus({ type: 'error', text: err.shortMessage || err.message || 'Could not load B20 curve tokens.' })
+      console.warn('B20 token refresh failed:', err)
+      if (tokens.length === 0 && cachedTokens.length > 0) {
+        setTokens(cachedTokens)
+      }
     } finally {
       setIsRefreshing(false)
     }

@@ -2,8 +2,11 @@ import { useCallback, useMemo, useState } from 'react'
 import { useAccount, useChainId, usePublicClient, useWriteContract } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import {
+  createPublicClient,
+  fallback as viemFallback,
   formatEther,
   formatUnits,
+  http as viemHttp,
   keccak256,
   maxUint256,
   parseEther,
@@ -27,9 +30,38 @@ import {
 
 const RECEIPT_TIMEOUT_MS = 90000
 const TOKEN_BATCH_SIZE = 40
+const BASE_B20_READ_CLIENT = createPublicClient({
+  transport: viemFallback([
+    viemHttp('https://mainnet.base.org', { timeout: 15000, retryCount: 1, retryDelay: 500 }),
+    viemHttp('https://base-rpc.publicnode.com', { timeout: 15000, retryCount: 1, retryDelay: 500 }),
+    viemHttp('https://1rpc.io/base', { timeout: 15000, retryCount: 1, retryDelay: 500 }),
+  ], { rank: false, retryCount: 1, retryDelay: 500 }),
+})
+const BASE_SEPOLIA_B20_READ_CLIENT = createPublicClient({
+  transport: viemHttp('https://sepolia.base.org', { timeout: 15000, retryCount: 1, retryDelay: 500 }),
+})
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function getBackupReadClient(chainId) {
+  if (Number(chainId) === NETWORKS.BASE.chainId) return BASE_B20_READ_CLIENT
+  if (Number(chainId) === NETWORKS.BASE_SEPOLIA.chainId) return BASE_SEPOLIA_B20_READ_CLIENT
+  return null
+}
+
+async function withReadFallback(publicClient, backupClient, method, params) {
+  try {
+    return await publicClient[method](params)
+  } catch (primaryError) {
+    if (!backupClient || backupClient === publicClient) throw primaryError
+    try {
+      return await backupClient[method](params)
+    } catch {
+      throw primaryError
+    }
+  }
 }
 
 async function withRetry(fn, { attempts = 4, delayMs = 500 } = {}) {
@@ -188,7 +220,8 @@ export function useB20Launchpad() {
 
   const fetchTokens = useCallback(async () => {
     if (!publicClient || !launchpadAddress) return []
-    const readLaunchpad = (functionName, args = []) => withRetry(() => publicClient.readContract({
+    const backupClient = getBackupReadClient(chainId)
+    const readLaunchpad = (functionName, args = []) => withRetry(() => withReadFallback(publicClient, backupClient, 'readContract', {
       address: launchpadAddress,
       abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI,
       functionName,
@@ -238,14 +271,14 @@ export function useB20Launchpad() {
 
     let results
     try {
-      results = await publicClient.multicall({ contracts, allowFailure: true })
+      results = await withReadFallback(publicClient, backupClient, 'multicall', { contracts, allowFailure: true })
     } catch {
       results = []
       const chunkSize = 12
       for (let index = 0; index < contracts.length; index += chunkSize) {
         const chunk = contracts.slice(index, index + chunkSize)
         try {
-          const chunkResults = await publicClient.multicall({ contracts: chunk, allowFailure: true })
+          const chunkResults = await withReadFallback(publicClient, backupClient, 'multicall', { contracts: chunk, allowFailure: true })
           results.push(...chunkResults)
         } catch {
           results.push(...chunk.map(() => ({ status: 'failure' })))
@@ -284,7 +317,7 @@ export function useB20Launchpad() {
     }
 
     return enriched.sort((a, b) => Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0))
-  }, [hydrateToken, launchpadAddress, publicClient])
+  }, [chainId, hydrateToken, launchpadAddress, publicClient])
 
   const createCurveToken = useCallback(async (input) => {
     requireReady()
@@ -299,15 +332,16 @@ export function useB20Launchpad() {
     setIsLoading(true)
     setError(null)
     try {
+      const backupClient = getBackupReadClient(chainId)
       const userSalt = keccak256(stringToBytes(`${address}:${Date.now()}:${name}:${symbol}:b20-curve`))
-      const predictedToken = await publicClient.readContract({
+      const predictedToken = await withReadFallback(publicClient, backupClient, 'readContract', {
         address: launchpadAddress,
         abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI,
         functionName: 'predictToken',
         args: [address, userSalt],
       })
 
-      await publicClient.simulateContract({
+      await withReadFallback(publicClient, backupClient, 'simulateContract', {
         address: launchpadAddress,
         abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI,
         functionName: 'createCurveB20',
@@ -359,7 +393,8 @@ export function useB20Launchpad() {
     setIsLoading(true)
     setError(null)
     try {
-      const quote = await publicClient.readContract({
+      const backupClient = getBackupReadClient(chainId)
+      const quote = await withReadFallback(publicClient, backupClient, 'readContract', {
         address: launchpadAddress,
         abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI,
         functionName: 'getTokensForETH',
@@ -392,20 +427,21 @@ export function useB20Launchpad() {
     setIsLoading(true)
     setError(null)
     try {
+      const backupClient = getBackupReadClient(chainId)
       const [allowance, balance, coreRaw] = await Promise.all([
-        publicClient.readContract({
+        withReadFallback(publicClient, backupClient, 'readContract', {
           address: tokenAddress,
           abi: B20_CURVE_ERC20_ABI,
           functionName: 'allowance',
           args: [address, launchpadAddress],
         }),
-        publicClient.readContract({
+        withReadFallback(publicClient, backupClient, 'readContract', {
           address: tokenAddress,
           abi: B20_CURVE_ERC20_ABI,
           functionName: 'balanceOf',
           args: [address],
         }),
-        publicClient.readContract({
+        withReadFallback(publicClient, backupClient, 'readContract', {
           address: launchpadAddress,
           abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI,
           functionName: 'tokenCore',
@@ -430,7 +466,7 @@ export function useB20Launchpad() {
         await waitForTx(approveHash, Number(chainId))
       }
 
-      const quote = await publicClient.readContract({
+      const quote = await withReadFallback(publicClient, backupClient, 'readContract', {
         address: launchpadAddress,
         abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI,
         functionName: 'getETHForTokens',

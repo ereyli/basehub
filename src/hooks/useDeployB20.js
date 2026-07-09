@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useAccount, useChainId, usePublicClient, useWriteContract } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
-import { keccak256, parseEther, parseEventLogs, stringToBytes, zeroAddress } from 'viem'
+import { createPublicClient, fallback as viemFallback, http as viemHttp, keccak256, parseEther, parseEventLogs, stringToBytes, zeroAddress } from 'viem'
 import { config, DATA_SUFFIX } from '../config/wagmi'
 import { NETWORKS } from '../config/networks'
 import { addXP } from '../utils/xpUtils'
@@ -32,6 +32,51 @@ function normalizeName(value) {
 
 function normalizeCurrency(value) {
   return String(value || '').trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 6)
+}
+
+const BASE_B20_READ_CLIENT = createPublicClient({
+  transport: viemFallback([
+    viemHttp('https://mainnet.base.org', { timeout: 15000, retryCount: 1, retryDelay: 500 }),
+    viemHttp('https://base-rpc.publicnode.com', { timeout: 15000, retryCount: 1, retryDelay: 500 }),
+    viemHttp('https://1rpc.io/base', { timeout: 15000, retryCount: 1, retryDelay: 500 }),
+  ], { rank: false, retryCount: 1, retryDelay: 500 }),
+})
+const BASE_SEPOLIA_B20_READ_CLIENT = createPublicClient({
+  transport: viemHttp('https://sepolia.base.org', { timeout: 15000, retryCount: 1, retryDelay: 500 }),
+})
+
+function getBackupReadClient(chainId) {
+  if (Number(chainId) === NETWORKS.BASE.chainId) return BASE_B20_READ_CLIENT
+  if (Number(chainId) === NETWORKS.BASE_SEPOLIA.chainId) return BASE_SEPOLIA_B20_READ_CLIENT
+  return null
+}
+
+async function readContractWithFallback(publicClient, chainId, params) {
+  try {
+    return await publicClient.readContract(params)
+  } catch (primaryError) {
+    const backupClient = getBackupReadClient(chainId)
+    if (!backupClient || backupClient === publicClient) throw primaryError
+    try {
+      return await backupClient.readContract(params)
+    } catch {
+      throw primaryError
+    }
+  }
+}
+
+async function simulateWithFallback(publicClient, chainId, params) {
+  try {
+    return await publicClient.simulateContract(params)
+  } catch (primaryError) {
+    const backupClient = getBackupReadClient(chainId)
+    if (!backupClient || backupClient === publicClient) throw primaryError
+    try {
+      return await backupClient.simulateContract(params)
+    } catch {
+      throw primaryError
+    }
+  }
 }
 
 function getReceiptToken(receipt) {
@@ -72,7 +117,7 @@ export function useDeployB20() {
 
   const readActivation = useCallback(async (variant, overrideChainId = chainId) => {
     if (!publicClient || !isB20SupportedChainId(overrideChainId)) return false
-    return publicClient.readContract({
+    return readContractWithFallback(publicClient, overrideChainId, {
       address: B20_ACTIVATION_REGISTRY_ADDRESS,
       abi: B20_ACTIVATION_REGISTRY_ABI,
       functionName: 'isActivated',
@@ -127,14 +172,14 @@ export function useDeployB20() {
       let predictedAddress = null
       let deployTxHash = null
 
-      predictedAddress = await publicClient.readContract({
+      predictedAddress = await readContractWithFallback(publicClient, targetChainId, {
         address: launcherAddress,
         abi: BASEHUB_B20_LAUNCHER_ABI,
         functionName: 'getB20Address',
         args: [variant, address, userSalt],
       })
 
-      await publicClient.simulateContract({
+      await simulateWithFallback(publicClient, targetChainId, {
         address: launcherAddress,
         abi: BASEHUB_B20_LAUNCHER_ABI,
         functionName: 'createB20',
