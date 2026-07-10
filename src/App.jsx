@@ -24,40 +24,41 @@ import { RainbowKitChainInterceptor } from './components/RainbowKitChainIntercep
 import { FastDeployProvider } from './contexts/FastDeployContext'
 import FastDeployModal from './components/FastDeployModal'
 import Home from './pages/Home'
-import GMGame from './pages/GMGame'
-import GNGame from './pages/GNGame'
-import FlipGame from './pages/FlipGame'
-import LuckyNumberGame from './pages/LuckyNumberGame'
-import DiceRollGame from './pages/DiceRollGame'
-import SlotGame from './pages/SlotGame'
-import Leaderboard from './pages/Leaderboard'
-import DeployToken from './pages/DeployToken'
-import DeployNFT from './pages/DeployNFT'
-import DeployERC721 from './pages/DeployERC721'
-import DeployERC1155 from './pages/DeployERC1155'
-import DeployERC8004 from './pages/DeployERC8004'
-import AgentDirectory from './pages/AgentDirectory'
-import DeployB20 from './pages/DeployB20'
-import AINFTLaunchpad from './pages/AINFTLaunchpad'
-import NFTLaunchpad from './pages/NFTLaunchpad'
-import NFTMintPage from './pages/NFTMintPage'
-import SharePage from './pages/SharePage'
-import WalletAnalysis from './pages/WalletAnalysis'
-import ContractSecurity from './pages/ContractSecurity'
-import AllowanceCleaner from './pages/AllowanceCleaner'
-import SwapHub from './pages/SwapHub'
-import Profile from './pages/Profile'
-import EarlyAccessNFT from './pages/EarlyAccessNFT'
-import NFTWheelGame from './pages/NFTWheelGame'
-import NFTPlinkoGame from './pages/NFTPlinkoGame'
-import PumpHub from './pages/PumpHub'
-import FrameLanding from './pages/FrameLanding'
-import BaseGuildCompanion from './pages/BaseGuildCompanion'
-import AirdropHub from './pages/AirdropHub'
-import AgentMode from './pages/AgentMode'
-import AdminNotifications from './pages/AdminNotifications'
-import NetworkLanding from './pages/NetworkLanding'
-import TrustCenter from './pages/TrustCenter'
+
+const GMGame = lazy(() => import('./pages/GMGame'))
+const GNGame = lazy(() => import('./pages/GNGame'))
+const FlipGame = lazy(() => import('./pages/FlipGame'))
+const LuckyNumberGame = lazy(() => import('./pages/LuckyNumberGame'))
+const DiceRollGame = lazy(() => import('./pages/DiceRollGame'))
+const SlotGame = lazy(() => import('./pages/SlotGame'))
+const Leaderboard = lazy(() => import('./pages/Leaderboard'))
+const DeployToken = lazy(() => import('./pages/DeployToken'))
+const DeployNFT = lazy(() => import('./pages/DeployNFT'))
+const DeployERC721 = lazy(() => import('./pages/DeployERC721'))
+const DeployERC1155 = lazy(() => import('./pages/DeployERC1155'))
+const DeployERC8004 = lazy(() => import('./pages/DeployERC8004'))
+const AgentDirectory = lazy(() => import('./pages/AgentDirectory'))
+const DeployB20 = lazy(() => import('./pages/DeployB20'))
+const AINFTLaunchpad = lazy(() => import('./pages/AINFTLaunchpad'))
+const NFTLaunchpad = lazy(() => import('./pages/NFTLaunchpad'))
+const NFTMintPage = lazy(() => import('./pages/NFTMintPage'))
+const SharePage = lazy(() => import('./pages/SharePage'))
+const WalletAnalysis = lazy(() => import('./pages/WalletAnalysis'))
+const ContractSecurity = lazy(() => import('./pages/ContractSecurity'))
+const AllowanceCleaner = lazy(() => import('./pages/AllowanceCleaner'))
+const SwapHub = lazy(() => import('./pages/SwapHub'))
+const Profile = lazy(() => import('./pages/Profile'))
+const EarlyAccessNFT = lazy(() => import('./pages/EarlyAccessNFT'))
+const NFTWheelGame = lazy(() => import('./pages/NFTWheelGame'))
+const NFTPlinkoGame = lazy(() => import('./pages/NFTPlinkoGame'))
+const PumpHub = lazy(() => import('./pages/PumpHub'))
+const FrameLanding = lazy(() => import('./pages/FrameLanding'))
+const BaseGuildCompanion = lazy(() => import('./pages/BaseGuildCompanion'))
+const AirdropHub = lazy(() => import('./pages/AirdropHub'))
+const AgentMode = lazy(() => import('./pages/AgentMode'))
+const AdminNotifications = lazy(() => import('./pages/AdminNotifications'))
+const NetworkLanding = lazy(() => import('./pages/NetworkLanding'))
+const TrustCenter = lazy(() => import('./pages/TrustCenter'))
 
 function AgentModeGate() {
   return <AgentMode />

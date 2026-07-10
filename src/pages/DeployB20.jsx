@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAccount, useBalance, useChainId, usePublicClient, useReadContract, useSwitchChain } from 'wagmi'
-import { createPublicClient, fallback as viemFallback, formatEther, formatUnits, http as viemHttp, parseAbiItem, parseUnits } from 'viem'
+import { formatEther, formatUnits, parseAbiItem, parseUnits } from 'viem'
 import {
   Activity,
   AlertTriangle,
@@ -33,6 +33,8 @@ import { useB20Launchpad } from '../hooks/useB20Launchpad'
 import { uploadToIPFS } from '../utils/pinata'
 import { getTransactionExplorerUrl, NETWORKS } from '../config/networks'
 import { supabase } from '../config/supabase'
+import { getReadClient } from '../utils/readClient'
+import { DEFAULT_ETH_USD_PRICE, useEthUsdPrice } from '../hooks/useEthUsdPrice'
 import {
   B20_CURVE_CREATE_FEE_ETH,
   B20_CURVE_GRADUATION_ETH,
@@ -47,17 +49,10 @@ import {
 } from '../config/b20'
 
 const B20_LOGO_SRC = '/crypto-logos/basahub logo/B20.svg'
-const ETH_PRICE_USD = 3000
 const B20_PUBLIC_SOON = false
 const B20_CACHE_PREFIX = 'basehub:b20:curve-tokens'
 const B20_SUPABASE_TABLE = 'b20_tokens'
-const BASE_LOG_CLIENT = createPublicClient({
-  transport: viemFallback([
-    viemHttp('https://mainnet.base.org', { timeout: 12000, retryCount: 1, retryDelay: 500 }),
-    viemHttp('https://base-rpc.publicnode.com', { timeout: 12000, retryCount: 1, retryDelay: 500 }),
-    viemHttp('https://1rpc.io/base', { timeout: 12000, retryCount: 1, retryDelay: 500 }),
-  ], { rank: false, retryCount: 1, retryDelay: 500 }),
-})
+const BASE_LOG_CLIENT = getReadClient(NETWORKS.BASE.chainId)
 
 const initialNormalForm = {
   variant: 'asset',
@@ -152,6 +147,14 @@ const responsiveCss = `
 function shortAddress(address) {
   if (!address) return '-'
   return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+function transactionErrorStatus(error, fallback) {
+  return {
+    type: error?.isSubmitted ? 'pending' : 'error',
+    text: error?.shortMessage || error?.message || fallback,
+    txHash: error?.txHash || null,
+  }
 }
 
 function formatNumber(value, maximumFractionDigits = 2) {
@@ -414,9 +417,9 @@ function formatMarketCap(value) {
   return `$${value.toFixed(2)}`
 }
 
-function tokenMarketCapUSD(token) {
+function tokenMarketCapUSD(token, ethPriceUsd = DEFAULT_ETH_USD_PRICE) {
   const virtual = Number(token?.realEthLabel || 0) + 1
-  return virtual * ETH_PRICE_USD
+  return virtual * ethPriceUsd
 }
 
 function tokenTxCount(token) {
@@ -485,6 +488,7 @@ export default function DeployB20() {
 
   const [searchParams] = useSearchParams()
   const { address } = useAccount()
+  const { price: ethPriceUsd } = useEthUsdPrice()
   const chainId = useChainId()
   const { switchChainAsync, isPending: isSwitching } = useSwitchChain()
   const [mode, setMode] = useState('curve')
@@ -559,7 +563,7 @@ export default function DeployB20() {
         result.sort((a, b) => Number(b.volumeLabel || 0) - Number(a.volumeLabel || 0))
         break
       case 'marketcap':
-        result.sort((a, b) => tokenMarketCapUSD(b) - tokenMarketCapUSD(a))
+        result.sort((a, b) => tokenMarketCapUSD(b, ethPriceUsd) - tokenMarketCapUSD(a, ethPriceUsd))
         break
       case 'progress':
         result.sort((a, b) => Number(b.progress || 0) - Number(a.progress || 0))
@@ -568,7 +572,7 @@ export default function DeployB20() {
         result.sort((a, b) => Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0))
     }
     return result
-  }, [category, searchQuery, sortBy, tokens])
+  }, [category, ethPriceUsd, searchQuery, sortBy, tokens])
 
   const loadTokens = async () => {
     if (!launchpadAddress) {
@@ -660,7 +664,7 @@ export default function DeployB20() {
       })
       setNormalForm(initialNormalForm)
     } catch (err) {
-      setStatus({ type: 'error', text: err.shortMessage || err.message || 'B20 deploy failed.' })
+      setStatus(transactionErrorStatus(err, 'B20 deploy failed.'))
     }
   }
 
@@ -718,7 +722,7 @@ export default function DeployB20() {
       }
       await loadTokens()
     } catch (err) {
-      setStatus({ type: 'error', text: err.shortMessage || err.message || 'Curve launch failed.' })
+      setStatus(transactionErrorStatus(err, 'Curve launch failed.'))
     }
   }
 
@@ -755,7 +759,7 @@ export default function DeployB20() {
       })
       await loadTokens()
     } catch (err) {
-      setStatus({ type: 'error', text: err.shortMessage || err.message || 'Trade failed.' })
+      setStatus(transactionErrorStatus(err, 'Trade failed.'))
     }
   }
 
@@ -780,7 +784,7 @@ export default function DeployB20() {
       setStatus({ type: 'success', text: 'Creator fees claimed.', txHash: result.txHash })
       await refetchCreatorFees?.()
     } catch (err) {
-      setStatus({ type: 'error', text: err.shortMessage || err.message || 'Creator fee claim failed.' })
+      setStatus(transactionErrorStatus(err, 'Creator fee claim failed.'))
     }
   }
 
@@ -844,8 +848,11 @@ export default function DeployB20() {
         />
 
         {status && (
-          <section className="b20-feedback" style={{ ...styles.feedback, ...(status.type === 'error' ? styles.feedbackError : styles.feedbackSuccess) }}>
-            {status.type === 'error' ? <AlertTriangle size={18} /> : <CheckCircle2 size={18} />}
+          <section className="b20-feedback" style={{
+            ...styles.feedback,
+            ...(status.type === 'error' ? styles.feedbackError : status.type === 'pending' ? styles.feedbackPending : styles.feedbackSuccess),
+          }}>
+            {status.type === 'error' ? <AlertTriangle size={18} /> : status.type === 'pending' ? <Clock size={18} /> : <CheckCircle2 size={18} />}
             <span>{status.text}</span>
             {explorerTx && (
               <a href={explorerTx} target="_blank" rel="noreferrer" className="b20-feedback-link" style={styles.feedbackLink}>
@@ -1088,18 +1095,20 @@ function B20TokenDetail({
 }
 
 function MiniB20TokenCard({ token, active, onClick }) {
+  const { price: ethPriceUsd } = useEthUsdPrice()
   return (
     <button type="button" onClick={onClick} style={{ ...styles.miniTokenCard, ...(active ? styles.miniTokenCardActive : {}) }}>
       <TokenAvatar image={token.image} symbol={token.symbol} size={30} />
       <div style={styles.miniTokenInfo}>
         <strong>{token.symbol}</strong>
-        <span>{formatMarketCap(tokenMarketCapUSD(token))}</span>
+        <span>{formatMarketCap(tokenMarketCapUSD(token, ethPriceUsd))}</span>
       </div>
     </button>
   )
 }
 
 function B20ChartPanel({ token, launchpadAddress }) {
+  const { price: ethPriceUsd } = useEthUsdPrice()
   const chartContainerRef = useRef(null)
   const chartRef = useRef(null)
   const seriesRef = useRef(null)
@@ -1107,7 +1116,7 @@ function B20ChartPanel({ token, launchpadAddress }) {
   const chainId = useChainId()
   const [tradeHistory, setTradeHistory] = useState([])
   const [loadingTrades, setLoadingTrades] = useState(true)
-  const marketCapUSD = tokenMarketCapUSD(token)
+  const marketCapUSD = tokenMarketCapUSD(token, ethPriceUsd)
   const realEth = Number(token?.realEthLabel || 0)
   const txns = tokenTxCount(token)
   const createdAt = token?.createdAtMs || Date.now()
@@ -1218,7 +1227,7 @@ function B20ChartPanel({ token, launchpadAddress }) {
     const bucketMs = ageMs <= 48 * 60 * 60 * 1000 ? 30 * 60 * 1000 : 24 * 60 * 60 * 1000
     const maxBuckets = ageMs <= 48 * 60 * 60 * 1000 ? 96 : 30
     const startMs = Math.floor(firstTradeAt / bucketMs) * bucketMs
-    const base = ETH_PRICE_USD
+    const base = ethPriceUsd
     const data = []
     let open = base
     let bucketStart = startMs
@@ -1232,7 +1241,7 @@ function B20ChartPanel({ token, launchpadAddress }) {
 
       bucketTrades.forEach((trade) => {
         const eth = Number(trade.ethAmount || 0)
-        const change = eth * ETH_PRICE_USD * 2
+        const change = eth * ethPriceUsd * 2
         close = trade.type === 'buy' ? close + change : close - change
         close = Math.max(base * 0.3, close)
         high = Math.max(high, close)
@@ -1260,7 +1269,7 @@ function B20ChartPanel({ token, launchpadAddress }) {
       })
     }
     return data
-  }, [createdAt, tradeHistory])
+  }, [createdAt, ethPriceUsd, tradeHistory])
 
   useEffect(() => {
     const container = chartContainerRef.current
@@ -1763,6 +1772,7 @@ function TokenBrowser({
 }
 
 function B20TokenCard({ token, active, onClick, featured = false }) {
+  const { price: ethPriceUsd } = useEthUsdPrice()
   const txns = tokenTxCount(token)
   const volume = Number(token.volumeLabel || 0)
   const volumeLabel = volume > 0 && volume < 0.0001 ? '<0.0001' : volume.toFixed(4)
@@ -1779,7 +1789,7 @@ function B20TokenCard({ token, active, onClick, featured = false }) {
           {featured && <em style={styles.trendingBadge}>Trending</em>}
         </div>
         <div style={styles.marketCap}>
-          <strong>{formatMarketCap(tokenMarketCapUSD(token))}</strong>
+          <strong>{formatMarketCap(tokenMarketCapUSD(token, ethPriceUsd))}</strong>
           <span>{token.progress > 0 ? `+${token.progress.toFixed(2)}%` : 'NEW'}</span>
         </div>
       </div>
@@ -2172,6 +2182,7 @@ const styles = {
     fontWeight: 700,
   },
   feedbackSuccess: { background: 'rgba(22, 163, 74, 0.14)', color: '#bbf7d0', border: '1px solid rgba(34, 197, 94, 0.3)' },
+  feedbackPending: { background: 'rgba(217, 119, 6, 0.14)', color: '#fde68a', border: '1px solid rgba(245, 158, 11, 0.32)' },
   feedbackError: { background: 'rgba(220, 38, 38, 0.14)', color: '#fecaca', border: '1px solid rgba(248, 113, 113, 0.32)' },
   feedbackLink: {
     display: 'inline-flex',

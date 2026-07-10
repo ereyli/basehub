@@ -2,11 +2,8 @@ import { useCallback, useMemo, useState } from 'react'
 import { useAccount, useChainId, usePublicClient, useWriteContract } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import {
-  createPublicClient,
-  fallback as viemFallback,
   formatEther,
   formatUnits,
-  http as viemHttp,
   keccak256,
   maxUint256,
   parseEther,
@@ -17,6 +14,7 @@ import {
 import { config, DATA_SUFFIX } from '../config/wagmi'
 import { NETWORKS } from '../config/networks'
 import { addXP } from '../utils/xpUtils'
+import { getReadClient } from '../utils/readClient'
 import {
   B20_CURVE_CREATE_FEE_ETH,
   B20_CURVE_ERC20_ABI,
@@ -30,25 +28,12 @@ import {
 
 const RECEIPT_TIMEOUT_MS = 90000
 const TOKEN_BATCH_SIZE = 40
-const BASE_B20_READ_CLIENT = createPublicClient({
-  transport: viemFallback([
-    viemHttp('https://mainnet.base.org', { timeout: 15000, retryCount: 1, retryDelay: 500 }),
-    viemHttp('https://base-rpc.publicnode.com', { timeout: 15000, retryCount: 1, retryDelay: 500 }),
-    viemHttp('https://1rpc.io/base', { timeout: 15000, retryCount: 1, retryDelay: 500 }),
-  ], { rank: false, retryCount: 1, retryDelay: 500 }),
-})
-const BASE_SEPOLIA_B20_READ_CLIENT = createPublicClient({
-  transport: viemHttp('https://sepolia.base.org', { timeout: 15000, retryCount: 1, retryDelay: 500 }),
-})
-
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 function getBackupReadClient(chainId) {
-  if (Number(chainId) === NETWORKS.BASE.chainId) return BASE_B20_READ_CLIENT
-  if (Number(chainId) === NETWORKS.BASE_SEPOLIA.chainId) return BASE_SEPOLIA_B20_READ_CLIENT
-  return null
+  return getReadClient(chainId)
 }
 
 async function withReadFallback(publicClient, backupClient, method, params) {
@@ -168,15 +153,22 @@ function getCreatedToken(receipt) {
 }
 
 async function waitForTx(hash, chainId) {
-  return Promise.race([
+  const receipt = await Promise.race([
     waitForTransactionReceipt(config, {
       hash,
       chainId,
       confirmations: 1,
       pollingInterval: 2000,
     }),
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Transaction confirmation timeout')), RECEIPT_TIMEOUT_MS)),
+    new Promise((_, reject) => setTimeout(() => {
+      const timeoutError = new Error('Transaction submitted, but confirmation is taking longer than expected. Check the explorer before retrying.')
+      timeoutError.txHash = hash
+      timeoutError.isSubmitted = true
+      reject(timeoutError)
+    }, RECEIPT_TIMEOUT_MS)),
   ])
+  if (!receipt || receipt.status !== 'success') throw new Error('Transaction reverted on-chain.')
+  return receipt
 }
 
 export function useB20Launchpad() {
@@ -359,7 +351,7 @@ export function useB20Launchpad() {
         chainId: Number(chainId),
         dataSuffix: DATA_SUFFIX,
       })
-      const receipt = await waitForTx(hash, Number(chainId)).catch(() => null)
+      const receipt = await waitForTx(hash, Number(chainId))
 
       let xpEarned = 0
       if (Number(chainId) === NETWORKS.BASE.chainId) {
@@ -410,7 +402,7 @@ export function useB20Launchpad() {
         chainId: Number(chainId),
         dataSuffix: DATA_SUFFIX,
       })
-      await waitForTx(hash, Number(chainId)).catch(() => null)
+      await waitForTx(hash, Number(chainId))
       return { txHash: hash, quotedTokens: quote }
     } catch (err) {
       setError(err.shortMessage || err.message || 'B20 buy failed')
@@ -481,7 +473,7 @@ export function useB20Launchpad() {
         chainId: Number(chainId),
         dataSuffix: DATA_SUFFIX,
       })
-      await waitForTx(hash, Number(chainId)).catch(() => null)
+      await waitForTx(hash, Number(chainId))
       return { txHash: hash, quotedEth: quote }
     } catch (err) {
       setError(err.shortMessage || err.message || 'B20 sell failed')
@@ -500,7 +492,7 @@ export function useB20Launchpad() {
       chainId: Number(chainId),
       dataSuffix: DATA_SUFFIX,
     })
-    await waitForTx(hash, Number(chainId)).catch(() => null)
+    await waitForTx(hash, Number(chainId))
     return { txHash: hash }
   }, [chainId, launchpadAddress, requireReady, writeContractAsync])
 

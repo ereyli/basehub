@@ -270,15 +270,12 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
   }
 
   try {
-    // Web: receipt verification (award-xp-verified EF).
-    // Miniapp + MegaETH + Tempo: direct award_xp RPC
-    // (verified EF can miss receipts on these networks/environments).
+    // Every transaction-backed reward goes through server-side receipt verification.
+    // Off-chain games without a tx hash continue to use the capped award_xp RPC.
     const isMiniapp = isMiniappDomain() || isLikelyBaseApp() || isLikelyFarcaster()
-    const isMegaETH = chainId != null && Number(chainId) === NETWORKS.MEGAETH?.chainId
-    const isTempo = chainId != null && Number(chainId) === NETWORKS.TEMPO?.chainId
-    const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke && !isMiniapp && !isMegaETH && !isTempo
+    const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke
     if (useVerified) {
-      const source = 'web'
+      const source = !isMiniapp ? 'web' : (isLikelyBaseApp() ? 'base_app' : 'farcaster')
       const invokeVerified = async () => {
         const { data, error } = await supabase.functions.invoke('award-xp-verified', {
           body: {

@@ -136,18 +136,23 @@ export const useTransactions = () => {
       try {
         await switchToNetwork(targetNetwork.chainId)
         console.log(`✅ Successfully switched to ${targetNetwork.chainName} network`)
-        // Wait a moment for the network switch to complete
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        // Double-check network after switch
-        const currentChainId = chainId
-        if (!isNetworkSupported(currentChainId)) {
-          throw new Error(`Still on wrong network (Chain ID: ${currentChainId}). Please manually switch to a supported network and try again.`)
-        }
+        // Hooks still contain the previous chain during this call. Stop here so a
+        // transaction can never be sent with stale contract/client state.
+        throw new Error(`Network switched to ${targetNetwork.chainName}. Please try the action again.`)
       } catch (switchError) {
+        if (switchError?.message?.startsWith('Network switched to ')) throw switchError
         console.error('❌ Failed to switch network:', switchError)
         const supportedNames = Object.values(NETWORKS).map(n => n.chainName).join(', ')
         throw new Error(`❌ SUPPORTED NETWORK REQUIRED!\n\nYou are currently on ${networkName}.\nBaseHub works on: ${supportedNames}\n\nPlease switch to a supported network manually and try again.`)
+      }
+    }
+
+    if (!isTempoChain && address && publicClient) {
+      const nativeBalance = await publicClient.getBalance({ address })
+      if (nativeBalance <= 0n) {
+        const symbol = currentNetworkConfig?.nativeCurrency?.symbol || 'native token'
+        const chainName = currentNetworkConfig?.chainName || networkName || 'this network'
+        throw new Error(`Insufficient ${symbol} on ${chainName}. This wallet has no native balance for transaction fees.`)
       }
     }
   }

@@ -39,21 +39,23 @@ const AssistantLauncher = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
+        gap: isMobile ? 0 : 8,
         border: 'none',
         cursor: 'pointer',
         color: '#e5f9ff',
         fontSize: isMobile ? 11 : 13,
         fontWeight: 600,
-        padding: isMobile ? '6px 11px' : '9px 15px',
-        borderRadius: 999,
+        width: isMobile ? 40 : undefined,
+        height: isMobile ? 40 : undefined,
+        padding: isMobile ? 0 : '9px 15px',
+        borderRadius: isMobile ? 8 : 999,
         // Daha BaseHub uyumlu: mor-mavi gradient
         background: 'linear-gradient(135deg, #6366f1 0%, #3b82f6 45%, #22c55e 100%)',
         boxShadow: '0 10px 30px rgba(15,23,42,0.95)',
       }}
     >
       <MessageCircle size={isMobile ? 14 : 18} />
-      <span>{isMobile ? 'AI' : 'BaseHub Assistant'}</span>
+      {!isMobile && <span>BaseHub Assistant</span>}
     </button>
   )
 
@@ -63,8 +65,8 @@ const AssistantLauncher = () => {
         <div
           style={{
             position: 'fixed',
-            bottom: 82,
-            right: 14,
+            bottom: 'calc(82px + env(safe-area-inset-bottom, 0px))',
+            right: 12,
             pointerEvents: 'none',
             zIndex: 1200,
           }}
@@ -278,4 +280,3 @@ const AssistantLauncher = () => {
 }
 
 export default AssistantLauncher
-

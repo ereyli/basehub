@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react'
 import { useAccount, useChainId, usePublicClient, useWriteContract } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
-import { createPublicClient, fallback as viemFallback, http as viemHttp, keccak256, parseEther, parseEventLogs, stringToBytes, zeroAddress } from 'viem'
+import { keccak256, parseEther, parseEventLogs, stringToBytes, zeroAddress } from 'viem'
 import { config, DATA_SUFFIX } from '../config/wagmi'
 import { NETWORKS } from '../config/networks'
 import { addXP } from '../utils/xpUtils'
+import { getReadClient } from '../utils/readClient'
 import {
   B20_ACTIVATION_REGISTRY_ABI,
   B20_ACTIVATION_REGISTRY_ADDRESS,
@@ -34,21 +35,8 @@ function normalizeCurrency(value) {
   return String(value || '').trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 6)
 }
 
-const BASE_B20_READ_CLIENT = createPublicClient({
-  transport: viemFallback([
-    viemHttp('https://mainnet.base.org', { timeout: 15000, retryCount: 1, retryDelay: 500 }),
-    viemHttp('https://base-rpc.publicnode.com', { timeout: 15000, retryCount: 1, retryDelay: 500 }),
-    viemHttp('https://1rpc.io/base', { timeout: 15000, retryCount: 1, retryDelay: 500 }),
-  ], { rank: false, retryCount: 1, retryDelay: 500 }),
-})
-const BASE_SEPOLIA_B20_READ_CLIENT = createPublicClient({
-  transport: viemHttp('https://sepolia.base.org', { timeout: 15000, retryCount: 1, retryDelay: 500 }),
-})
-
 function getBackupReadClient(chainId) {
-  if (Number(chainId) === NETWORKS.BASE.chainId) return BASE_B20_READ_CLIENT
-  if (Number(chainId) === NETWORKS.BASE_SEPOLIA.chainId) return BASE_SEPOLIA_B20_READ_CLIENT
-  return null
+  return getReadClient(chainId)
 }
 
 async function readContractWithFallback(publicClient, chainId, params) {
@@ -205,11 +193,16 @@ export function useDeployB20() {
           confirmations: 1,
           pollingInterval: 2000,
         }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Deploy confirmation timeout')), 90000)),
-      ]).catch((receiptError) => {
-        console.warn('B20 deploy receipt wait failed:', receiptError)
-        return null
-      })
+        new Promise((_, reject) => setTimeout(() => {
+          const timeoutError = new Error('Transaction submitted, but confirmation is taking longer than expected. Check the explorer before retrying.')
+          timeoutError.txHash = deployTxHash
+          timeoutError.isSubmitted = true
+          reject(timeoutError)
+        }, 90000)),
+      ])
+      if (!receipt || receipt.status !== 'success') {
+        throw new Error('B20 deployment reverted on-chain.')
+      }
       const tokenAddress = getReceiptToken(receipt) || predictedAddress
 
       let xpEarned = 0

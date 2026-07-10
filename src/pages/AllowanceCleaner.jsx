@@ -16,6 +16,7 @@ import {
 import BackButton from '../components/BackButton'
 import NetworkGuard from '../components/NetworkGuard'
 import { formatUnits } from 'viem'
+import { showGlobalConfirm } from '../components/GlobalAppNotices'
 
 // Supported networks - must match backend configuration
 const SUPPORTED_NETWORKS = {
@@ -88,9 +89,12 @@ export default function AllowanceCleaner() {
   }
 
   const handleRevokeAllRisky = async () => {
-    if (!confirm('Are you sure you want to revoke all risky allowances? This will send multiple transactions.')) {
-      return
-    }
+    const confirmed = await showGlobalConfirm({
+      title: 'Revoke all risky allowances?',
+      message: 'This can open multiple wallet confirmations. Review every transaction before signing.',
+      confirmLabel: 'Revoke allowances',
+    })
+    if (!confirmed) return
 
     try {
       await revokeAllRisky()

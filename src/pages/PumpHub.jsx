@@ -18,6 +18,7 @@ import { supabase } from '../config/supabase'
 import { uploadToIPFS } from '../utils/pinata'
 import { NETWORKS, getPumpHubFactoryAddress, getNetworkConfig } from '../config/networks'
 import { LaunchpadProgress, LaunchpadStatStrip, LaunchpadTrustStrip, TokenGridSkeleton } from '../components/LaunchpadPrimitives'
+import { useEthUsdPrice } from '../hooks/useEthUsdPrice'
 
 // Contract ABI for reading tokens
 const PUMPHUB_FACTORY_ABI = [
@@ -106,9 +107,6 @@ const ERC20_ABI = [
     type: 'function'
   }
 ]
-
-// ETH price constant (you can make this dynamic later)
-const ETH_PRICE_USD = 3000
 
 // Helper functions
 const formatMarketCap = (value) => {
@@ -508,13 +506,14 @@ const pumpTrendScore = (token) => (parseFloat(token?.volume || 0) * 1000) + (pum
 const isTrendingPumpToken = (token) => pumpTrendScore(token) > 2
 
 const TokenCard = ({ token, onClick, isMobile = false, featured = false }) => {
+  const { price: ethPriceUsd } = useEthUsdPrice()
   const chainId = useChainId()
   const virtualETH = parseFloat(token.virtualETH || 1)
   const realETH = parseFloat(token.realETH || 0)
   const marketCapETH = virtualETH + realETH
-  const marketCapUSD = marketCapETH * ETH_PRICE_USD
+  const marketCapUSD = marketCapETH * ethPriceUsd
   const progress = Math.min((realETH / 5) * 100, 100)
-  const initialMarketCapUSD = 1 * ETH_PRICE_USD
+  const initialMarketCapUSD = ethPriceUsd
   const changePercent = initialMarketCapUSD > 0 
     ? ((marketCapUSD - initialMarketCapUSD) / initialMarketCapUSD) * 100 
     : 0
@@ -632,6 +631,7 @@ const TokenCard = ({ token, onClick, isMobile = false, featured = false }) => {
 // MINI TOKEN CARD (for horizontal scroll when token selected)
 // ============================================
 const MiniTokenCard = ({ token, onClick, isSelected, isMobile = false }) => {
+  const { price: ethPriceUsd } = useEthUsdPrice()
   return (
     <div 
       onClick={onClick}
@@ -658,7 +658,7 @@ const MiniTokenCard = ({ token, onClick, isSelected, isMobile = false }) => {
       <TokenImage src={token.image} alt={token.name} size={isMobile ? 36 : 32} borderRadius="8px" />
       <div>
         <div style={{ fontSize: isMobile ? 14 : 12, fontWeight: 'bold', color: '#fff' }}>{token.symbol}</div>
-        <div style={{ fontSize: isMobile ? 11 : 10, color: '#9ca3af' }}>{formatMarketCap(parseFloat(token.virtualETH || 1) * ETH_PRICE_USD)}</div>
+        <div style={{ fontSize: isMobile ? 11 : 10, color: '#9ca3af' }}>{formatMarketCap(parseFloat(token.virtualETH || 1) * ethPriceUsd)}</div>
       </div>
     </div>
   )
@@ -668,6 +668,7 @@ const MiniTokenCard = ({ token, onClick, isSelected, isMobile = false }) => {
 // TOKEN CHART PANEL
 // ============================================
 const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt, isMobile = false }) => {
+  const { price: ethPriceUsd } = useEthUsdPrice()
   const chainId = useChainId()
   const [tradeHistory, setTradeHistory] = useState([])
   const [loadingTrades, setLoadingTrades] = useState(true)
@@ -707,8 +708,8 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt, isMobi
   const virtualETH = parseFloat(tokenData?.tokenData?.virtualETH || tokenData?.virtualETH || 1)
   const realETH = parseFloat(tokenData?.tokenData?.realETH || tokenData?.realETH || 0)
   const marketCapETH = virtualETH + realETH
-  const marketCapUSD = marketCapETH * ETH_PRICE_USD
-  const initialMarketCapUSD = 1 * ETH_PRICE_USD // 1 ETH virtual at start
+  const marketCapUSD = marketCapETH * ethPriceUsd
+  const initialMarketCapUSD = ethPriceUsd
   
   // Progress to graduation
   const progress = Math.min((realETH / 5) * 100, 100)
@@ -739,7 +740,7 @@ const TokenChartPanel = ({ tokenData, tokenAddress, lastTradeConfirmedAt, isMobi
 
       bucketTrades.forEach(trade => {
         const ethAmount = parseFloat(trade.eth_amount || 0)
-        const mcChange = ethAmount * ETH_PRICE_USD * 2
+        const mcChange = ethAmount * ethPriceUsd * 2
         if (trade.trade_type === 'buy') {
           close += mcChange
         } else {
@@ -1751,6 +1752,7 @@ const TokenCreationSuccessModal = ({ token, onClose, onViewToken }) => {
 // MAIN PUMPHUB COMPONENT
 // ============================================
 const PumpHub = () => {
+  const { price: ethPriceUsd } = useEthUsdPrice()
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
   const pumphubFactoryAddress = useMemo(() => getPumpHubFactoryAddress(chainId), [chainId])
@@ -2294,8 +2296,8 @@ const PumpHub = () => {
         break
       case 'marketcap':
         result.sort((a, b) => {
-          const mcA = (parseFloat(a.virtualETH || 1) + parseFloat(a.realETH || 0)) * ETH_PRICE_USD
-          const mcB = (parseFloat(b.virtualETH || 1) + parseFloat(b.realETH || 0)) * ETH_PRICE_USD
+          const mcA = (parseFloat(a.virtualETH || 1) + parseFloat(a.realETH || 0)) * ethPriceUsd
+          const mcB = (parseFloat(b.virtualETH || 1) + parseFloat(b.realETH || 0)) * ethPriceUsd
           return mcB - mcA
         })
         break
@@ -2305,7 +2307,7 @@ const PumpHub = () => {
     }
     
     return result
-  }, [tokens, searchQuery, category, sortBy])
+  }, [tokens, searchQuery, category, sortBy, ethPriceUsd])
 
   const trendingTokens = useMemo(() => (
     [...tokens]
