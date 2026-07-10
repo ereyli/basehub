@@ -4,6 +4,13 @@
   box-sizing: border-box;
 }
 
+html {
+  min-height: 100%;
+  background: #0b1324;
+  color-scheme: dark;
+  scrollbar-gutter: stable;
+}
+
 body {
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
@@ -20,31 +27,48 @@ body {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.28) transparent;
+  scrollbar-color: rgba(100, 116, 139, 0.62) #0b1324;
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #0b1324;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(148, 163, 184, 0.22);
+  background-color: rgba(100, 116, 139, 0.58);
   background-clip: content-box;
-  border: 2px solid transparent;
+  border: 1px solid transparent;
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(96, 165, 250, 0.38);
+  background-color: rgba(96, 165, 250, 0.72);
 }
 
 ::-webkit-scrollbar-corner {
-  background: transparent;
+  background: #0b1324;
+}
+
+::selection {
+  color: #f8fafc;
+  background: rgba(59, 130, 246, 0.42);
+}
+
+:focus-visible {
+  outline: 2px solid rgba(96, 165, 250, 0.9);
+  outline-offset: 2px;
+}
+
+/* Nested rails stay visually quiet while the page rail keeps a dark gutter. */
+.token-list-scrollbar,
+.quick-actions-bar,
+.mobile-menu-panel {
+  scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
 }
 
 input[type="number"]::-webkit-inner-spin-button,
@@ -56,6 +80,16 @@ input[type="number"]::-webkit-outer-spin-button {
 input[type="number"] {
   appearance: textfield;
   -moz-appearance: textfield;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: #e5e7eb;
+  box-shadow: 0 0 0 1000px #0b1324 inset;
+  caret-color: #e5e7eb;
 }
 
 /* Disable zoom on mobile browsers to prevent crashes */
