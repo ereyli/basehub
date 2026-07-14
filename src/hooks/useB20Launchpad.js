@@ -32,7 +32,7 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-async function withRetry(fn, { attempts = 3, delayMs = 600 } = {}) {
+async function withRetry(fn, { attempts = 2, delayMs = 600 } = {}) {
   let lastError
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {

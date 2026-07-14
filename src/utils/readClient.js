@@ -18,16 +18,14 @@ export function getReadClient(chainId) {
   if (!network || urls.length === 0) return null
 
   const transports = urls.map((url) => http(url, {
-    timeout: 15000,
-    retryCount: 1,
-    retryDelay: 600,
+    timeout: 8000,
+    retryCount: 0,
   }))
   const transport = transports.length === 1
     ? transports[0]
-    : fallback(transports, { rank: false, retryCount: 1, retryDelay: 600 })
+    : fallback(transports, { rank: false, retryCount: 0 })
 
   const client = createPublicClient({ transport })
   clients.set(id, client)
   return client
 }
-

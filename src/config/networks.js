@@ -22,7 +22,6 @@ export const NETWORKS = {
       decimals: 18,
     },
     rpcUrls: [
-      envRpc('VITE_BASE_RPC_URL'),
       'https://base-rpc.publicnode.com',
       'https://base.meowrpc.com',
       'https://mainnet.base.org',

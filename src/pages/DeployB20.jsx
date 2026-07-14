@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAccount, useBalance, useChainId, useReadContract, useSwitchChain } from 'wagmi'
-import { formatEther, formatUnits, parseAbiItem, parseUnits } from 'viem'
+import { formatEther, formatUnits, parseAbiItem, parseEther, parseUnits } from 'viem'
 import {
   Activity,
   AlertTriangle,
@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { createChart, CandlestickSeries } from 'lightweight-charts'
 import { Helmet } from 'react-helmet-async'
+import b20BaseSnapshot from '../data/b20BaseSnapshot.json'
 import BackButton from '../components/BackButton'
 import { LaunchpadProgress, LaunchpadStatStrip, LaunchpadTrustStrip, TokenGridSkeleton } from '../components/LaunchpadPrimitives'
 import { useDeployB20 } from '../hooks/useDeployB20'
@@ -247,6 +248,17 @@ function b20TokenFromRow(row) {
   }
 }
 
+function b20TokensFromRows(rows) {
+  if (!Array.isArray(rows)) return []
+  return rows.map((row) => {
+    try {
+      return b20TokenFromRow(row)
+    } catch {
+      return null
+    }
+  }).filter(Boolean)
+}
+
 function b20TokenToRow(token, chainId, launchpadAddress) {
   const createdAtMs = Number(token.createdAtMs || 0)
   return {
@@ -286,13 +298,7 @@ async function readSupabaseB20Tokens(chainId, launchpadAddress) {
       .order('created_at', { ascending: false })
       .limit(500)
     if (error || !Array.isArray(data)) return []
-    return data.map((row) => {
-      try {
-        return b20TokenFromRow(row)
-      } catch {
-        return null
-      }
-    }).filter(Boolean)
+    return b20TokensFromRows(data)
   } catch {
     return []
   }
@@ -343,6 +349,32 @@ async function settleWithin(promise, timeoutMs, fallback = []) {
     promise,
     sleep(timeoutMs).then(() => fallback),
   ]).catch(() => fallback)
+}
+
+function firstNonEmpty(promises, timeoutMs) {
+  return new Promise((resolve) => {
+    let settled = 0
+    let finished = false
+    const finish = (value) => {
+      if (finished) return
+      finished = true
+      clearTimeout(timer)
+      resolve(value)
+    }
+    const timer = setTimeout(() => finish([]), timeoutMs)
+    promises.forEach((promise) => {
+      Promise.resolve(promise)
+        .then((value) => {
+          settled += 1
+          if (Array.isArray(value) && value.length > 0) finish(value)
+          else if (settled === promises.length) finish([])
+        })
+        .catch(() => {
+          settled += 1
+          if (settled === promises.length) finish([])
+        })
+    })
+  })
 }
 
 async function withRetry(fn, { attempts = 3, delayMs = 500 } = {}) {
@@ -543,6 +575,10 @@ export default function DeployB20() {
   const normalLauncherAddress = useMemo(() => getB20LauncherAddress(chainId), [chainId])
   const isBusy = normalLoading || curveLoading || isSwitching
   const needsBaseNetworkForCurve = !launchpadAddress && !isSupported
+  const bundledTokens = useMemo(
+    () => Number(dataChainId) === NETWORKS.BASE.chainId ? b20TokensFromRows(b20BaseSnapshot) : [],
+    [dataChainId]
+  )
   const platformStats = useMemo(() => {
     const totalVolume = tokens.reduce((sum, token) => sum + Number(token.volumeLabel || 0), 0)
     return {
@@ -595,36 +631,49 @@ export default function DeployB20() {
       return
     }
     const cachedTokens = readCachedB20Tokens(dataChainId, launchpadAddress)
-    if (cachedTokens.length > 0) setTokens((current) => current.length > 0 ? current : cachedTokens)
+    const seedTokens = cachedTokens.length > 0 ? cachedTokens : bundledTokens
+    if (seedTokens.length > 0) setTokens((current) => current.length > 0 ? current : seedTokens)
     setIsRefreshing(true)
 
     const supabasePromise = readSupabaseB20Tokens(dataChainId, launchpadAddress)
 
     if (!forceChainRefresh) {
-      const supabaseTokens = await settleWithin(supabasePromise, 6000)
-      if (requestId !== tokenLoadRequestRef.current) return
-      if (supabaseTokens.length > 0) {
+      const chainPromise = fetchTokens({
+        knownTokens: seedTokens,
+        knownTokensPromise: supabasePromise,
+        forceRefresh: false,
+      })
+
+      supabasePromise.then((supabaseTokens) => {
+        if (requestId !== tokenLoadRequestRef.current || supabaseTokens.length === 0) return
         setTokens(supabaseTokens)
         writeCachedB20Tokens(dataChainId, launchpadAddress, supabaseTokens)
-        setIsRefreshing(false)
-        return
-      }
-      if (cachedTokens.length > 0) {
-        setIsRefreshing(false)
-        return
-      }
+      })
+      chainPromise.then((chainTokens) => {
+        if (requestId !== tokenLoadRequestRef.current || chainTokens.length === 0) return
+        setTokens(chainTokens)
+        writeCachedB20Tokens(dataChainId, launchpadAddress, chainTokens)
+        upsertSupabaseB20Tokens(dataChainId, launchpadAddress, chainTokens)
+      }).catch(() => {})
+
+      const initialTokens = await firstNonEmpty([Promise.resolve(seedTokens), supabasePromise, chainPromise], 12000)
+      if (requestId !== tokenLoadRequestRef.current) return
+      if (initialTokens.length > 0) setTokens(initialTokens)
+      else if (seedTokens.length === 0) setTokens([])
+      setIsRefreshing(false)
+      return
     }
 
     try {
       const nextTokens = await settleWithin(fetchTokens({
-        knownTokens: cachedTokens,
+        knownTokens: seedTokens,
         knownTokensPromise: supabasePromise,
         forceRefresh: true,
       }), 25000)
       if (requestId !== tokenLoadRequestRef.current) return
       const supabaseTokens = await settleWithin(supabasePromise, 1000)
       if (nextTokens.length > 0) setTokens(nextTokens)
-      else if (cachedTokens.length === 0 && supabaseTokens.length === 0) setTokens([])
+      else if (seedTokens.length === 0 && supabaseTokens.length === 0) setTokens([])
       if (nextTokens.length > 0) {
         writeCachedB20Tokens(dataChainId, launchpadAddress, nextTokens)
         upsertSupabaseB20Tokens(dataChainId, launchpadAddress, nextTokens)
@@ -637,7 +686,7 @@ export default function DeployB20() {
     } catch (err) {
       if (requestId !== tokenLoadRequestRef.current) return
       console.warn('B20 token refresh failed:', err)
-      const fallbackTokens = cachedTokens.length > 0 ? cachedTokens : await supabasePromise
+      const fallbackTokens = seedTokens.length > 0 ? seedTokens : await supabasePromise
       if (fallbackTokens.length > 0) setTokens((current) => current.length > 0 ? current : fallbackTokens)
     } finally {
       if (requestId === tokenLoadRequestRef.current) setIsRefreshing(false)
