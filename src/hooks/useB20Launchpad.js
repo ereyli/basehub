@@ -157,14 +157,15 @@ async function waitForTx(hash, chainId) {
 export function useB20Launchpad() {
   const { address } = useAccount()
   const chainId = useChainId()
-  const readClient = useMemo(() => getReadClient(chainId), [chainId])
   const { writeContractAsync } = useWriteContract()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const launchpadAddress = useMemo(() => getB20CurveLaunchpadAddress(chainId), [chainId])
   const isSupported = isB20SupportedChainId(chainId)
   const isTestnet = isB20TestnetChainId(chainId)
+  const dataChainId = isSupported ? Number(chainId) : NETWORKS.BASE.chainId
+  const readClient = useMemo(() => getReadClient(dataChainId), [dataChainId])
+  const launchpadAddress = useMemo(() => getB20CurveLaunchpadAddress(dataChainId), [dataChainId])
 
   const requireReady = useCallback(() => {
     if (!address) throw new Error('Wallet not connected')
@@ -193,7 +194,11 @@ export function useB20Launchpad() {
     }
   }, [])
 
-  const fetchTokens = useCallback(async () => {
+  const fetchTokens = useCallback(async ({
+    knownTokens = [],
+    knownTokensPromise = null,
+    forceRefresh = false,
+  } = {}) => {
     if (!readClient || !launchpadAddress) return []
     const readLaunchpad = (functionName, args = []) => withRetry(() => readClient.readContract({
       address: launchpadAddress,
@@ -233,8 +238,34 @@ export function useB20Launchpad() {
     const uniqueAddresses = Array.from(new Set(tokenAddresses.map((item) => String(item).toLowerCase())))
     if (!uniqueAddresses.length) return []
 
+    let resolvedKnownTokens = Array.isArray(knownTokens) ? knownTokens : []
+    if (!forceRefresh && knownTokensPromise) {
+      const promisedTokens = await Promise.race([
+        knownTokensPromise,
+        sleep(2500).then(() => []),
+      ]).catch(() => [])
+      if (Array.isArray(promisedTokens) && promisedTokens.length > 0) {
+        resolvedKnownTokens = promisedTokens
+      }
+    }
+    const knownByAddress = new Map(
+      resolvedKnownTokens
+        .filter((token) => token?.address)
+        .map((token) => [String(token.address).toLowerCase(), token])
+    )
+    const addressesToHydrate = forceRefresh
+      ? uniqueAddresses
+      : uniqueAddresses.filter((tokenAddress) => !knownByAddress.has(tokenAddress))
+
+    if (addressesToHydrate.length === 0) {
+      return uniqueAddresses
+        .map((tokenAddress) => knownByAddress.get(tokenAddress))
+        .filter(Boolean)
+        .sort((a, b) => Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0))
+    }
+
     const contracts = []
-    uniqueAddresses.forEach((tokenAddress) => {
+    addressesToHydrate.forEach((tokenAddress) => {
       contracts.push(
         { address: launchpadAddress, abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI, functionName: 'getTokenMeta', args: [tokenAddress] },
         { address: launchpadAddress, abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI, functionName: 'tokenCore', args: [tokenAddress] },
@@ -274,21 +305,22 @@ export function useB20Launchpad() {
       return hydrateToken(tokenAddress, meta, core, stats, progress)
     }
 
-    const enriched = []
-    for (let index = 0; index < uniqueAddresses.length; index++) {
+    const hydratedByAddress = new Map()
+    for (let index = 0; index < addressesToHydrate.length; index++) {
+      const tokenAddress = addressesToHydrate[index]
       const metaResult = results[index * 4]
       const coreResult = results[index * 4 + 1]
       const statsResult = results[index * 4 + 2]
       const progressResult = results[index * 4 + 3]
       if (metaResult?.status === 'failure' || coreResult?.status === 'failure' || statsResult?.status === 'failure') {
         try {
-          enriched.push(await hydrateSingleToken(uniqueAddresses[index]))
+          hydratedByAddress.set(tokenAddress, await hydrateSingleToken(tokenAddress))
         } catch {
           // A single malformed or temporarily unavailable token must not hide the market.
         }
       } else {
-        enriched.push(hydrateToken(
-          uniqueAddresses[index],
+        hydratedByAddress.set(tokenAddress, hydrateToken(
+          tokenAddress,
           metaResult?.result,
           coreResult?.result,
           statsResult?.result,
@@ -297,7 +329,10 @@ export function useB20Launchpad() {
       }
     }
 
-    return enriched.sort((a, b) => Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0))
+    return uniqueAddresses
+      .map((tokenAddress) => hydratedByAddress.get(tokenAddress) || knownByAddress.get(tokenAddress))
+      .filter(Boolean)
+      .sort((a, b) => Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0))
   }, [hydrateToken, launchpadAddress, readClient])
 
   const createCurveToken = useCallback(async (input) => {
@@ -484,6 +519,7 @@ export function useB20Launchpad() {
 
   return {
     launchpadAddress,
+    dataChainId,
     isSupported,
     isTestnet,
     isLoading,

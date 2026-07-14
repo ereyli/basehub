@@ -280,13 +280,19 @@ async function readSupabaseB20Tokens(chainId, launchpadAddress) {
   try {
     const { data, error } = await supabase
       .from(B20_SUPABASE_TABLE)
-      .select('*')
+      .select('token_address,chain_id,launchpad_address,creator,name,symbol,description,image_uri,creator_allocation,virtual_eth,virtual_tokens,real_eth,graduated,uniswap_pair,progress,total_buys,total_sells,total_volume,holder_count,graduated_at,created_at,updated_at')
       .eq('chain_id', Number(chainId || NETWORKS.BASE.chainId))
       .eq('launchpad_address', String(launchpadAddress).toLowerCase())
       .order('created_at', { ascending: false })
       .limit(500)
     if (error || !Array.isArray(data)) return []
-    return data.map(b20TokenFromRow).filter(Boolean)
+    return data.map((row) => {
+      try {
+        return b20TokenFromRow(row)
+      } catch {
+        return null
+      }
+    }).filter(Boolean)
   } catch {
     return []
   }
@@ -330,6 +336,13 @@ function writeCachedB20Tokens(chainId, launchpadAddress, tokens) {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function settleWithin(promise, timeoutMs, fallback = []) {
+  return Promise.race([
+    promise,
+    sleep(timeoutMs).then(() => fallback),
+  ]).catch(() => fallback)
 }
 
 async function withRetry(fn, { attempts = 3, delayMs = 500 } = {}) {
@@ -503,10 +516,12 @@ export default function DeployB20() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [logoPreview, setLogoPreview] = useState('')
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
+  const tokenLoadRequestRef = useRef(0)
 
   const { deployB20, readActivation, isLoading: normalLoading, error: normalError } = useDeployB20()
   const {
     launchpadAddress,
+    dataChainId,
     isSupported,
     isTestnet,
     isLoading: curveLoading,
@@ -572,30 +587,47 @@ export default function DeployB20() {
     return result
   }, [category, ethPriceUsd, searchQuery, sortBy, tokens])
 
-  const loadTokens = async () => {
+  const loadTokens = async ({ forceChainRefresh = false } = {}) => {
+    const requestId = ++tokenLoadRequestRef.current
     if (!launchpadAddress) {
       setTokens([])
       setSelectedToken(null)
       return
     }
-    const cachedTokens = readCachedB20Tokens(chainId, launchpadAddress)
-    if (tokens.length === 0 && cachedTokens.length > 0) {
-      setTokens(cachedTokens)
-    }
+    const cachedTokens = readCachedB20Tokens(dataChainId, launchpadAddress)
+    if (cachedTokens.length > 0) setTokens((current) => current.length > 0 ? current : cachedTokens)
     setIsRefreshing(true)
-    try {
-      const supabaseTokens = await readSupabaseB20Tokens(chainId, launchpadAddress)
-      if (tokens.length === 0 && supabaseTokens.length > 0) {
+
+    const supabasePromise = readSupabaseB20Tokens(dataChainId, launchpadAddress)
+
+    if (!forceChainRefresh) {
+      const supabaseTokens = await settleWithin(supabasePromise, 6000)
+      if (requestId !== tokenLoadRequestRef.current) return
+      if (supabaseTokens.length > 0) {
         setTokens(supabaseTokens)
-        writeCachedB20Tokens(chainId, launchpadAddress, supabaseTokens)
+        writeCachedB20Tokens(dataChainId, launchpadAddress, supabaseTokens)
+        setIsRefreshing(false)
+        return
       }
-      const nextTokens = await fetchTokens()
-      if (nextTokens.length > 0 || (cachedTokens.length === 0 && supabaseTokens.length === 0)) {
-        setTokens(nextTokens)
+      if (cachedTokens.length > 0) {
+        setIsRefreshing(false)
+        return
       }
+    }
+
+    try {
+      const nextTokens = await settleWithin(fetchTokens({
+        knownTokens: cachedTokens,
+        knownTokensPromise: supabasePromise,
+        forceRefresh: true,
+      }), 25000)
+      if (requestId !== tokenLoadRequestRef.current) return
+      const supabaseTokens = await settleWithin(supabasePromise, 1000)
+      if (nextTokens.length > 0) setTokens(nextTokens)
+      else if (cachedTokens.length === 0 && supabaseTokens.length === 0) setTokens([])
       if (nextTokens.length > 0) {
-        writeCachedB20Tokens(chainId, launchpadAddress, nextTokens)
-        upsertSupabaseB20Tokens(chainId, launchpadAddress, nextTokens)
+        writeCachedB20Tokens(dataChainId, launchpadAddress, nextTokens)
+        upsertSupabaseB20Tokens(dataChainId, launchpadAddress, nextTokens)
       }
       setSelectedToken((current) => {
         if (!nextTokens.length) return null
@@ -603,13 +635,12 @@ export default function DeployB20() {
         return nextTokens.find((item) => String(item.address).toLowerCase() === String(current.address).toLowerCase()) || null
       })
     } catch (err) {
+      if (requestId !== tokenLoadRequestRef.current) return
       console.warn('B20 token refresh failed:', err)
-      if (tokens.length === 0) {
-        const fallbackTokens = cachedTokens.length > 0 ? cachedTokens : await readSupabaseB20Tokens(chainId, launchpadAddress)
-        if (fallbackTokens.length > 0) setTokens(fallbackTokens)
-      }
+      const fallbackTokens = cachedTokens.length > 0 ? cachedTokens : await supabasePromise
+      if (fallbackTokens.length > 0) setTokens((current) => current.length > 0 ? current : fallbackTokens)
     } finally {
-      setIsRefreshing(false)
+      if (requestId === tokenLoadRequestRef.current) setIsRefreshing(false)
     }
   }
 
@@ -639,7 +670,7 @@ export default function DeployB20() {
   useEffect(() => {
     loadTokens()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [launchpadAddress, chainId])
+  }, [launchpadAddress, dataChainId])
 
   useEffect(() => {
     const tab = searchParams.get('tab')
@@ -718,7 +749,7 @@ export default function DeployB20() {
           return next
         })
       }
-      await loadTokens()
+      await loadTokens({ forceChainRefresh: true })
     } catch (err) {
       setStatus(transactionErrorStatus(err, 'Curve launch failed.'))
     }
@@ -755,7 +786,7 @@ export default function DeployB20() {
         text: side === 'buy' ? 'Buy confirmed.' : 'Sell confirmed.',
         txHash: result.txHash,
       })
-      await loadTokens()
+      await loadTokens({ forceChainRefresh: true })
     } catch (err) {
       setStatus(transactionErrorStatus(err, 'Trade failed.'))
     }
@@ -772,7 +803,7 @@ export default function DeployB20() {
       setCreatorFeeBalance(0n)
       return
     }
-    const client = getReadClient(chainId)
+    const client = getReadClient(dataChainId)
     if (!client) return
     try {
       const value = await client.readContract({
@@ -785,7 +816,7 @@ export default function DeployB20() {
     } catch {
       // Keep the last known value during a temporary RPC failure.
     }
-  }, [address, chainId, launchpadAddress])
+  }, [address, dataChainId, launchpadAddress])
 
   useEffect(() => {
     refetchCreatorFees()
@@ -983,7 +1014,7 @@ export default function DeployB20() {
                 <p style={styles.panelKicker}>Markets</p>
                 <h2 style={styles.panelTitle}>Curve launches</h2>
               </div>
-              <button type="button" onClick={loadTokens} disabled={isRefreshing} style={styles.iconButton} title="Refresh tokens">
+              <button type="button" onClick={() => loadTokens({ forceChainRefresh: true })} disabled={isRefreshing} style={styles.iconButton} title="Refresh tokens">
                 <RefreshCw size={18} />
               </button>
             </div>
@@ -1034,7 +1065,7 @@ export default function DeployB20() {
             setSelectedToken={setSelectedToken}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
-            chainId={chainId}
+            chainId={dataChainId}
             launchpadAddress={launchpadAddress}
             isBusy={isBusy}
             isCreator={isSelectedCreator}
@@ -1122,12 +1153,11 @@ function MiniB20TokenCard({ token, active, onClick }) {
   )
 }
 
-function B20ChartPanel({ token, launchpadAddress }) {
+function B20ChartPanel({ token, chainId, launchpadAddress }) {
   const { price: ethPriceUsd } = useEthUsdPrice()
   const chartContainerRef = useRef(null)
   const chartRef = useRef(null)
   const seriesRef = useRef(null)
-  const chainId = useChainId()
   const logClient = useMemo(() => getReadClient(chainId), [chainId])
   const [tradeHistory, setTradeHistory] = useState([])
   const [loadingTrades, setLoadingTrades] = useState(true)
@@ -1703,7 +1733,7 @@ function TokenBrowser({
           <option value="marketcap">Market Cap</option>
           <option value="progress">Progress</option>
         </select>
-        <button type="button" onClick={loadTokens} disabled={isRefreshing} style={styles.refreshButton}>
+        <button type="button" onClick={() => loadTokens({ forceChainRefresh: true })} disabled={isRefreshing} style={styles.refreshButton}>
           <RefreshCw size={18} /> Refresh
         </button>
       </div>
