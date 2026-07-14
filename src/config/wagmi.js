@@ -198,8 +198,8 @@ export const config = createConfig({
   dataSuffix: DATA_SUFFIX,
   transports: {
     [base.id]: fallback(
-      NETWORKS.BASE.rpcUrls.map((url) => viemHttp(url, { timeout: 8000, retryCount: 0 })),
-      { rank: false, retryCount: 0 }
+      NETWORKS.BASE.rpcUrls.map((url) => viemHttp(url, { timeout: 12000, retryCount: 1, retryDelay: 1000 })),
+      { rank: false, retryCount: 2, retryDelay: 1000 }
     ),
     [baseSepolia.id]: fallback(
       NETWORKS.BASE_SEPOLIA.rpcUrls.map((url) => viemHttp(url, { timeout: 30000, retryCount: 2, retryDelay: 1000 }))

@@ -51,7 +51,7 @@ import {
 
 const B20_LOGO_SRC = '/crypto-logos/basahub logo/B20.svg'
 const B20_PUBLIC_SOON = false
-const B20_CACHE_PREFIX = 'basehub:b20:curve-tokens'
+const B20_CACHE_PREFIX = 'basehub:b20:curve-tokens:v3'
 const B20_SUPABASE_TABLE = 'b20_tokens'
 const initialNormalForm = {
   variant: 'asset',
@@ -212,10 +212,29 @@ function reviveB20Token(token) {
 function b20TokenFromRow(row) {
   if (!row?.token_address) return null
   const createdAtMs = row.created_at ? new Date(row.created_at).getTime() : 0
-  const realETH = parseEther(normalizeDecimalInput(row.real_eth || '0', 18) || '0')
-  const virtualETH = parseEther(normalizeDecimalInput(row.virtual_eth || '1', 18) || '1')
-  const virtualTokens = parseUnits(normalizeDecimalInput(row.virtual_tokens || '0', 18) || '0', 18)
-  const volume = parseEther(normalizeDecimalInput(row.total_volume || '0', 18) || '0')
+  const realEthLabel = normalizeStoredDecimal(row.real_eth, 18, '0')
+  const virtualEthLabel = normalizeStoredDecimal(row.virtual_eth, 18, '1')
+  const virtualTokensLabel = normalizeStoredDecimal(row.virtual_tokens, 18, '0')
+  const volumeLabel = normalizeStoredDecimal(row.total_volume, 18, '0')
+  const realETH = parseEther(realEthLabel)
+  const virtualETH = parseEther(virtualEthLabel)
+  const virtualTokens = parseUnits(virtualTokensLabel, 18)
+  const volume = parseEther(volumeLabel)
+  const graduated = Boolean(row.graduated)
+  const transactionCount = Number(row.total_buys || 0) + Number(row.total_sells || 0)
+  const graduationEth = Number(B20_CURVE_GRADUATION_ETH)
+  const realEthNumber = Number(realEthLabel)
+  const volumeNumber = Number(volumeLabel)
+
+  // Reject rows written by the old scientific-notation parser (1e-7 became 17).
+  // Missing rows are hydrated from the contract and repaired in Supabase.
+  if (
+    !Number.isFinite(realEthNumber) ||
+    !Number.isFinite(volumeNumber) ||
+    (!graduated && realEthNumber > graduationEth * 1.01) ||
+    (transactionCount > 0 && volumeNumber > transactionCount * graduationEth * 1.01)
+  ) return null
+
   return {
     address: row.token_address,
     name: row.name || 'B20 Token',
@@ -230,7 +249,7 @@ function b20TokenFromRow(row) {
       creatorAllocation: BigInt(row.creator_allocation || 0),
       createdAt: BigInt(createdAtMs > 0 ? Math.floor(createdAtMs / 1000) : 0),
       pair: row.uniswap_pair || undefined,
-      graduated: Boolean(row.graduated),
+      graduated,
     },
     stats: {
       buys: BigInt(row.total_buys || 0),
@@ -240,8 +259,8 @@ function b20TokenFromRow(row) {
       graduatedAt: BigInt(row.graduated_at || 0),
     },
     progress: Number(row.progress || 0),
-    realEthLabel: String(row.real_eth || '0'),
-    volumeLabel: String(row.total_volume || '0'),
+    realEthLabel,
+    volumeLabel,
     holdersLabel: Number(row.holder_count || 0).toLocaleString(),
     createdAtMs,
     _fromSupabase: true,
@@ -257,6 +276,18 @@ function b20TokensFromRows(rows) {
       return null
     }
   }).filter(Boolean)
+}
+
+function mergeB20TokenLists(primary, fallback = []) {
+  const merged = new Map()
+  fallback.forEach((token) => {
+    if (token?.address) merged.set(String(token.address).toLowerCase(), token)
+  })
+  primary.forEach((token) => {
+    if (token?.address) merged.set(String(token.address).toLowerCase(), token)
+  })
+  return Array.from(merged.values())
+    .sort((a, b) => Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0))
 }
 
 function b20TokenToRow(token, chainId, launchpadAddress) {
@@ -411,6 +442,39 @@ function normalizeDecimalInput(value, decimals = 18) {
   const normalizedWhole = whole.replace(/^0+(?=\d)/, '')
   if (text.includes('.') && fraction.length >= 0) return `${normalizedWhole || '0'}.${fraction}`
   return normalizedWhole
+}
+
+// Database numeric values may arrive as scientific notation (for example 1e-7).
+// Keep this separate from the locale-aware form input normalizer.
+function normalizeStoredDecimal(value, decimals = 18, fallback = '0') {
+  const source = String(value ?? '').trim().toLowerCase()
+  const match = source.match(/^\+?(\d*\.?\d+)(?:e([+-]?\d+))?$/)
+  if (!match) return fallback
+
+  const coefficient = match[1]
+  const exponent = Number(match[2] || 0)
+  if (!Number.isSafeInteger(exponent) || exponent < -1000 || exponent > 1000) return fallback
+
+  const dotIndex = coefficient.indexOf('.')
+  const digits = coefficient.replace('.', '')
+  const decimalIndex = (dotIndex >= 0 ? dotIndex : coefficient.length) + exponent
+
+  let whole
+  let fraction
+  if (decimalIndex <= 0) {
+    whole = '0'
+    fraction = `${'0'.repeat(-decimalIndex)}${digits}`
+  } else if (decimalIndex >= digits.length) {
+    whole = `${digits}${'0'.repeat(decimalIndex - digits.length)}`
+    fraction = ''
+  } else {
+    whole = digits.slice(0, decimalIndex)
+    fraction = digits.slice(decimalIndex)
+  }
+
+  whole = whole.replace(/^0+(?=\d)/, '') || '0'
+  fraction = fraction.slice(0, decimals).replace(/0+$/, '')
+  return fraction ? `${whole}.${fraction}` : whole
 }
 
 function parseTokenAmountSafe(value) {
@@ -636,6 +700,7 @@ export default function DeployB20() {
     setIsRefreshing(true)
 
     const supabasePromise = readSupabaseB20Tokens(dataChainId, launchpadAddress)
+      .then((supabaseTokens) => mergeB20TokenLists(supabaseTokens, seedTokens))
 
     if (!forceChainRefresh) {
       const chainPromise = fetchTokens({
@@ -2078,9 +2143,64 @@ function ConfigLine({ icon, label, value }) {
   )
 }
 
+function getTokenImageSources(image) {
+  const source = String(image || '').trim()
+  if (!source) return []
+
+  const ipfsMatch = source.match(/(?:ipfs:\/\/|\/ipfs\/)([^?#]+)/i)
+  if (!ipfsMatch) return [source]
+
+  const ipfsPath = ipfsMatch[1].replace(/^ipfs\//i, '')
+  return Array.from(new Set([
+    `https://ipfs.io/ipfs/${ipfsPath}`,
+    `https://dweb.link/ipfs/${ipfsPath}`,
+    source,
+  ]))
+}
+
 function TokenAvatar({ image, symbol, size = 42 }) {
   const dynamicStyle = { width: size, height: size }
-  if (image) return <img src={image} alt={symbol} style={{ ...styles.tokenAvatar, ...dynamicStyle }} />
+  const sources = useMemo(() => getTokenImageSources(image), [image])
+  const [sourceIndex, setSourceIndex] = useState(0)
+  const [isLoaded, setIsLoaded] = useState(false)
+  const previousImageRef = useRef(image)
+
+  useEffect(() => {
+    if (previousImageRef.current === image) return
+    previousImageRef.current = image
+    setSourceIndex(0)
+    setIsLoaded(false)
+  }, [image])
+
+  useEffect(() => {
+    if (!sources[sourceIndex] || isLoaded) return undefined
+    const timeoutId = window.setTimeout(() => {
+      setIsLoaded(false)
+      setSourceIndex((current) => current + 1)
+    }, 7000)
+    return () => window.clearTimeout(timeoutId)
+  }, [isLoaded, sourceIndex, sources])
+
+  if (sources[sourceIndex]) {
+    return (
+      <div role="img" aria-label={`${symbol || 'Token'} logo`} style={{ ...styles.tokenAvatarFrame, ...dynamicStyle }}>
+        <span style={styles.tokenAvatarInitials}>{String(symbol || 'B').slice(0, 2)}</span>
+        <img
+          src={sources[sourceIndex]}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          referrerPolicy="no-referrer"
+          onLoad={() => setIsLoaded(true)}
+          onError={() => {
+            setIsLoaded(false)
+            setSourceIndex((current) => current + 1)
+          }}
+          style={{ ...styles.tokenAvatar, opacity: isLoaded ? 1 : 0 }}
+        />
+      </div>
+    )
+  }
   return <div style={{ ...styles.tokenAvatarFallback, ...dynamicStyle }}>{String(symbol || 'B').slice(0, 2)}</div>
 }
 
@@ -2830,11 +2950,30 @@ const styles = {
     fontWeight: 900,
   },
   tokenAvatar: {
-    width: 42,
-    height: 42,
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
     borderRadius: 8,
     objectFit: 'cover',
     background: '#111827',
+    transition: 'opacity 160ms ease',
+  },
+  tokenAvatarFrame: {
+    position: 'relative',
+    flex: '0 0 auto',
+    overflow: 'hidden',
+    borderRadius: 8,
+    background: 'linear-gradient(145deg, #172554, #0f2d4d)',
+  },
+  tokenAvatarInitials: {
+    position: 'absolute',
+    inset: 0,
+    display: 'grid',
+    placeItems: 'center',
+    color: '#bfdbfe',
+    fontWeight: 900,
+    fontSize: 14,
   },
   tokenAvatarFallback: {
     width: 42,
