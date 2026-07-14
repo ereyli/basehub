@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react'
-import { useAccount, useChainId, usePublicClient, useWriteContract } from 'wagmi'
+import { useCallback, useMemo, useState } from 'react'
+import { useAccount, useChainId, useWriteContract } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { keccak256, parseEther, parseEventLogs, stringToBytes, zeroAddress } from 'viem'
 import { config, DATA_SUFFIX } from '../config/wagmi'
@@ -35,38 +35,6 @@ function normalizeCurrency(value) {
   return String(value || '').trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 6)
 }
 
-function getBackupReadClient(chainId) {
-  return getReadClient(chainId)
-}
-
-async function readContractWithFallback(publicClient, chainId, params) {
-  try {
-    return await publicClient.readContract(params)
-  } catch (primaryError) {
-    const backupClient = getBackupReadClient(chainId)
-    if (!backupClient || backupClient === publicClient) throw primaryError
-    try {
-      return await backupClient.readContract(params)
-    } catch {
-      throw primaryError
-    }
-  }
-}
-
-async function simulateWithFallback(publicClient, chainId, params) {
-  try {
-    return await publicClient.simulateContract(params)
-  } catch (primaryError) {
-    const backupClient = getBackupReadClient(chainId)
-    if (!backupClient || backupClient === publicClient) throw primaryError
-    try {
-      return await backupClient.simulateContract(params)
-    } catch {
-      throw primaryError
-    }
-  }
-}
-
 function getReceiptToken(receipt) {
   if (!receipt?.logs?.length) return null
 
@@ -98,20 +66,21 @@ function getReceiptToken(receipt) {
 export function useDeployB20() {
   const { address } = useAccount()
   const chainId = useChainId()
-  const publicClient = usePublicClient()
+  const readClient = useMemo(() => getReadClient(chainId), [chainId])
   const { writeContractAsync } = useWriteContract()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
 
   const readActivation = useCallback(async (variant, overrideChainId = chainId) => {
-    if (!publicClient || !isB20SupportedChainId(overrideChainId)) return false
-    return readContractWithFallback(publicClient, overrideChainId, {
+    const targetClient = Number(overrideChainId) === Number(chainId) ? readClient : getReadClient(overrideChainId)
+    if (!targetClient || !isB20SupportedChainId(overrideChainId)) return false
+    return targetClient.readContract({
       address: B20_ACTIVATION_REGISTRY_ADDRESS,
       abi: B20_ACTIVATION_REGISTRY_ABI,
       functionName: 'isActivated',
       args: [B20_FEATURE_IDS[variant]],
     })
-  }, [chainId, publicClient])
+  }, [chainId, readClient])
 
   const deployB20 = async (input) => {
     if (!address) throw new Error('Wallet not connected')
@@ -137,6 +106,7 @@ export function useDeployB20() {
     setError(null)
 
     try {
+      if (!readClient) throw new Error('B20 read RPC is unavailable for this network.')
       const active = await readActivation(variant, targetChainId)
       if (!active) {
         throw new Error('B20 is not active on this network yet. Use Base Sepolia for testing until Base mainnet activation is enabled.')
@@ -160,14 +130,14 @@ export function useDeployB20() {
       let predictedAddress = null
       let deployTxHash = null
 
-      predictedAddress = await readContractWithFallback(publicClient, targetChainId, {
+      predictedAddress = await readClient.readContract({
         address: launcherAddress,
         abi: BASEHUB_B20_LAUNCHER_ABI,
         functionName: 'getB20Address',
         args: [variant, address, userSalt],
       })
 
-      await simulateWithFallback(publicClient, targetChainId, {
+      await readClient.simulateContract({
         address: launcherAddress,
         abi: BASEHUB_B20_LAUNCHER_ABI,
         functionName: 'createB20',

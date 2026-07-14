@@ -23,10 +23,10 @@ export const NETWORKS = {
     },
     rpcUrls: [
       envRpc('VITE_BASE_RPC_URL'),
-      'https://mainnet.base.org',
       'https://base-rpc.publicnode.com',
       'https://1rpc.io/base',
       'https://base.meowrpc.com',
+      'https://mainnet.base.org',
     ].filter(Boolean),
     blockExplorerUrls: ['https://basescan.org'],
     iconUrls: ['https://base.org/favicon.ico'],

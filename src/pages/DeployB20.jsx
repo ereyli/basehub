@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useAccount, useBalance, useChainId, usePublicClient, useReadContract, useSwitchChain } from 'wagmi'
+import { useAccount, useBalance, useChainId, useReadContract, useSwitchChain } from 'wagmi'
 import { formatEther, formatUnits, parseAbiItem, parseUnits } from 'viem'
 import {
   Activity,
@@ -52,8 +52,6 @@ const B20_LOGO_SRC = '/crypto-logos/basahub logo/B20.svg'
 const B20_PUBLIC_SOON = false
 const B20_CACHE_PREFIX = 'basehub:b20:curve-tokens'
 const B20_SUPABASE_TABLE = 'b20_tokens'
-const BASE_LOG_CLIENT = getReadClient(NETWORKS.BASE.chainId)
-
 const initialNormalForm = {
   variant: 'asset',
   name: '',
@@ -768,13 +766,30 @@ export default function DeployB20() {
   const isSelectedCreator = Boolean(
     address && selectedCore?.creator && String(selectedCore.creator).toLowerCase() === String(address).toLowerCase()
   )
-  const { data: creatorFeeBalance, refetch: refetchCreatorFees } = useReadContract({
-    address: launchpadAddress,
-    abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI,
-    functionName: 'fees',
-    args: address ? [address] : undefined,
-    query: { enabled: Boolean(address && launchpadAddress) },
-  })
+  const [creatorFeeBalance, setCreatorFeeBalance] = useState(0n)
+  const refetchCreatorFees = useCallback(async () => {
+    if (!address || !launchpadAddress) {
+      setCreatorFeeBalance(0n)
+      return
+    }
+    const client = getReadClient(chainId)
+    if (!client) return
+    try {
+      const value = await client.readContract({
+        address: launchpadAddress,
+        abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI,
+        functionName: 'fees',
+        args: [address],
+      })
+      setCreatorFeeBalance(value || 0n)
+    } catch {
+      // Keep the last known value during a temporary RPC failure.
+    }
+  }, [address, chainId, launchpadAddress])
+
+  useEffect(() => {
+    refetchCreatorFees()
+  }, [refetchCreatorFees])
   const creatorFeeEth = creatorFeeBalance ? Number(formatEther(creatorFeeBalance)) : 0
 
   const handleClaimCreatorFees = async () => {
@@ -1112,8 +1127,8 @@ function B20ChartPanel({ token, launchpadAddress }) {
   const chartContainerRef = useRef(null)
   const chartRef = useRef(null)
   const seriesRef = useRef(null)
-  const publicClient = usePublicClient()
   const chainId = useChainId()
+  const logClient = useMemo(() => getReadClient(chainId), [chainId])
   const [tradeHistory, setTradeHistory] = useState([])
   const [loadingTrades, setLoadingTrades] = useState(true)
   const marketCapUSD = tokenMarketCapUSD(token, ethPriceUsd)
@@ -1128,13 +1143,12 @@ function B20ChartPanel({ token, launchpadAddress }) {
   useEffect(() => {
     let cancelled = false
     async function loadTradeHistory() {
-      if (!publicClient || !launchpadAddress || !token?.address) {
+      if (!logClient || !launchpadAddress || !token?.address) {
         setTradeHistory([])
         return
       }
       setLoadingTrades(true)
       try {
-        const logClient = Number(chainId) === NETWORKS.BASE.chainId ? BASE_LOG_CLIENT : publicClient
         const latestBlock = await logClient.getBlockNumber()
         const lookbackTiers = txns > 0 ? [25000n, 100000n, 500000n] : [10000n]
         const chunkSize = 2000n
@@ -1218,7 +1232,7 @@ function B20ChartPanel({ token, launchpadAddress }) {
     return () => {
       cancelled = true
     }
-  }, [launchpadAddress, publicClient, token?.address, txns])
+  }, [createdAt, launchpadAddress, logClient, token?.address, txns])
 
   const chartData = useMemo(() => {
     const now = Date.now()

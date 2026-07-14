@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { useAccount, useChainId, usePublicClient, useWriteContract } from 'wagmi'
+import { useAccount, useChainId, useWriteContract } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import {
   formatEther,
@@ -32,24 +32,7 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-function getBackupReadClient(chainId) {
-  return getReadClient(chainId)
-}
-
-async function withReadFallback(publicClient, backupClient, method, params) {
-  try {
-    return await publicClient[method](params)
-  } catch (primaryError) {
-    if (!backupClient || backupClient === publicClient) throw primaryError
-    try {
-      return await backupClient[method](params)
-    } catch {
-      throw primaryError
-    }
-  }
-}
-
-async function withRetry(fn, { attempts = 4, delayMs = 500 } = {}) {
+async function withRetry(fn, { attempts = 3, delayMs = 600 } = {}) {
   let lastError
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {
@@ -174,7 +157,7 @@ async function waitForTx(hash, chainId) {
 export function useB20Launchpad() {
   const { address } = useAccount()
   const chainId = useChainId()
-  const publicClient = usePublicClient()
+  const readClient = useMemo(() => getReadClient(chainId), [chainId])
   const { writeContractAsync } = useWriteContract()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -211,9 +194,8 @@ export function useB20Launchpad() {
   }, [])
 
   const fetchTokens = useCallback(async () => {
-    if (!publicClient || !launchpadAddress) return []
-    const backupClient = getBackupReadClient(chainId)
-    const readLaunchpad = (functionName, args = []) => withRetry(() => withReadFallback(publicClient, backupClient, 'readContract', {
+    if (!readClient || !launchpadAddress) return []
+    const readLaunchpad = (functionName, args = []) => withRetry(() => readClient.readContract({
       address: launchpadAddress,
       abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI,
       functionName,
@@ -263,14 +245,17 @@ export function useB20Launchpad() {
 
     let results
     try {
-      results = await withReadFallback(publicClient, backupClient, 'multicall', { contracts, allowFailure: true })
+      results = await readClient.multicall({ contracts, allowFailure: true })
     } catch {
       results = []
       const chunkSize = 12
       for (let index = 0; index < contracts.length; index += chunkSize) {
         const chunk = contracts.slice(index, index + chunkSize)
         try {
-          const chunkResults = await withReadFallback(publicClient, backupClient, 'multicall', { contracts: chunk, allowFailure: true })
+          const chunkResults = await withRetry(
+            () => readClient.multicall({ contracts: chunk, allowFailure: true }),
+            { attempts: 2, delayMs: 750 }
+          )
           results.push(...chunkResults)
         } catch {
           results.push(...chunk.map(() => ({ status: 'failure' })))
@@ -296,7 +281,11 @@ export function useB20Launchpad() {
       const statsResult = results[index * 4 + 2]
       const progressResult = results[index * 4 + 3]
       if (metaResult?.status === 'failure' || coreResult?.status === 'failure' || statsResult?.status === 'failure') {
-        enriched.push(await hydrateSingleToken(uniqueAddresses[index]))
+        try {
+          enriched.push(await hydrateSingleToken(uniqueAddresses[index]))
+        } catch {
+          // A single malformed or temporarily unavailable token must not hide the market.
+        }
       } else {
         enriched.push(hydrateToken(
           uniqueAddresses[index],
@@ -309,7 +298,7 @@ export function useB20Launchpad() {
     }
 
     return enriched.sort((a, b) => Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0))
-  }, [chainId, hydrateToken, launchpadAddress, publicClient])
+  }, [hydrateToken, launchpadAddress, readClient])
 
   const createCurveToken = useCallback(async (input) => {
     requireReady()
@@ -324,16 +313,15 @@ export function useB20Launchpad() {
     setIsLoading(true)
     setError(null)
     try {
-      const backupClient = getBackupReadClient(chainId)
       const userSalt = keccak256(stringToBytes(`${address}:${Date.now()}:${name}:${symbol}:b20-curve`))
-      const predictedToken = await withReadFallback(publicClient, backupClient, 'readContract', {
+      const predictedToken = await readClient.readContract({
         address: launchpadAddress,
         abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI,
         functionName: 'predictToken',
         args: [address, userSalt],
       })
 
-      await withReadFallback(publicClient, backupClient, 'simulateContract', {
+      await readClient.simulateContract({
         address: launchpadAddress,
         abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI,
         functionName: 'createCurveB20',
@@ -376,7 +364,7 @@ export function useB20Launchpad() {
     } finally {
       setIsLoading(false)
     }
-  }, [address, chainId, launchpadAddress, publicClient, requireReady, writeContractAsync])
+  }, [address, chainId, launchpadAddress, readClient, requireReady, writeContractAsync])
 
   const buyTokens = useCallback(async (tokenAddress, ethAmount) => {
     requireReady()
@@ -385,8 +373,7 @@ export function useB20Launchpad() {
     setIsLoading(true)
     setError(null)
     try {
-      const backupClient = getBackupReadClient(chainId)
-      const quote = await withReadFallback(publicClient, backupClient, 'readContract', {
+      const quote = await readClient.readContract({
         address: launchpadAddress,
         abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI,
         functionName: 'getTokensForETH',
@@ -410,7 +397,7 @@ export function useB20Launchpad() {
     } finally {
       setIsLoading(false)
     }
-  }, [chainId, launchpadAddress, publicClient, requireReady, writeContractAsync])
+  }, [chainId, launchpadAddress, readClient, requireReady, writeContractAsync])
 
   const sellTokens = useCallback(async (tokenAddress, tokenAmount) => {
     requireReady()
@@ -419,21 +406,20 @@ export function useB20Launchpad() {
     setIsLoading(true)
     setError(null)
     try {
-      const backupClient = getBackupReadClient(chainId)
       const [allowance, balance, coreRaw] = await Promise.all([
-        withReadFallback(publicClient, backupClient, 'readContract', {
+        readClient.readContract({
           address: tokenAddress,
           abi: B20_CURVE_ERC20_ABI,
           functionName: 'allowance',
           args: [address, launchpadAddress],
         }),
-        withReadFallback(publicClient, backupClient, 'readContract', {
+        readClient.readContract({
           address: tokenAddress,
           abi: B20_CURVE_ERC20_ABI,
           functionName: 'balanceOf',
           args: [address],
         }),
-        withReadFallback(publicClient, backupClient, 'readContract', {
+        readClient.readContract({
           address: launchpadAddress,
           abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI,
           functionName: 'tokenCore',
@@ -458,7 +444,7 @@ export function useB20Launchpad() {
         await waitForTx(approveHash, Number(chainId))
       }
 
-      const quote = await withReadFallback(publicClient, backupClient, 'readContract', {
+      const quote = await readClient.readContract({
         address: launchpadAddress,
         abi: BASEHUB_B20_CURVE_LAUNCHPAD_ABI,
         functionName: 'getETHForTokens',
@@ -481,7 +467,7 @@ export function useB20Launchpad() {
     } finally {
       setIsLoading(false)
     }
-  }, [address, chainId, launchpadAddress, publicClient, requireReady, writeContractAsync])
+  }, [address, chainId, launchpadAddress, readClient, requireReady, writeContractAsync])
 
   const claimFees = useCallback(async () => {
     requireReady()
