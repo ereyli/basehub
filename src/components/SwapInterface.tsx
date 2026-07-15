@@ -227,13 +227,15 @@ function CustomTokenItemWithRemove({
   isOtherToken, 
   onSelect, 
   onRemove,
-  ethPrice
+  ethPrice,
+  tokenLogos
 }: { 
   token: AppToken; 
   isOtherToken: boolean; 
   onSelect: () => void; 
   onRemove: (e: React.MouseEvent) => void;
   ethPrice: number;
+  tokenLogos?: Record<string, string>;
 }) {
   const { address: userAddress } = useAccount();
   const { data: balance } = useBalance({
@@ -4124,6 +4126,7 @@ export default function SwapInterface() {
                           onSelect={() => handleTokenSelect(token, showTokenSelect!)}
                           onRemove={handleRemove}
                           ethPrice={ethPriceUsd}
+                          tokenLogos={tokenLogos}
                         />
                       );
                     }
