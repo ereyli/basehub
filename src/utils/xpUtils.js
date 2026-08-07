@@ -270,10 +270,11 @@ export const addXP = async (walletAddress, xpAmount, gameType = 'GENERAL', chain
   }
 
   try {
-    // Every transaction-backed reward goes through server-side receipt verification.
-    // Off-chain games without a tx hash continue to use the capped award_xp RPC.
+    // Web rewards use server-side receipt verification. Base App/Farcaster smart-wallet
+    // transactions can surface AA receipts whose `from`/timing breaks that verifier, so
+    // miniapp XP stays on the capped award_xp RPC path below.
     const isMiniapp = isMiniappDomain() || isLikelyBaseApp() || isLikelyFarcaster()
-    const useVerified = transactionHash && chainId != null && supabase?.functions?.invoke
+    const useVerified = !isMiniapp && transactionHash && chainId != null && supabase?.functions?.invoke
     if (useVerified) {
       const source = !isMiniapp ? 'web' : (isLikelyBaseApp() ? 'base_app' : 'farcaster')
       const invokeVerified = async () => {
