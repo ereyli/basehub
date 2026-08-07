@@ -2,7 +2,7 @@ import React from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useChainId } from 'wagmi'
-import { Users, Zap, Sun, Moon, Loader2, Activity, Smartphone, Gamepad2, Shield, BarChart3 } from 'lucide-react'
+import { Users, Zap, Sun, Moon, Loader2, Activity, Smartphone, Gamepad2, Shield, BarChart3, ChevronDown } from 'lucide-react'
 import { useNetworkCheck } from '../hooks/useNetworkCheck'
 import { isTestnetChainId } from '../config/networks'
 import { useFastDeployModal } from '../contexts/FastDeployContext'
@@ -14,6 +14,44 @@ import { useSupabase } from '../hooks/useSupabase'
 import { useTransactions } from '../hooks/useTransactions'
 import UserProfile from './UserProfile'
 import { useOpenInApp } from '../contexts/OpenInAppContext'
+import { BaseHubGlyph } from './BaseHubIcon'
+
+const HeaderWalletControl = () => (
+  <ConnectButton.Custom>
+    {({ account, chain, mounted, openAccountModal, openChainModal, openConnectModal }) => {
+      const connected = mounted && account && chain
+
+      if (!connected) {
+        return (
+          <button type="button" className="header-wallet-connect" onClick={openConnectModal}>
+            <BaseHubGlyph name="profile" size={16} />
+            <span>Cüzdanı Bağla</span>
+          </button>
+        )
+      }
+
+      return (
+        <div className="header-wallet-control">
+          <button type="button" className="header-chain-button" onClick={openChainModal} title={chain.name}>
+            {chain.hasIcon && chain.iconUrl ? (
+              <img src={chain.iconUrl} alt="" className="header-chain-icon" style={{ background: chain.iconBackground }} />
+            ) : (
+              <span className="header-chain-fallback" aria-hidden="true" />
+            )}
+            <span className="header-chain-name">{chain.name}</span>
+            <ChevronDown size={15} aria-hidden="true" />
+          </button>
+
+          <button type="button" className="header-account-button" onClick={openAccountModal} title={account.address}>
+            {account.displayBalance && <span className="header-wallet-balance">{account.displayBalance}</span>}
+            <span className="header-wallet-address">{account.displayName}</span>
+            <ChevronDown size={15} aria-hidden="true" />
+          </button>
+        </div>
+      )
+    }}
+  </ConnectButton.Custom>
+)
 
 const WebHeader = () => {
   const { openModal: openOpenInAppModal } = useOpenInApp()
@@ -157,16 +195,16 @@ const WebHeader = () => {
 
 
   const quickActions = [
-    { id: 'gm', label: 'GM', icon: Sun, color: '#10b981', onClick: handleQuickGM, loading: isLoadingGM },
-    { id: 'gn', label: 'GN', icon: Moon, color: '#3b82f6', onClick: handleQuickGN, loading: isLoadingGN },
-    { id: 'fast-deploy', label: 'Fast Deploy', icon: Zap, color: '#ec4899', onClick: openFastDeployModal },
-    { id: 'gaming', label: 'Gaming', icon: Gamepad2, color: '#f59e0b', path: '/', hash: 'gaming' },
-    { id: 'analysis', label: 'Analysis', icon: BarChart3, color: '#8b5cf6', path: '/', hash: 'analysis' },
-    { id: 'guild', label: 'Guild', icon: Shield, color: '#2563eb', path: '/base-guild', highlight: true },
+    { id: 'gm', label: 'GM', icon: 'gmgn', color: '#45d6a0', onClick: handleQuickGM, loading: isLoadingGM },
+    { id: 'gn', label: 'GN', icon: 'gmgn', color: '#7aa2ff', onClick: handleQuickGN, loading: isLoadingGN },
+    { id: 'fast-deploy', label: 'Fast Deploy', icon: 'deploy', color: '#f472b6', onClick: openFastDeployModal },
+    { id: 'gaming', label: 'Gaming', icon: 'gaming', color: '#f6b84a', path: '/', hash: 'gaming' },
+    { id: 'analysis', label: 'Analysis', icon: 'analysis', color: '#a78bfa', path: '/', hash: 'analysis' },
+    { id: 'guild', label: 'Guild', icon: 'base-guild-companion', color: '#5f8fff', path: '/base-guild', highlight: true },
   ]
 
   const renderAction = (action) => {
-    const IconComponent = action.icon
+    const ActionIcon = () => <BaseHubGlyph name={action.icon} size={16} />
     if (action.path && !action.hash) {
       return (
         <Link
@@ -175,7 +213,7 @@ const WebHeader = () => {
           className={`quick-action-btn${action.highlight ? ' quick-action-btn--guild' : ''}`}
           style={{ '--action-color': action.color }}
         >
-          <IconComponent size={16} />
+          <ActionIcon />
           <span>{action.label}</span>
         </Link>
       )
@@ -184,7 +222,7 @@ const WebHeader = () => {
       const href = action.hash ? `${action.path}#${action.hash}` : action.path
       return (
         <a key={action.id} href={href} className="quick-action-btn" style={{ '--action-color': action.color }}>
-          <IconComponent size={16} />
+          <ActionIcon />
           <span>{action.label}</span>
         </a>
       )
@@ -197,7 +235,7 @@ const WebHeader = () => {
         className="quick-action-btn"
         style={{ '--action-color': action.color }}
       >
-        {action.loading ? <Loader2 size={16} className="spinning" /> : <IconComponent size={16} />}
+        {action.loading ? <Loader2 size={16} className="spinning" /> : <ActionIcon />}
         <span>{action.label}</span>
       </button>
     )
@@ -281,7 +319,7 @@ const WebHeader = () => {
             
             {/* RainbowKit Connect Button - own row on mobile */}
             <div className="header-wallet-wrap">
-              <ConnectButton />
+              <HeaderWalletControl />
             </div>
           </div>
         </div>

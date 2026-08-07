@@ -6,6 +6,7 @@ import SwapInterface from '../components/SwapInterface.tsx';
 import StatsPanel from '../components/StatsPanel.tsx';
 import SwapHubActivity from '../components/SwapHubActivity';
 import BackButton from '../components/BackButton';
+import { BaseHubGlyph } from '../components/BaseHubIcon';
 import { NETWORKS } from '../config/networks';
 
 // Error Boundary Component
@@ -108,7 +109,7 @@ export default function SwapHub() {
   const styles = {
     container: {
       minHeight: isMobile ? 'auto' : '100vh',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1e3a8a 100%)',
+      background: 'transparent',
       paddingTop: isMobile ? '60px' : '0',
       paddingBottom: isMobile ? '100px' : '20px'
     },
@@ -143,39 +144,42 @@ export default function SwapHub() {
       marginBottom: isMobile ? '0' : '24px'
     },
     swapCard: {
-      backgroundColor: 'rgba(30, 41, 59, 0.6)',
+      background: 'linear-gradient(180deg, rgba(10, 18, 31, 0.94), rgba(4, 9, 18, 0.96))',
       borderRadius: '20px',
       padding: isMobile ? '14px' : '24px',
-      border: '1px solid rgba(59, 130, 246, 0.2)',
+      border: '1px solid rgba(126, 157, 215, 0.14)',
+      boxShadow: '0 20px 55px rgba(0, 0, 0, 0.24)',
       backdropFilter: 'blur(10px)'
     },
     statsCard: {
-      backgroundColor: 'rgba(30, 41, 59, 0.6)',
+      background: 'linear-gradient(180deg, rgba(10, 18, 31, 0.94), rgba(4, 9, 18, 0.96))',
       borderRadius: '20px',
       padding: isMobile ? '14px' : '24px',
-      border: '1px solid rgba(59, 130, 246, 0.2)',
+      border: '1px solid rgba(126, 157, 215, 0.14)',
+      boxShadow: '0 20px 55px rgba(0, 0, 0, 0.24)',
       backdropFilter: 'blur(10px)',
       display: 'flex',
       flexDirection: 'column',
       minHeight: isMobile ? 'auto' : 'auto'
     },
     activityCard: {
-      backgroundColor: 'rgba(30, 41, 59, 0.6)',
+      background: 'linear-gradient(180deg, rgba(10, 18, 31, 0.94), rgba(4, 9, 18, 0.96))',
       borderRadius: '20px',
       padding: isMobile ? '14px' : '24px',
-      border: '1px solid rgba(59, 130, 246, 0.2)',
+      border: '1px solid rgba(126, 157, 215, 0.14)',
+      boxShadow: '0 20px 55px rgba(0, 0, 0, 0.24)',
       backdropFilter: 'blur(10px)',
       marginTop: isMobile ? '0' : '24px'
     },
     xpBanner: {
-      backgroundColor: 'rgba(30, 41, 59, 0.6)',
+      backgroundColor: 'rgba(7, 14, 26, 0.92)',
       borderRadius: '16px',
       padding: isMobile ? '16px' : '20px 24px',
       border: '1px solid rgba(59, 130, 246, 0.3)',
       backdropFilter: 'blur(10px)',
       marginBottom: isMobile ? '16px' : '24px',
-      background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%)',
-      boxShadow: '0 4px 20px rgba(59, 130, 246, 0.2)'
+      background: 'linear-gradient(135deg, rgba(14, 28, 50, 0.94) 0%, rgba(6, 13, 25, 0.96) 100%)',
+      boxShadow: '0 16px 40px rgba(0, 0, 0, 0.22)'
     },
     xpBannerContent: {
       display: 'flex',
@@ -263,21 +267,7 @@ export default function SwapHub() {
           <div style={styles.xpBannerContent}>
             <div style={styles.xpBannerLeft}>
               <div style={styles.xpIcon}>
-                <div style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: isMobile ? '24px' : '28px',
-                  fontWeight: 'bold',
-                  background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text'
-                }}>
-                  ⭐
-                </div>
+                <BaseHubGlyph name="xp" size={isMobile ? 22 : 26} style={{ color: '#fbbf24' }} title="XP rewards" />
               </div>
               <div style={styles.xpBannerText}>
                 <div style={styles.xpBannerTitle}>

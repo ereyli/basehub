@@ -5,6 +5,7 @@ import { useTransactions } from '../hooks/useTransactions'
 import { isTestnetChainId } from '../config/networks'
 import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, ChevronRight, ChevronLeft, Trash2, Star, Users, Repeat, Zap, ArrowLeftRight, Search, Sparkles, Bot } from 'lucide-react'
 import { getNavItems } from '../config/products'
+import { BaseHubGlyph } from './BaseHubIcon'
 
 const LUCIDE_ICONS = { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, Trash2, Star, Users, Repeat, Zap, ArrowLeftRight, Search, Sparkles, Bot }
 
@@ -88,8 +89,7 @@ const WebBottomNav = () => {
   const analysisTools = getNavItems('analysis')
   const deployTools = getNavItems('deploy')
   const renderNavIcon = (iconName) => {
-    const Icon = LUCIDE_ICONS[iconName]
-    return Icon ? <Icon size={20} /> : null
+    return <BaseHubGlyph name={iconName} size={20} />
   }
 
   return (
@@ -126,7 +126,7 @@ const WebBottomNav = () => {
       )}
 
       {/* Left Sidebar Navigation */}
-      <div style={{
+      <div className="web-rail" style={{
         position: 'fixed',
         top: '96px',
         left: isMobile && !isSidebarOpen ? '-80px' : '0',
@@ -173,10 +173,7 @@ const WebBottomNav = () => {
               : '0 2px 4px rgba(16, 185, 129, 0.1)'
           }}
         >
-          <div style={{ display: 'flex', gap: '2px' }}>
-            <Sun size={20} />
-            <Moon size={20} />
-          </div>
+          <BaseHubGlyph name="gmgn" size={22} />
           <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>GM/GN</span>
         </button>
 
@@ -207,7 +204,7 @@ const WebBottomNav = () => {
               : '0 2px 4px rgba(102, 126, 234, 0.1)'
           }}
         >
-          <Repeat size={20} />
+          <BaseHubGlyph name="swap" size={22} />
           <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>Swaphub</span>
         </button>
 
@@ -238,7 +235,7 @@ const WebBottomNav = () => {
               : '0 2px 4px rgba(6, 182, 212, 0.1)'
           }}
         >
-          <Zap size={20} />
+          <BaseHubGlyph name="pumphub" size={22} />
           <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>Pumphub</span>
         </button>
 
@@ -269,7 +266,7 @@ const WebBottomNav = () => {
               : '0 2px 4px rgba(245, 158, 11, 0.1)'
           }}
         >
-          <Gamepad2 size={20} />
+          <BaseHubGlyph name="gaming" size={22} />
           <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>GAMING</span>
         </button>
 
@@ -300,7 +297,7 @@ const WebBottomNav = () => {
               : '0 2px 4px rgba(59, 130, 246, 0.1)'
           }}
         >
-          <TrendingUp size={20} />
+          <BaseHubGlyph name="analysis" size={22} />
           <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>ANALYSIS</span>
         </button>
 
@@ -331,7 +328,7 @@ const WebBottomNav = () => {
               : '0 2px 4px rgba(139, 92, 246, 0.1)'
           }}
         >
-          <Image size={20} />
+          <BaseHubGlyph name="nft" size={22} />
           <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>NFT</span>
         </button>
 
@@ -362,7 +359,7 @@ const WebBottomNav = () => {
               : '0 2px 4px rgba(236, 72, 153, 0.1)'
           }}
         >
-          <Rocket size={20} />
+          <BaseHubGlyph name="deploy" size={22} />
           <span style={{ fontSize: '9px', textAlign: 'center', lineHeight: '1.2' }}>DEPLOY</span>
         </button>
 

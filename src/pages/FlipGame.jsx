@@ -5,6 +5,7 @@ import { useSupabase } from '../hooks/useSupabase'
 // Quest system is now handled in useTransactions hook
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
+import { BaseHubGlyph } from '../components/BaseHubIcon'
 import GamingShortcuts from '../components/GamingShortcuts'
 import ShareButton from '../components/ShareButton'
 import NetworkGuard from '../components/NetworkGuard'
@@ -195,7 +196,7 @@ const FlipGame = () => {
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 20, position: 'relative' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '8px 20px', background: 'linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(217,119,6,0.1) 100%)', borderRadius: 50, border: '1px solid rgba(245,158,11,0.2)', marginBottom: 8 }}>
-          <span style={{ fontSize: 20 }}>🪙</span>
+          <BaseHubGlyph productId="flip" size={20} style={{ color: '#fbbf24' }} title="Coin Flip" />
           <span style={{ fontWeight: 800, fontSize: 13, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.1em' }}>COIN FLIP</span>
           <span style={{ fontSize: 11, color: '#94a3b8', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: 20 }}>50/50</span>
         </div>

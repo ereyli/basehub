@@ -19,6 +19,7 @@ import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { NETWORKS, getNetworkKey, isPumpHubSupportedChainId } from '../config/networks'
 import { getProductsForHome, getProductsForHomeByNetwork, getNetworksForProductIds } from '../config/products'
 import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat, Sparkles, RotateCcw, Gift, LayoutGrid, CircleDot, Bot, MoreHorizontal } from 'lucide-react'
+import { BaseHubGlyph } from '../components/BaseHubIcon'
 
 const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Search, Shield, Trash2, Star, Layers, Package, Factory, Rocket, Image, Sparkles, ArrowLeftRight, Repeat, Zap, Users, LayoutGrid, CircleDot, Bot }
 
@@ -725,12 +726,9 @@ const Home = () => {
   const isPumphubSupported = !isConnected || isPumpHubSupportedChainId(chainId)
 
   const games = React.useMemo(() => {
-    const iconStyle = { width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }
     const products = getProductsForHomeByNetwork(chainId, getNetworkKey)
     return products.map(p => {
-      const icon = p.iconImage
-        ? <img src={p.iconImage} alt={p.title} loading="lazy" style={iconStyle} />
-        : (() => { const Icon = LUCIDE_ICONS[p.icon]; return Icon ? <Icon size={40} style={{ color: 'white' }} /> : null })()
+      const icon = <BaseHubGlyph productId={p.id} name={p.icon} size={24} title={p.title} />
       return {
         id: p.id,
         title: p.title,
@@ -752,12 +750,9 @@ const Home = () => {
   /** Analysis tools: always listed on Home on every chain; routes handle network checks. */
   const analysisGames = React.useMemo(() => {
     const ids = ['wallet-analysis', 'contract-security', 'allowance-cleaner']
-    const iconStyle = { width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }
     const products = getProductsForHome()
     return ids.map((id) => products.find((p) => p.id === id)).filter(Boolean).map((p) => {
-      const icon = p.iconImage
-        ? <img src={p.iconImage} alt={p.title} loading="lazy" style={iconStyle} />
-        : (() => { const Icon = LUCIDE_ICONS[p.icon]; return Icon ? <Icon size={40} style={{ color: 'white' }} /> : null })()
+      const icon = <BaseHubGlyph productId={p.id} name={p.icon} size={24} title={p.title} />
       return {
         id: p.id,
         title: p.title,

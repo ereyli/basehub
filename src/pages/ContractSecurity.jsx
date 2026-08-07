@@ -3,6 +3,7 @@ import { useAccount } from 'wagmi'
 import { useContractSecurity } from '../hooks/useContractSecurity'
 import { Shield, AlertTriangle, CheckCircle, XCircle, Loader2, Eye, BarChart3, FileCode, Lock, Zap } from 'lucide-react'
 import BackButton from '../components/BackButton'
+import { BaseHubGlyph } from '../components/BaseHubIcon'
 import NetworkGuard from '../components/NetworkGuard'
 import { getFarcasterUniversalLink } from '../config/farcaster'
 
@@ -95,7 +96,7 @@ export default function ContractSecurity() {
 
   return (
     <NetworkGuard>
-      <div style={{
+      <div className="analysis-tool-page" style={{
         minHeight: '100vh',
         height: 'auto',
         background: '#0f172a',
@@ -108,7 +109,7 @@ export default function ContractSecurity() {
         boxSizing: 'border-box',
       }}>
         {/* Animated Background Elements */}
-        <div style={{
+        <div className="analysis-tool-orb analysis-tool-orb--one" style={{
           position: 'absolute',
           top: '-50%',
           right: '-20%',
@@ -118,7 +119,7 @@ export default function ContractSecurity() {
           borderRadius: '50%',
           animation: 'float 20s ease-in-out infinite',
         }} />
-        <div style={{
+        <div className="analysis-tool-orb analysis-tool-orb--two" style={{
           position: 'absolute',
           bottom: '-30%',
           left: '-10%',
@@ -129,7 +130,7 @@ export default function ContractSecurity() {
           animation: 'float 15s ease-in-out infinite reverse',
         }} />
 
-        <div style={{
+        <div className="analysis-tool-shell" style={{
           maxWidth: '1400px',
           margin: '0 auto',
           position: 'relative',
@@ -138,20 +139,20 @@ export default function ContractSecurity() {
           <BackButton />
           
           {/* Header Section */}
-          <div style={{
+          <div className="analysis-tool-header" style={{
             textAlign: 'center',
             marginBottom: '48px',
             paddingTop: '20px',
           }}>
-            <div style={{
+            <div className="analysis-tool-icon" style={{
               fontSize: '80px',
               marginBottom: '20px',
               animation: 'bounce 2s ease-in-out infinite',
               filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))',
             }}>
-              🛡️
+              <BaseHubGlyph productId="contract-security" size={42} title="Contract Security" />
             </div>
-            <h1 style={{
+            <h1 className="analysis-tool-title" style={{
               fontSize: '48px',
               fontWeight: 'bold',
               marginBottom: '12px',
@@ -163,7 +164,7 @@ export default function ContractSecurity() {
             }}>
               Contract Security Analysis
             </h1>
-            <p style={{
+            <p className="analysis-tool-description" style={{
               fontSize: '18px',
               color: '#9ca3af',
               marginBottom: '16px',
@@ -171,7 +172,7 @@ export default function ContractSecurity() {
             }}>
               Analyze smart contract security risks
             </p>
-            <div style={{
+            <div className="analysis-tool-price" style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '10px',

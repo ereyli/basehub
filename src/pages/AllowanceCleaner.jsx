@@ -14,6 +14,7 @@ import {
   BarChart3
 } from 'lucide-react'
 import BackButton from '../components/BackButton'
+import { BaseHubGlyph } from '../components/BaseHubIcon'
 import NetworkGuard from '../components/NetworkGuard'
 import { formatUnits } from 'viem'
 import { showGlobalConfirm } from '../components/GlobalAppNotices'
@@ -131,7 +132,7 @@ export default function AllowanceCleaner() {
         
         <div style={{ marginBottom: '32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            <Shield size={32} style={{ color: '#3b82f6' }} />
+            <BaseHubGlyph productId="allowance-cleaner" size={32} style={{ color: '#6f98ff' }} title="Allowance Cleaner" />
             <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 'bold', color: '#e5e7eb' }}>
               Allowance Cleaner
             </h1>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { getLeaderboard, getExtendedLeaderboard } from '../utils/xpUtils'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
+import { BaseHubGlyph } from '../components/BaseHubIcon'
 import { Trophy, Medal, Award, Users, TrendingUp, RefreshCw, ChevronDown } from 'lucide-react'
 
 const Leaderboard = () => {
@@ -87,7 +88,7 @@ const Leaderboard = () => {
 
   if (loading) {
     return (
-      <div className="card">
+      <div className="card leaderboard-state-card">
         <div style={{ textAlign: 'center', padding: '40px 20px' }}>
           <div className="loading" style={{ marginBottom: '16px' }} />
           <p style={{ 
@@ -102,7 +103,7 @@ const Leaderboard = () => {
 
   if (error) {
     return (
-      <div className="card">
+      <div className="card leaderboard-state-card">
         <div style={{ textAlign: 'center', padding: '40px 20px' }}>
           <p style={{ color: '#ef4444' }}>Error loading leaderboard: {error}</p>
           <button onClick={loadLeaderboard} className="btn btn-primary" style={{ marginTop: '16px' }}>
@@ -133,12 +134,11 @@ const Leaderboard = () => {
       </style>
       <div className="card">
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ 
-            fontSize: '48px', 
+          <div className="leaderboard-hero-icon" style={{
             marginBottom: '16px',
             color: '#e5e7eb'
           }}>
-            🏆
+            <BaseHubGlyph name="level" size={30} title="Leaderboard" />
           </div>
           <h1 style={{ 
             fontSize: '28px', 
@@ -214,7 +214,7 @@ const Leaderboard = () => {
                   alignItems: 'center',
                   padding: '16px',
                   marginBottom: '12px',
-                  background: 'rgba(30, 41, 59, 0.8)',
+                  background: 'linear-gradient(180deg, rgba(11, 20, 34, 0.88), rgba(5, 11, 21, 0.92))',
                   borderRadius: '12px',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                   transition: 'all 0.2s ease'
@@ -319,7 +319,7 @@ const Leaderboard = () => {
                     alignItems: 'center',
                     padding: '16px',
                     marginBottom: '12px',
-                    background: 'rgba(30, 41, 59, 0.8)',
+                    background: 'linear-gradient(180deg, rgba(11, 20, 34, 0.88), rgba(5, 11, 21, 0.92))',
                     borderRadius: '12px',
                     border: '1px solid rgba(255, 255, 255, 0.1)',
                     transition: 'all 0.2s ease'

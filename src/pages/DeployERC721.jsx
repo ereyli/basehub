@@ -5,6 +5,7 @@ import { useDeployERC721 } from '../hooks/useDeployERC721'
 import { Image, Zap, CheckCircle, ExternalLink } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
 import BackButton from '../components/BackButton'
+import { BaseHubGlyph } from '../components/BaseHubIcon'
 import ShareButton from '../components/ShareButton'
 import { getTransactionExplorerUrl, getAddressExplorerUrl, getNetworkConfig } from '../config/networks'
 import { getFarcasterUniversalLink } from '../config/farcaster'
@@ -63,10 +64,11 @@ const DeployERC721 = () => {
             
       <div className="deploy-container">
         <BackButton />
-        <h2 className="title">Deploy ERC721 Contract</h2>
-        <p className="description">
-          Deploy your own ERC721 NFT contract on {activeNetworkName}. Define a name and symbol, then publish it from the connected wallet.
-        </p>
+        <div className="deploy-header">
+          <div className="deploy-icon"><BaseHubGlyph productId="deploy-erc721" size={34} title="Deploy ERC721" /></div>
+          <h1>Deploy ERC721 Contract</h1>
+          <p>Deploy your own ERC721 NFT contract on {activeNetworkName}. Define a name and symbol, then publish it from the connected wallet.</p>
+        </div>
 
         <form onSubmit={handleSubmit} className="deploy-form">
           <div className="form-group">

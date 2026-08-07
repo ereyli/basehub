@@ -12,6 +12,7 @@ import NetworkGuard from '../components/NetworkGuard'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { Target, Send, Star, CheckCircle, ExternalLink, Coins, TrendingUp, TrendingDown, Play } from 'lucide-react'
 import NumberWheel from '../components/NumberWheel'
+import { BaseHubGlyph } from '../components/BaseHubIcon'
 import Confetti from '../components/Confetti'
 import soundManager from '../utils/soundEffects'
 
@@ -205,7 +206,7 @@ const LuckyNumberGame = () => {
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 20 }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '8px 20px', background: 'linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(124,58,237,0.1) 100%)', borderRadius: 50, border: '1px solid rgba(139,92,246,0.2)', marginBottom: 8 }}>
-          <span style={{ fontSize: 20 }}>🍀</span>
+          <BaseHubGlyph productId="lucky" size={20} style={{ color: '#a78bfa' }} title="Lucky Number" />
           <span style={{ fontWeight: 800, fontSize: 13, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.1em' }}>LUCKY NUMBER</span>
           <span style={{ fontSize: 11, color: '#94a3b8', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: 20 }}>10%</span>
         </div>
@@ -254,7 +255,7 @@ const LuckyNumberGame = () => {
           border: `1px solid ${gameResult.won ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.08)'}`,
           animation: 'resultPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
         }}>
-          <div style={{ fontSize: isMobile ? 22 : 28, marginBottom: 4 }}>{gameResult.won ? '🎉' : '🍀'}</div>
+          <BaseHubGlyph name={gameResult.won ? 'xp' : 'lucky'} size={isMobile ? 22 : 28} style={{ margin: '0 auto 4px', color: gameResult.won ? '#4ade80' : '#94a3b8' }} />
           <div style={{ fontWeight: 800, fontSize: isMobile ? 16 : 20, color: gameResult.won ? '#4ade80' : '#94a3b8', marginBottom: 4 }}>
             {gameResult.won ? 'LUCKY WIN!' : 'Try Again'}
           </div>
@@ -333,13 +334,13 @@ const LuckyNumberGame = () => {
         <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>How to play</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {[
-            { icon: '🍀', text: 'Pick 1–10' },
-            { icon: '🎯', text: '10% chance' },
-            { icon: '⚡', text: '150 XP base' },
-            { icon: '🏆', text: '+1000 XP win' },
+            { icon: 'lucky', text: 'Pick 1–10' },
+            { icon: 'quests', text: '10% chance' },
+            { icon: 'xp', text: '150 XP base' },
+            { icon: 'level', text: '+1000 XP win' },
           ].map((item, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#94a3b8', padding: '6px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
-              <span style={{ fontSize: 14 }}>{item.icon}</span>
+              <BaseHubGlyph name={item.icon} size={14} style={{ flexShrink: 0 }} />
               <span>{item.text}</span>
             </div>
           ))}

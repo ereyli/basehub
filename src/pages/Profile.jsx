@@ -11,6 +11,7 @@ import { getXP, calcLevel } from '../utils/xpUtils'
 import { useQuestSystem } from '../hooks/useQuestSystem'
 import { useSupabase } from '../hooks/useSupabase'
 import BackButton from '../components/BackButton'
+import { BaseHubGlyph } from '../components/BaseHubIcon'
 import { EARLY_ACCESS_CONFIG, EARLY_ACCESS_ABI } from '../config/earlyAccessNFT'
 import {
   getOrCreateReferralCode,
@@ -219,14 +220,17 @@ const Profile = () => {
 
   if (!isConnected || !address) {
     return (
-      <div style={styles.container}>
+      <div className="profile-page" style={styles.container}>
+        <div className="profile-content" style={styles.content}>
         <BackButton />
-        <div style={styles.notConnected}>
-          <User size={48} style={{ color: '#9ca3af', marginBottom: '16px' }} />
+        <div className="profile-empty-card" style={styles.notConnected}>
+          <div className="profile-empty-icon"><BaseHubGlyph name="profile" size={34} title="Profile" /></div>
+          <span className="profile-eyebrow">ONCHAIN PROFILE</span>
           <h2 style={styles.notConnectedTitle}>Not Connected</h2>
           <p style={styles.notConnectedText}>
             Please connect your wallet to view your profile
           </p>
+        </div>
         </div>
       </div>
     )
@@ -408,21 +412,26 @@ const Profile = () => {
   }, [])
 
   return (
-    <div style={styles.container}>
+    <div className="profile-page" style={styles.container}>
+      <div className="profile-content" style={styles.content}>
         <BackButton />
-      
-      <div style={styles.content}>
+
         {/* Header Section */}
-        <div style={styles.header}>
-          <div style={styles.profileHeader}>
-            <div style={styles.avatar}>
-              <User size={32} style={{ color: 'white' }} />
+        <div className="profile-hero-wrap" style={styles.header}>
+          <div className="profile-hero" style={styles.profileHeader}>
+            <div className="profile-avatar" style={styles.avatar}>
+              <BaseHubGlyph name="profile" size={32} title="Profile" />
             </div>
-            <div style={styles.profileInfo}>
+            <div className="profile-identity" style={styles.profileInfo}>
+              <div className="profile-eyebrow"><span className="profile-status-dot" /> ONCHAIN PROFILE</div>
               <h1 style={styles.title}>Your Profile</h1>
-              <p style={styles.address}>
+              <p className="profile-address" style={styles.address}>
                 {address.slice(0, 6)}...{address.slice(-4)}
               </p>
+            </div>
+            <div className="profile-level-chip">
+              <span>LEVEL</span>
+              <strong>{level}</strong>
             </div>
           </div>
         </div>
@@ -435,10 +444,10 @@ const Profile = () => {
         ) : (
           <>
             {/* Stats Grid */}
-            <div style={styles.statsGrid}>
-              <div style={styles.statCard}>
+            <div className="profile-stats-grid" style={styles.statsGrid}>
+              <div className="profile-stat-card" style={styles.statCard}>
                 <div style={styles.statIcon}>
-                  <Zap size={20} style={{ color: '#60a5fa' }} />
+                  <BaseHubGlyph name="xp" size={20} />
                 </div>
                 <div style={styles.statContent}>
                   <div style={styles.statLabel}>Total XP</div>
@@ -446,9 +455,9 @@ const Profile = () => {
                 </div>
               </div>
 
-              <div style={styles.statCard}>
+              <div className="profile-stat-card" style={styles.statCard}>
                 <div style={styles.statIcon}>
-                  <Award size={20} style={{ color: '#60a5fa' }} />
+                  <BaseHubGlyph name="level" size={20} />
                 </div>
                 <div style={styles.statContent}>
                   <div style={styles.statLabel}>Level</div>
@@ -456,9 +465,9 @@ const Profile = () => {
                 </div>
               </div>
 
-              <div style={styles.statCard}>
+              <div className="profile-stat-card" style={styles.statCard}>
                 <div style={styles.statIcon}>
-                  <Repeat size={20} style={{ color: '#60a5fa' }} />
+                  <BaseHubGlyph name="swap" size={20} />
                 </div>
                 <div style={styles.statContent}>
                   <div style={styles.statLabel}>Total TX</div>
@@ -466,9 +475,9 @@ const Profile = () => {
                 </div>
               </div>
 
-              <div style={styles.statCard}>
+              <div className="profile-stat-card" style={styles.statCard}>
                 <div style={styles.statIcon}>
-                  <Calendar size={20} style={{ color: '#60a5fa' }} />
+                  <BaseHubGlyph name="quests" size={20} />
                 </div>
                 <div style={styles.statContent}>
                   <div style={styles.statLabel}>Quest Day</div>
@@ -477,7 +486,7 @@ const Profile = () => {
               </div>
 
               {leaderboardRank && (
-                <div style={{
+                <div className="profile-stat-card" style={{
                   ...styles.statCard,
                   background: leaderboardRank <= 3 
                     ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)'
@@ -513,10 +522,10 @@ const Profile = () => {
             </div>
 
             {/* Daily Quests */}
-            <div style={styles.section}>
+            <div className="profile-section" style={styles.section}>
               <div style={styles.sectionHeader}>
                 <h2 style={styles.sectionTitle}>
-                  <Trophy size={20} style={{ color: '#60a5fa', marginRight: '8px' }} />
+                  <BaseHubGlyph name="quests" size={20} style={{ marginRight: '8px' }} />
                   Daily Quests (Day {currentDay})
                 </h2>
                 <div style={styles.questProgress}>
@@ -599,7 +608,7 @@ const Profile = () => {
 
             {/* Early Access NFTs */}
             {userNFTCount > 0 && (
-              <div style={styles.section}>
+              <div className="profile-section" style={styles.section}>
                 <div style={styles.sectionHeader}>
                   <h2 style={styles.sectionTitle}>
                     <Sparkles size={20} style={{ color: '#60a5fa', marginRight: '8px' }} />
@@ -668,10 +677,10 @@ const Profile = () => {
             )}
 
             {/* Referral System */}
-            <div style={styles.section}>
+            <div className="profile-section" style={styles.section}>
               <div style={styles.sectionHeader}>
                 <h2 style={styles.sectionTitle}>
-                  <Users size={20} style={{ color: '#60a5fa', marginRight: '8px' }} />
+                  <BaseHubGlyph name="agent-directory" size={20} style={{ marginRight: '8px' }} />
                   Referral Program
                 </h2>
                 {referralStats?.total_referrals > 0 && (
@@ -834,9 +843,9 @@ const Profile = () => {
 
             {/* Recent Transactions */}
             {recentTransactions.length > 0 && (
-              <div style={styles.section}>
+              <div className="profile-section" style={styles.section}>
                 <h2 style={styles.sectionTitle}>
-                  <BarChart3 size={20} style={{ color: '#60a5fa', marginRight: '8px' }} />
+                  <BaseHubGlyph name="analysis" size={20} style={{ marginRight: '8px' }} />
                   Recent Transactions
                 </h2>
                 <div style={styles.transactionsList}>
@@ -909,54 +918,56 @@ const Profile = () => {
 const styles = {
   container: {
     minHeight: '100vh',
-    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1e3a8a 100%)',
-    paddingTop: '80px',
-    paddingBottom: '40px'
+    background: 'transparent',
+    paddingTop: '24px',
+    paddingBottom: '64px'
   },
   content: {
-    maxWidth: '1200px',
+    maxWidth: '1120px',
     margin: '0 auto',
-    padding: '20px'
+    padding: '20px 24px'
   },
   header: {
-    marginBottom: '32px'
+    marginBottom: '20px'
   },
   profileHeader: {
     display: 'flex',
     alignItems: 'center',
-    gap: '20px',
-    padding: '24px',
-    backgroundColor: 'rgba(30, 41, 59, 0.6)',
+    gap: '18px',
+    padding: '26px',
+    background: 'linear-gradient(145deg, rgba(18,29,48,.97), rgba(8,14,24,.98))',
     borderRadius: '20px',
-    border: '1px solid rgba(59, 130, 246, 0.2)',
-    boxShadow: '0 4px 20px rgba(59, 130, 246, 0.2)'
+    border: '1px solid rgba(126,157,215,.16)',
+    boxShadow: '0 24px 70px rgba(0,0,0,.26), inset 0 1px rgba(255,255,255,.04)'
   },
   avatar: {
-    width: '64px',
-    height: '64px',
-    borderRadius: '16px',
-    background: 'rgba(59, 130, 246, 0.15)',
-    border: '1px solid rgba(59, 130, 246, 0.3)',
+    width: '68px',
+    height: '68px',
+    borderRadius: '18px',
+    background: 'linear-gradient(145deg, rgba(70,116,231,.24), rgba(34,62,125,.12))',
+    border: '1px solid rgba(111,152,255,.34)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 2px 8px rgba(59, 130, 246, 0.2)'
+    color: '#8cadff',
+    boxShadow: 'inset 0 1px rgba(255,255,255,.08), 0 14px 30px rgba(28,68,159,.2)'
   },
   profileInfo: {
     flex: 1
   },
   title: {
     margin: 0,
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#ffffff',
-    marginBottom: '4px'
+    fontSize: '30px',
+    fontWeight: '780',
+    color: '#f5f8fc',
+    letterSpacing: '-0.04em',
+    marginBottom: '5px'
   },
   address: {
     margin: 0,
-    fontSize: '14px',
-    color: '#9ca3af',
-    fontFamily: 'monospace'
+    fontSize: '13px',
+    color: '#8290a6',
+    fontFamily: 'DM Mono, ui-monospace, SFMono-Regular, Menlo, monospace'
   },
   loading: {
     display: 'flex',
@@ -975,68 +986,78 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '60px 20px',
-    textAlign: 'center'
+    padding: '72px 24px',
+    textAlign: 'center',
+    borderRadius: '22px',
+    border: '1px solid rgba(126,157,215,.15)',
+    background: 'linear-gradient(145deg, rgba(16,26,43,.96), rgba(8,13,23,.98))',
+    boxShadow: '0 28px 80px rgba(0,0,0,.28), inset 0 1px rgba(255,255,255,.035)'
   },
   notConnectedTitle: {
-    fontSize: '24px',
-    fontWeight: '600',
-    color: '#ffffff',
+    fontSize: '27px',
+    fontWeight: '760',
+    color: '#f5f8fc',
+    letterSpacing: '-0.035em',
     marginBottom: '8px'
   },
   notConnectedText: {
-    fontSize: '16px',
-    color: '#9ca3af'
+    fontSize: '14px',
+    color: '#8290a6'
   },
   statsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '16px',
-    marginBottom: '32px'
+    gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+    gap: '12px',
+    marginBottom: '20px'
   },
   statCard: {
     display: 'flex',
     alignItems: 'center',
-    gap: '16px',
-    padding: '20px',
-    backgroundColor: 'rgba(30, 41, 59, 0.6)',
-    borderRadius: '16px',
-    border: '1px solid rgba(59, 130, 246, 0.2)',
-    transition: 'all 0.2s ease'
+    gap: '13px',
+    padding: '17px',
+    background: 'linear-gradient(145deg, rgba(16,25,40,.94), rgba(9,15,25,.96))',
+    borderRadius: '15px',
+    border: '1px solid rgba(126,157,215,.12)',
+    boxShadow: 'inset 0 1px rgba(255,255,255,.025)',
+    transition: 'border-color .2s ease, transform .2s ease, box-shadow .2s ease'
   },
   statIcon: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '12px',
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    width: '42px',
+    height: '42px',
+    borderRadius: '11px',
+    background: 'rgba(71,112,215,.13)',
+    border: '1px solid rgba(102,145,255,.2)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    color: '#7fa4ff',
     flexShrink: 0
   },
   statContent: {
     flex: 1
   },
   statLabel: {
-    fontSize: '12px',
-    color: '#9ca3af',
-    fontWeight: '500',
-    marginBottom: '4px',
+    fontSize: '10px',
+    color: '#77869c',
+    fontWeight: '700',
+    marginBottom: '5px',
     textTransform: 'uppercase',
-    letterSpacing: '0.5px'
+    letterSpacing: '0.08em'
   },
   statValue: {
-    fontSize: '24px',
-    fontWeight: '700',
-    color: '#ffffff'
+    fontSize: '23px',
+    fontWeight: '760',
+    color: '#f4f7fc',
+    fontVariantNumeric: 'tabular-nums',
+    letterSpacing: '-0.03em'
   },
   section: {
-    marginBottom: '32px',
-    padding: '24px',
-    backgroundColor: 'rgba(30, 41, 59, 0.6)',
-    borderRadius: '20px',
-    border: '1px solid rgba(59, 130, 246, 0.2)',
-    boxShadow: '0 4px 20px rgba(59, 130, 246, 0.2)'
+    marginBottom: '16px',
+    padding: '22px',
+    background: 'linear-gradient(145deg, rgba(16,25,40,.94), rgba(9,15,25,.97))',
+    borderRadius: '18px',
+    border: '1px solid rgba(126,157,215,.12)',
+    boxShadow: '0 18px 50px rgba(0,0,0,.18), inset 0 1px rgba(255,255,255,.028)'
   },
   sectionHeader: {
     display: 'flex',
@@ -1048,20 +1069,20 @@ const styles = {
   },
   sectionTitle: {
     margin: 0,
-    fontSize: '20px',
-    fontWeight: '600',
-    color: '#ffffff',
+    fontSize: '17px',
+    fontWeight: '720',
+    color: '#edf2fa',
     display: 'flex',
     alignItems: 'center'
   },
   questProgress: {
-    padding: '6px 12px',
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    padding: '6px 10px',
+    backgroundColor: 'rgba(61,101,196,.12)',
     borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#60a5fa',
-    border: '1px solid rgba(59, 130, 246, 0.3)'
+    fontSize: '11px',
+    fontWeight: '700',
+    color: '#9bb7fa',
+    border: '1px solid rgba(104,145,239,.2)'
   },
   activityGrid: {
     display: 'grid',
@@ -1096,10 +1117,10 @@ const styles = {
     gap: '12px'
   },
   questCard: {
-    padding: '16px',
-    borderRadius: '12px',
+    padding: '14px',
+    borderRadius: '11px',
     border: '1px solid',
-    transition: 'all 0.2s ease'
+    transition: 'border-color .2s ease, background .2s ease'
   },
   questHeader: {
     display: 'flex',
@@ -1153,9 +1174,9 @@ const styles = {
   },
   progressBar: {
     flex: 1,
-    height: '8px',
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-    borderRadius: '4px',
+    height: '6px',
+    backgroundColor: 'rgba(59, 91, 153, 0.15)',
+    borderRadius: '999px',
     overflow: 'hidden'
   },
   progressFill: {
@@ -1200,9 +1221,9 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: '14px',
-    backgroundColor: 'rgba(30, 41, 59, 0.4)',
-    borderRadius: '12px',
-    border: '1px solid rgba(59, 130, 246, 0.1)',
+    backgroundColor: 'rgba(7, 12, 21, .48)',
+    borderRadius: '11px',
+    border: '1px solid rgba(126,157,215,.09)',
     transition: 'all 0.2s ease'
   },
   transactionLeft: {
@@ -1341,21 +1362,21 @@ const styles = {
 
 const referralStyles = {
   codeCard: {
-    padding: '16px',
-    background: 'linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(37,99,235,0.08) 100%)',
-    borderRadius: '14px',
-    border: '1px solid rgba(59,130,246,0.25)',
+    padding: '17px',
+    background: 'rgba(7,12,21,.5)',
+    borderRadius: '13px',
+    border: '1px solid rgba(126,157,215,.11)',
   },
   codeBadge: {
     width: '40px',
     height: '40px',
     borderRadius: '10px',
-    background: 'rgba(59,130,246,0.2)',
-    border: '1px solid rgba(59,130,246,0.4)',
+    background: 'rgba(68,108,205,.14)',
+    border: '1px solid rgba(103,145,244,.22)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#93c5fd',
+    color: '#8dadff',
     flexShrink: 0,
   },
   actionBtn: {
@@ -1363,10 +1384,10 @@ const referralStyles = {
     alignItems: 'center',
     gap: '6px',
     padding: '8px 14px',
-    background: 'rgba(59,130,246,0.2)',
-    border: '1px solid rgba(59,130,246,0.4)',
-    color: '#93c5fd',
-    borderRadius: '8px',
+    background: 'linear-gradient(135deg,#3f73ed,#315fce)',
+    border: '1px solid #658fff',
+    color: '#fff',
+    borderRadius: '9px',
     fontSize: '12px',
     fontWeight: '700',
     cursor: 'pointer',
@@ -1376,19 +1397,19 @@ const referralStyles = {
     alignItems: 'center',
     gap: '6px',
     padding: '8px 14px',
-    background: 'rgba(30,41,59,0.6)',
-    border: '1px solid rgba(148,163,184,0.2)',
-    color: '#94a3b8',
-    borderRadius: '8px',
+    background: 'rgba(16,25,40,.8)',
+    border: '1px solid rgba(126,157,215,.14)',
+    color: '#9ba9bc',
+    borderRadius: '9px',
     fontSize: '12px',
     fontWeight: '700',
     cursor: 'pointer',
   },
   miniStat: {
     padding: '12px',
-    background: 'rgba(30,41,59,0.6)',
+    background: 'rgba(7,12,21,.52)',
     borderRadius: '10px',
-    border: '1px solid rgba(59,130,246,0.15)',
+    border: '1px solid rgba(126,157,215,.1)',
     textAlign: 'center',
   },
   miniStatValue: {
@@ -1409,11 +1430,10 @@ const referralStyles = {
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: '10px 12px',
-    background: 'rgba(30,41,59,0.4)',
+    background: 'rgba(7,12,21,.48)',
     borderRadius: '10px',
-    border: '1px solid rgba(59,130,246,0.1)',
+    border: '1px solid rgba(126,157,215,.09)',
   },
 }
 
 export default Profile
-

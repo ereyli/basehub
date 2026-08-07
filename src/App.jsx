@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
 import { HelmetProvider } from 'react-helmet-async' 
-import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
+import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit'
 import '@rainbow-me/rainbowkit/styles.css'
 import { FarcasterProvider, useFarcaster } from './contexts/FarcasterContext'
 import { config } from './config/wagmi'
@@ -24,6 +24,47 @@ import { RainbowKitChainInterceptor } from './components/RainbowKitChainIntercep
 import { FastDeployProvider } from './contexts/FastDeployContext'
 import FastDeployModal from './components/FastDeployModal'
 import Home from './pages/Home'
+
+const rainbowBaseTheme = darkTheme({
+  accentColor: '#5f8fff',
+  accentColorForeground: '#ffffff',
+  borderRadius: 'medium',
+  fontStack: 'system',
+  overlayBlur: 'small',
+})
+
+const baseHubRainbowTheme = {
+  ...rainbowBaseTheme,
+  colors: {
+    ...rainbowBaseTheme.colors,
+    accentColor: '#5f8fff',
+    accentColorForeground: '#ffffff',
+    actionButtonBorder: 'rgba(132, 162, 215, 0.14)',
+    actionButtonSecondaryBackground: 'rgba(95, 143, 255, 0.10)',
+    closeButton: '#9cabc1',
+    closeButtonBackground: 'rgba(255, 255, 255, 0.045)',
+    connectButtonBackground: '#0b1423',
+    connectButtonInnerBackground: '#0b1423',
+    connectButtonText: '#edf3fc',
+    generalBorder: 'rgba(132, 162, 215, 0.14)',
+    generalBorderDim: 'rgba(132, 162, 215, 0.08)',
+    menuItemBackground: 'rgba(95, 143, 255, 0.10)',
+    modalBackdrop: 'rgba(2, 6, 13, 0.72)',
+    modalBackground: '#080f1b',
+    modalBorder: 'rgba(132, 162, 215, 0.16)',
+    modalText: '#edf3fc',
+    modalTextDim: '#76869e',
+    modalTextSecondary: '#9cabc1',
+    profileAction: 'rgba(95, 143, 255, 0.10)',
+    profileActionHover: 'rgba(95, 143, 255, 0.16)',
+    profileForeground: '#0b1423',
+    selectedOptionBorder: 'rgba(95, 143, 255, 0.55)',
+  },
+  shadows: {
+    ...rainbowBaseTheme.shadows,
+    dialog: '0 32px 90px rgba(0, 0, 0, 0.58), 0 0 0 1px rgba(132, 162, 215, 0.08)',
+  },
+}
 
 const GMGame = lazy(() => import('./pages/GMGame'))
 const GNGame = lazy(() => import('./pages/GNGame'))
@@ -517,7 +558,7 @@ function App() {
       <HelmetProvider>
         <WagmiProvider config={rainbowkitConfig}>
           <QueryClientProvider client={queryClient}>
-            <RainbowKitProvider>
+            <RainbowKitProvider theme={baseHubRainbowTheme} modalSize="compact">
               <FarcasterProvider>
               <WebAppContent />
               </FarcasterProvider>

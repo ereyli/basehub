@@ -5,6 +5,7 @@ import { useTransactions } from '../hooks/useTransactions'
 import { isTestnetChainId } from '../config/networks'
 import { Sun, Moon, Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Gamepad2, Rocket, Trash2, Star, Users, Repeat, ArrowLeftRight, Bot } from 'lucide-react'
 import { getNavItems } from '../config/products'
+import { BaseHubGlyph } from './BaseHubIcon'
 
 const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Image, Layers, Package, Factory, Shield, TrendingUp, Rocket, Trash2, Star, Users, Repeat, ArrowLeftRight, Bot }
 
@@ -77,8 +78,7 @@ const FarcasterBottomNav = () => {
   const dexTools = getNavItems('dex')
 
   const renderNavIcon = (iconName) => {
-    const Icon = LUCIDE_ICONS[iconName]
-    return Icon ? <Icon size={20} /> : null
+    return <BaseHubGlyph name={iconName} size={20} />
   }
 
   return (
@@ -133,10 +133,7 @@ const FarcasterBottomNav = () => {
             boxSizing: 'border-box'
           }}
         >
-          <div style={{ display: 'flex', gap: '2px' }}>
-            <Sun size={14} />
-            <Moon size={14} />
-          </div>
+          <BaseHubGlyph name="gmgn" size={17} />
           <span style={{ fontSize: '9px', lineHeight: '1.1' }}>GM/GN</span>
         </button>
 
@@ -170,7 +167,7 @@ const FarcasterBottomNav = () => {
             boxSizing: 'border-box'
           }}
         >
-          <Repeat size={14} />
+          <BaseHubGlyph name="swap" size={17} />
           <span style={{ fontSize: '9px', lineHeight: '1.1' }}>DEX</span>
         </button>
 
@@ -204,7 +201,7 @@ const FarcasterBottomNav = () => {
             boxSizing: 'border-box'
           }}
         >
-          <Gamepad2 size={14} />
+          <BaseHubGlyph name="gaming" size={17} />
           <span style={{ fontSize: '9px', lineHeight: '1.1' }}>GAMING</span>
         </button>
 
@@ -238,7 +235,7 @@ const FarcasterBottomNav = () => {
             boxSizing: 'border-box'
           }}
         >
-          <Image size={14} />
+          <BaseHubGlyph name="nft" size={17} />
           <span style={{ fontSize: '9px', lineHeight: '1.1' }}>NFT</span>
         </button>
 
@@ -272,7 +269,7 @@ const FarcasterBottomNav = () => {
             boxSizing: 'border-box'
           }}
         >
-          <TrendingUp size={14} />
+          <BaseHubGlyph name="analysis" size={17} />
           <span style={{ fontSize: '9px', lineHeight: '1.1' }}>ANALYSIS</span>
         </button>
 
@@ -306,7 +303,7 @@ const FarcasterBottomNav = () => {
             boxSizing: 'border-box'
           }}
         >
-          <Rocket size={14} />
+          <BaseHubGlyph name="deploy" size={17} />
           <span style={{ fontSize: '9px', lineHeight: '1.1' }}>DEPLOY</span>
         </button>
 

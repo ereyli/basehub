@@ -196,9 +196,9 @@ const NFTWheelGame = () => {
   }
 
   return (
-    <div style={{
+    <div className="nft-wheel-page" style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
+      background: 'transparent',
       padding: isMobile ? '14px' : '20px',
       paddingTop: isMobile ? '70px' : '100px',
       paddingBottom: isMobile ? '80px' : '120px'
@@ -498,7 +498,7 @@ const NFTWheelGame = () => {
                           fontSize: '14px',
                           flexShrink: 0
                         }}>
-                          {index < 3 ? '🏆' : `#${index + 1}`}
+                          {index < 3 ? <Trophy size={15} aria-hidden="true" /> : `#${index + 1}`}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{
@@ -771,7 +771,7 @@ const NFTWheelGame = () => {
                           fontSize: '12px',
                           flexShrink: 0
                         }}>
-                          {index < 3 ? '🏆' : `#${index + 1}`}
+                          {index < 3 ? <Trophy size={15} aria-hidden="true" /> : `#${index + 1}`}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{

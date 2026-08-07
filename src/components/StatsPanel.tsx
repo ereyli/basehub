@@ -4,6 +4,7 @@ import { formatUnits } from 'viem';
 import { base } from 'wagmi/chains';
 import { getSwapVolumeForWallet, SWAP_VOLUME_TIERS, SWAP_PER_100_XP, SWAP_VOLUME_BAR_MAX_USD } from '../utils/xpUtils';
 import { supabase, TABLES } from '../config/supabase';
+import { BaseHubGlyph } from './BaseHubIcon';
 
 const SWAP_AGGREGATOR = '0xbf579e68ba69de03ccec14476eb8d765ec558257';
 const SWAPHUB_V4_STATS_START_ISO = import.meta.env.VITE_SWAPHUB_V4_STATS_START_ISO || '2026-06-03T00:00:00.000Z';
@@ -582,7 +583,7 @@ export default function StatsPanel({ isMobile = false }: StatsPanelProps) {
             fontSize: '24px',
             boxShadow: '0 4px 12px rgba(251, 191, 36, 0.2)'
           }}>
-            ⚡
+            <BaseHubGlyph name="xp" size={22} style={{ color: '#fbbf24' }} title="XP rewards" />
           </div>
           <div>
             <h3 style={{

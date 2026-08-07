@@ -3,6 +3,7 @@ import { useAccount } from 'wagmi'
 import { useWalletAnalysis } from '../hooks/useWalletAnalysis'
 import { Wallet, Activity, TrendingUp, Award, AlertCircle, Loader2, Calendar, BarChart3, Zap, Eye, CheckCircle2, XCircle, Layers, Compass, Clock, Target, Gauge, Download, Clipboard, Image as ImageIcon, Receipt } from 'lucide-react'
 import BackButton from '../components/BackButton'
+import { BaseHubGlyph } from '../components/BaseHubIcon'
 import NetworkGuard from '../components/NetworkGuard'
 
 // Supported networks - must match backend configuration
@@ -330,7 +331,7 @@ export default function WalletAnalysis() {
 
   return (
     <NetworkGuard>
-      <div style={{
+      <div className="analysis-tool-page" style={{
         minHeight: '100vh',
         height: 'auto',
         background: '#0f172a',
@@ -343,7 +344,7 @@ export default function WalletAnalysis() {
         boxSizing: 'border-box',
       }}>
         {/* Animated Background Elements */}
-        <div style={{
+        <div className="analysis-tool-orb analysis-tool-orb--one" style={{
           position: 'absolute',
           top: '-50%',
           right: '-20%',
@@ -353,7 +354,7 @@ export default function WalletAnalysis() {
           borderRadius: '50%',
           animation: 'float 20s ease-in-out infinite',
         }} />
-        <div style={{
+        <div className="analysis-tool-orb analysis-tool-orb--two" style={{
           position: 'absolute',
           bottom: '-30%',
           left: '-10%',
@@ -364,7 +365,7 @@ export default function WalletAnalysis() {
           animation: 'float 15s ease-in-out infinite reverse',
         }} />
 
-        <div style={{
+        <div className="analysis-tool-shell" style={{
           maxWidth: '1400px',
           margin: '0 auto',
           position: 'relative',
@@ -373,20 +374,20 @@ export default function WalletAnalysis() {
           <BackButton />
           
           {/* Header Section */}
-          <div style={{
+          <div className="analysis-tool-header" style={{
             textAlign: 'center',
             marginBottom: '48px',
             paddingTop: '20px',
           }}>
-            <div style={{
+            <div className="analysis-tool-icon" style={{
               fontSize: '80px',
               marginBottom: '20px',
               animation: 'bounce 2s ease-in-out infinite',
               filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))',
             }}>
-              🔍
+              <BaseHubGlyph productId="wallet-analysis" size={42} title="Wallet Analysis" />
             </div>
-            <h1 style={{
+            <h1 className="analysis-tool-title" style={{
               fontSize: '48px',
               fontWeight: 'bold',
               marginBottom: '12px',
@@ -398,7 +399,7 @@ export default function WalletAnalysis() {
             }}>
               Wallet Analysis
             </h1>
-            <p style={{
+            <p className="analysis-tool-description" style={{
               fontSize: '18px',
               color: '#9ca3af',
               marginBottom: '16px',
@@ -406,7 +407,7 @@ export default function WalletAnalysis() {
             }}>
               Discover fun insights about any wallet
             </p>
-            <div style={{
+            <div className="analysis-tool-price" style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '10px',

@@ -186,7 +186,7 @@ const NFTPlinkoGame = () => {
                     flexShrink: 0,
                   }}
                 >
-                  {index < 3 ? '🏆' : `#${index + 1}`}
+                  {index < 3 ? <Trophy size={15} aria-hidden="true" /> : `#${index + 1}`}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
@@ -223,9 +223,10 @@ const NFTPlinkoGame = () => {
 
   return (
     <div
+      className="nft-plinko-page"
       style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #0f172a 0%, #134e4a 35%, #0f172a 100%)',
+        background: 'transparent',
         padding: isMobile ? 14 : 20,
         paddingTop: isMobile ? 70 : 100,
         paddingBottom: isMobile ? 80 : 120,

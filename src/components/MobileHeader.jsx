@@ -10,6 +10,7 @@ const LUCIDE_ICONS = { Home, Repeat, Zap, Rocket, Coins, Dice1, TrendingUp, Awar
 import { getXP, getNFTCount } from '../utils/xpUtils'
 import { useSupabase } from '../hooks/useSupabase'
 import { useOpenInApp } from '../contexts/OpenInAppContext'
+import { BaseHubGlyph } from './BaseHubIcon'
 
 const MobileHeader = ({ customWallet }) => {
   const { openModal: openOpenInAppModal } = useOpenInApp()
@@ -191,7 +192,6 @@ const MobileHeader = ({ customWallet }) => {
         {/* Menu Items */}
         <nav className="mobile-menu-nav">
           {menuItems.map((item) => {
-            const Icon = LUCIDE_ICONS[item.icon]
             const isActive = location.pathname === item.path
             return (
               <button
@@ -203,7 +203,7 @@ const MobileHeader = ({ customWallet }) => {
                 }}
                 style={{ '--item-color': item.color }}
               >
-                {Icon && <Icon size={20} style={{ color: item.color }} />}
+                <BaseHubGlyph productId={item.id} name={item.icon} size={20} style={{ color: item.color }} />
                 <span>{item.label}</span>
                 {isActive && <div className="mobile-menu-active-dot" />}
               </button>

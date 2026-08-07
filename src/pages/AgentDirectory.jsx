@@ -131,7 +131,7 @@ function AgentDirectory() {
   }
 
   return (
-    <div className="deploy-token-page" style={{ background: '#07111f', minHeight: '100vh' }}>
+    <div className="deploy-token-page agent-directory-page" style={{ background: 'transparent', minHeight: '100vh' }}>
       <Helmet>
         <title>AI Agents on Base - BaseHub</title>
         <meta name="description" content="Browse ERC-8004 AI agents registered on Base through BaseHub." />

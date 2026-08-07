@@ -160,19 +160,22 @@ export default function FrameLanding() {
         <title>{config.title}</title>
       </Helmet>
       <div
+        className="frame-landing-page"
         style={{
-          minHeight: '60vh',
+          minHeight: 'calc(100vh - 96px)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           padding: '24px',
-          background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
+          background: 'transparent',
           color: '#e2e8f0',
           fontFamily: 'system-ui, sans-serif',
           textAlign: 'center',
         }}
       >
+        <div style={{ width: 'min(100%, 540px)', padding: '34px 28px', borderRadius: '20px', border: '1px solid rgba(126, 157, 215, 0.14)', background: 'linear-gradient(180deg, rgba(10, 18, 31, 0.95), rgba(4, 9, 18, 0.97))', boxShadow: '0 24px 70px rgba(0, 0, 0, 0.28)' }}>
+        <img src="/icon.png" alt="BaseHub" style={{ width: '48px', height: '48px', objectFit: 'contain', marginBottom: '18px' }} />
         <h1 style={{ marginBottom: '8px', fontSize: '1.5rem' }}>{config.title}</h1>
         <p style={{ color: '#94a3b8', marginBottom: '24px' }}>{config.description}</p>
         <a
@@ -180,7 +183,7 @@ export default function FrameLanding() {
           style={{
             display: 'inline-block',
             padding: '12px 24px',
-            background: '#4A90E2',
+            background: 'linear-gradient(135deg, #367cff, #1f5fd8)',
             color: '#fff',
             borderRadius: '12px',
             fontWeight: '600',
@@ -192,6 +195,7 @@ export default function FrameLanding() {
         <p style={{ marginTop: '24px', fontSize: '13px', color: '#64748b' }}>
           Share this link in a cast to show the frame. In Farcaster, the button opens BaseHub.
         </p>
+        </div>
       </div>
     </>
   )

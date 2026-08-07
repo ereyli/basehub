@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Coins, Zap, CheckCircle, ExternalLink } from 'lucide-react'
 import EmbedMeta from '../components/EmbedMeta'
 import BackButton from '../components/BackButton'
+import { BaseHubGlyph } from '../components/BaseHubIcon'
 import ShareButton from '../components/ShareButton'
 import NetworkGuard from '../components/NetworkGuard'
 import { getTransactionExplorerUrl, getNetworkConfig, NETWORKS } from '../config/networks'
@@ -76,7 +77,7 @@ const DeployToken = () => {
         <BackButton />
         <div className="deploy-header">
           <div className="deploy-icon">
-            <img src="/crypto-logos/basahub logo/ERC20.png" alt="Deploy Token" loading="lazy" style={{ width: '60px', height: '60px', borderRadius: '16px' }} />
+            <BaseHubGlyph productId="deploy" size={34} title="Deploy Token" />
           </div>
           <h1>Deploy Your Token</h1>
           <p>Create your own ERC20 token on {isTempo ? 'Tempo (one-time PUSD fee)' : networkLabel}</p>
