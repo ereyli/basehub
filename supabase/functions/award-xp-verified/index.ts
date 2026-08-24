@@ -42,6 +42,8 @@ const EVENT_TOPICS: Record<string, string[]> = {
     "0xf67937dd4f683fb10e53f88c4f58f168c99e8619cac4d9fd9ed8d87c188512bd",
     "0x74faaff3b14b7a15bf8b7d490cbcba1285c73d2138386c8b6f3dffd02840ab72",
   ],
+  AI_NFT_MINTING: ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"],
+  "AI NFT Minting": ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"],
 }
 
 const BUILTIN_GAME_TARGETS: Record<string, Record<number, string[]>> = {
@@ -151,6 +153,12 @@ const BUILTIN_GAME_TARGETS: Record<string, Record<number, string[]>> = {
       "0xceec271c573243a7e8faf47c5a2ccef223396bd9",
     ],
   },
+  AI_NFT_MINTING: {
+    8453: ["0xf8278421df4312991616bd7f9d81ee9b52f1473c"],
+  },
+  "AI NFT Minting": {
+    8453: ["0xf8278421df4312991616bd7f9d81ee9b52f1473c"],
+  },
 }
 
 const TX_REWARD_BASE_XP: Record<string, number> = {
@@ -235,9 +243,10 @@ function hasWalletActionLog(receipt: VerifiedReceipt, gameType: string, chainId:
     const logAddress = normalizeAddress(log?.address || "")
     const topic0 = String(log?.topics?.[0] || "").toLowerCase()
     const topic1 = String(log?.topics?.[1] || "").toLowerCase()
+    const topic2 = String(log?.topics?.[2] || "").toLowerCase()
     return expectedTargets.includes(logAddress)
       && expectedTopics.includes(topic0)
-      && topic1 === walletTopic
+      && (topic1 === walletTopic || topic2 === walletTopic)
   })
 }
 

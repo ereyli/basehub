@@ -8,7 +8,7 @@ import { useAccount } from 'wagmi'
 
 const DailyQuestSystem = () => {
   const { address } = useAccount()
-  const { questProgress, updateQuestProgress, awardQuestXP, completeQuestDay, awardWeeklyBonus } = useQuestSystem()
+  const { questProgress, setQuestProgress, updateQuestProgress, awardQuestXP, completeQuestDay, awardWeeklyBonus } = useQuestSystem()
   const { supabase } = useSupabase()
   
   // Debug logging

@@ -499,6 +499,7 @@ export const useQuestSystem = () => {
 
   return {
     questProgress,
+    setQuestProgress,
     loading,
     error,
     updateQuestProgress,
