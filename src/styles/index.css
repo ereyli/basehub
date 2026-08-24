@@ -4749,6 +4749,13 @@ p { text-wrap: pretty; }
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25) !important;
 }
 
+.farcaster-app .leaderboard .card img.leaderboard-nft-badge {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  min-height: 14px !important;
+}
+
 @media (max-width: 640px) {
   .frame-landing-page {
     min-height: calc(100vh - 60px) !important;

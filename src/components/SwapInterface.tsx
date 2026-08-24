@@ -18,6 +18,7 @@ import { AlertCircle } from 'lucide-react';
 let cachedEthPrice = 2950; // Default fallback price
 let lastFetchTime = 0;
 const PRICE_CACHE_DURATION = 60000; // Cache for 1 minute
+const missingLogoCache = new Set<string>();
 
 // Fetch ETH price from CoinGecko API
 async function fetchEthPrice(): Promise<number> {
@@ -50,7 +51,8 @@ async function fetchEthPrice(): Promise<number> {
       }
     }
   } catch (error) {
-    console.warn('⚠️ Failed to fetch ETH price from CoinGecko, using cached price:', cachedEthPrice);
+    lastFetchTime = now;
+    console.debug('ETH price fetch failed; using cached price:', cachedEthPrice);
   }
   
   return cachedEthPrice;
@@ -146,6 +148,9 @@ const checkImageUrl = (url: string): Promise<boolean> => {
 // Fetch token logo from multiple sources
 async function fetchTokenLogo(address: string, symbol: string): Promise<string | null> {
   const normalizedAddress = address.toLowerCase();
+  if (missingLogoCache.has(normalizedAddress)) {
+    return null;
+  }
   
   // 1. Try Trust Wallet Assets (Base) - most reliable
   const trustWalletBaseUrl = `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/base/assets/${normalizedAddress}/logo.png`;
@@ -176,7 +181,7 @@ async function fetchTokenLogo(address: string, symbol: string): Promise<string |
       }
     }
   } catch (e) {
-    console.warn('CoinGecko API error:', e);
+    console.debug('CoinGecko token logo lookup failed:', symbol);
   }
 
   // 3. Try Trust Wallet Ethereum assets (for bridged tokens)
@@ -206,10 +211,11 @@ async function fetchTokenLogo(address: string, symbol: string): Promise<string |
       }
     }
   } catch (e) {
-    console.warn('Uniswap token list error:', e);
+    console.debug('Uniswap token list lookup failed:', symbol);
   }
 
-  console.warn('❌ No logo found for token:', symbol, address);
+  missingLogoCache.add(normalizedAddress);
+  console.debug('No logo found for token:', symbol, address);
   return null;
 }
 
@@ -1072,7 +1078,7 @@ export default function SwapInterface() {
                 console.log('✅ Logo fetched for default token:', token.symbol, logoURI);
               }
             } catch (e) {
-              console.warn('Failed to fetch logo for default token', token.symbol, e);
+              console.debug('Failed to fetch logo for default token', token.symbol);
             }
           }
         }
@@ -1100,7 +1106,7 @@ export default function SwapInterface() {
                   console.log('✅ Logo refreshed for:', token.symbol, logoURI);
                 }
               } catch (e) {
-                console.warn('Failed to refresh logo for', token.symbol, e);
+                console.debug('Failed to refresh logo for', token.symbol);
               }
             } else {
               // Verify existing logo is still valid
@@ -1118,15 +1124,15 @@ export default function SwapInterface() {
                       console.log('✅ Logo refreshed for:', token.symbol, logoURI);
                     }
                   } catch (e) {
-                    console.warn('Failed to refresh logo for', token.symbol, e);
+                    console.debug('Failed to refresh logo for', token.symbol);
                   }
                 }
               } catch (e) {
-                console.warn('Failed to check logo validity for', token.symbol, e);
+                console.debug('Failed to check logo validity for', token.symbol);
               }
             }
           } catch (e) {
-            console.warn('Error processing token', token.symbol, e);
+            console.debug('Error processing token logo', token.symbol);
           }
         }
       } catch (error) {
@@ -1193,10 +1199,10 @@ export default function SwapInterface() {
         if (logoURI) {
           console.log('✅ Logo fetched successfully:', logoURI);
         } else {
-          console.warn('⚠️ No logo found for token:', String(symbol));
+          console.debug('No logo found for token:', String(symbol));
         }
       } catch (logoError) {
-        console.warn('❌ Failed to fetch logo:', logoError);
+        console.debug('Failed to fetch token logo');
         // Continue without logo
       }
 

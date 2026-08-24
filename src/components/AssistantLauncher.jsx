@@ -45,8 +45,8 @@ const AssistantLauncher = () => {
         color: '#e5f9ff',
         fontSize: isMobile ? 11 : 13,
         fontWeight: 600,
-        width: isMobile ? 40 : undefined,
-        height: isMobile ? 40 : undefined,
+        width: isMobile ? 38 : undefined,
+        height: isMobile ? 38 : undefined,
         padding: isMobile ? 0 : '9px 15px',
         borderRadius: isMobile ? 8 : 999,
         // Daha BaseHub uyumlu: mor-mavi gradient
@@ -65,8 +65,8 @@ const AssistantLauncher = () => {
         <div
           style={{
             position: 'fixed',
-            bottom: 'calc(82px + env(safe-area-inset-bottom, 0px))',
-            right: 12,
+            bottom: 'calc(112px + env(safe-area-inset-bottom, 0px))',
+            right: 14,
             pointerEvents: 'none',
             zIndex: 1200,
           }}

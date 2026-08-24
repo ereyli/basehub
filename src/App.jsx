@@ -412,6 +412,7 @@ function FarcasterAppContent() {
               <Route path="/agents" element={<AgentDirectory />} />
               <Route path="/deploy-b20" element={<DeployB20 />} />
               <Route path="/ai-nft" element={<AINFTLaunchpad />} />
+              <Route path="/nft" element={<NFTLaunchpad />} />
               <Route path="/nft-launchpad" element={<NFTLaunchpad />} />
               <Route path="/mint/:slug" element={<NFTMintPage />} />
               <Route path="/share" element={<SharePage />} />
@@ -495,6 +496,7 @@ function WebAppContent() {
               <Route path="/agents" element={<AgentDirectory />} />
               <Route path="/deploy-b20" element={<DeployB20 />} />
               <Route path="/ai-nft" element={<AINFTLaunchpad />} />
+              <Route path="/nft" element={<NFTLaunchpad />} />
               <Route path="/nft-launchpad" element={<NFTLaunchpad />} />
               <Route path="/mint/:slug" element={<NFTMintPage />} />
               <Route path="/share" element={<SharePage />} />
