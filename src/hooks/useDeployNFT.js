@@ -4,7 +4,7 @@ import { waitForTransactionReceipt, sendTransaction } from 'wagmi/actions'
 import { parseEther } from 'viem'
 import { config } from '../config/wagmi'
 import { addXP } from '../utils/xpUtils'
-import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/pinata'
+import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/nftUpload'
 import { useNetworkCheck } from './useNetworkCheck'
 
 // SimpleNFT ABI from Remix compilation

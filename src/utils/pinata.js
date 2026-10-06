@@ -14,7 +14,7 @@ const JPEG_QUALITY = 0.82
 const MAX_BASE64_BYTES = 2 * 1024 * 1024 // ~2MB base64 → under Vercel 4.5MB body, faster upload
 
 /** Resize/compress image so upload fits within limits and finishes before timeout */
-function compressImageForUpload(file) {
+export function compressImageForUpload(file) {
   return new Promise((resolve, reject) => {
     const img = new Image()
     const url = URL.createObjectURL(file)

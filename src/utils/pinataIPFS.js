@@ -1,5 +1,5 @@
 import { AI_NFT_CONFIG } from '../config/aiNFT';
-import { uploadFileViaProxy, uploadMetadataViaProxy } from './pinata';
+import { uploadFileViaProxy, uploadMetadataViaProxy } from './nftUpload';
 
 function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
@@ -11,21 +11,20 @@ function blobToBase64(blob) {
 }
 
 /**
- * Upload image to IPFS via server proxy (no client keys)
+ * Upload image to NFT storage via server proxy (no client keys)
  */
 export async function uploadImageToIPFS(imageBlob, fileName = 'ai-generated-image.png') {
   const imageBase64 = await blobToBase64(imageBlob);
-  const { ipfsHash } = await uploadFileViaProxy(imageBase64, fileName, imageBlob.type || 'image/png');
-  return `ipfs://${ipfsHash}`;
+  const { url } = await uploadFileViaProxy(imageBase64, fileName, imageBlob.type || 'image/png');
+  return url;
 }
 
 /**
- * Upload NFT metadata to IPFS via server proxy
+ * Upload NFT metadata to storage via server proxy
  */
 export async function uploadMetadataToIPFS(metadata) {
   const { url } = await uploadMetadataViaProxy(metadata);
-  const hash = url.replace('https://gateway.pinata.cloud/ipfs/', '');
-  return `ipfs://${hash}`;
+  return url;
 }
 
 /**

@@ -129,8 +129,10 @@ export default function AINFTLaunchpad() {
       return;
     }
 
-    // No file size limit - let Pinata handle it
-    // Just show warning for large files
+    if (file.size > 20 * 1024 * 1024) {
+      alert('Please select an image smaller than 20 MB');
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -552,7 +554,7 @@ export default function AINFTLaunchpad() {
                             Click to upload image
                           </p>
                           <p style={{ color: '#9ca3af', fontSize: '12px', margin: '0' }}>
-                            PNG, JPG, GIF (any size)
+                            PNG, JPG, GIF (max 20 MB)
                           </p>
                           <p style={{ color: '#f59e0b', fontSize: '11px', margin: '4px 0 0 0', fontWeight: '500' }}>
                             ⚠️ 1MB+ images may upload slowly, smaller files recommended
@@ -942,7 +944,7 @@ export default function AINFTLaunchpad() {
                         {isMinting || isUploading ? (
                           <>
                             <Coins size={20} className="animate-spin" />
-                            {isUploading ? 'Uploading to IPFS...' : 'Minting...'}
+                            {isUploading ? 'Uploading...' : 'Minting...'}
                           </>
                         ) : (
                           <>

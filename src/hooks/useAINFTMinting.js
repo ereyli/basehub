@@ -282,7 +282,7 @@ export function useAINFTMinting(quantity = 1) {
     setError(null);
 
     try {
-      // Import new nftStorage utility (Pinata-based)
+      // Store both image and metadata before submitting the mint transaction.
       const { uploadTokenMetadata } = await import('../utils/nftStorage');
       
       // Determine category based on prompt
@@ -343,15 +343,15 @@ export function useAINFTMinting(quantity = 1) {
         };
       }
       
-      // Upload to Pinata and get metadata URI
+      // Upload the image and metadata before minting.
       const metadataIPFSUrl = await uploadTokenMetadata(generatedImage, tokenInfo);
       
       setMetadataURI(metadataIPFSUrl);
       return metadataIPFSUrl;
       
     } catch (err) {
-      console.error('Error uploading to IPFS:', err);
-      setError(`Failed to upload to IPFS: ${err.message}`);
+      console.error('Error uploading NFT assets:', err);
+      setError(`Failed to upload NFT assets: ${err.message}`);
       return null;
     } finally {
       setIsUploading(false);

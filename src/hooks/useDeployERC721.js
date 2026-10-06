@@ -5,7 +5,7 @@ import { parseEther, encodeAbiParameters, parseAbiParameters, maxUint256 } from 
 import { config, DATA_SUFFIX, tempo } from '../config/wagmi'
 import { estimateTempoDeployTransactionGas } from '../utils/tempoGas'
 import { addXP } from '../utils/xpUtils'
-import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/pinata'
+import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/nftUpload'
 import { useNetworkCheck } from './useNetworkCheck'
 import { useQuestSystem } from './useQuestSystem'
 import { useFarcaster } from '../contexts/FarcasterContext'

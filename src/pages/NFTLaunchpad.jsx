@@ -11,7 +11,7 @@ import NetworkGuard from '../components/NetworkGuard'
 import { useNFTLaunchpad } from '../hooks/useNFTLaunchpad'
 import { useX402Payment } from '../hooks/useX402Payment'
 import { NFT_LAUNCH_COLLECTION_ABI } from '../config/nftCollection'
-import { uploadToIPFS } from '../utils/pinata'
+import { uploadToIPFS } from '../utils/nftUpload'
 import { generateAIImage } from '../utils/aiImageGenerator'
 import { supabase } from '../config/supabase'
 import { getAddressExplorerUrl, getBlockExplorerDisplayName, getCollectionMarketUrl, NETWORKS } from '../config/networks'
@@ -65,6 +65,7 @@ function ipfsToUrl(ipfsHash) {
   if (ipfsHash.startsWith('http://') || ipfsHash.startsWith('https://')) {
     return ipfsHash
   }
+  if (ipfsHash.startsWith('ipfs://')) return `https://ipfs.io/ipfs/${ipfsHash.slice(7)}`
   // If it's an IPFS hash (starts with Qm or bafk), convert to gateway URL
   if (ipfsHash.startsWith('Qm') || ipfsHash.startsWith('bafk')) {
     // Try multiple gateways for better reliability
@@ -200,6 +201,10 @@ function SortPill({ label, icon: Icon, active, onClick }) {
 function CollectionCardImage({ imageUrl, name }) {
   const [imageError, setImageError] = useState(false)
   const [imageSrc, setImageSrc] = useState(() => ipfsToUrl(imageUrl))
+  useEffect(() => {
+    setImageSrc(ipfsToUrl(imageUrl))
+    setImageError(false)
+  }, [imageUrl])
   
   if (!imageUrl || imageError) {
     return <Package size={48} style={{ color: '#3b82f6', opacity: 0.6 }} />
@@ -212,7 +217,7 @@ function CollectionCardImage({ imageUrl, name }) {
       onError={() => {
         // Extract IPFS hash from URL
         const hash = imageUrl.replace(/^https?:\/\/[^/]+\/ipfs\//, '').replace(/^ipfs:\/\//, '').replace(/^\/ipfs\//, '')
-        if (hash && hash.length > 10) {
+        if (/^(Qm[1-9A-HJ-NP-Za-km-z]{44}|bafy[a-z2-7]+|bafk[a-z2-7]+)(\/.*)?$/.test(hash)) {
           // Try fallback gateways
           const fallbacks = [
             `https://gateway.pinata.cloud/ipfs/${hash}`,
@@ -291,7 +296,7 @@ export default function NFTLaunchpad() {
 
   const getProcessingLabel = () => {
     if (!loadingStep) return 'Processing...'
-    if (loadingStep === 'uploading_image') return 'Uploading image to IPFS...'
+    if (loadingStep === 'uploading_image') return 'Uploading image...'
     if (loadingStep === 'uploading_metadata') return 'Uploading metadata...'
     if (loadingStep === 'approving_token') return 'Confirm unlimited pathUSD approval (TIP20)...'
     if (loadingStep === 'deploying') return 'Confirm in wallet (deploy)...'

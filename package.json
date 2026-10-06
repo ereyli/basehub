@@ -80,6 +80,7 @@
     "react-dom": "^18.2.0",
     "react-helmet-async": "^2.0.5",
     "react-router-dom": "^6.8.1",
+    "sharp": "^0.34.4",
     "three": "^0.185.1",
     "viem": "^2.37.6",
     "wagmi": "^2.16.9"
@@ -91,7 +92,6 @@
     "baseline-browser-mapping": "^2.10.18",
     "hardhat": "^3.0.6",
     "http-server": "^14.1.1",
-    "sharp": "^0.34.4",
     "solc": "^0.8.20",
     "vite": "^5.0.8"
   },

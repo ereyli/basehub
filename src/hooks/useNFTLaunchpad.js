@@ -4,7 +4,7 @@ import { waitForTransactionReceipt } from 'wagmi/actions'
 import { config, DATA_SUFFIX, tempo } from '../config/wagmi'
 // Tempo pathUSD: match useDeployToken.js — writeContractAsync + dataSuffix: DATA_SUFFIX (proven working on TempoBaseHubDeployer).
 import { parseEther, encodeAbiParameters, parseAbiParameters, toEventHash, maxUint256, getAddress } from 'viem'
-import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/pinata'
+import { uploadToIPFS, uploadMetadataToIPFS, createNFTMetadata } from '../utils/nftUpload'
 import {
   encodeDeployerCall,
   getNFTCollectionFeeNative,
