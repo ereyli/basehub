@@ -2347,7 +2347,7 @@ const PumpHub = () => {
       const ipfsUrl = await uploadToIPFS(file)
       setFormData(prev => ({ ...prev, logoUrl: ipfsUrl }))
       setLogoError(false)
-      console.log('✅ Logo uploaded to IPFS:', ipfsUrl)
+      console.log('Logo uploaded:', ipfsUrl)
     } catch (err) {
       console.error('Failed to upload logo:', err)
       alert('Failed to upload logo. Please try again.')
@@ -3087,7 +3087,7 @@ const PumpHub = () => {
                   <div style={pumpLaunchStyles.logoBody}>
                     <strong style={pumpLaunchStyles.logoBodyTitle}>Token logo</strong>
                     <span style={pumpLaunchStyles.logoBodyText}>
-                      {isUploadingLogo ? 'Uploading to IPFS' : formData.logoUrl ? 'Uploaded to IPFS' : 'PNG, JPG or GIF'}
+                      {isUploadingLogo ? 'Uploading' : formData.logoUrl ? 'Uploaded' : 'PNG, JPG or GIF'}
                     </span>
                   </div>
                   <label style={pumpLaunchStyles.uploadButton}>
