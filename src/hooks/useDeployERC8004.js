@@ -4,7 +4,7 @@ import { waitForTransactionReceipt } from 'wagmi/actions'
 import { formatEther, parseEventLogs } from 'viem'
 import { config, DATA_SUFFIX } from '../config/wagmi'
 import { addXP } from '../utils/xpUtils'
-import { uploadMetadataToIPFS, uploadToIPFS } from '../utils/pinata'
+import { uploadMetadataToIPFS, uploadToIPFS } from '../utils/nftUpload'
 import {
   BASEHUB_ERC8004_REGISTRAR_ABI,
   ERC8004_AGENT_XP_REWARD,

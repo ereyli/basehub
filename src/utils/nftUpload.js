@@ -1,6 +1,8 @@
-import { createNFTMetadata, compressImageForUpload } from './pinata'
+import { compressImageForUpload } from './imageUpload'
 
-export { createNFTMetadata }
+export function createNFTMetadata(name, description, imageUrl, attributes = []) {
+  return { name, description, image: imageUrl, attributes, external_url: 'https://www.basehub.fun', background_color: '000000' }
+}
 
 async function upload(body) {
   const apiBase = (import.meta.env.VITE_API_URL || '').trim().replace(/\/$/, '')

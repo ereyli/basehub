@@ -1,12 +1,9 @@
 // AI NFT Configuration – secret keys are server-only (env in Vercel). Do not use VITE_ for API keys.
 export const AI_NFT_CONFIG = {
-  // Not exposed to client; AI image uses /api/ai-image-generate, Pinata uses /api/pinata-upload
+  // Secrets remain server-only; asset uploads use Supabase Storage.
   GOOGLE_STUDIO_API_KEY: '',
   MINIMAX_API_KEY: '',
   AI_PROVIDER: import.meta.env.VITE_AI_PROVIDER || 'minimax',
-  PINATA_API_KEY: '',
-  PINATA_SECRET_KEY: '',
-  PINATA_JWT: '',
   
   // AI NFT Collection Contract Address (currently Base mainnet)
   // V2 - Tiered Pricing Model (Fixed: tokenURI before mint)

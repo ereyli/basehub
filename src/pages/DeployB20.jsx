@@ -31,7 +31,7 @@ import BackButton from '../components/BackButton'
 import { LaunchpadProgress, LaunchpadStatStrip, LaunchpadTrustStrip, TokenGridSkeleton } from '../components/LaunchpadPrimitives'
 import { useDeployB20 } from '../hooks/useDeployB20'
 import { useB20Launchpad } from '../hooks/useB20Launchpad'
-import { uploadToIPFS } from '../utils/pinata'
+import { uploadToIPFS } from '../utils/nftUpload'
 import { getTransactionExplorerUrl, NETWORKS } from '../config/networks'
 import { supabase } from '../config/supabase'
 import { getReadClient } from '../utils/readClient'
@@ -878,7 +878,7 @@ export default function DeployB20() {
     try {
       const imageUrl = await uploadToIPFS(file)
       setCurveForm((prev) => ({ ...prev, image: imageUrl }))
-      setStatus({ type: 'success', text: 'Logo uploaded to IPFS.' })
+      setStatus({ type: 'success', text: 'Logo uploaded.' })
     } catch (err) {
       setStatus({ type: 'error', text: err.message || 'Logo upload failed.' })
     } finally {
@@ -2063,7 +2063,7 @@ function CurveCreateForm({
         </div>
         <div style={styles.logoUploadBody}>
           <strong>Token logo</strong>
-          <span>{form.image ? 'Uploaded to IPFS' : 'PNG, JPG or GIF'}</span>
+          <span>{form.image ? 'Uploaded' : 'PNG, JPG or GIF'}</span>
         </div>
         <label style={styles.uploadButton}>
           <Upload size={16} />

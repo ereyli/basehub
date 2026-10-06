@@ -15,7 +15,7 @@ import { usePumpHub, usePumpHubData } from '../hooks/usePumpHub'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { getFarcasterUniversalLink } from '../config/farcaster'
 import { supabase } from '../config/supabase'
-import { uploadToIPFS } from '../utils/pinata'
+import { uploadToIPFS } from '../utils/nftUpload'
 import { NETWORKS, getPumpHubFactoryAddress, getNetworkConfig } from '../config/networks'
 import { LaunchpadProgress, LaunchpadStatStrip, LaunchpadTrustStrip, TokenGridSkeleton } from '../components/LaunchpadPrimitives'
 import { useEthUsdPrice } from '../hooks/useEthUsdPrice'
@@ -2341,7 +2341,7 @@ const PumpHub = () => {
     setLogoFile(file)
     setLogoPreview(URL.createObjectURL(file))
     
-    // Upload to Pinata immediately
+    // Upload the logo before creating the token.
     setIsUploadingLogo(true)
     try {
       const ipfsUrl = await uploadToIPFS(file)
@@ -2350,7 +2350,7 @@ const PumpHub = () => {
       console.log('✅ Logo uploaded to IPFS:', ipfsUrl)
     } catch (err) {
       console.error('Failed to upload logo:', err)
-      alert('Failed to upload logo to IPFS')
+      alert('Failed to upload logo. Please try again.')
     } finally {
       setIsUploadingLogo(false)
     }
