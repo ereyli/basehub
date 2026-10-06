@@ -163,6 +163,7 @@ export function useAINFTMinting(quantity = 1) {
     setIsGenerating(true);
     setError(null);
     setGeneratedImage(null);
+    setMetadataURI(null);
 
     try {
       // Import AI image generator
@@ -268,7 +269,7 @@ export function useAINFTMinting(quantity = 1) {
   };
 
   /**
-   * Upload image and metadata to IPFS using Pinata
+   * Upload image and metadata to Supabase Storage
    * @param {string} prompt - Original prompt
    * @param {object} customMetadata - Custom metadata object (optional)
    */

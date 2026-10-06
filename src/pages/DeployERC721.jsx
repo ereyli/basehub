@@ -212,7 +212,7 @@ const DeployERC721 = () => {
               )}
               {deployResult.metadataUrl && (
                 <div className="detail-item">
-                  <strong>Metadata URL (IPFS):</strong>
+                  <strong>Metadata URL:</strong>
                   <div className="tx-hash">
                     <span style={{ fontSize: '12px', wordBreak: 'break-all' }}>
                       {deployResult.metadataUrl.length > 40 

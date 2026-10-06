@@ -33,6 +33,16 @@ try {
   const duplicate = await request({ type: 'file', imageBase64: png.toString('base64') })
   assert.equal(duplicate.statusCode, 200)
   assert.equal(duplicate.body.url, image.body.url)
+  for (const [format, contentType] of [['jpeg', 'image/jpeg'], ['webp', 'image/webp'], ['gif', 'image/gif']]) {
+    const encoded = await sharp(png)[format]().toBuffer()
+    const stored = await request({ type: 'file', imageBase64: encoded.toString('base64') })
+    assert.equal(stored.statusCode, 200, `${format} upload`)
+    cleanup.add(stored.body.path)
+    const downloaded = await fetch(stored.body.url)
+    assert.equal(downloaded.status, 200)
+    assert.match(downloaded.headers.get('content-type'), new RegExp(contentType))
+    assert.deepEqual(Buffer.from(await downloaded.arrayBuffer()), encoded)
+  }
   const metadata = { name: `Storage test ${Date.now()}`, image: image.body.url, attributes: [] }
   const json = await request({ type: 'metadata', metadata })
   assert.equal(json.statusCode, 200)
@@ -41,6 +51,7 @@ try {
   assert.equal(publicMetadata.status, 200)
   assert.deepEqual(await publicMetadata.json(), metadata)
   assert.equal((await request({ type: 'file', imageBase64: Buffer.from('<svg/>').toString('base64') })).statusCode, 400)
+  assert.equal((await request({ type: 'file', imageBase64: png.subarray(0, 30).toString('base64') })).statusCode, 400)
   assert.equal((await request({ type: 'file', imageBase64: 'a'.repeat(5 * 1024 * 1024) })).statusCode, 413)
   assert.equal((await request({ type: 'metadata', metadata: { name: 'Bad', image: 'javascript:alert(1)' } })).statusCode, 400)
   assert.equal((await request({ type: 'metadata', metadata: { ...metadata, description: 'x'.repeat(70000) } })).statusCode, 413)
@@ -66,7 +77,7 @@ try {
   let throttled
   for (let i = 0; i < 21; i++) throttled = await request({ type: 'invalid' })
   assert.equal(throttled.statusCode, 429)
-  console.log('PASS: live image and metadata, public reads, duplicate upload, MIME detection, validation, anonymous write restriction')
+  console.log('PASS: live PNG/JPEG/WebP/GIF and metadata, public reads, duplicates, MIME detection, truncated images, validation, anonymous write restriction, concurrent quotas')
 } finally {
   if (cleanup.size) {
     const { error } = await client.storage.from(NFT_BUCKET).remove([...cleanup])

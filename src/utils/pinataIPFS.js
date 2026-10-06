@@ -1,20 +1,12 @@
 import { AI_NFT_CONFIG } from '../config/aiNFT';
 import { uploadFileViaProxy, uploadMetadataViaProxy } from './nftUpload';
-
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
+import { compressImageForUpload } from './imageUpload';
 
 /**
  * Upload image to NFT storage via server proxy (no client keys)
  */
 export async function uploadImageToIPFS(imageBlob, fileName = 'ai-generated-image.png') {
-  const imageBase64 = await blobToBase64(imageBlob);
+  const imageBase64 = await compressImageForUpload(imageBlob);
   const { url } = await uploadFileViaProxy(imageBase64, fileName, imageBlob.type || 'image/png');
   return url;
 }

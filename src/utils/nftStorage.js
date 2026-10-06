@@ -1,19 +1,11 @@
 import { uploadFileViaProxy, uploadMetadataViaProxy } from './nftUpload';
-
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
+import { compressImageForUpload } from './imageUpload';
 
 /**
  * Upload image to Supabase via server proxy (no client keys)
  */
 async function uploadImage(fileBlob, fileName) {
-  const imageBase64 = await blobToBase64(fileBlob);
+  const imageBase64 = await compressImageForUpload(fileBlob);
   const { url } = await uploadFileViaProxy(
     imageBase64,
     fileName,
@@ -53,7 +45,7 @@ export async function uploadCollectionMetadata(collectionInfo, imageBase64) {
       description: collectionInfo.description,
       image: imageUri,
       external_link: collectionInfo.externalLink || '',
-      seller_fee_basis_points: collectionInfo.sellerFeeBasisPoints || 500,
+      seller_fee_basis_points: collectionInfo.sellerFeeBasisPoints ?? 500,
       fee_recipient: collectionInfo.feeRecipient || '',
     };
 
