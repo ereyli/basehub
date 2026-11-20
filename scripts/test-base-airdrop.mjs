@@ -120,8 +120,14 @@ test('scores a wallet-authored B20 movement without doubling activity per transf
 })
 
 test('keeps indexed requests isolated and fills missing chain results through the backup', async () => {
-  const index = { call: async () => ({ transfers: [] }) }
-  const chain = { call: async () => { throw new Error('Primary rate limited') }, batch: async () => ['0x2', null] }
+  const index = {
+    call: async () => ({ transfers: [] }),
+    batch: async (calls) => {
+      assert.deepEqual(calls, [['transaction'], ['receipt']])
+      return ['verified transaction', null]
+    },
+  }
+  const chain = { call: async () => { throw new Error('Primary rate limited') }, batch: async () => ['0x2', null, null] }
   const backup = { call: async () => 'safe block', batch: async (calls) => {
     assert.deepEqual(calls, [['receipt']])
     return ['verified receipt']
@@ -129,7 +135,7 @@ test('keeps indexed requests isolated and fills missing chain results through th
   const rpc = createScanRpc(index, chain, backup)
   assert.equal(await rpc.call('eth_getBlockByNumber', 'safe'), 'safe block')
   assert.deepEqual(await rpc.call('alchemy_getAssetTransfers', {}), { transfers: [] })
-  assert.deepEqual(await rpc.batch([['nonce'], ['receipt']]), ['0x2', 'verified receipt'])
+  assert.deepEqual(await rpc.batch([['nonce'], ['transaction'], ['receipt']]), ['0x2', 'verified transaction', 'verified receipt'])
 })
 
 test('reports a verified nonce and withholds the score when indexed history is unavailable', async () => {
@@ -147,6 +153,44 @@ test('reports a verified nonce and withholds the score when indexed history is u
   assert.equal(result.coverage.historyUnavailable, true)
   assert.equal(result.score.total, null)
   assert.deepEqual(result.monthlyActivity, [])
+})
+
+test('hydrates indexed transactions in batches and retries only missing fields', async () => {
+  const rows = Array.from({ length: 25 }, (_, index) => ({
+    hash: `0x${index.toString(16).padStart(64, '0')}`,
+    metadata: { blockTimestamp: new Date(time + index * 1000).toISOString() },
+    category: 'external', from: wallet, to: merchant,
+  }))
+  const missingHash = rows.at(-1).hash
+  const reads = []
+  let missingReceipt = true
+  const rpc = {
+    call: async (method, query) => {
+      if (method === 'eth_getBlockByNumber') return { number: '0x100000', timestamp: `0x${(time / 1000 + 60).toString(16)}` }
+      if (query.category[0] !== 'external') return { transfers: [] }
+      assert.equal(query.maxCount, '0x12c')
+      return { transfers: rows }
+    },
+    batch: async (calls) => {
+      if (calls[0][0] === 'eth_getBalance') return ['0x0', '0x', '0x19']
+      reads.push(calls)
+      return calls.map(([method, hash]) => {
+        if (method === 'eth_getTransactionByHash') return { from: wallet, to: merchant, input: '0x' }
+        if (hash === missingHash && missingReceipt) {
+          missingReceipt = false
+          return null
+        }
+        return { status: '0x1', logs: [] }
+      })
+    },
+  }
+  const result = await scanWallet(rpc, wallet, null, async () => Response.json({
+    tokens: [{ contract_address: stock, symbol: 'AAPLc' }],
+  }))
+  assert.deepEqual(reads.map((calls) => calls.length), [48, 2, 1])
+  assert.deepEqual(reads.at(-1), [['eth_getTransactionReceipt', missingHash]])
+  assert.equal(result.coverage.activityComplete, true)
+  assert.equal(result.metrics.transactions, rows.length)
 })
 
 test('requires a supported authorization, payer and merchant for direct x402 attribution', () => {

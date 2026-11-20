@@ -11,6 +11,8 @@ const WEEK = 7 * 86_400_000
 const MIN_DATE = '2023-08-09'
 const ERC_TOKENS = ['erc20', 'erc721', 'erc1155']
 const MAX_RECEIPTS = 400
+const RECEIPT_BATCH_SIZE = 24
+const RECEIPT_WORKERS = 2
 const lower = (value) => typeof value === 'string' ? value.toLowerCase() : ''
 const hex = (number) => `0x${number.toString(16)}`
 const padded = (address) => `0x${address.slice(2).padStart(64, '0')}`
@@ -30,14 +32,14 @@ export function parseCutoff(value, now = Date.now()) {
 
 export function createRpc(url, fetcher = fetch, deadline) {
   let nextId = 0
-  async function post(body) {
+  async function post(body, retry = true) {
     for (let attempt = 0; attempt < 2; attempt += 1) {
       const timeout = AbortSignal.timeout(6500)
       const response = await fetcher(url, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body), signal: deadline ? AbortSignal.any([timeout, deadline]) : timeout,
       })
-      if ([429, 502, 503, 504].includes(response.status) && attempt === 0 && !deadline?.aborted) {
+      if (retry && [429, 502, 503, 504].includes(response.status) && attempt === 0 && !deadline?.aborted) {
         const retryAfter = Number(response.headers.get('retry-after'))
         await new Promise((resolve) => setTimeout(resolve, Math.min(2000, Math.max(700, retryAfter * 1000 || 0))))
         continue
@@ -57,7 +59,7 @@ export function createRpc(url, fetcher = fetch, deadline) {
       if (!calls.length) return []
       const messages = calls.map(([method, ...params]) => ({ jsonrpc: '2.0', id: ++nextId, method, params }))
       try {
-        const reply = await post(messages)
+        const reply = await post(messages, false)
         if (!Array.isArray(reply)) return calls.map(() => null)
         const byId = new Map(reply.map((message) => [message.id, message]))
         return messages.map(({ id }) => byId.get(id)?.result ?? null)
@@ -88,11 +90,15 @@ export function createScanRpc(index, chain, backup) {
       return backup.call(method, ...params)
     },
     async batch(calls) {
-      const results = await chain.batch(calls)
-      const missing = calls.flatMap((call, index) => results[index] == null ? [index] : [])
-      if (!missing.length) return results
-      const fallback = await backup.batch(missing.map((index) => calls[index]))
-      missing.forEach((index, offset) => { results[index] = fallback[offset] })
+      const results = Array(calls.length).fill(null)
+      // The indexed provider also serves standard RPC reads. Prefer it to the
+      // shared Base RPC for gaps to avoid repeated public endpoint throttling.
+      for (const provider of [chain, index, backup]) {
+        const missing = calls.flatMap((call, index) => results[index] == null ? [index] : [])
+        if (!missing.length) break
+        const replies = await provider.batch(missing.map((index) => calls[index]))
+        missing.forEach((index, offset) => { results[index] = replies[offset] ?? null })
+      }
       return results
     },
   }
@@ -127,25 +133,48 @@ async function findBlock(rpc, cutoff) {
   return best
 }
 
-async function collect(rpc, query, pages, size) {
+async function collect(rpc, query, limit, maxPages = 1) {
   const rows = []
+  const cursors = new Set()
   let pageKey
-  for (let page = 0; page < pages; page += 1) {
-    try {
+  try {
+    for (let page = 0; page < maxPages && rows.length < limit; page += 1) {
+      const remaining = limit - rows.length
       const reply = await rpc.call('alchemy_getAssetTransfers', {
-        fromBlock: '0x0', order: 'desc', withMetadata: true, maxCount: hex(size),
-        ...query, ...(pageKey ? { pageKey } : {}),
+        fromBlock: '0x0', order: 'desc', withMetadata: true, maxCount: hex(remaining), ...query,
+        ...(pageKey ? { pageKey } : {}),
       })
       if (!Array.isArray(reply?.transfers)) throw new Error('Transfers unavailable')
-      rows.push(...reply.transfers)
-      if (!reply.pageKey) return { rows, state: 'complete' }
-      if (pageKey === reply.pageKey) break
+      rows.push(...reply.transfers.slice(0, remaining))
       pageKey = reply.pageKey
-    } catch {
-      return { rows, state: rows.length ? 'partial' : 'unavailable' }
+      if (!pageKey) return { rows, state: reply.transfers.length > remaining ? 'partial' : 'complete' }
+      if (!reply.transfers.length || cursors.has(pageKey)) break
+      cursors.add(pageKey)
     }
+  } catch {
+    if (!rows.length) return { rows, state: 'unavailable' }
   }
   return { rows, state: 'partial' }
+}
+
+const chunk = (items, size) => Array.from({ length: Math.ceil(items.length / size) }, (_, i) => items.slice(i * size, (i + 1) * size))
+
+async function hydrateRecords(rpc, records) {
+  const groups = chunk(records, RECEIPT_BATCH_SIZE)
+  let next = 0
+  async function hydrateNext() {
+    while (next < groups.length) {
+      const group = groups[next++]
+      const reads = []
+      for (const record of group) {
+        if (!record.tx) reads.push({ record, property: 'tx', method: 'eth_getTransactionByHash' })
+        if (!record.receipt) reads.push({ record, property: 'receipt', method: 'eth_getTransactionReceipt' })
+      }
+      const replies = await rpc.batch(reads.map(({ record, method }) => [method, record.hash]))
+      reads.forEach(({ record, property }, index) => { record[property] = replies[index] ?? null })
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(RECEIPT_WORKERS, groups.length) }, hydrateNext))
 }
 
 function readOps(logs, walletTopic) {
@@ -361,15 +390,15 @@ export async function scanWallet(rpc, address, cutoff, fetcher = fetch) {
   const merchants = new Set(['0x7d2ceb7a0e0c39a3d0f7b5b491659fde4bb7bcfe', lower(process.env.X402_RECEIVING_ADDRESS)]
     .filter((value) => ADDRESS.test(value) && value !== ZERO && value !== address))
   const [outgoing, sent, received, bridge, balances, registry, merchantTransfers] = await Promise.all([
-    collect(rpc, { fromAddress: address, toBlock, category: ['external'], excludeZeroValue: false }, 3, 100),
-    collect(rpc, { fromAddress: address, toBlock, category: ERC_TOKENS, excludeZeroValue: true }, 3, 200),
-    collect(rpc, { toAddress: address, toBlock, category: ERC_TOKENS, excludeZeroValue: true }, 2, 200),
-    collect(rpc, { fromAddress: BRIDGE, toAddress: address, toBlock, category: ['internal'], excludeZeroValue: true }, 1, 100),
+    collect(rpc, { fromAddress: address, toBlock, category: ['external'], excludeZeroValue: false }, 300, 3),
+    collect(rpc, { fromAddress: address, toBlock, category: ERC_TOKENS, excludeZeroValue: true }, 600, 3),
+    collect(rpc, { toAddress: address, toBlock, category: ERC_TOKENS, excludeZeroValue: true }, 400, 2),
+    collect(rpc, { fromAddress: BRIDGE, toAddress: address, toBlock, category: ['internal'], excludeZeroValue: true }, 100),
     rpc.batch([['eth_getBalance', address, toBlock], ['eth_getCode', address, toBlock], ['eth_getTransactionCount', address, toBlock]]),
     stockPromise,
     Promise.all([...merchants].map((merchant) => collect(rpc, {
       fromAddress: address, toAddress: merchant, toBlock, category: ['erc20'], contractAddresses: [USDC], excludeZeroValue: true,
-    }, 1, 20))),
+    }, 20))),
   ])
   const candidates = new Map()
   const outgoingHashes = new Set(outgoing.rows.map(({ hash }) => lower(hash)).filter((hash) => HASH.test(hash)))
@@ -392,29 +421,11 @@ export async function scanWallet(rpc, address, cutoff, fetcher = fetch) {
   }
   const selected = [...candidates.values()].sort((a, b) => b.rank - a.rank || b.time - a.time).slice(0, MAX_RECEIPTS)
   const toVerify = [...indexedTokens].slice(0, 100)
-  const records = []
+  const records = selected.map(({ hash, time, rows }) => ({ hash, time, transfers: [...rows.values()] }))
   const verifiedB20 = new Set()
   let checkedB20 = 0
-  const chunk = (items, size) => Array.from({ length: Math.ceil(items.length / size) }, (_, i) => items.slice(i * size, (i + 1) * size))
-  const groups = chunk(selected, 12)
   await Promise.all([
-    (async () => {
-      for (const batch of chunk(groups, 2)) {
-        const hydrated = await Promise.all(batch.map(async (group) => {
-          const calls = group.flatMap(({ hash }) => [['eth_getTransactionByHash', hash], ['eth_getTransactionReceipt', hash]])
-          const replies = await rpc.batch(calls)
-          const missing = calls.map((_, index) => index).filter((index) => replies[index] == null)
-          if (missing.length) {
-            const retry = await rpc.batch(missing.map((index) => calls[index]))
-            missing.forEach((index, offset) => { replies[index] = retry[offset] })
-          }
-          return group.map((entry, index) => ({
-            hash: entry.hash, time: entry.time, tx: replies[index * 2], receipt: replies[index * 2 + 1], transfers: [...entry.rows.values()],
-          }))
-        }))
-        records.push(...hydrated.flat())
-      }
-    })(),
+    hydrateRecords(rpc, records),
     (async () => {
       const calls = toVerify.map((token) => ['eth_call', {
         to: FACTORY, data: encodeFunctionData({ abi: B20_ABI, functionName: 'isB20Initialized', args: [token] }),
@@ -428,6 +439,8 @@ export async function scanWallet(rpc, address, cutoff, fetcher = fetch) {
       }
     })(),
   ])
+  // Recover fields missed during transient provider throttling after the first pass.
+  await hydrateRecords(rpc, records.filter(({ tx, receipt }) => !tx || !receipt))
   const checked = records.filter(({ tx, receipt }) => tx && Array.isArray(receipt?.logs))
   const nonce = balances[2] == null ? null : Number(balances[2])
   const activityComplete = balances[1] === '0x' && nonce === outgoingHashes.size &&
