@@ -8,6 +8,7 @@ import { AIRDROP_POOL, TOKEN_SUPPLY, ASSUMED_ELIGIBLE_WALLETS, ASSUMED_AVERAGE_S
 import './BaseAirdropCheck.css'
 
 const ADDRESS = /^0x[\da-f]{40}$/i
+const SCAN_RETRIES = 2
 const whole = (number) => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(number)
 const decimal = (number) => new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(number)
 const short = (value) => `${value.slice(0, 8)}…${value.slice(-6)}`
@@ -23,6 +24,23 @@ const EVIDENCE = [
   ['build', 'Builder activity', 'Direct contract creation and ERC-8004 registrations.'],
   ['received', 'Passive RWA receipts', 'Shown for context. Incoming receipts without supported wallet activity earn no points.'],
 ]
+
+function waitForScanRetry(response, signal) {
+  const seconds = Number(response.headers.get('Retry-After')) || 3
+  const delay = Math.min(10_000, Math.max(1000, seconds * 1000)) + Math.random() * 1000
+  return new Promise((resolve, reject) => {
+    signal.throwIfAborted()
+    const stop = () => {
+      clearTimeout(timer)
+      reject(signal.reason)
+    }
+    const timer = setTimeout(() => {
+      signal.removeEventListener('abort', stop)
+      resolve()
+    }, delay)
+    signal.addEventListener('abort', stop, { once: true })
+  })
+}
 
 function Status({ value }) {
   return <span className={`bac-badge bac-${value}`}>{STATUS[value]}</span>
@@ -187,6 +205,7 @@ export default function BaseAirdropCheck() {
   const [address, setAddress] = useState(linkedAddress)
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [retrying, setRetrying] = useState(false)
   const [error, setError] = useState('')
   const request = useRef(null)
   const scanAddress = useCallback(async (value) => {
@@ -200,10 +219,18 @@ export default function BaseAirdropCheck() {
     request.current = controller
     const query = new URLSearchParams({ address: normalized })
     setLoading(true)
+    setRetrying(false)
     setError('')
     setResult(null)
     try {
-      const response = await fetch(`/api/base-airdrop-check?${query}`, { signal: controller.signal })
+      const url = `/api/base-airdrop-check?${query}`
+      let response = await fetch(url, { signal: controller.signal })
+      for (let attempt = 0; response.status === 429 && attempt < SCAN_RETRIES; attempt += 1) {
+        setRetrying(true)
+        await response.body?.cancel()
+        await waitForScanRetry(response, controller.signal)
+        response = await fetch(url, { signal: controller.signal })
+      }
       const body = await response.json()
       if (!response.ok) throw new Error(body.error || 'Analysis is temporarily unavailable.')
       if (!body.history || !body.score) throw new Error('Base activity data was unavailable. Please retry.')
@@ -211,7 +238,10 @@ export default function BaseAirdropCheck() {
     } catch (err) {
       if (!controller.signal.aborted) setError(err instanceof SyntaxError ? 'Analysis is temporarily unavailable. Please retry.' : err.message)
     } finally {
-      if (!controller.signal.aborted) setLoading(false)
+      if (!controller.signal.aborted) {
+        setLoading(false)
+        setRetrying(false)
+      }
     }
   }, [])
 
@@ -221,6 +251,7 @@ export default function BaseAirdropCheck() {
     else {
       setResult(null)
       setLoading(false)
+      setRetrying(false)
       setError('')
     }
     return () => request.current?.abort()
@@ -259,6 +290,7 @@ export default function BaseAirdropCheck() {
           <label className="bac-address">Base wallet address<input placeholder="0x…" value={address} onChange={(event) => setAddress(event.target.value)} required maxLength={60} spellCheck={false} autoCapitalize="none" autoComplete="off" /></label>
           <button type="submit" disabled={loading}><Search size={17} />{loading ? 'Scanning…' : 'Analyze address'}</button>
         </form>
+        {retrying && <p className="bac-footnote" role="status">The scanner is handling other requests. Retrying automatically…</p>}
         {error && <p className="bac-error" role="alert">{error}</p>}
         <p className="bac-footnote">Unofficial simulation · No wallet connection required</p>
       </header>

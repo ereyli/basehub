@@ -3,11 +3,66 @@ import test from 'node:test'
 import { AIRDROP_POOL, TOKEN_SUPPLY, buildHistory, estimateAllocation } from '../src/features/airdrop/model.js'
 import { classifyWallet, createScanRpc, parseCutoff, scanWallet } from '../api/_airdropScanner.js'
 import { AUTH_USED, USDC, X402_AUTH_CALLS } from '../api/_airdropRegistry.js'
+import handleAirdropScan from '../api/base-airdrop-check.js'
 
 const wallet = '0x0000000000000000000000000000000000000001'
 const merchant = '0x0000000000000000000000000000000000000002'
 const stock = '0xb200000000000000000000c2e324d24d7eecd1fb'
 const time = Date.parse('2026-11-01T00:00:00Z')
+
+test('queues scans at capacity, shares pending results and serves cached repeats', async (t) => {
+  const originalKey = process.env.ALCHEMY_API_KEY
+  process.env.ALCHEMY_API_KEY = 'test-key'
+  t.after(() => {
+    if (originalKey === undefined) delete process.env.ALCHEMY_API_KEY
+    else process.env.ALCHEMY_API_KEY = originalKey
+  })
+
+  let releaseHeads
+  const holdHeads = new Promise((resolve) => { releaseHeads = resolve })
+  let heads = 0
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    if (!options?.body) return Response.json({ tokens: [{ contract_address: stock, symbol: 'AAPLc' }] })
+    const body = JSON.parse(options.body)
+    if (Array.isArray(body)) {
+      return Response.json(body.map(({ id, method }) => ({ id, result: method === 'eth_getCode' ? '0x' : '0x0' })))
+    }
+    if (body.method === 'eth_getBlockByNumber') {
+      heads += 1
+      await holdHeads
+      return Response.json({ id: body.id, result: { number: '0x100000', timestamp: '0x69000000' } })
+    }
+    return Response.json({ id: body.id, result: { transfers: [] } })
+  })
+
+  async function request(id) {
+    const address = `0x${id.toString(16).padStart(40, '0')}`
+    const headers = new Map()
+    return handleAirdropScan({ method: 'GET', url: `/api/base-airdrop-check?address=${address}` }, {
+      setHeader: (name, value) => headers.set(name, value),
+      status: (status) => ({ json: (body) => ({ status, headers, body }) }),
+    })
+  }
+
+  const requests = Array.from({ length: 18 }, (_, index) => request(100 + index))
+  const duplicate = request(117)
+  let overloaded
+  let initialHeads
+  try {
+    overloaded = await request(118)
+    initialHeads = heads
+  } finally {
+    releaseHeads()
+  }
+  const results = await Promise.all(requests)
+  assert.equal(initialHeads, 6)
+  assert.equal(overloaded.status, 429)
+  assert.equal(overloaded.headers.get('Retry-After'), '3')
+  assert.ok(results.every(({ status }) => status === 200))
+  assert.strictEqual((await duplicate).body, results.at(-1).body)
+  assert.strictEqual((await request(117)).body, results.at(-1).body)
+  assert.equal(heads, requests.length)
+})
 
 function transfer(from, to, token) {
   return { from, to, value: 1, category: 'erc20', rawContract: { address: token } }
