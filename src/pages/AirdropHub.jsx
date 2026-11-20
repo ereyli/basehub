@@ -12,6 +12,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import BackButton from '../components/BackButton'
+import AirdropHubNav from '../components/AirdropHubNav'
 import EmbedMeta from '../components/EmbedMeta'
 import { useRainbowKitSwitchChain } from '../hooks/useRainbowKitSwitchChain'
 import { useTransactions } from '../hooks/useTransactions'
@@ -453,12 +454,7 @@ export default function AirdropHub() {
       />
 
       <BackButton />
-      <Link
-        to="/base-airdrop-check"
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, margin: '0 0 20px', padding: '10px 14px', border: `1px solid ${primary}`, borderRadius: 10, color: '#bfdbfe', textDecoration: 'none', fontWeight: 700 }}
-      >
-        <Search size={16} /> Base Airdrop Simulator
-      </Link>
+      <AirdropHubNav />
 
       <div
         style={{

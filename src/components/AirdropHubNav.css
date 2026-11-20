@@ -1,0 +1,34 @@
+.airdrop-hub-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.airdrop-hub-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  border-radius: 10px;
+  color: #bfdbfe;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.airdrop-hub-nav a:hover,
+.airdrop-hub-nav a[aria-current='page'] {
+  border-color: #60a5fa;
+  background: rgba(59, 130, 246, 0.16);
+  color: #eff6ff;
+}
+
+.airdrop-hub-nav a:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}

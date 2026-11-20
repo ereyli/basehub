@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Navigate, Routes, Route, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
 import { HelmetProvider } from 'react-helmet-async' 
@@ -7,6 +7,7 @@ import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit'
 import '@rainbow-me/rainbowkit/styles.css'
 import { FarcasterProvider, useFarcaster } from './contexts/FarcasterContext'
 import { config } from './config/wagmi'
+import { AIRDROP_HUB_PATH, AIRDROP_SIMULATOR_PATH } from './config/products'
 import { rainbowkitConfig, shouldUseRainbowKit, isLocalDevHostname } from './config/rainbowkit'
 import FarcasterBottomNav from './components/FarcasterBottomNav'
 import HomeScrollManager from './components/HomeScrollManager'
@@ -101,6 +102,11 @@ const AgentMode = lazy(() => import('./pages/AgentMode'))
 const AdminNotifications = lazy(() => import('./pages/AdminNotifications'))
 const NetworkLanding = lazy(() => import('./pages/NetworkLanding'))
 const TrustCenter = lazy(() => import('./pages/TrustCenter'))
+
+function AirdropSimulatorRedirect() {
+  const { search, hash } = useLocation()
+  return <Navigate replace to={{ pathname: AIRDROP_SIMULATOR_PATH, search, hash }} />
+}
 
 function AgentModeGate() {
   return <AgentMode />
@@ -426,8 +432,9 @@ function FarcasterAppContent() {
               <Route path="/nft-wheel" element={<NFTWheelGame />} />
               <Route path="/nft-plinko" element={<NFTPlinkoGame />} />
               <Route path="/pumphub" element={<PumpHub />} />
-              <Route path="/airdrop-hub" element={<AirdropHub />} />
-              <Route path="/base-airdrop-check" element={<BaseAirdropCheck />} />
+              <Route path={AIRDROP_HUB_PATH} element={<AirdropHub />} />
+              <Route path={AIRDROP_SIMULATOR_PATH} element={<BaseAirdropCheck />} />
+              <Route path="/base-airdrop-check" element={<AirdropSimulatorRedirect />} />
               <Route path="/agent" element={<AgentModeGate />} />
               <Route path="/admin" element={<AdminNotifications />} />
               <Route path="/base-guild" element={<BaseGuildCompanion />} />
@@ -511,8 +518,9 @@ function WebAppContent() {
               <Route path="/nft-wheel" element={<NFTWheelGame />} />
               <Route path="/nft-plinko" element={<NFTPlinkoGame />} />
 <Route path="/pumphub" element={<PumpHub />} />
-            <Route path="/airdrop-hub" element={<AirdropHub />} />
-            <Route path="/base-airdrop-check" element={<BaseAirdropCheck />} />
+            <Route path={AIRDROP_HUB_PATH} element={<AirdropHub />} />
+            <Route path={AIRDROP_SIMULATOR_PATH} element={<BaseAirdropCheck />} />
+            <Route path="/base-airdrop-check" element={<AirdropSimulatorRedirect />} />
             <Route path="/agent" element={<AgentModeGate />} />
             <Route path="/admin" element={<AdminNotifications />} />
             <Route path="/base-guild" element={<BaseGuildCompanion />} />

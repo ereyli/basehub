@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowRight, ExternalLink, Search } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
+import { ExternalLink, Search } from 'lucide-react'
 import BackButton from '../components/BackButton'
+import AirdropHubNav from '../components/AirdropHubNav'
 import EmbedMeta from '../components/EmbedMeta'
 import { AIRDROP_POOL, TOKEN_SUPPLY, ASSUMED_ELIGIBLE_WALLETS, ASSUMED_AVERAGE_SCORE, SOURCES, estimateAllocation } from '../features/airdrop/model'
 import './BaseAirdropCheck.css'
@@ -249,6 +250,7 @@ export default function BaseAirdropCheck() {
     <main className="bac">
       <EmbedMeta title="Base Airdrop Simulator · BaseHub" description="Compare a Base wallet with historical airdrop criteria and calculate a hypothetical allocation." buttonText="Analyze Base wallet" />
       <BackButton />
+      <AirdropHubNav />
       <header className="bac-hero">
         <p className="bac-kicker"><span /> Base mainnet</p>
         <h1>Base Airdrop Simulator</h1>
@@ -310,7 +312,6 @@ export default function BaseAirdropCheck() {
         <a className="bac-link" href={SOURCES.stocks} target="_blank" rel="noreferrer">Stock registry <ExternalLink size={13} /></a>
         <a className="bac-link" href={SOURCES.spiko} target="_blank" rel="noreferrer">RWA registry <ExternalLink size={13} /></a>
         <a className="bac-link" href={SOURCES.x402} target="_blank" rel="noreferrer">x402 spec <ExternalLink size={13} /></a>
-        <Link className="bac-link" to="/airdrop-hub">Airdrop Hub <ArrowRight size={14} /></Link>
       </footer>
     </main>
   )

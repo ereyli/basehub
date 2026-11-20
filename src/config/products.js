@@ -4,6 +4,9 @@
  * icon: Lucide icon name (string). iconImage: optional path for custom image.
  */
 
+export const AIRDROP_HUB_PATH = '/airdrop-hub'
+export const AIRDROP_SIMULATOR_PATH = `${AIRDROP_HUB_PATH}/base-simulator`
+
 export const CATEGORIES = {
   EARLY_ACCESS: 'earlyAccess',
   DEX: 'dex',
@@ -83,7 +86,7 @@ const PRODUCTS_ALL = [
   { id: 'slot', path: '/slot', label: 'Slots', title: 'Crypto Slots', description: 'Spin the reels and win XP', castShareText: CAST_SHARE['slot'], category: CATEGORIES.GAMING, color: '#dc2626', icon: 'Gift', iconImage: '/crypto-logos/basahub logo/CryptoSloth.png', xpReward: '150 XP', bonusXP: '+2000 XP (Combo)', networks: FULL_EVM_NETWORKS },
   { id: 'lucky', path: '/lucky', label: 'Lucky Number', title: 'Lucky Number', description: 'Guess 1-10 and earn XP', castShareText: CAST_SHARE['lucky'], category: CATEGORIES.GAMING, color: '#3b82f6', icon: 'RotateCcw', iconImage: '/crypto-logos/basahub logo/luckynumber.png', xpReward: '150 XP', bonusXP: '+1000 XP (Win)', networks: FULL_EVM_NETWORKS },
   { id: 'wallet-analysis', path: '/wallet-analysis', label: 'Wallet Analysis', title: 'Wallet Analysis', description: 'Get fun insights about any wallet', castShareText: CAST_SHARE['wallet-analysis'], category: CATEGORIES.ANALYSIS, color: '#3b82f6', icon: 'Search', xpReward: '400 XP', bonusXP: '0.40 USDC', networks: ['base'], isX402: true },
-  { id: 'base-airdrop-check', path: '/base-airdrop-check', label: 'Airdrop Simulator', title: 'Base Airdrop Simulator', description: 'Analyze any Base address, compare historical criteria and explore hypothetical allocations.', castShareText: CAST_SHARE['base-airdrop-check'], category: CATEGORIES.ANALYSIS, color: '#60a5fa', icon: 'Search', xpReward: null, bonusXP: null, networks: ['base'] },
+  { id: 'base-airdrop-check', path: AIRDROP_SIMULATOR_PATH, label: 'Airdrop Simulator', title: 'Base Airdrop Simulator', description: 'Analyze any Base address, compare historical criteria and explore hypothetical allocations.', castShareText: CAST_SHARE['base-airdrop-check'], category: CATEGORIES.ANALYSIS, color: '#60a5fa', icon: 'Search', xpReward: null, bonusXP: null, networks: ['base'] },
   { id: 'contract-security', path: '/contract-security', label: 'Contract Security', title: 'Contract Security', description: 'Analyze smart contract security risks', castShareText: CAST_SHARE['contract-security'], category: CATEGORIES.ANALYSIS, color: '#8b5cf6', icon: 'Shield', xpReward: '500 XP', bonusXP: '0.50 USDC', networks: ['base'], isX402: true },
   { id: 'allowance-cleaner', path: '/allowance-cleaner', label: 'Allowance Cleaner', title: 'Allowance Cleaner', description: 'Scan and revoke risky token approvals', castShareText: CAST_SHARE['allowance-cleaner'], category: CATEGORIES.ANALYSIS, color: '#8b5cf6', icon: 'Trash2', xpReward: '300 XP', bonusXP: '0.1 USDC', networks: ['base'], isX402: true },
   { id: 'base-guild-companion', path: '/base-guild', label: 'Base Guild', title: 'Base Guild Companion', description: 'Complete Base Guild-style missions with one-click actions and wallet checks', castShareText: CAST_SHARE['base-guild-companion'], category: CATEGORIES.GUILD, color: '#2563eb', icon: 'Shield', xpReward: '500 XP', bonusXP: 'Community bonus', networks: ['base'] },
