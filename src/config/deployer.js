@@ -106,20 +106,29 @@ export const DEPLOYER_FEE_NFT_COLLECTION_ETH = '0.002'
 export const DEPLOYER_FEE_NFT_COLLECTION_ETH_HOLDER = '0.0005'
 
 export const MONAD_CHAIN_ID = 143
+export const ARC_CHAIN_ID = 5042
 /** Monad fees are MON-native equivalents of ETH-network fees, calculated from Jul 4 2026 spot prices. */
 export const MONAD_GAME_FEE_MON = '1.75'
 export const MONAD_DEPLOYER_FEE_MON = '22'
 export const MONAD_NFT_COLLECTION_FEE_MON = '175'
+export const ARC_GAME_FEE_USDC = '0.04'
+export const ARC_DEPLOYER_FEE_USDC = '0.50'
+export const ARC_NFT_COLLECTION_FEE_USDC = '3.50'
 
 export function getDeployerFeeNative(chainId) {
-  return Number(chainId) === MONAD_CHAIN_ID ? MONAD_DEPLOYER_FEE_MON : DEPLOYER_FEE_ETH
+  if (Number(chainId) === MONAD_CHAIN_ID) return MONAD_DEPLOYER_FEE_MON
+  if (Number(chainId) === ARC_CHAIN_ID) return ARC_DEPLOYER_FEE_USDC
+  return DEPLOYER_FEE_ETH
 }
 
 export function getNFTCollectionFeeNative(chainId, isEarlyAccessHolder = false) {
   if (Number(chainId) === MONAD_CHAIN_ID) return MONAD_NFT_COLLECTION_FEE_MON
+  if (Number(chainId) === ARC_CHAIN_ID) return ARC_NFT_COLLECTION_FEE_USDC
   return isEarlyAccessHolder ? DEPLOYER_FEE_NFT_COLLECTION_ETH_HOLDER : DEPLOYER_FEE_NFT_COLLECTION_ETH
 }
 
 export function getGameFeeNative(chainId) {
-  return Number(chainId) === MONAD_CHAIN_ID ? MONAD_GAME_FEE_MON : '0.00002'
+  if (Number(chainId) === MONAD_CHAIN_ID) return MONAD_GAME_FEE_MON
+  if (Number(chainId) === ARC_CHAIN_ID) return ARC_GAME_FEE_USDC
+  return '0.00002'
 }

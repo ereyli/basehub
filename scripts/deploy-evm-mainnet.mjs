@@ -40,6 +40,22 @@ const NETWORKS = {
       NFT_COLLECTION_FEE: process.env.MONAD_NFT_COLLECTION_FEE || '175',
     },
   },
+  arc: {
+    label: 'Arc',
+    chainId: 5042n,
+    rpcUrl: process.env.ARC_RPC_URL || 'https://rpc.mainnet.arc.io',
+    explorer: 'https://explorer.arc.io',
+    nativeSymbol: 'USDC',
+    configKey: 'ARC',
+    outputFile: 'arc-mainnet.json',
+    feeOverrides: {
+      // Arc accounts for native USDC with 18 EVM decimals even though the
+      // ERC-20 USDC interface uses 6 decimals.
+      GAME_FEE: process.env.ARC_GAME_FEE || '0.04',
+      DEPLOYER_FEE: process.env.ARC_DEPLOYER_FEE || '0.50',
+      NFT_COLLECTION_FEE: process.env.ARC_NFT_COLLECTION_FEE || '3.50',
+    },
+  },
 }
 
 const CONTRACTS = [

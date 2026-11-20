@@ -37,6 +37,7 @@ function timeAgo(dateStr) {
 function getMintCurrencySymbol(chainIdOrIsTempo) {
   if (chainIdOrIsTempo === true || Number(chainIdOrIsTempo) === NETWORKS.TEMPO.chainId) return 'PUSD'
   if (Number(chainIdOrIsTempo) === NETWORKS.MONAD.chainId) return 'MON'
+  if (Number(chainIdOrIsTempo) === NETWORKS.ARC.chainId) return 'USDC'
   return 'ETH'
 }
 
@@ -52,6 +53,7 @@ const NFT_CHAIN_OPTIONS = [
   { chainId: 1868, logo: '/soneium-logo.jpg', label: 'Soneium' },
   { chainId: 4326, logo: '/megaeth-logo.jpg', label: 'MegaETH' },
   { chainId: 4217, logo: '/Tempo logo.jpg', label: 'Tempo' },
+  { chainId: 5042, logo: '/arc-testnet-logo.jpg', label: 'Arc' },
   { chainId: 4663, logo: '/robinhood-testnet-logo.png', label: 'Robinhood' },
   { chainId: 42161, logo: '/arbitrum-logo.svg', label: 'Arbitrum' },
   { chainId: 10, logo: '/optimism-logo.svg', label: 'Optimism' },
@@ -293,6 +295,7 @@ export default function NFTLaunchpad() {
   const currentNetworkLabel = currentChainOption?.label || 'current network'
   const currentMintCurrency = getMintCurrencySymbol(chainId)
   const isMonadChain = Number(chainId) === NETWORKS.MONAD.chainId
+  const isArcChain = Number(chainId) === NETWORKS.ARC.chainId
 
   const getProcessingLabel = () => {
     if (!loadingStep) return 'Processing...'
@@ -598,7 +601,7 @@ export default function NFTLaunchpad() {
               NFT Launchpad
             </h1>
             <p style={{ fontSize: '14px', color: '#94a3b8', margin: 0, maxWidth: '420px', marginInline: 'auto', lineHeight: 1.5 }}>
-              Deploy your NFT collection on Base, Ink, Soneium, MegaETH, Tempo, Robinhood, Arbitrum, Optimism or Monad. Set a mint price, get a shareable page, and earn from every mint.
+              Deploy your NFT collection on Base, Ink, Soneium, MegaETH, Tempo, Arc, Robinhood, Arbitrum, Optimism or Monad. Set a mint price, get a shareable page, and earn from every mint.
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '999px', background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)', color: '#bfdbfe', fontSize: '12px', fontWeight: 700 }}>
@@ -890,6 +893,8 @@ export default function NFTLaunchpad() {
                             <span style={{ color: '#64748b' }}> (pathUSD / TIP20 — unlimited spend cap for NFT deployer)</span>
                           ) : isMonadChain ? (
                             <span style={{ color: '#c4b5fd', marginLeft: '4px' }}>(MON-native fee on Monad)</span>
+                          ) : isArcChain ? (
+                            <span style={{ color: '#86efac', marginLeft: '4px' }}>(native USDC fee on Arc)</span>
                           ) : isEarlyAccessHolder ? (
                             <span style={{ color: '#22c55e', marginLeft: '4px' }}>(Early Access discount)</span>
                           ) : (

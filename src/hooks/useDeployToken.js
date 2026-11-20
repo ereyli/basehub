@@ -475,6 +475,7 @@ export const useDeployToken = () => {
         chainId === NETWORKS.INKCHAIN.chainId ||
         chainId === NETWORKS.SONEIUM.chainId ||
         chainId === NETWORKS.MEGAETH.chainId ||
+        chainId === NETWORKS.ARC.chainId ||
         chainId === NETWORKS.ROBINHOOD.chainId ||
         chainId === NETWORKS.ARBITRUM.chainId ||
         chainId === NETWORKS.OPTIMISM.chainId ||

@@ -529,10 +529,10 @@ const Home = () => {
             style={{ ...baseStyle, objectFit: 'contain', background: '#6e54ff' }}
           />
         )}
-        {networks.includes('arc-restnet') && (
+        {networks.includes('arc') && (
           <img 
             src="/arc-testnet-logo.jpg" 
-            alt="Arc Testnet" 
+            alt="Arc"
             style={{ ...baseStyle, objectFit: 'contain' }} 
           />
         )}
@@ -788,7 +788,7 @@ const Home = () => {
     { key: 'ARB', label: 'Arbitrum', logo: '/arbitrum-logo.svg', chainId: NETWORKS.ARBITRUM.chainId },
     { key: 'OP', label: 'Optimism', logo: '/optimism-logo.svg', chainId: NETWORKS.OPTIMISM.chainId },
     { key: 'MON', label: 'Monad', logo: '/monad-logo.svg', chainId: NETWORKS.MONAD.chainId },
-    ...(NETWORKS.ARC_RESTNET ? [{ key: 'ARC', label: 'Arc Testnet', logo: '/arc-testnet-logo.jpg', chainId: NETWORKS.ARC_RESTNET.chainId }] : []),
+    ...(NETWORKS.ARC ? [{ key: 'ARC', label: 'Arc', logo: '/arc-testnet-logo.jpg', chainId: NETWORKS.ARC.chainId }] : []),
     ...(NETWORKS.ROBINHOOD ? [{ key: 'RH', label: 'Robinhood', logo: '/robinhood-testnet-logo.png', chainId: NETWORKS.ROBINHOOD.chainId }] : []),
   ]
   const mobilePrimaryNetworkKeys = new Set(['BASE', 'INK', 'ARB', 'OP'])

@@ -2,7 +2,7 @@ import tempoLogo from '../../Tempo logo.jpg'
 
 // Multi-network configuration
 // Mainnet + Testnet. When adding testnet networks, also add them to CONTRACT_ADDRESSES.
-// Keys used in product.networks: 'base', 'ink', 'soneium', 'katana', 'tempo', 'arbitrum', 'optimism', 'monad' (+ testnet keys)
+// Keys used in product.networks: 'base', 'ink', 'soneium', 'katana', 'tempo', 'arc', 'arbitrum', 'optimism', 'monad' (+ testnet keys)
 
 const envRpc = (key) => (
   typeof import.meta !== 'undefined' && import.meta.env?.[key]
@@ -129,22 +129,19 @@ export const NETWORKS = {
     iconUrls: [tempoLogo],
     isFarcasterSupported: false,
   },
-  // Arc Testnet - currency is USDC, auto "Add Network" prompt if not in wallet
-  ARC_RESTNET: {
-    chainId: 5042002, // 0x4cef52
-    networkKey: 'arc-restnet',
-    chainName: 'Arc Testnet',
-    isTestnet: true,
+  ARC: {
+    chainId: 5042,
+    networkKey: 'arc',
+    chainName: 'Arc',
+    isTestnet: false,
     nativeCurrency: {
       name: 'USDC',
       symbol: 'USDC',
-      decimals: 6,
+      // Arc native USDC uses 18 decimals at the EVM account layer.
+      decimals: 18,
     },
-    rpcUrls: [
-      'https://arc-testnet.drpc.org',
-      'https://rpc.testnet.arc.network',
-    ],
-    blockExplorerUrls: ['https://testnet.arcscan.app'],
+    rpcUrls: ['https://rpc.mainnet.arc.io'],
+    blockExplorerUrls: ['https://explorer.arc.io'],
     iconUrls: ['/arc-testnet-logo.jpg'],
     isFarcasterSupported: false,
   },
@@ -319,14 +316,15 @@ export const CONTRACT_ADDRESSES = {
     LUCKY_NUMBER: '0x71a625487DC88fa1Be54EC8BD96E240aCdAF8Fb0',
     SLOT_GAME: '0x9E54449DD4c042279aA454710481Cf33E15d8cb7',
   },
-  ARC_RESTNET: {
-    DICE_ROLL: '0x5E86e9Cd50E7F64b692b90FaE1487d2F6ED1AbA9',
-    FLIP_GAME: '0x1fe43a182B2a4A5845B91bA29Cd7E7EEBC4b68Df',
-    GM_GAME: '0x74A2C6466d98253cA932fe6a6CcB811d4d7d5784',
-    GN_GAME: '0x933570b7A6B872e1be0A1585AACcDbf609C5F981',
-    LUCKY_NUMBER: '0xA15CE1eAdA8E34ec67d82f8D7aB242a42C767C2d',
-    SLOT_GAME: '0xB2b2c587E51175a2aE4713d8Ea68A934a8527a4b',
-    BASEHUB_DEPLOYER: '0x84e4dD821c8F848470Fc49Def3B14Fc870Fa97f0',
+  ARC: {
+    GM_GAME: '0x166011AB63AA872cf9E1d7d0f7a1ddfa32e2f7b9',
+    GN_GAME: '0x71e90F79B07c42DAF99C5BBEd1B5E5C7b52a2129',
+    FLIP_GAME: '0x2Bcf075C5876385FE191d0a471FE53D6f6FA8b05',
+    LUCKY_NUMBER: '0x4873c6A524c47FEe05F2839c308553bc8c09bC47',
+    DICE_ROLL: '0xCD8cBAc71195fe2f2a81dbbbE4AE4Fff5278102C',
+    SLOT_GAME: '0xc64006e31Dd09Df82B6513A9Cba20A52341EF1dB',
+    BASEHUB_DEPLOYER: '0x71Bc04A2e357279c75EB1E2c133f08Ca9097d9bF',
+    BASEHUB_NFT_COLLECTION_DEPLOYER: '0x71Bc04A2e357279c75EB1E2c133f08Ca9097d9bF',
   },
   ROBINHOOD: {
     DICE_ROLL: '0xCD8cBAc71195fe2f2a81dbbbE4AE4Fff5278102C',
@@ -416,7 +414,7 @@ export const getNetworkKey = (chainId) => {
 
 // Mainnet networks only (NetworkSelector Mainnet group)
 export const getMainnetNetworks = () => {
-  const visibleOrder = ['BASE', 'INKCHAIN', 'TEMPO', 'SONEIUM', 'KATANA', 'MEGAETH', 'ARBITRUM', 'OPTIMISM', 'MONAD', 'ROBINHOOD']
+  const visibleOrder = ['BASE', 'INKCHAIN', 'TEMPO', 'SONEIUM', 'KATANA', 'MEGAETH', 'ARBITRUM', 'OPTIMISM', 'MONAD', 'ARC', 'ROBINHOOD']
   return visibleOrder.map(key => NETWORKS[key]).filter(net => net && net.isTestnet === false)
 }
 
@@ -467,6 +465,7 @@ export const getBlockExplorerDisplayName = (chainId) => {
   if (cid === NETWORKS.ARBITRUM.chainId) return 'Arbiscan'
   if (cid === NETWORKS.OPTIMISM.chainId) return 'Optimistic Etherscan'
   if (cid === NETWORKS.MONAD.chainId) return 'MonadVision'
+  if (cid === NETWORKS.ARC.chainId) return 'Arc Explorer'
   const net = getNetworkConfig(cid)
   if (net?.chainName) return `${net.chainName} Explorer`
   return 'Explorer'

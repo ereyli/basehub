@@ -44,7 +44,7 @@ export function useNFTLaunchpad() {
   const { writeContractAsync } = useWriteContract()
   const chainId = useChainId()
   const publicClient = usePublicClient({ chainId })
-  const { isCorrectNetwork, networkName } = useNetworkCheck()
+  const { isCorrectNetwork, networkName, currentNetworkConfig } = useNetworkCheck()
   const { updateQuestProgress } = useQuestSystem()
 
   const shouldFetchEarlyAccess = !!address && !!EARLY_ACCESS_CONFIG.CONTRACT_ADDRESS && chainId === NETWORKS.BASE.chainId
@@ -390,6 +390,7 @@ export function useNFTLaunchpad() {
         chainId === NETWORKS.INKCHAIN.chainId ||
         chainId === NETWORKS.SONEIUM.chainId ||
         chainId === NETWORKS.MEGAETH.chainId ||
+        chainId === NETWORKS.ARC.chainId ||
         chainId === NETWORKS.ROBINHOOD.chainId ||
         chainId === NETWORKS.ARBITRUM.chainId ||
         chainId === NETWORKS.OPTIMISM.chainId ||
@@ -472,8 +473,8 @@ export function useNFTLaunchpad() {
     }
   }
 
-  /** UI: Tempo uses pathUSD (TIP20 / PUSD-style), not ETH for deploy fee */
-  const nativeSymbol = NETWORKS.MONAD?.chainId === chainId ? 'MON' : 'ETH'
+  /** UI: Tempo uses pathUSD; other chains use their configured native currency. */
+  const nativeSymbol = currentNetworkConfig?.nativeCurrency?.symbol || 'ETH'
   const deployFeeLabel = isTempoChain
     ? '4.40 PUSD (pathUSD)'
     : `${deployFeeNative} ${nativeSymbol}`

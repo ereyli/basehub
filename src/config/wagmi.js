@@ -105,20 +105,20 @@ const tempo = defineChain({
 /** Exported for Tempo TIP20 `approve` via raw `walletClient.sendTransaction` — avoids global `dataSuffix` on `writeContractAsync`. */
 export { tempo }
 
-// Arc Testnet - USDC as native/gas
-const arcRestnet = defineChain({
-  id: NETWORKS.ARC_RESTNET.chainId,
-  name: NETWORKS.ARC_RESTNET.chainName,
-  nativeCurrency: NETWORKS.ARC_RESTNET.nativeCurrency,
+// Arc mainnet - native USDC gas
+const arc = defineChain({
+  id: NETWORKS.ARC.chainId,
+  name: NETWORKS.ARC.chainName,
+  nativeCurrency: NETWORKS.ARC.nativeCurrency,
   rpcUrls: {
     default: {
-      http: NETWORKS.ARC_RESTNET.rpcUrls,
+      http: NETWORKS.ARC.rpcUrls,
     },
   },
   blockExplorers: {
     default: {
-      name: 'Arc Scan',
-      url: NETWORKS.ARC_RESTNET.blockExplorerUrls[0],
+      name: 'Arc Explorer',
+      url: NETWORKS.ARC.blockExplorerUrls[0],
     },
   },
 })
@@ -194,7 +194,7 @@ const monad = defineChain({
 
 // Wagmi config with multiple wallet support
 export const config = createConfig({
-  chains: [base, baseSepolia, inkChain, tempo, soneium, katana, megaeth, arcRestnet, robinhoodChain, arbitrum, optimism, monad],
+  chains: [base, baseSepolia, inkChain, tempo, soneium, katana, megaeth, arc, robinhoodChain, arbitrum, optimism, monad],
   dataSuffix: DATA_SUFFIX,
   transports: {
     [base.id]: fallback(
@@ -225,7 +225,7 @@ export const config = createConfig({
       retryCount: 3,
       retryDelay: 1000,
     }),
-    [arcRestnet.id]: http(NETWORKS.ARC_RESTNET.rpcUrls[0], {
+    [arc.id]: http(NETWORKS.ARC.rpcUrls[0], {
       timeout: 30000,
       retryCount: 3,
       retryDelay: 1000,

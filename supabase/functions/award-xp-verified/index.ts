@@ -18,6 +18,7 @@ const CHAIN_RPC: Record<number, string> = {
   143: "https://rpc.monad.xyz",
   4326: "https://mainnet.megaeth.com/rpc",
   4217: "https://rpc.tempo.xyz",
+  5042: "https://rpc.mainnet.arc.io",
 }
 
 type ReceiptLog = { address?: string; topics?: string[] }
@@ -58,6 +59,7 @@ const BUILTIN_GAME_TARGETS: Record<string, Record<number, string[]>> = {
     42161: ["0x166011ab63aa872cf9e1d7d0f7a1ddfa32e2f7b9"],
     10: ["0x166011ab63aa872cf9e1d7d0f7a1ddfa32e2f7b9"],
     143: ["0x166011ab63aa872cf9e1d7d0f7a1ddfa32e2f7b9"],
+    5042: ["0x166011ab63aa872cf9e1d7d0f7a1ddfa32e2f7b9"],
   },
   GN_GAME: {
     8453: ["0xecd289ea7ab254bd53062a26f377f146a624f133"],
@@ -70,6 +72,7 @@ const BUILTIN_GAME_TARGETS: Record<string, Record<number, string[]>> = {
     42161: ["0x71e90f79b07c42daf99c5bbed1b5e5c7b52a2129"],
     10: ["0x71e90f79b07c42daf99c5bbed1b5e5c7b52a2129"],
     143: ["0x71e90f79b07c42daf99c5bbed1b5e5c7b52a2129"],
+    5042: ["0x71e90f79b07c42daf99c5bbed1b5e5c7b52a2129"],
   },
   FLIP_GAME: {
     8453: ["0x9be475499498f0e07bc3d89a91d8de1b97a036b6"],
@@ -82,6 +85,7 @@ const BUILTIN_GAME_TARGETS: Record<string, Record<number, string[]>> = {
     42161: ["0x2bcf075c5876385fe191d0a471fe53d6f6fa8b05"],
     10: ["0x2bcf075c5876385fe191d0a471fe53d6f6fa8b05"],
     143: ["0x2bcf075c5876385fe191d0a471fe53d6f6fa8b05"],
+    5042: ["0x2bcf075c5876385fe191d0a471fe53d6f6fa8b05"],
   },
   LUCKY_NUMBER: {
     8453: ["0x48ff955604a44d5dbbf1e6c0fd8924cb99d46ef0"],
@@ -94,6 +98,7 @@ const BUILTIN_GAME_TARGETS: Record<string, Record<number, string[]>> = {
     42161: ["0x4873c6a524c47fee05f2839c308553bc8c09bc47"],
     10: ["0x4873c6a524c47fee05f2839c308553bc8c09bc47"],
     143: ["0x4873c6a524c47fee05f2839c308553bc8c09bc47"],
+    5042: ["0x4873c6a524c47fee05f2839c308553bc8c09bc47"],
   },
   DICE_ROLL: {
     8453: ["0xb8c1d2c73ec319b9484944c4e1ea7c1cc93ec2c2"],
@@ -106,6 +111,7 @@ const BUILTIN_GAME_TARGETS: Record<string, Record<number, string[]>> = {
     42161: ["0xcd8cbac71195fe2f2a81dbbbe4ae4fff5278102c"],
     10: ["0xcd8cbac71195fe2f2a81dbbbe4ae4fff5278102c"],
     143: ["0xcd8cbac71195fe2f2a81dbbbe4ae4fff5278102c"],
+    5042: ["0xcd8cbac71195fe2f2a81dbbbe4ae4fff5278102c"],
   },
   SLOT_GAME: {
     8453: ["0xbdae561fcad053902402f3d000cabc9806a6f3c1"],
@@ -118,6 +124,7 @@ const BUILTIN_GAME_TARGETS: Record<string, Record<number, string[]>> = {
     42161: ["0xc64006e31dd09df82b6513a9cba20a52341ef1db"],
     10: ["0xc64006e31dd09df82b6513a9cba20a52341ef1db"],
     143: ["0xc64006e31dd09df82b6513a9cba20a52341ef1db"],
+    5042: ["0xc64006e31dd09df82b6513a9cba20a52341ef1db"],
   },
   SLOT_GAME_CREDITS: {
     8453: ["0xbdae561fcad053902402f3d000cabc9806a6f3c1"],
@@ -130,6 +137,7 @@ const BUILTIN_GAME_TARGETS: Record<string, Record<number, string[]>> = {
     42161: ["0xc64006e31dd09df82b6513a9cba20a52341ef1db"],
     10: ["0xc64006e31dd09df82b6513a9cba20a52341ef1db"],
     143: ["0xc64006e31dd09df82b6513a9cba20a52341ef1db"],
+    5042: ["0xc64006e31dd09df82b6513a9cba20a52341ef1db"],
   },
   PUMPHUB_TOKEN_CREATION: {
     8453: ["0xe7c2fe007c65349c91b8ccac3c5be5a7f2fdaf21"],

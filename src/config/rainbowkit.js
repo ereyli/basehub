@@ -139,20 +139,20 @@ const tempo = defineChain({
   iconBackground: '#ffffff',
 })
 
-// Arc Testnet for RainbowKit
-const arcRestnet = defineChain({
-  id: NETWORKS.ARC_RESTNET.chainId,
-  name: NETWORKS.ARC_RESTNET.chainName,
-  nativeCurrency: NETWORKS.ARC_RESTNET.nativeCurrency,
+// Arc mainnet for RainbowKit
+const arc = defineChain({
+  id: NETWORKS.ARC.chainId,
+  name: NETWORKS.ARC.chainName,
+  nativeCurrency: NETWORKS.ARC.nativeCurrency,
   rpcUrls: {
     default: {
-      http: NETWORKS.ARC_RESTNET.rpcUrls,
+      http: NETWORKS.ARC.rpcUrls,
     },
   },
   blockExplorers: {
     default: {
-      name: 'Arc Scan',
-      url: NETWORKS.ARC_RESTNET.blockExplorerUrls[0],
+      name: 'Arc Explorer',
+      url: NETWORKS.ARC.blockExplorerUrls[0],
     },
   },
   iconUrl: '/arc-testnet-logo.jpg',
@@ -240,7 +240,7 @@ const monad = defineChain({
 export const rainbowkitConfig = getDefaultConfig({
   appName: APP_NAME,
   projectId: REOWN_PROJECT_ID,
-  chains: [base, baseSepolia, inkChain, tempo, soneium, katana, megaeth, arcRestnet, robinhoodChain, arbitrum, optimism, monad],
+  chains: [base, baseSepolia, inkChain, tempo, soneium, katana, megaeth, arc, robinhoodChain, arbitrum, optimism, monad],
   wallets: [
     {
       groupName: 'Recommended',

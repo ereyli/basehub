@@ -69,8 +69,8 @@ const CAST_SHARE = {
   'nft-launchpad-explore': 'Browse and mint from NFT collections launched on BaseHub. Base, Ink, Soneium, Arbitrum, Optimism, Monad and more.',
 }
 
-const FULL_EVM_NETWORKS = ['base', 'ink', 'soneium', 'katana', 'megaeth', 'tempo', 'arc-restnet', 'robinhood', 'arbitrum', 'optimism', 'monad']
-const NFT_LAUNCHPAD_NETWORKS = ['base', 'ink', 'soneium', 'megaeth', 'tempo', 'robinhood', 'arbitrum', 'optimism', 'monad']
+const FULL_EVM_NETWORKS = ['base', 'ink', 'soneium', 'katana', 'megaeth', 'tempo', 'arc', 'robinhood', 'arbitrum', 'optimism', 'monad']
+const NFT_LAUNCHPAD_NETWORKS = ['base', 'ink', 'soneium', 'megaeth', 'tempo', 'arc', 'robinhood', 'arbitrum', 'optimism', 'monad']
 
 const PRODUCTS_ALL = [
   { id: 'early-access', path: '/early-access', label: 'Early Access', title: 'Early Access Pass', description: 'Mint your BaseHub Early Access Pass and unlock exclusive benefits', castShareText: CAST_SHARE['early-access'], category: CATEGORIES.EARLY_ACCESS, color: '#fbbf24', icon: 'Rocket', xpReward: '3000 XP', bonusXP: null, networks: ['base'] },
@@ -94,8 +94,8 @@ const PRODUCTS_ALL = [
   { id: 'deploy-erc1155', path: '/deploy-erc1155', label: 'ERC1155', title: 'Deploy ERC1155', description: 'Deploy multi-token contract', category: CATEGORIES.DEPLOY, color: '#8b5cf6', icon: 'Factory', iconImage: '/crypto-logos/basahub logo/ERC-1155.png', xpReward: '850 XP', bonusXP: null, networks: FULL_EVM_NETWORKS },
   { id: 'deploy-erc8004', path: '/deploy-erc8004', label: 'ERC-8004', title: 'Deploy ERC-8004 Agent', description: 'Register a trustless AI agent identity', castShareText: CAST_SHARE['deploy-erc8004'], category: CATEGORIES.DEPLOY, color: '#22c55e', icon: 'Bot', xpReward: '5000 XP', bonusXP: 'New', networks: ['base'] },
   { id: 'agent-directory', path: '/agents', label: 'Agents', title: 'Agent Directory', description: 'Browse ERC-8004 AI agents registered on BaseHub', castShareText: CAST_SHARE['agent-directory'], category: CATEGORIES.DEPLOY, color: '#60a5fa', icon: 'Users', xpReward: 'Explore', bonusXP: 'Directory', networks: ['base'] },
-  { id: 'nft-launchpad', path: '/nft-launchpad', label: 'NFT Launchpad', title: 'NFT Launchpad', description: 'Create your own NFT collection. Upload art or generate with AI, then deploy on Base, Ink, Soneium, MegaETH, Tempo, Robinhood, Arbitrum, Optimism or Monad.', castShareText: CAST_SHARE['nft-launchpad'], category: CATEGORIES.NFT, color: '#3b82f6', icon: 'Package', xpReward: '2000 XP', bonusXP: '200 XP per mint', networks: NFT_LAUNCHPAD_NETWORKS, isX402: true, holderDiscount: 'Pass: 0.0005 ETH deploy (Base)' },
-  { id: 'nft-launchpad-explore', path: '/nft-launchpad?tab=explore', label: 'Launched NFTs', title: 'Launched Collections', description: 'Browse and mint from NFT collections launched on Base, Ink, Soneium, MegaETH, Tempo, Robinhood, Arbitrum, Optimism or Monad', castShareText: CAST_SHARE['nft-launchpad-explore'], category: CATEGORIES.NFT, color: '#10b981', icon: 'LayoutGrid', xpReward: '200 XP', bonusXP: null, networks: NFT_LAUNCHPAD_NETWORKS },
+  { id: 'nft-launchpad', path: '/nft-launchpad', label: 'NFT Launchpad', title: 'NFT Launchpad', description: 'Create your own NFT collection. Upload art or generate with AI, then deploy on Base, Ink, Soneium, MegaETH, Tempo, Arc, Robinhood, Arbitrum, Optimism or Monad.', castShareText: CAST_SHARE['nft-launchpad'], category: CATEGORIES.NFT, color: '#3b82f6', icon: 'Package', xpReward: '2000 XP', bonusXP: '200 XP per mint', networks: NFT_LAUNCHPAD_NETWORKS, isX402: true, holderDiscount: 'Pass: 0.0005 ETH deploy (Base)' },
+  { id: 'nft-launchpad-explore', path: '/nft-launchpad?tab=explore', label: 'Launched NFTs', title: 'Launched Collections', description: 'Browse and mint from NFT collections launched on Base, Ink, Soneium, MegaETH, Tempo, Arc, Robinhood, Arbitrum, Optimism or Monad', castShareText: CAST_SHARE['nft-launchpad-explore'], category: CATEGORIES.NFT, color: '#10b981', icon: 'LayoutGrid', xpReward: '200 XP', bonusXP: null, networks: NFT_LAUNCHPAD_NETWORKS },
 ]
 
 /** Public catalog */
@@ -107,7 +107,7 @@ export function getProductById(id) {
 }
 
 /** List of networks supported in the category (union of product networks). Returns in a fixed order for consistency. */
-const NETWORK_ORDER = ['base', 'base-sepolia', 'ink', 'tempo', 'soneium', 'katana', 'megaeth', 'arbitrum', 'optimism', 'monad', 'arc-restnet', 'robinhood']
+const NETWORK_ORDER = ['base', 'base-sepolia', 'ink', 'tempo', 'soneium', 'katana', 'megaeth', 'arbitrum', 'optimism', 'monad', 'arc', 'robinhood']
 export function getNetworksForProductIds(productIds) {
   const set = new Set()
   PRODUCTS.filter(p => productIds && productIds.includes(p.id)).forEach(p => {

@@ -862,7 +862,7 @@ export default function AirdropHub() {
       )}
 
       <p style={{ marginTop: 28, fontSize: 12, color: '#64748b', textAlign: 'center' }}>
-        Games and deploys may charge small network / deployer fees (ETH or chain-native). Hub uses auto-generated names so
+        Games and deploys may charge small network / deployer fees (including native USDC on Arc). Hub uses auto-generated names so
         you only sign — review fees in your wallet before confirming.
       </p>
       <style>{`

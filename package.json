@@ -26,6 +26,8 @@
     "deploy:optimism:dry-run": "node scripts/deploy-evm-mainnet.mjs --network=optimism --dry-run",
     "deploy:monad": "node scripts/deploy-evm-mainnet.mjs --network=monad",
     "deploy:monad:dry-run": "node scripts/deploy-evm-mainnet.mjs --network=monad --dry-run",
+    "deploy:arc": "node scripts/deploy-evm-mainnet.mjs --network=arc",
+    "deploy:arc:dry-run": "node scripts/deploy-evm-mainnet.mjs --network=arc --dry-run",
     "compile:erc8004": "hardhat compile --config hardhat.config.erc8004.cjs",
     "deploy:erc8004-base": "hardhat run scripts/deploy-erc8004-registrar.cjs --config hardhat.config.erc8004.cjs --network base",
     "deploy:erc8004-sepolia": "hardhat run scripts/deploy-erc8004-registrar.cjs --config hardhat.config.erc8004.cjs --network baseSepolia",
