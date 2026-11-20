@@ -164,6 +164,7 @@ test('hydrates indexed transactions in batches and retries only missing fields',
   const missingHash = rows.at(-1).hash
   const reads = []
   let missingReceipt = true
+  let keepReceiptMissing = false
   const rpc = {
     call: async (method, query) => {
       if (method === 'eth_getBlockByNumber') return { number: '0x100000', timestamp: `0x${(time / 1000 + 60).toString(16)}` }
@@ -176,7 +177,7 @@ test('hydrates indexed transactions in batches and retries only missing fields',
       reads.push(calls)
       return calls.map(([method, hash]) => {
         if (method === 'eth_getTransactionByHash') return { from: wallet, to: merchant, input: '0x' }
-        if (hash === missingHash && missingReceipt) {
+        if (hash === missingHash && (missingReceipt || keepReceiptMissing)) {
           missingReceipt = false
           return null
         }
@@ -190,7 +191,22 @@ test('hydrates indexed transactions in batches and retries only missing fields',
   assert.deepEqual(reads.map((calls) => calls.length), [48, 2, 1])
   assert.deepEqual(reads.at(-1), [['eth_getTransactionReceipt', missingHash]])
   assert.equal(result.coverage.activityComplete, true)
+  assert.equal(result.coverage.estimateReady, true)
   assert.equal(result.metrics.transactions, rows.length)
+
+  keepReceiptMissing = true
+  const degraded = await scanWallet(rpc, wallet, null)
+  assert.equal(degraded.block, result.block)
+  assert.equal(degraded.metrics.transactions, rows.length - 1)
+  assert.equal(degraded.coverage.estimateReady, false)
+  assert.equal(degraded.score.total, null)
+  assert.equal(estimateAllocation(degraded.score.total, 2_000_000, 'weighted', 50), null)
+
+  keepReceiptMissing = false
+  rows.reverse()
+  const recovered = await scanWallet(rpc, wallet, null)
+  assert.equal(recovered.coverage.estimateReady, true)
+  assert.deepEqual(recovered.score, result.score)
 })
 
 test('requires a supported authorization, payer and merchant for direct x402 attribution', () => {

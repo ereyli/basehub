@@ -4,11 +4,12 @@ import { ExternalLink, Search } from 'lucide-react'
 import BackButton from '../components/BackButton'
 import AirdropHubNav from '../components/AirdropHubNav'
 import EmbedMeta from '../components/EmbedMeta'
-import { AIRDROP_POOL, TOKEN_SUPPLY, ASSUMED_ELIGIBLE_WALLETS, ASSUMED_AVERAGE_SCORE, SOURCES, estimateAllocation } from '../features/airdrop/model'
+import { AIRDROP_POOL, TOKEN_SUPPLY, ASSUMED_ELIGIBLE_WALLETS, ASSUMED_AVERAGE_SCORE, MODEL_VERSION, SOURCES, estimateAllocation } from '../features/airdrop/model'
 import './BaseAirdropCheck.css'
 
 const ADDRESS = /^0x[\da-f]{40}$/i
 const SCAN_RETRIES = 2
+const SNAPSHOT_KEY = `basehub-airdrop-verified:${MODEL_VERSION}`
 const whole = (number) => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(number)
 const decimal = (number) => new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(number)
 const short = (value) => `${value.slice(0, 8)}…${value.slice(-6)}`
@@ -44,6 +45,29 @@ function waitForScanRetry(response, signal) {
 
 function Status({ value }) {
   return <span className={`bac-badge bac-${value}`}>{STATUS[value]}</span>
+}
+
+function readVerifiedEstimate(address) {
+  try {
+    const snapshot = JSON.parse(localStorage.getItem(`${SNAPSHOT_KEY}:${address}`))
+    return snapshot?.address === address && Number.isFinite(snapshot.score) && Number.isSafeInteger(snapshot.block) ? snapshot : null
+  } catch {
+    return null
+  }
+}
+
+function keepVerifiedEstimate(result, previous) {
+  if (!result.coverage.estimateReady || !Number.isFinite(result.score.total) || previous?.block >= result.block) return previous
+  const snapshot = {
+    address: result.address, block: result.block, asOf: result.asOf,
+    score: result.score.total, hasHistory: result.metrics.transactions > 0,
+  }
+  try {
+    localStorage.setItem(`${SNAPSHOT_KEY}:${snapshot.address}`, JSON.stringify(snapshot))
+  } catch {
+    // The current result remains usable when browser storage is disabled.
+  }
+  return snapshot
 }
 
 function ActivityChart({ result }) {
@@ -90,8 +114,8 @@ function ActivityChart({ result }) {
 }
 
 function Score({ result }) {
-  const { score, coverage, metrics: m } = result
-  const noScore = coverage.historyUnavailable || (!coverage.activityComplete && !score.total && !m.transactions)
+  const { score, coverage } = result
+  const noScore = !coverage.estimateReady || !Number.isFinite(score.total)
   return (
     <section className="bac-panel bac-score-panel">
       <div className="bac-heading">
@@ -113,27 +137,24 @@ function Score({ result }) {
   )
 }
 
-function Allocation({ result, loading }) {
-  const quantity = estimateAllocation(result?.score.total, ASSUMED_ELIGIBLE_WALLETS, 'weighted', ASSUMED_AVERAGE_SCORE)
-  const hasHistory = result?.metrics.transactions > 0
-  const quantityLabel = !hasHistory || quantity == null ? '—' : quantity > 0 && quantity < 1 ? '<1' : whole(quantity)
+function Allocation({ result, verified, loading }) {
+  const quantity = estimateAllocation(verified?.score, ASSUMED_ELIGIBLE_WALLETS, 'weighted', ASSUMED_AVERAGE_SCORE)
+  const quantityLabel = !verified?.hasHistory || quantity == null ? '—' : quantity > 0 && quantity < 1 ? '<1' : whole(quantity)
+  const current = result?.coverage.estimateReady && verified?.block === result.block && verified?.score === result.score.total
+  let status = 'Estimate unavailable while scan data is incomplete.'
+  if (loading) status = 'Verifying wallet activity…'
+  else if (current) status = verified.hasHistory ? 'Simulated amount based on verified scan data.' : 'No wallet actions were verified in this scan.'
+  else if (verified) status = `Last verified estimate · block ${whole(verified.block)} · ${dateLabel(verified.asOf)} UTC`
   return (
     <section className="bac-panel bac-allocation" aria-labelledby="bac-allocation-title">
       <div className="bac-allocation-main">
         <div>
           <h2 id="bac-allocation-title">Estimated BASE allocation</h2>
           <div className="bac-amount" aria-live="polite">
-            {loading ? <span className="bac-amount-skeleton" aria-hidden="true" /> : <strong>{quantityLabel}</strong>}
+            {loading && !verified ? <span className="bac-amount-skeleton" aria-hidden="true" /> : <strong>{quantityLabel}</strong>}
             <span className="bac-amount-unit">BASE</span>
           </div>
-          {loading ? (
-            <p className="bac-allocation-status" role="status">Verifying wallet activity…</p>
-          ) : (
-            <p className="bac-allocation-status">
-              {!hasHistory ? 'No wallet actions were verified in this scan.' : 'Simulated amount if this address qualifies.'}
-              {hasHistory && !result.coverage.activityComplete && ' Based on partial activity data.'}
-            </p>
-          )}
+          <p className="bac-allocation-status" role="status">{status}</p>
         </div>
         <dl className="bac-allocation-inputs">
           <div><dt>Assumed total supply</dt><dd>{whole(TOKEN_SUPPLY)}</dd></div>
@@ -204,10 +225,12 @@ export default function BaseAirdropCheck() {
   const linkedAddress = params.get('address') ?? ''
   const [address, setAddress] = useState(linkedAddress)
   const [result, setResult] = useState(null)
+  const [verified, setVerified] = useState(null)
   const [loading, setLoading] = useState(false)
   const [retrying, setRetrying] = useState(false)
   const [error, setError] = useState('')
   const request = useRef(null)
+  const lastVerified = useRef(null)
   const scanAddress = useCallback(async (value) => {
     const normalized = value.trim().toLowerCase()
     if (!ADDRESS.test(normalized) || /^0x0{40}$/i.test(normalized)) {
@@ -222,6 +245,8 @@ export default function BaseAirdropCheck() {
     setRetrying(false)
     setError('')
     setResult(null)
+    const previous = lastVerified.current?.address === normalized ? lastVerified.current : readVerifiedEstimate(normalized)
+    setVerified(previous)
     try {
       const url = `/api/base-airdrop-check?${query}`
       let response = await fetch(url, { signal: controller.signal })
@@ -233,8 +258,12 @@ export default function BaseAirdropCheck() {
       }
       const body = await response.json()
       if (!response.ok) throw new Error(body.error || 'Analysis is temporarily unavailable.')
-      if (!body.history || !body.score) throw new Error('Base activity data was unavailable. Please retry.')
-      if (!controller.signal.aborted) setResult(body)
+      if (!body.history || !body.score || body.address !== normalized) throw new Error('Base activity data was unavailable. Please retry.')
+      if (!controller.signal.aborted) {
+        lastVerified.current = keepVerifiedEstimate(body, previous)
+        setResult(body)
+        setVerified(lastVerified.current)
+      }
     } catch (err) {
       if (!controller.signal.aborted) setError(err instanceof SyntaxError ? 'Analysis is temporarily unavailable. Please retry.' : err.message)
     } finally {
@@ -250,6 +279,7 @@ export default function BaseAirdropCheck() {
     if (linkedAddress) void scanAddress(linkedAddress)
     else {
       setResult(null)
+      setVerified(null)
       setLoading(false)
       setRetrying(false)
       setError('')
@@ -294,7 +324,7 @@ export default function BaseAirdropCheck() {
         {error && <p className="bac-error" role="alert">{error}</p>}
         <p className="bac-footnote">Unofficial simulation · No wallet connection required</p>
       </header>
-      {(loading || result) && <Allocation result={result} loading={loading} />}
+      {(loading || result || verified) && <Allocation result={result} verified={verified} loading={loading} />}
       {result ? (
         <>
           <div className="bac-result" aria-live="polite">
@@ -308,8 +338,13 @@ export default function BaseAirdropCheck() {
               <p>{result.coverage.accountNonce > 0 ? `Base RPC reports an account nonce of ${whole(result.coverage.accountNonce)}. The history provider did not supply enough verified records to score this address.` : 'The history or receipt provider could not complete this scan.'}</p>
               <button type="button" onClick={() => scanAddress(result.address)}>Retry scan</button>
             </div>
+          ) : !result.coverage.estimateReady ? (
+            <div className="bac-data-notice" role="status">
+              <p>The data provider could not verify every record required for the estimate.</p>
+              <button type="button" onClick={() => scanAddress(result.address)}>Retry scan</button>
+            </div>
           ) : !result.coverage.activityComplete && (
-            <p className="bac-data-notice">Verified {whole(result.coverage.receiptCount)} of {whole(result.coverage.candidateCount)} indexed records. The score and counts may be lower than the wallet’s full history.</p>
+            <p className="bac-data-notice">The verified sample includes {whole(result.coverage.receiptCount)} of {whole(result.coverage.candidateCount)} indexed records. It reflects the scanner’s coverage limits.</p>
           )}
           <dl className="bac-overview">
             <div><dt>Verified actions</dt><dd>{showCount(result.metrics.transactions)}</dd></div>

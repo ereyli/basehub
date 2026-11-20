@@ -73,10 +73,9 @@ export default async function handler(req, res) {
   if (!scan) {
     scan = runScan(key, address, cutoff).then((result) => {
       if (!result) return null
-      const ttl = result.coverage.historyUnavailable ? 0 : result.coverage.activityComplete ? CACHE_TTL : 45_000
-      if (ttl) {
+      if (result.coverage.estimateReady) {
         if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value)
-        cache.set(cacheKey, { result, expires: Date.now() + ttl })
+        cache.set(cacheKey, { result, expires: Date.now() + CACHE_TTL })
       }
       return result
     }).finally(() => pending.delete(cacheKey))

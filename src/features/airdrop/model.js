@@ -2,7 +2,7 @@ export const TOKEN_SUPPLY = 10_000_000_000
 export const AIRDROP_POOL = 1_000_000_000
 export const ASSUMED_ELIGIBLE_WALLETS = 2_000_000
 export const ASSUMED_AVERAGE_SCORE = 50
-export const MODEL_VERSION = '1.0'
+export const MODEL_VERSION = '1.1'
 
 export const SOURCES = {
   base: 'https://www.base.org/blog/the-state-of-base-at-basecamp-2025',

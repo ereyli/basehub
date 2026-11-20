@@ -105,7 +105,7 @@ export function createScanRpc(index, chain, backup) {
 }
 
 async function findBlock(rpc, cutoff) {
-  const head = await rpc.call('eth_getBlockByNumber', 'safe', false)
+  const head = await rpc.call('eth_getBlockByNumber', 'finalized', false)
   if (head?.number == null || head.timestamp == null) throw new Error('Unable to pin Base block')
   if (cutoff == null || Number(head.timestamp) <= cutoff) return head
   // Base uses approximately two-second blocks. Check the estimate, then verify
@@ -147,20 +147,21 @@ async function collect(rpc, query, limit, maxPages = 1) {
       if (!Array.isArray(reply?.transfers)) throw new Error('Transfers unavailable')
       rows.push(...reply.transfers.slice(0, remaining))
       pageKey = reply.pageKey
-      if (!pageKey) return { rows, state: reply.transfers.length > remaining ? 'partial' : 'complete' }
+      if (!pageKey) return { rows, state: reply.transfers.length > remaining ? 'bounded' : 'complete' }
       if (!reply.transfers.length || cursors.has(pageKey)) break
       cursors.add(pageKey)
     }
   } catch {
-    if (!rows.length) return { rows, state: 'unavailable' }
+    return { rows, state: rows.length ? 'interrupted' : 'unavailable' }
   }
-  return { rows, state: 'partial' }
+  return { rows, state: rows.length === limit ? 'bounded' : 'interrupted' }
 }
 
+const indexed = ({ state }) => state === 'complete' || state === 'bounded'
 const chunk = (items, size) => Array.from({ length: Math.ceil(items.length / size) }, (_, i) => items.slice(i * size, (i + 1) * size))
 
-async function hydrateRecords(rpc, records) {
-  const groups = chunk(records, RECEIPT_BATCH_SIZE)
+async function hydrateRecords(rpc, records, batchSize = RECEIPT_BATCH_SIZE) {
+  const groups = chunk(records, batchSize)
   let next = 0
   async function hydrateNext() {
     while (next < groups.length) {
@@ -403,7 +404,9 @@ export async function scanWallet(rpc, address, cutoff, fetcher = fetch) {
   const candidates = new Map()
   const outgoingHashes = new Set(outgoing.rows.map(({ hash }) => lower(hash)).filter((hash) => HASH.test(hash)))
   const indexedTokens = new Set()
-  for (const row of [...outgoing.rows, ...sent.rows, ...received.rows, ...bridge.rows, ...merchantTransfers.flatMap(({ rows }) => rows)]) {
+  // The merchant searches cover a subset of outgoing ERC-20 transfers.
+  const supplementalPayments = sent.state === 'complete' ? [] : merchantTransfers.flatMap(({ rows }) => rows)
+  for (const row of [...outgoing.rows, ...sent.rows, ...received.rows, ...bridge.rows, ...supplementalPayments]) {
     const hash = lower(row.hash)
     const time = txTime(row)
     if (!HASH.test(hash) || !Number.isFinite(time) || time > cutoffTime) continue
@@ -419,8 +422,10 @@ export async function scanWallet(rpc, address, cutoff, fetcher = fetch) {
     candidate.rank = Math.max(candidate.rank, rank)
     candidates.set(hash, candidate)
   }
-  const selected = [...candidates.values()].sort((a, b) => b.rank - a.rank || b.time - a.time).slice(0, MAX_RECEIPTS)
-  const toVerify = [...indexedTokens].slice(0, 100)
+  const selected = [...candidates.values()]
+    .sort((a, b) => b.rank - a.rank || b.time - a.time || a.hash.localeCompare(b.hash))
+    .slice(0, MAX_RECEIPTS)
+  const toVerify = [...indexedTokens].sort().slice(0, 100)
   const records = selected.map(({ hash, time, rows }) => ({ hash, time, transfers: [...rows.values()] }))
   const verifiedB20 = new Set()
   let checkedB20 = 0
@@ -440,18 +445,23 @@ export async function scanWallet(rpc, address, cutoff, fetcher = fetch) {
     })(),
   ])
   // Recover fields missed during transient provider throttling after the first pass.
-  await hydrateRecords(rpc, records.filter(({ tx, receipt }) => !tx || !receipt))
+  await hydrateRecords(rpc, records.filter(({ tx, receipt }) => !tx || !receipt), 12)
   const checked = records.filter(({ tx, receipt }) => tx && Array.isArray(receipt?.logs))
   const nonce = balances[2] == null ? null : Number(balances[2])
   const activityComplete = balances[1] === '0x' && nonce === outgoingHashes.size &&
     outgoing.state === 'complete' && sent.state === 'complete' && received.state === 'complete' &&
     checked.length === candidates.size
+  const x402Indexed = sent.state === 'complete' || merchantTransfers.every(indexed)
+  const estimateReady = [outgoing, sent, received, bridge].every(indexed) && x402Indexed &&
+    checked.length === selected.length && checkedB20 === toVerify.length &&
+    (registry.complete || !selected.some(({ rows }) => [...rows.values()].some(({ category }) => category === 'erc20'))) &&
+    (checked.length > 0 || activityComplete)
   const coverage = {
-    activityComplete, receiptCount: checked.length, candidateCount: candidates.size, scanLimit: MAX_RECEIPTS,
+    activityComplete, estimateReady, receiptCount: checked.length, candidateCount: candidates.size, scanLimit: MAX_RECEIPTS,
     external: outgoing.state, sent: sent.state, received: received.state, bridge: bridge.state,
     stockRegistry: registry.complete ? 'complete' : 'partial',
     b20Registry: checkedB20 === indexedTokens.size ? 'complete' : 'partial',
-    x402MerchantHistory: merchantTransfers.every(({ state }) => state === 'complete') ? 'complete' : 'partial',
+    x402MerchantHistory: sent.state === 'complete' || merchantTransfers.every(({ state }) => state === 'complete') ? 'complete' : 'partial',
     accountType: balances[1] == null ? 'unknown' : balances[1] === '0x' ? 'EOA'
       : /^0xef0100[\da-f]{40}$/i.test(balances[1]) ? 'Delegated EOA' : 'Smart account / contract',
   }
@@ -459,8 +469,10 @@ export async function scanWallet(rpc, address, cutoff, fetcher = fetch) {
   coverage.historyUnavailable = historyUnavailable
   coverage.accountNonce = nonce
   const ethBalance = balances[0] == null ? null : Number(BigInt(balances[0])) / 1e18
+  const analysis = classifyWallet({ address, records: checked, verifiedB20, stocks: registry.stocks, cutoffTime, ethBalance, coverage, merchants })
+  if (!estimateReady) analysis.score = { total: null, dimensions: analysis.score.dimensions.map((dimension) => ({ ...dimension, points: null })) }
   return {
     address, block: Number(toBlock), asOf: new Date(cutoffTime).toISOString(), version: MODEL_VERSION, coverage,
-    ...classifyWallet({ address, records: checked, verifiedB20, stocks: registry.stocks, cutoffTime, ethBalance, coverage, merchants }),
+    ...analysis,
   }
 }
