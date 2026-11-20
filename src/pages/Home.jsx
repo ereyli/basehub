@@ -17,11 +17,32 @@ import { useFastDeployModal } from '../contexts/FastDeployContext'
 import { useFarcaster } from '../contexts/FarcasterContext'
 import { shouldUseRainbowKit } from '../config/rainbowkit'
 import { NETWORKS, getNetworkKey, isPumpHubSupportedChainId } from '../config/networks'
-import { getProductsForHome, getProductsForHomeByNetwork, getNetworksForProductIds } from '../config/products'
+import { AIRDROP_HUB_PATH, AIRDROP_SIMULATOR_PATH, getProductsForHome, getProductsForHomeByNetwork, getNetworksForProductIds } from '../config/products'
 import { Gamepad2, MessageSquare, Coins, Zap, Dice1, Dice6, Trophy, User, Star, Medal, Award, TrendingUp, Image, Layers, Package, Twitter, ExternalLink, Rocket, Factory, Menu, X, Search, Shield, Sun, Moon, Trash2, Users, ArrowLeftRight, Repeat, Sparkles, RotateCcw, Gift, LayoutGrid, CircleDot, Bot, MoreHorizontal } from 'lucide-react'
 import { BaseHubGlyph } from '../components/BaseHubIcon'
 
 const LUCIDE_ICONS = { Coins, RotateCcw, Dice1, Gift, Search, Shield, Trash2, Star, Layers, Package, Factory, Rocket, Image, Sparkles, ArrowLeftRight, Repeat, Zap, Users, LayoutGrid, CircleDot, Bot }
+
+const AIRDROP_HUB_CARDS = [
+  {
+    path: AIRDROP_HUB_PATH,
+    title: 'Airdrop Hub',
+    description: 'GM, GN, flip, dice, lucky, and three deploys with automatic picks and the same XP.',
+    icon: LayoutGrid,
+    color: '#3b82f6',
+    compactLabel: 'All chains',
+    action: 'Explore',
+  },
+  {
+    path: AIRDROP_SIMULATOR_PATH,
+    title: 'Base Airdrop Simulator',
+    description: 'Check a Base address, compare past airdrop criteria, and see a hypothetical BASE allocation.',
+    icon: Search,
+    color: '#60a5fa',
+    compactLabel: 'Base only',
+    action: 'Analyze an address',
+  },
+]
 
 const Home = () => {
   const location = useLocation()
@@ -1526,42 +1547,27 @@ const Home = () => {
                   </span>
                   {!isCompactMode && renderNetworkLogos(getNetworksForProductIds(['deploy', 'deploy-erc721', 'deploy-erc1155']))}
                 </div>
-                <div style={{ ...compactStyles.cardGrid, gridTemplateColumns: isCompactMode ? undefined : 'minmax(0, 1fr)' }}>
-                  <Link
-                    to="/airdrop-hub"
-                    className="game-card"
-                    style={{ textDecoration: 'none', display: 'block', gridColumn: isCompactMode ? undefined : '1 / -1' }}
-                  >
-                    <div style={{ ...compactStyles.card('#3b82f6'), height: '100%' }}>
-                      <div style={{ position: 'absolute', top: '-20%', right: '-20%', width: '70%', height: '70%', background: 'radial-gradient(ellipse, #3b82f620 0%, #3b82f60c 35%, #3b82f604 60%, transparent 85%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
-                      <div style={{ ...compactStyles.cardInner, position: 'relative', zIndex: 1 }}>
-                        {isCompactMode ? (
-                          <>
-                            <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: '#3b82f622', border: '1px solid #3b82f644', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <LayoutGrid size={18} style={{ color: '#fff' }} />
+                <div style={{ ...compactStyles.cardGrid, gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+                  {AIRDROP_HUB_CARDS.map(({ path, title, description, icon: Icon, color, compactLabel, action }) => (
+                    <Link key={path} to={path} className="game-card" style={{ textDecoration: 'none', display: 'block', minWidth: 0 }}>
+                      <div style={{ ...compactStyles.card(color), height: '100%' }}>
+                        <div style={{ ...compactStyles.cardInner, height: '100%' }}>
+                          <div style={{ display: 'flex', flexDirection: isCompactMode ? 'column' : 'row', alignItems: isCompactMode ? 'center' : 'flex-start', gap: isCompactMode ? '4px' : '12px' }}>
+                            <div style={{ ...compactStyles.categoryIconBox, background: `${color}22`, border: `1px solid ${color}44`, flexShrink: 0 }}>
+                              <Icon size={isCompactMode ? 16 : 22} color="#fff" aria-hidden="true" />
                             </div>
-                            <h3 style={{ ...compactStyles.cardTitle, color: '#93c5fd' }}>Airdrop Hub</h3>
-                            <div style={compactStyles.xpBadge}>All chains</div>
-                          </>
-                        ) : (
-                          <>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                              <div style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '12px', background: '#3b82f622', border: '1px solid #3b82f644', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <LayoutGrid size={22} style={{ color: '#fff' }} />
-                              </div>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <h3 style={{ ...compactStyles.cardTitle, color: '#e2e8f0' }}>Airdrop Hub</h3>
-                                <p style={compactStyles.cardDescription}>GM, GN, flip, dice, lucky, and three deploys — auto picks, same XP</p>
-                              </div>
+                            <div style={{ minWidth: 0 }}>
+                              <h3 style={{ ...compactStyles.cardTitle, color: isCompactMode ? '#bfdbfe' : '#e2e8f0', whiteSpace: 'normal' }}>{title}</h3>
+                              <p style={{ ...compactStyles.cardDescription, whiteSpace: 'normal' }}>{description}</p>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: 'auto' }}>
-                              <div style={compactStyles.xpBadge}>Explore</div>
-                            </div>
-                          </>
-                        )}
+                          </div>
+                          <div style={{ ...compactStyles.xpBadge, alignSelf: isCompactMode ? 'center' : 'flex-start', marginTop: 'auto' }}>
+                            {isCompactMode ? compactLabel : action}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </Link>
+                    </Link>
+                  ))}
                 </div>
               </div>
 
