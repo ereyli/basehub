@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 
 function localApiPlugin() {
   const routes = {
+    '/api/base-airdrop-check': './api/base-airdrop-check.js',
     '/api/erc8004-agents': './api/erc8004-agents.js',
     '/api/erc8004-agent-views': './api/erc8004-agent-views.js',
   }
@@ -28,7 +29,9 @@ function localApiPlugin() {
             }
           }
 
-          const mod = await import(`${route}?t=${Date.now()}`)
+          const mod = pathname === '/api/base-airdrop-check'
+            ? await server.ssrLoadModule(route)
+            : await import(`${route}?t=${Date.now()}`)
           const handlerReq = {
             ...req,
             body: parsedBody,

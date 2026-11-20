@@ -96,6 +96,7 @@ const PumpHub = lazy(() => import('./pages/PumpHub'))
 const FrameLanding = lazy(() => import('./pages/FrameLanding'))
 const BaseGuildCompanion = lazy(() => import('./pages/BaseGuildCompanion'))
 const AirdropHub = lazy(() => import('./pages/AirdropHub'))
+const BaseAirdropCheck = lazy(() => import('./pages/BaseAirdropCheck'))
 const AgentMode = lazy(() => import('./pages/AgentMode'))
 const AdminNotifications = lazy(() => import('./pages/AdminNotifications'))
 const NetworkLanding = lazy(() => import('./pages/NetworkLanding'))
@@ -426,6 +427,7 @@ function FarcasterAppContent() {
               <Route path="/nft-plinko" element={<NFTPlinkoGame />} />
               <Route path="/pumphub" element={<PumpHub />} />
               <Route path="/airdrop-hub" element={<AirdropHub />} />
+              <Route path="/base-airdrop-check" element={<BaseAirdropCheck />} />
               <Route path="/agent" element={<AgentModeGate />} />
               <Route path="/admin" element={<AdminNotifications />} />
               <Route path="/base-guild" element={<BaseGuildCompanion />} />
@@ -510,6 +512,7 @@ function WebAppContent() {
               <Route path="/nft-plinko" element={<NFTPlinkoGame />} />
 <Route path="/pumphub" element={<PumpHub />} />
             <Route path="/airdrop-hub" element={<AirdropHub />} />
+            <Route path="/base-airdrop-check" element={<BaseAirdropCheck />} />
             <Route path="/agent" element={<AgentModeGate />} />
             <Route path="/admin" element={<AdminNotifications />} />
             <Route path="/base-guild" element={<BaseGuildCompanion />} />

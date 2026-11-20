@@ -1,0 +1,129 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+import { AIRDROP_POOL, TOKEN_SUPPLY, buildHistory, estimateAllocation } from '../src/features/airdrop/model.js'
+import { classifyWallet, createScanRpc, parseCutoff, scanWallet } from '../api/_airdropScanner.js'
+import { AUTH_USED, USDC, X402_AUTH_CALLS } from '../api/_airdropRegistry.js'
+
+const wallet = '0x0000000000000000000000000000000000000001'
+const merchant = '0x0000000000000000000000000000000000000002'
+const stock = '0xb200000000000000000000c2e324d24d7eecd1fb'
+const time = Date.parse('2026-11-01T00:00:00Z')
+
+function transfer(from, to, token) {
+  return { from, to, value: 1, category: 'erc20', rawContract: { address: token } }
+}
+
+function record(id, from, to, transfers, options = {}) {
+  return {
+    hash: `0x${id.toString(16).padStart(64, '0')}`, time: options.time ?? time,
+    tx: { from, to, input: options.input ?? '0x' },
+    receipt: { status: options.status ?? '0x1', logs: options.logs ?? [] }, transfers,
+  }
+}
+
+function analyze(records, { complete = true, balance = 0.001 } = {}) {
+  return classifyWallet({
+    address: wallet, records, verifiedB20: new Set([stock]), stocks: new Map([[stock, 'AAPLc']]),
+    cutoffTime: time, ethBalance: balance, coverage: { activityComplete: complete }, merchants: new Set([merchant]),
+  })
+}
+
+test('uses the requested tokenomics with valid score-weighted populations', () => {
+  assert.equal(AIRDROP_POOL / TOKEN_SUPPLY, 0.1)
+  assert.equal(estimateAllocation(75, 2_000_000, 'weighted', 50), 750)
+  assert.equal(estimateAllocation(75, 2_000_000, 'equal', 50), 500)
+  assert.equal(estimateAllocation(75, 1, 'weighted', 50), null)
+  assert.equal(estimateAllocation(75, 0, 'equal', 50), null)
+})
+
+test('uses a strict UTC date boundary and rejects invalid dates', () => {
+  assert.equal(parseCutoff('2025-01-01'), Date.parse('2025-01-01T23:59:59Z') / 1000)
+  assert.equal(parseCutoff('2025-02-30'), undefined)
+  assert.equal(parseCutoff('2022-12-31'), undefined)
+  assert.equal(parseCutoff('2025-01-01', Date.parse('2024-12-31')), undefined)
+  assert.equal(parseCutoff(''), null)
+})
+
+test('does not score passive RWA receipts, failed calls or post-cutoff events', () => {
+  const result = analyze([
+    record(1, merchant, stock, [transfer(merchant, wallet, stock)]),
+    record(2, wallet, stock, [transfer(wallet, merchant, stock)], { status: '0x0' }),
+    record(3, wallet, stock, [transfer(wallet, merchant, stock)], { time: time + 1000 }),
+  ])
+  assert.equal(result.score.total, 0)
+  assert.equal(result.evidence.received.length, 1)
+  assert.equal(result.metrics.rwaActions, 0)
+  assert.equal(result.metrics.b20Assets, 0)
+})
+
+test('scores a wallet-authored B20 movement without doubling activity per transfer leg', () => {
+  const result = analyze([record(1, wallet, stock, [transfer(wallet, merchant, stock), transfer(wallet, merchant, stock)])])
+  assert.equal(result.metrics.transactions, 1)
+  assert.equal(result.metrics.rwaActions, 1)
+  assert.equal(result.metrics.b20Assets, 1)
+  assert.deepEqual(result.monthlyActivity, [{ month: '2026-11', actions: 1 }])
+})
+
+test('keeps indexed requests isolated and fills missing chain results through the backup', async () => {
+  const index = { call: async () => ({ transfers: [] }) }
+  const chain = { call: async () => { throw new Error('Primary rate limited') }, batch: async () => ['0x2', null] }
+  const backup = { call: async () => 'safe block', batch: async (calls) => {
+    assert.deepEqual(calls, [['receipt']])
+    return ['verified receipt']
+  } }
+  const rpc = createScanRpc(index, chain, backup)
+  assert.equal(await rpc.call('eth_getBlockByNumber', 'safe'), 'safe block')
+  assert.deepEqual(await rpc.call('alchemy_getAssetTransfers', {}), { transfers: [] })
+  assert.deepEqual(await rpc.batch([['nonce'], ['receipt']]), ['0x2', 'verified receipt'])
+})
+
+test('reports a verified nonce and withholds the score when indexed history is unavailable', async () => {
+  const rpc = {
+    call: async (method) => {
+      if (method === 'eth_getBlockByNumber') return { number: '0x100000', timestamp: '0x69000000' }
+      throw new Error('Index rate limited')
+    },
+    batch: async () => ['0x0', '0x', '0x517'],
+  }
+  const result = await scanWallet(rpc, wallet, null, async () => Response.json({
+    tokens: [{ contract_address: stock, symbol: 'AAPLc' }],
+  }))
+  assert.equal(result.coverage.accountNonce, 1303)
+  assert.equal(result.coverage.historyUnavailable, true)
+  assert.equal(result.score.total, null)
+  assert.deepEqual(result.monthlyActivity, [])
+})
+
+test('requires a supported authorization, payer and merchant for direct x402 attribution', () => {
+  const authorization = { address: USDC, topics: [AUTH_USED, `0x${wallet.slice(2).padStart(64, '0')}`] }
+  const payment = transfer(wallet, merchant, USDC)
+  const result = analyze([
+    record(1, wallet, USDC, [payment]),
+    record(2, merchant, USDC, [payment], { input: [...X402_AUTH_CALLS][0], logs: [authorization] }),
+    record(3, merchant, USDC, [payment], { input: [...X402_AUTH_CALLS][0] }),
+  ])
+  assert.equal(result.metrics.x402, 1)
+  assert.equal(result.evidence.x402.length, 1)
+})
+
+test('distinguishes missing history from a failed threshold and gap-free ETH balance checks', () => {
+  const partial = analyze([], { complete: false, balance: null })
+  const stark = partial.history.find(({ id }) => id === 'stark')
+  assert.equal(stark.status, 'unknown')
+  assert.ok(stark.criteria.every(({ status }) => status === 'unknown'))
+  assert.equal(analyze([]).history.find(({ id }) => id === 'stark').status, 'missed')
+})
+
+test('evaluates historical criteria independently at their original threshold boundaries', () => {
+  const metrics = {
+    ...analyze([]).metrics, transactions: 6, months: 3, usdcVolume: 100, ethBalance: 0.005,
+    recentContracts: 20, recentContractRatio: 10, bridge: 1, deFiSupplies: 1, activitySpanHours: 72,
+  }
+  const result = buildHistory(metrics, { activityComplete: true })
+  assert.equal(result.find(({ id }) => id === 'stark').status, 'met')
+  assert.equal(result.find(({ id }) => id === 'op5').status, 'met')
+  assert.equal(result.find(({ id }) => id === 'zk').status, 'met')
+  const revised = buildHistory({ ...metrics, transactions: 5, recentContractRatio: 9.99 }, { activityComplete: true })
+  assert.equal(revised.find(({ id }) => id === 'stark').status, 'missed')
+  assert.equal(revised.find(({ id }) => id === 'op5').status, 'missed')
+})
