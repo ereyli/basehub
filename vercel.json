@@ -2,6 +2,10 @@
   "functions": {
     "api/base-airdrop-check.js": { "maxDuration": 60 }
   },
+  "redirects": [
+    { "source": "/airdrop-hub/base-simulator", "destination": "/airdrop", "permanent": true },
+    { "source": "/base-airdrop-check", "destination": "/airdrop", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }

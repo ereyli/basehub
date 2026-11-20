@@ -434,6 +434,7 @@ function FarcasterAppContent() {
               <Route path="/pumphub" element={<PumpHub />} />
               <Route path={AIRDROP_HUB_PATH} element={<AirdropHub />} />
               <Route path={AIRDROP_SIMULATOR_PATH} element={<BaseAirdropCheck />} />
+              <Route path={`${AIRDROP_HUB_PATH}/base-simulator`} element={<AirdropSimulatorRedirect />} />
               <Route path="/base-airdrop-check" element={<AirdropSimulatorRedirect />} />
               <Route path="/agent" element={<AgentModeGate />} />
               <Route path="/admin" element={<AdminNotifications />} />
@@ -520,6 +521,7 @@ function WebAppContent() {
 <Route path="/pumphub" element={<PumpHub />} />
             <Route path={AIRDROP_HUB_PATH} element={<AirdropHub />} />
             <Route path={AIRDROP_SIMULATOR_PATH} element={<BaseAirdropCheck />} />
+            <Route path={`${AIRDROP_HUB_PATH}/base-simulator`} element={<AirdropSimulatorRedirect />} />
             <Route path="/base-airdrop-check" element={<AirdropSimulatorRedirect />} />
             <Route path="/agent" element={<AgentModeGate />} />
             <Route path="/admin" element={<AdminNotifications />} />

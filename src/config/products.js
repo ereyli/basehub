@@ -5,7 +5,7 @@
  */
 
 export const AIRDROP_HUB_PATH = '/airdrop-hub'
-export const AIRDROP_SIMULATOR_PATH = `${AIRDROP_HUB_PATH}/base-simulator`
+export const AIRDROP_SIMULATOR_PATH = '/airdrop'
 
 export const CATEGORIES = {
   EARLY_ACCESS: 'earlyAccess',
