@@ -4,6 +4,7 @@ import { createRpc, createScanRpc, parseCutoff, scanWallet } from './_airdropSca
 const cache = new Map()
 const pending = new Map()
 const recordCache = new Map()
+const indexPages = new Map()
 const CACHE_TTL = 5 * 60_000
 const FALLBACK_TTL = 60 * 60_000
 const CACHE_MAX = 100
@@ -55,11 +56,11 @@ function releaseScanSlot() {
 async function runScan(key, address, cutoff) {
   if (!await acquireScanSlot()) return null
   try {
-    const deadline = AbortSignal.timeout(45_000)
+    const deadline = AbortSignal.timeout(24_000)
     const index = createRpc(process.env.ALCHEMY_BASE_RPC_URL || `https://base-mainnet.g.alchemy.com/v2/${encodeURIComponent(key)}`, fetch, deadline)
     const chain = createRpc(process.env.BASE_AIRDROP_RPC_URL || 'https://base-rpc.publicnode.com', fetch, deadline, 3000)
     const backup = createRpc(process.env.BASE_RPC_URL || 'https://mainnet.base.org', fetch, deadline, 3000)
-    return await scanWallet(createScanRpc(index, chain, backup), address, cutoff, fetch, recordCache)
+    return await scanWallet(createScanRpc(index, chain, backup, indexPages), address, cutoff, fetch, recordCache)
   } finally {
     releaseScanSlot()
   }

@@ -77,6 +77,18 @@ test('retries a throttled index response without using it as wallet data', async
   assert.equal(attempts, 2)
 })
 
+test('reuses successful index pages only for the requested block and query', async () => {
+  const pages = new Map()
+  let calls = 0
+  const index = { call: async () => { calls += 1; return { transfers: [] } } }
+  const query = { fromAddress: wallet, toBlock: '0x100000' }
+  await createScanRpc(index, null, null, pages).call('alchemy_getAssetTransfers', query)
+  await createScanRpc(index, null, null, pages).call('alchemy_getAssetTransfers', query)
+  assert.equal(calls, 1)
+  await createScanRpc(index, null, null, pages).call('alchemy_getAssetTransfers', { ...query, toBlock: '0x100001' })
+  assert.equal(calls, 2)
+})
+
 function transfer(from, to, token) {
   return { from, to, value: 1, category: 'erc20', rawContract: { address: token } }
 }

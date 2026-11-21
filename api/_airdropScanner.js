@@ -15,6 +15,8 @@ const MAX_RECEIPTS = 400
 const RECEIPT_BATCH_SIZE = 24
 const RECEIPT_WORKERS = 2
 const MAX_CACHED_RECORDS = 1200
+const MAX_INDEX_PAGES = 64
+const INDEX_PAGE_TTL = 90_000
 const lower = (value) => typeof value === 'string' ? value.toLowerCase() : ''
 const hex = (number) => `0x${number.toString(16)}`
 const padded = (address) => `0x${address.slice(2).padStart(64, '0')}`
@@ -82,14 +84,25 @@ export function createRpc(url, fetcher = fetch, deadline, requestTimeout = 6500)
   }
 }
 
-export function createScanRpc(index, chain, backup) {
+export function createScanRpc(index, chain, backup, indexPages) {
   // Transfer queries are expensive. Stagger them so one scan does not send
   // every indexed query in the same provider rate-limit window.
   let nextIndexStart = Promise.resolve()
   return {
     async call(method, ...params) {
       if (method === 'alchemy_getAssetTransfers') {
-        const job = nextIndexStart.then(() => index.call(method, ...params))
+        const key = indexPages && JSON.stringify(params)
+        const cached = indexPages?.get(key)
+        if (cached?.expires > Date.now()) return cached.reply
+        const job = nextIndexStart.then(async () => {
+          const reply = await index.call(method, ...params)
+          if (indexPages && Array.isArray(reply?.transfers) && (reply.transfers.length > 0 || !reply.pageKey)) {
+            indexPages.delete(key)
+            if (indexPages.size >= MAX_INDEX_PAGES) indexPages.delete(indexPages.keys().next().value)
+            indexPages.set(key, { reply, expires: Date.now() + INDEX_PAGE_TTL })
+          }
+          return reply
+        })
         nextIndexStart = nextIndexStart.then(() => new Promise((resolve) => setTimeout(resolve, 300)))
         return job
       }
