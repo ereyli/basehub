@@ -10,6 +10,7 @@ import './BaseAirdropCheck.css'
 const ADDRESS = /^0x[\da-f]{40}$/i
 const SCAN_RETRIES = 2
 const SNAPSHOT_KEY = `basehub-airdrop-verified:${MODEL_VERSION}`
+const REPORTS_KEY = `${SNAPSHOT_KEY}:reports`
 const whole = (number) => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(number)
 const decimal = (number) => new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(number)
 const short = (value) => `${value.slice(0, 8)}…${value.slice(-6)}`
@@ -27,7 +28,7 @@ const EVIDENCE = [
 ]
 
 function waitForScanRetry(response, signal) {
-  const seconds = Number(response.headers.get('Retry-After')) || 3
+  const seconds = Number(response?.headers.get('Retry-After')) || 3
   const delay = Math.min(10_000, Math.max(1000, seconds * 1000)) + Math.random() * 1000
   return new Promise((resolve, reject) => {
     signal.throwIfAborted()
@@ -68,6 +69,24 @@ function keepVerifiedEstimate(result, previous) {
     // The current result remains usable when browser storage is disabled.
   }
   return snapshot
+}
+
+function readVerifiedReports() {
+  try {
+    const reports = JSON.parse(localStorage.getItem(REPORTS_KEY))
+    return Array.isArray(reports) ? reports : []
+  } catch {
+    return []
+  }
+}
+
+function saveVerifiedReport(report) {
+  try {
+    const recent = readVerifiedReports().filter(({ address }) => address !== report.address)
+    localStorage.setItem(REPORTS_KEY, JSON.stringify([report, ...recent.slice(0, 4)]))
+  } catch {
+    // The report is still available in the current tab.
+  }
 }
 
 function ActivityChart({ result }) {
@@ -137,12 +156,12 @@ function Score({ result }) {
   )
 }
 
-function Allocation({ result, verified, loading }) {
+function Allocation({ result, verified, loading, refreshDeferred }) {
   const quantity = estimateAllocation(verified?.score, ASSUMED_ELIGIBLE_WALLETS, 'weighted', ASSUMED_AVERAGE_SCORE)
   const quantityLabel = !verified?.hasHistory || quantity == null ? '—' : quantity > 0 && quantity < 1 ? '<1' : whole(quantity)
-  const current = result?.coverage.estimateReady && verified?.block === result.block && verified?.score === result.score.total
+  const current = !refreshDeferred && result?.coverage.estimateReady && verified?.block === result.block && verified?.score === result.score.total
   let status = 'Estimate unavailable while scan data is incomplete.'
-  if (loading) status = 'Verifying wallet activity…'
+  if (loading) status = verified ? 'Showing the last verified estimate while we check for updates…' : 'Verifying wallet activity…'
   else if (current) status = verified.hasHistory ? 'Simulated amount based on verified scan data.' : 'No wallet actions were verified in this scan.'
   else if (verified) status = `Last verified estimate · block ${whole(verified.block)} · ${dateLabel(verified.asOf)} UTC`
   return (
@@ -227,10 +246,12 @@ export default function BaseAirdropCheck() {
   const [result, setResult] = useState(null)
   const [verified, setVerified] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [refreshDeferred, setRefreshDeferred] = useState(false)
   const [retrying, setRetrying] = useState(false)
   const [error, setError] = useState('')
   const request = useRef(null)
   const lastVerified = useRef(null)
+  const lastReport = useRef(null)
   const scanAddress = useCallback(async (value) => {
     const normalized = value.trim().toLowerCase()
     if (!ADDRESS.test(normalized) || /^0x0{40}$/i.test(normalized)) {
@@ -243,29 +264,54 @@ export default function BaseAirdropCheck() {
     const query = new URLSearchParams({ address: normalized })
     setLoading(true)
     setRetrying(false)
+    setRefreshDeferred(false)
     setError('')
-    setResult(null)
+    const saved = lastReport.current?.address === normalized ? lastReport.current : readVerifiedReports().find((report) => report?.address === normalized)
+    setResult(saved ?? null)
     const previous = lastVerified.current?.address === normalized ? lastVerified.current : readVerifiedEstimate(normalized)
     setVerified(previous)
     try {
       const url = `/api/base-airdrop-check?${query}`
-      let response = await fetch(url, { signal: controller.signal })
-      for (let attempt = 0; response.status === 429 && attempt < SCAN_RETRIES; attempt += 1) {
-        setRetrying(true)
-        await response.body?.cancel()
-        await waitForScanRetry(response, controller.signal)
-        response = await fetch(url, { signal: controller.signal })
+      const signal = controller.signal
+      async function fetchReport(retries) {
+        let response = await fetch(url, { signal })
+        for (let attempt = 0; response.status === 429 && attempt < retries; attempt += 1) {
+          setRetrying(true)
+          await response.body?.cancel()
+          await waitForScanRetry(response, signal)
+          response = await fetch(url, { signal })
+        }
+        const body = await response.json()
+        if (!response.ok) throw new Error(body.error || 'Analysis is temporarily unavailable.')
+        if (!body.history || !body.score || !body.coverage || body.address !== normalized) throw new Error('Base activity data was unavailable. Please retry.')
+        return body
       }
-      const body = await response.json()
-      if (!response.ok) throw new Error(body.error || 'Analysis is temporarily unavailable.')
-      if (!body.history || !body.score || body.address !== normalized) throw new Error('Base activity data was unavailable. Please retry.')
-      if (!controller.signal.aborted) {
-        lastVerified.current = keepVerifiedEstimate(body, previous)
+      let body = await fetchReport(SCAN_RETRIES)
+      if (!body.coverage.estimateReady && !saved && !signal.aborted) {
         setResult(body)
-        setVerified(lastVerified.current)
+        setRetrying(true)
+        await waitForScanRetry(null, signal)
+        body = await fetchReport(0)
+      }
+      if (!controller.signal.aborted) {
+        const verified = keepVerifiedEstimate(body, previous)
+        lastVerified.current = verified
+        setVerified(verified)
+        if (body.coverage.estimateReady && verified?.block === body.block && verified?.score === body.score.total) {
+          lastReport.current = body
+          saveVerifiedReport(body)
+          setResult(body)
+          setRefreshDeferred(Boolean(body.refreshDeferred))
+        } else {
+          setResult(saved ?? body)
+          setRefreshDeferred(Boolean(saved))
+        }
       }
     } catch (err) {
-      if (!controller.signal.aborted) setError(err instanceof SyntaxError ? 'Analysis is temporarily unavailable. Please retry.' : err.message)
+      if (!controller.signal.aborted) {
+        setRefreshDeferred(Boolean(saved))
+        setError(err instanceof SyntaxError ? 'Analysis is temporarily unavailable. Please retry.' : err.message)
+      }
     } finally {
       if (!controller.signal.aborted) {
         setLoading(false)
@@ -280,6 +326,7 @@ export default function BaseAirdropCheck() {
     else {
       setResult(null)
       setVerified(null)
+      setRefreshDeferred(false)
       setLoading(false)
       setRetrying(false)
       setError('')
@@ -320,11 +367,11 @@ export default function BaseAirdropCheck() {
           <label className="bac-address">Base wallet address<input placeholder="0x…" value={address} onChange={(event) => setAddress(event.target.value)} required maxLength={60} spellCheck={false} autoCapitalize="none" autoComplete="off" /></label>
           <button type="submit" disabled={loading}><Search size={17} />{loading ? 'Scanning…' : 'Analyze address'}</button>
         </form>
-        {retrying && <p className="bac-footnote" role="status">The scanner is handling other requests. Retrying automatically…</p>}
+        {retrying && <p className="bac-footnote" role="status">Waiting for the data provider. Retrying automatically…</p>}
         {error && <p className="bac-error" role="alert">{error}</p>}
         <p className="bac-footnote">Unofficial simulation · No wallet connection required</p>
       </header>
-      {(loading || result || verified) && <Allocation result={result} verified={verified} loading={loading} />}
+      {(loading || result || verified) && <Allocation result={result} verified={verified} loading={loading} refreshDeferred={refreshDeferred} />}
       {result ? (
         <>
           <div className="bac-result" aria-live="polite">
@@ -332,7 +379,11 @@ export default function BaseAirdropCheck() {
             <span>Block {whole(result.block)} · {dateLabel(result.asOf)} UTC</span>
             <span className={`bac-coverage-tag ${result.coverage.activityComplete ? 'bac-met' : 'bac-unknown'}`}>{result.coverage.activityComplete ? 'History verified' : result.coverage.historyUnavailable ? 'History unavailable' : 'Partial history'}</span>
           </div>
-          {result.coverage.historyUnavailable ? (
+          {refreshDeferred ? (
+            <p className="bac-data-notice" role="status">Showing the last verified report. The latest scan could not be completed.</p>
+          ) : loading && !result.coverage.estimateReady ? (
+            <p className="bac-data-notice" role="status">Showing the activity verified so far. Checking the remaining records before calculating an estimate.</p>
+          ) : result.coverage.historyUnavailable ? (
             <div className="bac-data-notice" role="status">
               <strong>Wallet history could not be verified</strong>
               <p>{result.coverage.accountNonce > 0 ? `Base RPC reports an account nonce of ${whole(result.coverage.accountNonce)}. The history provider did not supply enough verified records to score this address.` : 'The history or receipt provider could not complete this scan.'}</p>

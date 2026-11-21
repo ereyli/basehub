@@ -3,13 +3,28 @@ import { createRpc, createScanRpc, parseCutoff, scanWallet } from './_airdropSca
 
 const cache = new Map()
 const pending = new Map()
+const recordCache = new Map()
 const CACHE_TTL = 5 * 60_000
+const FALLBACK_TTL = 60 * 60_000
 const CACHE_MAX = 100
 const MAX_CONCURRENT = 6
 const MAX_WAITING = 12
 const QUEUE_TIMEOUT = 8_000
 const waiting = []
 let active = 0
+
+function sendVerified(res, { result, expires }) {
+  const seconds = Math.floor((expires - Date.now()) / 1000)
+  if (seconds > 0) {
+    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate')
+    res.setHeader('Vercel-CDN-Cache-Control', `public, max-age=${seconds}`)
+  }
+  return res.status(200).json(result)
+}
+
+function sendPrevious(res, { result }) {
+  return res.status(200).json({ ...result, refreshDeferred: true })
+}
 
 function acquireScanSlot() {
   if (active < MAX_CONCURRENT) {
@@ -42,9 +57,9 @@ async function runScan(key, address, cutoff) {
   try {
     const deadline = AbortSignal.timeout(45_000)
     const index = createRpc(process.env.ALCHEMY_BASE_RPC_URL || `https://base-mainnet.g.alchemy.com/v2/${encodeURIComponent(key)}`, fetch, deadline)
-    const chain = createRpc(process.env.BASE_AIRDROP_RPC_URL || 'https://base-rpc.publicnode.com', fetch, deadline)
-    const backup = createRpc(process.env.BASE_RPC_URL || 'https://mainnet.base.org', fetch, deadline)
-    return await scanWallet(createScanRpc(index, chain, backup), address, cutoff)
+    const chain = createRpc(process.env.BASE_AIRDROP_RPC_URL || 'https://base-rpc.publicnode.com', fetch, deadline, 3000)
+    const backup = createRpc(process.env.BASE_RPC_URL || 'https://mainnet.base.org', fetch, deadline, 3000)
+    return await scanWallet(createScanRpc(index, chain, backup), address, cutoff, fetch, recordCache)
   } finally {
     releaseScanSlot()
   }
@@ -67,15 +82,18 @@ export default async function handler(req, res) {
 
   const cacheKey = `${address}:${date || 'current'}`
   const cached = cache.get(cacheKey)
-  if (cached?.expires > Date.now()) return res.status(200).json(cached.result)
-  if (cached) cache.delete(cacheKey)
+  if (cached?.expires > Date.now()) return sendVerified(res, cached)
+  const previous = cached?.retainUntil > Date.now() ? cached : null
+  if (cached && !previous) cache.delete(cacheKey)
   let scan = pending.get(cacheKey)
   if (!scan) {
     scan = runScan(key, address, cutoff).then((result) => {
       if (!result) return null
       if (result.coverage.estimateReady) {
+        cache.delete(cacheKey)
         if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value)
-        cache.set(cacheKey, { result, expires: Date.now() + CACHE_TTL })
+        const now = Date.now()
+        cache.set(cacheKey, { result, expires: now + CACHE_TTL, retainUntil: now + FALLBACK_TTL })
       }
       return result
     }).finally(() => pending.delete(cacheKey))
@@ -83,10 +101,14 @@ export default async function handler(req, res) {
   }
   try {
     const result = await scan
+    const verified = cache.get(cacheKey)
+    if (result && verified?.result === result) return sendVerified(res, verified)
+    if (previous) return sendPrevious(res, previous)
     if (result) return res.status(200).json(result)
     res.setHeader('Retry-After', '3')
     return res.status(429).json({ error: 'The scanner is at capacity. Please try again shortly.' })
   } catch {
+    if (previous) return sendPrevious(res, previous)
     return res.status(503).json({ error: 'Base history could not be verified right now. Please retry in a moment.' })
   }
 }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { AIRDROP_POOL, TOKEN_SUPPLY, buildHistory, estimateAllocation } from '../src/features/airdrop/model.js'
-import { classifyWallet, createScanRpc, parseCutoff, scanWallet } from '../api/_airdropScanner.js'
+import { classifyWallet, createRpc, createScanRpc, parseCutoff, scanWallet } from '../api/_airdropScanner.js'
 import { AUTH_USED, USDC, X402_AUTH_CALLS } from '../api/_airdropRegistry.js'
 import handleAirdropScan from '../api/base-airdrop-check.js'
 
@@ -59,9 +59,22 @@ test('queues scans at capacity, shares pending results and serves cached repeats
   assert.equal(overloaded.status, 429)
   assert.equal(overloaded.headers.get('Retry-After'), '3')
   assert.ok(results.every(({ status }) => status === 200))
+  assert.ok(results.every(({ headers }) => headers.has('Vercel-CDN-Cache-Control')))
+  assert.equal(overloaded.headers.has('Vercel-CDN-Cache-Control'), false)
   assert.strictEqual((await duplicate).body, results.at(-1).body)
   assert.strictEqual((await request(117)).body, results.at(-1).body)
   assert.equal(heads, requests.length)
+})
+
+test('retries a throttled index response without using it as wallet data', async () => {
+  let attempts = 0
+  const provider = createRpc('https://index.example', async (url, { body }) => {
+    const { id } = JSON.parse(body)
+    attempts += 1
+    return Response.json(attempts === 1 ? { id, error: { code: 429 } } : { id, result: { transfers: [] } })
+  })
+  assert.deepEqual(await provider.call('alchemy_getAssetTransfers', {}), { transfers: [] })
+  assert.equal(attempts, 2)
 })
 
 function transfer(from, to, token) {
@@ -162,6 +175,7 @@ test('hydrates indexed transactions in batches and retries only missing fields',
     category: 'external', from: wallet, to: merchant,
   }))
   const missingHash = rows.at(-1).hash
+  const blockHash = `0x${'1'.repeat(64)}`
   const reads = []
   let missingReceipt = true
   let keepReceiptMissing = false
@@ -176,12 +190,12 @@ test('hydrates indexed transactions in batches and retries only missing fields',
       if (calls[0][0] === 'eth_getBalance') return ['0x0', '0x', '0x19']
       reads.push(calls)
       return calls.map(([method, hash]) => {
-        if (method === 'eth_getTransactionByHash') return { from: wallet, to: merchant, input: '0x' }
+        if (method === 'eth_getTransactionByHash') return { hash, blockHash, from: wallet, to: merchant, input: '0x' }
         if (hash === missingHash && (missingReceipt || keepReceiptMissing)) {
           missingReceipt = false
           return null
         }
-        return { status: '0x1', logs: [] }
+        return { transactionHash: hash, blockHash, blockNumber: '0x100000', status: '0x1', logs: [] }
       })
     },
   }
@@ -204,9 +218,15 @@ test('hydrates indexed transactions in batches and retries only missing fields',
 
   keepReceiptMissing = false
   rows.reverse()
-  const recovered = await scanWallet(rpc, wallet, null)
+  const finalized = new Map()
+  const recovered = await scanWallet(rpc, wallet, null, undefined, finalized)
   assert.equal(recovered.coverage.estimateReady, true)
   assert.deepEqual(recovered.score, result.score)
+  assert.equal(finalized.size, rows.length)
+  reads.length = 0
+  const cached = await scanWallet(rpc, wallet, null, undefined, finalized)
+  assert.deepEqual(reads, [])
+  assert.deepEqual(cached.score, result.score)
 })
 
 test('requires a supported authorization, payer and merchant for direct x402 attribution', () => {

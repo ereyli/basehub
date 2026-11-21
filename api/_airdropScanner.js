@@ -1,4 +1,5 @@
 import { decodeEventLog, encodeFunctionData } from 'viem'
+import { setTimeout as delay } from 'node:timers/promises'
 import {
   ADDRESS, HASH, ZERO, BRIDGE, FACTORY, IDENTITY, USDC, SPIKO, APPS, DEX, LENDING,
   B20_CANDIDATE, B20_ABI, B20_CREATED, B20_LAUNCHED, B20_CURVE_CREATED, B20_LAUNCHERS, TOKEN_CALLS, X402_PROXIES,
@@ -13,6 +14,7 @@ const ERC_TOKENS = ['erc20', 'erc721', 'erc1155']
 const MAX_RECEIPTS = 400
 const RECEIPT_BATCH_SIZE = 24
 const RECEIPT_WORKERS = 2
+const MAX_CACHED_RECORDS = 1200
 const lower = (value) => typeof value === 'string' ? value.toLowerCase() : ''
 const hex = (number) => `0x${number.toString(16)}`
 const padded = (address) => `0x${address.slice(2).padStart(64, '0')}`
@@ -30,28 +32,38 @@ export function parseCutoff(value, now = Date.now()) {
   return Math.floor((start + 86_400_000 - 1) / 1000)
 }
 
-export function createRpc(url, fetcher = fetch, deadline) {
+export function createRpc(url, fetcher = fetch, deadline, requestTimeout = 6500) {
   let nextId = 0
-  async function post(body, retry = true) {
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      const timeout = AbortSignal.timeout(6500)
-      const response = await fetcher(url, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body), signal: deadline ? AbortSignal.any([timeout, deadline]) : timeout,
-      })
-      if (retry && [429, 502, 503, 504].includes(response.status) && attempt === 0 && !deadline?.aborted) {
-        const retryAfter = Number(response.headers.get('retry-after'))
-        await new Promise((resolve) => setTimeout(resolve, Math.min(2000, Math.max(700, retryAfter * 1000 || 0))))
-        continue
+  async function post(body, attempts) {
+    const payload = JSON.stringify(body)
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      deadline?.throwIfAborted()
+      const timeout = AbortSignal.timeout(requestTimeout)
+      const signal = deadline ? AbortSignal.any([timeout, deadline]) : timeout
+      let response
+      let reply
+      try {
+        response = await fetcher(url, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, signal,
+        })
+        if (response.ok) reply = await response.json()
+      } catch (error) {
+        if (attempt === attempts || deadline?.aborted) throw error
       }
-      if (!response.ok) throw new Error('Base data provider unavailable')
-      return response.json()
+      const limited = [429, -32005, -32007].includes(reply?.error?.code)
+      if (response?.ok && reply && (!limited || attempt === attempts)) return reply
+      if (attempt === attempts || (response && !response.ok && ![429, 500, 502, 503, 504].includes(response.status))) {
+        throw new Error('Base data provider unavailable')
+      }
+      const retryAfter = Number(response?.headers.get('retry-after')) * 1000 || 0
+      await delay(Math.min(2000, Math.max(650 * attempt, retryAfter)), undefined, { signal: deadline })
     }
   }
   return {
     async call(method, ...params) {
       const id = ++nextId
-      const reply = await post({ jsonrpc: '2.0', id, method, params })
+      const attempts = method === 'alchemy_getAssetTransfers' ? 3 : 1
+      const reply = await post({ jsonrpc: '2.0', id, method, params }, attempts)
       if (reply?.id !== id || reply.error || !('result' in reply)) throw new Error('Base RPC read failed')
       return reply.result
     },
@@ -59,7 +71,7 @@ export function createRpc(url, fetcher = fetch, deadline) {
       if (!calls.length) return []
       const messages = calls.map(([method, ...params]) => ({ jsonrpc: '2.0', id: ++nextId, method, params }))
       try {
-        const reply = await post(messages, false)
+        const reply = await post(messages, 1)
         if (!Array.isArray(reply)) return calls.map(() => null)
         const byId = new Map(reply.map((message) => [message.id, message]))
         return messages.map(({ id }) => byId.get(id)?.result ?? null)
@@ -73,12 +85,12 @@ export function createRpc(url, fetcher = fetch, deadline) {
 export function createScanRpc(index, chain, backup) {
   // Transfer queries are expensive. Stagger them so one scan does not send
   // every indexed query in the same provider rate-limit window.
-  let nextIndexRequest = Promise.resolve()
+  let nextIndexStart = Promise.resolve()
   return {
     async call(method, ...params) {
       if (method === 'alchemy_getAssetTransfers') {
-        const job = nextIndexRequest.then(() => index.call(method, ...params))
-        nextIndexRequest = job.catch(() => {}).then(() => new Promise((resolve) => setTimeout(resolve, 300)))
+        const job = nextIndexStart.then(() => index.call(method, ...params))
+        nextIndexStart = nextIndexStart.then(() => new Promise((resolve) => setTimeout(resolve, 300)))
         return job
       }
       try {
@@ -176,6 +188,18 @@ async function hydrateRecords(rpc, records, batchSize = RECEIPT_BATCH_SIZE) {
     }
   }
   await Promise.all(Array.from({ length: Math.min(RECEIPT_WORKERS, groups.length) }, hydrateNext))
+}
+
+function rememberFinalizedRecords(cache, records, block) {
+  if (!cache) return
+  for (const { hash, tx, receipt } of records) {
+    const height = Number(receipt.blockNumber)
+    if (tx.hash !== hash || receipt.transactionHash !== hash || tx.blockHash !== receipt.blockHash ||
+      !HASH.test(receipt.blockHash ?? '') || height > block || !Number.isSafeInteger(height)) continue
+    if (cache.has(hash) || JSON.stringify([tx, receipt]).length > 24_000) continue
+    if (cache.size >= MAX_CACHED_RECORDS) cache.delete(cache.keys().next().value)
+    cache.set(hash, { tx, receipt, height })
+  }
 }
 
 function readOps(logs, walletTopic) {
@@ -383,29 +407,32 @@ export function classifyWallet({ address, records, verifiedB20, stocks, cutoffTi
   }
 }
 
-export async function scanWallet(rpc, address, cutoff, fetcher = fetch) {
+export async function scanWallet(rpc, address, cutoff, fetcher = fetch, recordCache) {
   const stockPromise = getStockRegistry(fetcher)
   const head = await findBlock(rpc, cutoff)
   const toBlock = head.number
   const cutoffTime = Number(head.timestamp) * 1000
   const merchants = new Set(['0x7d2ceb7a0e0c39a3d0f7b5b491659fde4bb7bcfe', lower(process.env.X402_RECEIVING_ADDRESS)]
     .filter((value) => ADDRESS.test(value) && value !== ZERO && value !== address))
+  const outgoingTransfers = collect(rpc, { fromAddress: address, toBlock, category: ['external'], excludeZeroValue: false }, 300, 3)
+  const sentTransfers = collect(rpc, { fromAddress: address, toBlock, category: ERC_TOKENS, excludeZeroValue: true }, 600, 3)
+  // A complete outgoing token feed already includes the tracked merchant payments.
+  const merchantHistory = sentTransfers.then(({ state }) => state === 'complete' ? [] : Promise.all([...merchants].map((merchant) => collect(rpc, {
+    fromAddress: address, toAddress: merchant, toBlock, category: ['erc20'], contractAddresses: [USDC], excludeZeroValue: true,
+  }, 20))))
   const [outgoing, sent, received, bridge, balances, registry, merchantTransfers] = await Promise.all([
-    collect(rpc, { fromAddress: address, toBlock, category: ['external'], excludeZeroValue: false }, 300, 3),
-    collect(rpc, { fromAddress: address, toBlock, category: ERC_TOKENS, excludeZeroValue: true }, 600, 3),
+    outgoingTransfers,
+    sentTransfers,
     collect(rpc, { toAddress: address, toBlock, category: ERC_TOKENS, excludeZeroValue: true }, 400, 2),
     collect(rpc, { fromAddress: BRIDGE, toAddress: address, toBlock, category: ['internal'], excludeZeroValue: true }, 100),
     rpc.batch([['eth_getBalance', address, toBlock], ['eth_getCode', address, toBlock], ['eth_getTransactionCount', address, toBlock]]),
     stockPromise,
-    Promise.all([...merchants].map((merchant) => collect(rpc, {
-      fromAddress: address, toAddress: merchant, toBlock, category: ['erc20'], contractAddresses: [USDC], excludeZeroValue: true,
-    }, 20))),
+    merchantHistory,
   ])
   const candidates = new Map()
   const outgoingHashes = new Set(outgoing.rows.map(({ hash }) => lower(hash)).filter((hash) => HASH.test(hash)))
   const indexedTokens = new Set()
-  // The merchant searches cover a subset of outgoing ERC-20 transfers.
-  const supplementalPayments = sent.state === 'complete' ? [] : merchantTransfers.flatMap(({ rows }) => rows)
+  const supplementalPayments = merchantTransfers.flatMap(({ rows }) => rows)
   for (const row of [...outgoing.rows, ...sent.rows, ...received.rows, ...bridge.rows, ...supplementalPayments]) {
     const hash = lower(row.hash)
     const time = txTime(row)
@@ -426,11 +453,16 @@ export async function scanWallet(rpc, address, cutoff, fetcher = fetch) {
     .sort((a, b) => b.rank - a.rank || b.time - a.time || a.hash.localeCompare(b.hash))
     .slice(0, MAX_RECEIPTS)
   const toVerify = [...indexedTokens].sort().slice(0, 100)
-  const records = selected.map(({ hash, time, rows }) => ({ hash, time, transfers: [...rows.values()] }))
+  const block = Number(toBlock)
+  const records = selected.map(({ hash, time, rows }) => {
+    const cached = recordCache?.get(hash)
+    const saved = cached?.height <= block ? cached : null
+    return { hash, time, transfers: [...rows.values()], tx: saved?.tx, receipt: saved?.receipt }
+  })
   const verifiedB20 = new Set()
   let checkedB20 = 0
   await Promise.all([
-    hydrateRecords(rpc, records),
+    hydrateRecords(rpc, records.filter(({ tx, receipt }) => !tx || !receipt)),
     (async () => {
       const calls = toVerify.map((token) => ['eth_call', {
         to: FACTORY, data: encodeFunctionData({ abi: B20_ABI, functionName: 'isB20Initialized', args: [token] }),
@@ -446,7 +478,9 @@ export async function scanWallet(rpc, address, cutoff, fetcher = fetch) {
   ])
   // Recover fields missed during transient provider throttling after the first pass.
   await hydrateRecords(rpc, records.filter(({ tx, receipt }) => !tx || !receipt), 12)
+  await hydrateRecords(rpc, records.filter(({ tx, receipt }) => !tx || !receipt), 8)
   const checked = records.filter(({ tx, receipt }) => tx && Array.isArray(receipt?.logs))
+  rememberFinalizedRecords(recordCache, checked, block)
   const nonce = balances[2] == null ? null : Number(balances[2])
   const activityComplete = balances[1] === '0x' && nonce === outgoingHashes.size &&
     outgoing.state === 'complete' && sent.state === 'complete' && received.state === 'complete' &&
@@ -472,7 +506,7 @@ export async function scanWallet(rpc, address, cutoff, fetcher = fetch) {
   const analysis = classifyWallet({ address, records: checked, verifiedB20, stocks: registry.stocks, cutoffTime, ethBalance, coverage, merchants })
   if (!estimateReady) analysis.score = { total: null, dimensions: analysis.score.dimensions.map((dimension) => ({ ...dimension, points: null })) }
   return {
-    address, block: Number(toBlock), asOf: new Date(cutoffTime).toISOString(), version: MODEL_VERSION, coverage,
+    address, block, asOf: new Date(cutoffTime).toISOString(), version: MODEL_VERSION, coverage,
     ...analysis,
   }
 }
